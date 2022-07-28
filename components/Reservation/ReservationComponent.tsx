@@ -1,0 +1,52 @@
+import {Group, Loader, Space, Stack, Text} from "@mantine/core";
+import React from "react";
+import {BaseReservation, getEndDate, getStartDate, ReservationState} from "../../model/Reservation";
+import GameTable from "../../model/GameTable";
+import {MdCancel, MdDone, MdErrorOutline} from "react-icons/md";
+
+interface Status {
+    icon: React.ReactNode,
+    message: string
+}
+
+export default function ReservationComponent(reservation: BaseReservation, gameTable: GameTable, showStatus: boolean) {
+    // const theme = useMantineTheme()
+
+    const state = reservation.state ?? ReservationState.PendingApproval;
+    const status: Status = (() => {
+        switch (state) {
+            case ReservationState.PendingApproval:
+                return {icon: <Loader size={32}/>, message: "Se procesează"};
+            case ReservationState.Canceled:
+                return {icon: <MdCancel size={32}/>, message: "Anulata"};
+            case ReservationState.Approved:
+                return {icon: <MdDone size={32}/>, message: "Aprobată"};
+            case ReservationState.Invalid:
+                return {icon: <MdErrorOutline size={32}/>, message: "Eroare la aprobare"}
+        }
+    })();
+
+    const startDate = getStartDate(reservation);
+    const endDate = getEndDate(reservation);
+
+    return (<Group position={"apart"}>
+        <Stack spacing={0}>
+            <Text size={"lg"} weight={800}>{gameTable.name}</Text>
+
+            <Text>Pe data de <b>{startDate.toLocaleDateString('ro-RO')}</b> de la ora <b>{startDate.getHours()}:{("0" + startDate.getMinutes()).slice(-2)}</b> la <b>{endDate.getHours()}:{("0" + endDate.getMinutes()).slice(-2)}</b></Text>
+
+            <Space h={"xs"}/>
+
+            <Text>Tipul mesei: <b>{gameTable.type.toUpperCase()}</b></Text>
+            <Text>Culoarea mesei: <b>{gameTable.color.toUpperCase()}</b></Text>
+            <Text>Robot: <b>{gameTable.has_robot ? "DA" : "NU"}</b></Text>
+        </Stack>
+
+        {showStatus &&
+            <Stack align={"center"}>
+                {status.icon}
+                <Text weight={700}>{status.message}</Text>
+            </Stack>
+        }
+    </Group>)
+}

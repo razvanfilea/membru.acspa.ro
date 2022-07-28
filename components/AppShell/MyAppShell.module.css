@@ -1,0 +1,17 @@
+@media (max-width: 760px) {
+    .title {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .youtubeButton {
+        display: none;
+    }
+}
+
+@media (max-width: 560px) {
+    .mainLinksText {
+        display: none;
+    }
+}
