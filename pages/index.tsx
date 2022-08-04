@@ -1,8 +1,21 @@
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useState} from "react";
 import Head from "next/head";
-import {Button, Card, Divider, Grid, Group, Paper, Radio, Space, Stack, Text, Title} from "@mantine/core";
+import {
+    Button,
+    Card,
+    Divider,
+    Grid,
+    Group, MantineProvider,
+    Paper,
+    Radio,
+    Space,
+    Stack,
+    Text,
+    Title,
+    useMantineTheme
+} from "@mantine/core";
 import {Calendar} from '@mantine/dates';
-import {BaseReservation, getEndDateDuration, Reservation} from "../model/Reservation";
+import {BaseReservation, getEndDateDuration, getStartDate, Reservation, ReservationStatus} from "../model/Reservation";
 import GameTable from "../model/GameTable";
 import {useScrollIntoView} from "@mantine/hooks";
 import {appwrite, userIsLoggedIn} from "../utils/appwrite_utils";
@@ -10,6 +23,8 @@ import {NextLink} from "@mantine/next";
 import ReservationComponent from "../components/Reservation";
 import {LocationName} from "../model/Room";
 import 'dayjs/locale/ro'
+import {MantineThemeColors} from "@mantine/styles/lib/theme/types/MantineColor";
+import {Tuple} from "@mantine/styles/lib/theme/types/Tuple";
 
 function addDays(date, days) {
     const result = new Date(date);
@@ -18,16 +33,19 @@ function addDays(date, days) {
 }
 
 interface IParams {
-    gara: Room,
-    boromir: Room,
+    gara: Room
+    boromir: Room
     daysAhead: number
 }
 
 interface Room {
+    locationName: LocationName
     tables: GameTable[]
     startHour: number
     endHour: number
     duration: number
+    maxReservations: number
+    uiColor: Tuple<string, 10>
 }
 
 class SelectedTable {
@@ -83,55 +101,60 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                 </>
             }
 
-            <Grid columns={12} gutter={"xl"}>
-                <Grid.Col md={6} lg={6} xl={4} key={"calendar"}>
-                    <Stack>
-                        <Radio.Group
-                            value={locationName}
-                            onChange={(value) => {
-                                switch (value) {
-                                    case LocationName.Gara.toString():
-                                        setLocationName(LocationName.Gara);
-                                        break;
-                                    case LocationName.Boromir.toString():
-                                        setLocationName(LocationName.Boromir);
-                                        break;
-                                }
-                            }}
-                            label={"Alege locația unde faci rezervarea:"}
-                            size="md">
-                            <Radio value={LocationName.Gara} label={"Gară"}/>
-                            <Radio value={LocationName.Boromir} label={"Boromir"}/>
-                        </Radio.Group>
+            <MantineProvider theme={{
+                colors: {brand: room.uiColor},
+                primaryColor: 'brand'
+            }}>
+                <Grid columns={12} gutter={"xl"}>
+                    <Grid.Col md={6} lg={6} xl={4} key={"calendar"}>
+                        <Stack>
+                            <Radio.Group
+                                value={locationName}
+                                onChange={(value) => {
+                                    switch (value) {
+                                        case LocationName.Gara.toString():
+                                            setLocationName(LocationName.Gara);
+                                            break;
+                                        case LocationName.Boromir.toString():
+                                            setLocationName(LocationName.Boromir);
+                                            break;
+                                    }
+                                }}
+                                label={"Alege locația unde faci rezervarea:"}
+                                size="md">
+                                <Radio value={LocationName.Gara} label={"Gară"}/>
+                                <Radio value={LocationName.Boromir} label={"Boromir"}/>
+                            </Radio.Group>
 
-                        <Space h={"sm"} />
+                            <Space h={"sm"}/>
 
-                        <Text>Alege ziua rezervării:</Text>
+                            <Text>Alege ziua rezervării:</Text>
 
-                        <Calendar
-                            minDate={minRange}
-                            maxDate={maxRange}
-                            hideOutsideDates={true}
-                            size={"xl"}
-                            locale={"ro"}
-                            value={selectedDate}
-                            onChange={(date) => {
-                                if (isLoggedIn && date != null) onSelectedDateChange(date)
-                            }}
-                            excludeDate={(date) => date.getDay() === 0}
-                            fullWidth={true}
-                        />
-                    </Stack>
-                </Grid.Col>
+                            <Calendar
+                                minDate={minRange}
+                                maxDate={maxRange}
+                                hideOutsideDates={true}
+                                size={"xl"}
+                                locale={"ro"}
+                                value={selectedDate}
+                                onChange={(date) => {
+                                    if (isLoggedIn && date != null) onSelectedDateChange(date)
+                                }}
+                                excludeDate={(date) => date.getDay() === 0}
+                                fullWidth={true}
+                            />
+                        </Stack>
+                    </Grid.Col>
 
-                <Grid.Col md={6} lg={6} xl={3} key={"tables"}>
-                    {SelectGameTable(room, selectedDate, selectedTable, setSelectedTable)}
-                </Grid.Col>
+                    <Grid.Col md={6} lg={6} xl={3} key={"tables"}>
+                        {SelectGameTable(room, selectedDate, selectedTable, setSelectedTable)}
+                    </Grid.Col>
 
-                <Grid.Col md={12} lg={12} xl={5} key={"confirm"}>
-                    {ConfirmSelection(locationName, room.duration, selectedDate, selectedTable)}
-                </Grid.Col>
-            </Grid>
+                    <Grid.Col md={12} lg={12} xl={5} key={"confirm"}>
+                        {ConfirmSelection(room, selectedDate, selectedTable)}
+                    </Grid.Col>
+                </Grid>
+            </MantineProvider>
         </Paper>
     </>);
 }
@@ -141,12 +164,68 @@ function SelectGameTable(room: Room,
                          selectedTable: SelectedTable,
                          onSelectTable: (s: SelectedTable) => void): JSX.Element {
 
+    if (selectedDate == null) return null
+
+    const selectedTableId = selectedTable?.table?.$id;
+    const selectedStartHour = (selectedTable) ? selectedTable.startHour : -1;
+
+    const tableButtons = function (startHour: number) {
+        return room.tables.map((gameTable) => {
+            return (
+                <Button
+                    variant={(gameTable.$id == selectedTableId && startHour == selectedStartHour) ? "filled" : "outline"}
+                    key={gameTable.$id}
+                    fullWidth={true}
+                    onClick={() => onSelectTable(new SelectedTable(startHour, gameTable))}>
+                    {gameTable.name}
+                </Button>
+            )
+        })
+    }
+
+    const allButtons = () => {
+        let content = [];
+        for (let startHour = room.startHour; startHour < room.endHour; startHour += room.duration) {
+            content.push(<Stack key={startHour}>
+                <Text>{`Ora ${startHour} - ${startHour + room.duration}`}:</Text>
+                <Group noWrap={true} style={{marginLeft: "1em", marginRight: "1em"}}>
+                    {tableButtons(startHour)}
+                </Group>
+                <Divider variant={"dashed"}/>
+            </Stack>);
+        }
+        return content;
+    };
+
+    return (<Stack>
+        <Text weight={600}>Data selectată: <Text color={"blue"}>{selectedDate.toLocaleDateString('ro-RO')}</Text></Text>
+
+        {allButtons()}
+    </Stack>)
+}
+
+function ConfirmSelection(
+    room: Room,
+    selectedDate: Date, selectedTable: SelectedTable
+): JSX.Element {
+    enum ConfirmationStatus {
+        None,
+        Loading,
+        Success,
+        Fail
+    }
+
+    const [status, setStatus] = useState(ConfirmationStatus.None)
+    const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
+
     const [reservations, setReservations] = useState<Reservation[]>([])
+    const [currentSelectionReservations, setCurrentSelectionReservations] = useState<Reservation[]>([])
 
     useEffect(() => {
         function refetchReservations() {
             appwrite.database.listDocuments<Reservation>('62cdcab0e527f917eb34').then((res) => {
-                setReservations(res.documents)
+                // Only show approved reservations
+                setReservations(res.documents.filter((value) => value.status == ReservationStatus.Approved))
                 console.log("Reservation updated")
             });
         }
@@ -159,70 +238,18 @@ function SelectGameTable(room: Room,
         });
     }, [])
 
-    const selectedDayReservations = useMemo(() => {
-        if (selectedDate) {
-            return reservations.filter((reservation) => {
-                return (new Date(reservation.date)).getDay() == selectedDate.getDay()
-            })
-        } else {
-            return []
-        }
-    }, [reservations, selectedDate])
-
-    if (selectedDate == null) return null
-
-    const selectedTableId = selectedTable?.table.$id;
-    const selectedStartHour = (selectedTable) ? selectedTable.startHour : -1;
-
-    const tableButtons = function (startHour: number) {
-        return room.tables.map((gameTable) => {
-            return (
-                <Button
-                    variant={(gameTable.$id == selectedTableId && startHour == selectedStartHour) ? "filled" : "outline"}
-                    key={gameTable.$id}
-                    disabled={selectedDayReservations.some((res) => gameTable.$id == res.table_id && startHour == res.start_hour)}
-                    onClick={() => onSelectTable(new SelectedTable(startHour, gameTable))}>
-                    {gameTable.name}
-                </Button>
+    useEffect(() => {
+        if (selectedDate != null && selectedTable != null) {
+            setCurrentSelectionReservations(
+                reservations.filter((reservation) => {
+                        return getStartDate(reservation) == selectedDate
+                            && reservation.table_id == selectedTable.table.$id
+                            && reservation.location == room.locationName
+                    }
+                )
             )
-        })
-    }
-
-    const hourButtons = (startHour) => {
-        return (<Stack key={startHour}>
-            <Text>{`Ora ${startHour} - ${startHour + room.duration}`}</Text>
-            <Group position={"apart"} style={{marginLeft: "1em", marginRight: "1em"}}>
-                {tableButtons(startHour)}
-            </Group>
-            <Divider variant={"dashed"}/>
-        </Stack>)
-    };
-
-    const allButtons = () => {
-        let content = [];
-        for (let i = room.startHour; i < room.endHour; i += room.duration) {
-            content.push(hourButtons(i));
         }
-        return content;
-    };
-
-    return (<Stack>
-        <Text weight={600}>Data selectată: <Text color={"blue"}>{selectedDate.toLocaleDateString('ro-RO')}</Text></Text>
-
-        {allButtons()}
-    </Stack>)
-}
-
-function ConfirmSelection(locationName: LocationName, duration: number, selectedDate: Date, selectedTable: SelectedTable): JSX.Element {
-    enum ConfirmationStatus {
-        None,
-        Loading,
-        Success,
-        Fail
-    }
-
-    const [status, setStatus] = useState(ConfirmationStatus.None)
-    const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
+    }, [reservations, room.locationName, selectedDate, selectedTable]);
 
     useEffect(() => {
         if (selectedDate && selectedTable) {
@@ -234,41 +261,28 @@ function ConfirmSelection(locationName: LocationName, duration: number, selected
 
     if (selectedDate == null || selectedTable == null) return null
 
-    const startDate = getEndDateDuration(selectedDate, selectedTable.startHour * 60)
-
+    const startDate = getEndDateDuration(selectedDate, selectedTable.startHour)
+    const isValid = currentSelectionReservations.length < room.maxReservations;
     const baseReservation: BaseReservation = {
         start_date: startDate.toISOString(),
-        duration: duration,
+        duration: room.duration,
         table_id: selectedTable.table.$id,
         user_id: "",
-        location: locationName
+        location: room.locationName
     }
 
-    const gameTable = selectedTable.table;
-
-    return (<Card p={"xl"} shadow={"sm"}>
-        <div style={{marginTop: 'sm'}}>
-            <Title ref={targetRef}>Confirmă rezervarea:</Title>
-        </div>
-
-        <Space h={"lg"}/>
-
-        {ReservationComponent(baseReservation, gameTable, false)}
-
-        <Space h={"md"}/>
-
-        {(status == ConfirmationStatus.None || status == ConfirmationStatus.Loading) &&
-            <Button fullWidth style={{marginTop: 14}}
-                    loading={status == ConfirmationStatus.Loading}
-                    onClick={async () => {
-                        setStatus(ConfirmationStatus.Loading)
-                        const success = await publishReservation(baseReservation)
-                        setStatus(success ? ConfirmationStatus.Success : ConfirmationStatus.Fail)
-                    }}>Confirmă rezervarea!</Button>
-        }
-
-        {status == ConfirmationStatus.Success &&
-            <Stack>
+    function DisplayConfirmationStatus(): JSX.Element {
+        if (status == ConfirmationStatus.None || status == ConfirmationStatus.Loading) {
+            return <Button
+                fullWidth style={{marginTop: 14}}
+                loading={status == ConfirmationStatus.Loading}
+                onClick={async () => {
+                    setStatus(ConfirmationStatus.Loading)
+                    const success = await publishReservation(baseReservation)
+                    setStatus(success ? ConfirmationStatus.Success : ConfirmationStatus.Fail)
+                }}>Confirmă rezervarea!</Button>
+        } else if (status == ConfirmationStatus.Success) {
+            return <Stack>
                 <Paper shadow={"0"} p={"md"} sx={(theme) => ({
                     backgroundColor: theme.colors.green,
                     marginTop: theme.spacing.sm,
@@ -284,10 +298,8 @@ function ConfirmSelection(locationName: LocationName, duration: number, selected
                     </NextLink>
                 </Group>
             </Stack>
-        }
-
-        {status == ConfirmationStatus.Fail &&
-            <Paper shadow={"0"} p={"md"} sx={(theme) => ({
+        } else {
+            return <Paper shadow={"0"} p={"md"} sx={(theme) => ({
                 backgroundColor: theme.colors.orange,
                 marginTop: theme.spacing.sm,
                 marginBottom: theme.spacing.xs
@@ -295,6 +307,31 @@ function ConfirmSelection(locationName: LocationName, duration: number, selected
                 <Text align={"center"} color="#FFF">Rezervarea nu a putut fi realizată.</Text>
             </Paper>
         }
+    }
+
+    return (<Card p={"xl"} shadow={"sm"}>
+        <div style={{marginTop: 'sm'}}>
+            <Title ref={targetRef}>Confirmă rezervarea:</Title>
+        </div>
+
+        <Space h={"lg"}/>
+
+        {ReservationComponent(baseReservation, selectedTable.table, false)}
+
+        <Space h={"md"}/>
+
+        {isValid &&
+            DisplayConfirmationStatus()
+        }
+
+        {!isValid &&
+            <Text>Nu se mai pot face rezervări la aceasta masă</Text>
+        }
+
+        {/* { reservations.map(async (reservation) => {
+            // const user = appwrite.database.
+        })}*/}
+
     </Card>)
 }
 
@@ -323,16 +360,22 @@ export async function getStaticProps({}) {
     const props: IParams = {
         daysAhead: 14,
         gara: {
+            locationName: LocationName.Gara,
             tables: garaTables,
-            startHour: 10,
-            endHour: 21,
-            duration: 1,
-        },
-        boromir: {
-            tables: boromirTables,
             startHour: 18,
             endHour: 22,
             duration: 2,
+            maxReservations: 8,
+            uiColor: ['#e7f5ff', '#d0ebff', '#a5d8ff', '#74c0fc', '#4dabf7', '#339af0', '#228be6', '#1c7ed6', '#1971c2', '#1864ab']
+        },
+        boromir: {
+            locationName: LocationName.Boromir,
+            tables: boromirTables,
+            startHour: 10,
+            endHour: 20,
+            duration: 1,
+            maxReservations: 2,
+            uiColor: ['#e6fcf5', '#c3fae8', '#96f2d7', '#63e6be', '#38d9a9', '#20c997', '#12b886', '#0ca678', '#099268', '#087f5b',]
         }
     }
 

@@ -1,6 +1,6 @@
-import {Group, Loader, Space, Stack, Text} from "@mantine/core";
+import {Group, Button, Loader, Space, Stack, Text} from "@mantine/core";
 import React from "react";
-import {BaseReservation, getEndDate, getStartDate, ReservationState} from "../../model/Reservation";
+import {BaseReservation, getEndDate, getStartDate, ReservationStatus} from "../../model/Reservation";
 import GameTable from "../../model/GameTable";
 import {MdCancel, MdDone, MdErrorOutline} from "react-icons/md";
 
@@ -9,19 +9,23 @@ interface Status {
     message: string
 }
 
+function cancelReservation(reservation: BaseReservation) {
+
+}
+
 export default function ReservationComponent(reservation: BaseReservation, gameTable: GameTable, showStatus: boolean) {
     // const theme = useMantineTheme()
 
-    const state = reservation.state ?? ReservationState.PendingApproval;
+    const state = reservation.status ?? ReservationStatus.PendingApproval;
     const status: Status = (() => {
         switch (state) {
-            case ReservationState.PendingApproval:
+            case ReservationStatus.PendingApproval:
                 return {icon: <Loader size={32}/>, message: "Se procesează"};
-            case ReservationState.Canceled:
+            case ReservationStatus.Canceled:
                 return {icon: <MdCancel size={32}/>, message: "Anulata"};
-            case ReservationState.Approved:
+            case ReservationStatus.Approved:
                 return {icon: <MdDone size={32}/>, message: "Aprobată"};
-            case ReservationState.Invalid:
+            case ReservationStatus.Invalid:
                 return {icon: <MdErrorOutline size={32}/>, message: "Eroare la aprobare"}
         }
     })();
@@ -46,6 +50,12 @@ export default function ReservationComponent(reservation: BaseReservation, gameT
             <Stack align={"center"}>
                 {status.icon}
                 <Text weight={700}>{status.message}</Text>
+
+                <Space h={"xs"} />
+
+                {reservation.status == ReservationStatus.Approved &&
+                    <Button gradient={{ from: 'orange', to: 'red' }} variant={"outline"} onClick={() => cancelReservation(reservation)}>Anulează</Button>
+                }
             </Stack>
         }
     </Group>)

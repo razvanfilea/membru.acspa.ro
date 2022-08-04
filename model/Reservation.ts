@@ -7,7 +7,7 @@ export interface BaseReservation {
     duration: number;
     user_id: string;
     location: LocationName;
-    state?: ReservationState;
+    status?: ReservationStatus;
 }
 
 export interface Reservation extends BaseReservation, Models.Document {
@@ -25,7 +25,7 @@ export function getEndDate(reservation: BaseReservation): Date {
     return getEndDateDuration(new Date(reservation.start_date), reservation.duration);
 }
 
-export const enum ReservationState {
+export const enum ReservationStatus {
     PendingApproval = "pending",
     Approved = "approved",
     Canceled = "cancelled",

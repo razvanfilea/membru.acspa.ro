@@ -2,10 +2,14 @@ import {Avatar, Card, Button, Center, Group, Loader, Paper, Stack, Text, Title} 
 import {appwrite} from "../utils/appwrite_utils";
 import React, {useEffect, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
-import {Models, Query} from "appwrite";
+import {Models} from "appwrite";
 import {Reservation} from "../model/Reservation";
 import ReservationComponent from "../components/Reservation";
 import GameTable from "../model/GameTable";
+
+interface IParams {
+    gameTables: GameTable[]
+}
 
 function signOut(router: NextRouter) {
     const promise = appwrite.account.deleteSession('current');
@@ -20,10 +24,9 @@ function signOut(router: NextRouter) {
     });
 }
 
-export default function Profile(params) {
+export default function Profile(params: IParams) {
     const router = useRouter()
 
-    const gameTables: GameTable[] = params.documents
     const [loading, setLoading] = useState(true)
     const [user, setUser] = useState<Models.User<Models.Preferences>>(null)
     const [reservations, setReservations] = useState<Reservation[]>([])
@@ -82,7 +85,7 @@ export default function Profile(params) {
         </Paper>
 
         <Stack p={"xl"}>
-            <Title order={2}>Rezervărtile tale:</Title>
+            <Title order={2}>Rezervările tale:</Title>
 
             {reservations.length == 0 &&
                 <Text size={"lg"}>Nu ați făcut nici o rezervare</Text>
@@ -90,12 +93,10 @@ export default function Profile(params) {
 
             {reservations.map((reservation) => (
                 <Card key={reservation.$id}>
-                    {
-                        ReservationComponent(
+                    {ReservationComponent(
                             reservation,
-                            gameTables.find((element) => element.$id == reservation.table_id),
-                            true)
-                    }
+                            params.gameTables.find((element) => element.$id == reservation.table_id),
+                            true)}
                 </Card>
             ))}
         </Stack>
@@ -105,7 +106,11 @@ export default function Profile(params) {
 export async function getStaticProps({}) {
     const gameTables = await appwrite.database.listDocuments<GameTable>("62cdcac1bb2c8a4e5e48")
 
+    const props: IParams = {
+        gameTables: gameTables.documents
+    }
+
     return {
-        props: gameTables
+        props: props
     }
 }
