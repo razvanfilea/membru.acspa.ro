@@ -1,10 +1,10 @@
 import {Box, Button, Group, Paper, PasswordInput, Space, Stack, Text, TextInput, Title} from "@mantine/core";
 import {MdAccountBox, MdAlternateEmail, MdPerson} from "react-icons/md";
 import {useForm} from "@mantine/form";
-import {appwrite, userIsLoggedIn} from "../utils/appwrite_utils";
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
 import Link from "next/link";
+import {useAuth} from "../components/AuthProvider";
 
 const REGEX_EMAIL = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(([a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))$/
 
@@ -17,6 +17,7 @@ enum RegisterState {
 }
 
 export default function LoginForm() {
+    const auth = useAuth()
     const router = useRouter()
     const form = useForm({
         initialValues: {
@@ -40,29 +41,20 @@ export default function LoginForm() {
     const [registerState, setRegisterState] = useState(RegisterState.None)
 
     useEffect(() => {
-        userIsLoggedIn().then((value) => {
-            if (value) router.back()
-        })
-    }, [registerState, router])
+        if (auth.user != null) {
+            router.push('/')
+        }
+    }, [auth.user, router])
 
     return (<>
         <Box sx={{maxWidth: 480}} mx="auto">
             <Stack>
                 <form style={{position: 'relative'}} onSubmit={
-                    form.onSubmit((values) => {
+                    form.onSubmit(async (values) => {
                         setRegisterState(RegisterState.Loading)
-                        appwrite.account.create('unique()', values.email, values.password, values.name)
-                            .then(res => {
-                                    setRegisterState(RegisterState.Success)
-                                    appwrite.account.createEmailSession(values.email, values.password)
-                                        .then(
-                                            res => setRegisterState(RegisterState.LoginSuccess),
-                                            err => console.log(err))
-                                },
-                                err => {
-                                    console.log(err)
-                                    setRegisterState(RegisterState.Failed)
-                                })
+                        const {error} = await auth.signUp({email: values.email, password: values.password})
+
+                        setRegisterState(error == null ? RegisterState.LoginSuccess : RegisterState.Failed)
                     })}>
 
                     <Title>Înregistrare cont</Title>

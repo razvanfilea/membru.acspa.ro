@@ -1,14 +1,14 @@
 import {Box, Button, Group, Paper, PasswordInput, Space, Stack, Text, TextInput, Title} from "@mantine/core";
 import {MdAccountBox, MdAlternateEmail, MdPassword} from "react-icons/md";
 import {useForm} from "@mantine/form";
-import {appwrite, userIsLoggedIn} from "../utils/appwrite_utils";
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
 import Link from "next/link";
+import {useAuth} from "../components/AuthProvider";
 
 const REGEX_EMAIL = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(([a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))$/
 
-enum LoginState {
+const enum LoginState {
     None,
     Failed,
     Loading,
@@ -17,6 +17,7 @@ enum LoginState {
 
 export default function LoginForm() {
     const router = useRouter()
+    const auth = useAuth()
     const form = useForm({
         initialValues: {
             email: '',
@@ -33,10 +34,10 @@ export default function LoginForm() {
     const [loginState, setLoginState] = useState(LoginState.None)
 
     useEffect(() => {
-        userIsLoggedIn().then((value) => {
-            if (value) setLoginState(LoginState.Success)
-        })
-    }, [])
+        if (auth.user != null) {
+            setLoginState(LoginState.Success)
+        }
+    }, [auth.user])
 
     useEffect(() => {
         if (loginState == LoginState.Success) {
@@ -48,15 +49,11 @@ export default function LoginForm() {
         <Box sx={{maxWidth: 480}} mx="auto">
             <Stack>
                 <form style={{position: 'relative'}} onSubmit={
-                    form.onSubmit((values) => {
+                    form.onSubmit(async (values) => {
                         setLoginState(LoginState.Loading)
-                        appwrite.account.createEmailSession(values.email, values.password)
-                            .then(
-                                res => setLoginState(LoginState.Success),
-                                err => {
-                                    console.log(err)
-                                    setLoginState(LoginState.Failed)
-                                })
+                        const {error} = await auth.signIn({email: values.email, password: values.password})
+
+                        setLoginState(error == null ? LoginState.Success : LoginState.Failed)
                     })}>
 
                     <Title>Login</Title>

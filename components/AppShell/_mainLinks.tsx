@@ -1,11 +1,9 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {MdAccountBox, MdBookmarks, MdHome} from 'react-icons/md';
-import {Avatar, Group, Text, ThemeIcon, UnstyledButton} from '@mantine/core';
-import {useRouter} from "next/router";
+import {Group, Text, ThemeIcon, UnstyledButton} from '@mantine/core';
 import styles from './MyAppShell.module.css'
-import {appwrite} from "../../utils/appwrite_utils";
-import {Models} from "appwrite";
 import Link from "next/link";
+import {useAuth} from "../AuthProvider";
 
 interface MainLinkProps {
     icon: React.ReactNode;
@@ -65,11 +63,11 @@ function UserProfileLink(name: string) {
                 })}
             >
                 <Group noWrap={true}>
-                    <Avatar
+                    {/*TODO <Avatar
                         src={appwrite.avatars.getInitials(name, 64, 64).toString()}
                         radius={"md"}
                         style={{marginLeft: 6, marginRight: 6}}
-                    />
+                    />*/}
                     <Text size="md" className={styles.mainLinksText}>{name}</Text>
                 </Group>
             </UnstyledButton>
@@ -83,14 +81,7 @@ const data = [
 ];
 
 export default function MainLinks() {
-    const router = useRouter()
-    const [user, setUser] = useState<Models.User<Models.Preferences>>(null)
-
-    useEffect(() => {
-        appwrite.account.get()
-            .then((account) => setUser(account))
-            .catch(() => setUser(null))
-    }, [router.asPath]);
+    const auth = useAuth()
 
     const loginButtonData = {icon: <MdAccountBox size={22}/>, color: 'purple', label: 'Logare', link: '/signin'}
 
@@ -99,11 +90,11 @@ export default function MainLinks() {
             <MainLink {...link} key={link.label}/>
         ))}
 
-        {user != null &&
-            UserProfileLink(user.name)
+        {auth.user != null &&
+            UserProfileLink(auth.user.email)
         }
 
-        {user == null &&
+        {(!auth.loading && auth.user == null) &&
             <MainLink {...loginButtonData} />
         }
     </Group>;

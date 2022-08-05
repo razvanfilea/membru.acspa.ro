@@ -1,19 +1,18 @@
 import {Group, Button, Loader, Space, Stack, Text} from "@mantine/core";
 import React from "react";
-import {BaseReservation, getEndDate, getStartDate, ReservationStatus} from "../../model/Reservation";
-import GameTable from "../../model/GameTable";
 import {MdCancel, MdDone, MdErrorOutline} from "react-icons/md";
+import {GameTable, getEndDate, getStartDate, Reservation, ReservationStatus} from "../../types/wrapper";
 
 interface Status {
     icon: React.ReactNode,
     message: string
 }
 
-function cancelReservation(reservation: BaseReservation) {
-
+function cancelReservation(reservation: Reservation) {
+    // TODO
 }
 
-export default function ReservationComponent(reservation: BaseReservation, gameTable: GameTable, showStatus: boolean) {
+export default function ReservationComponent(reservation, gameTable: GameTable, showStatus: boolean) {
     // const theme = useMantineTheme()
 
     const state = reservation.status ?? ReservationStatus.PendingApproval;

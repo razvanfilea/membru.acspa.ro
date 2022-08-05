@@ -4,6 +4,7 @@ import MyAppShell from "../components/AppShell";
 import React, {useEffect, useState} from "react";
 import {ColorScheme, ColorSchemeProvider, MantineProvider, Paper} from '@mantine/core';
 import {useColorScheme, useLocalStorage} from "@mantine/hooks";
+import AuthProvider from "../components/AuthProvider";
 
 export default function MyApp({Component, pageProps}): JSX.Element {
     const [colorScheme, setLocalColorScheme] = useLocalStorage<ColorScheme>({
@@ -22,7 +23,7 @@ export default function MyApp({Component, pageProps}): JSX.Element {
             <title>ACS Perpetuum</title>
             {/*<link rel="icon" href="/favicon.ico"/>*/}
             <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width"/>
-            <meta name="description" content="" />
+            <meta name="description" content=""/>
         </Head>
 
         <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
@@ -37,9 +38,11 @@ export default function MyApp({Component, pageProps}): JSX.Element {
                 }}
             >
                 <Paper>
-                    <MyAppShell>
-                        <Component {...pageProps} />
-                    </MyAppShell>
+                    <AuthProvider>
+                        <MyAppShell>
+                            <Component {...pageProps} />
+                        </MyAppShell>
+                    </AuthProvider>
                 </Paper>
             </MantineProvider>
         </ColorSchemeProvider>

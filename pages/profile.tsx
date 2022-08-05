@@ -1,69 +1,68 @@
-import {Avatar, Card, Button, Center, Group, Loader, Paper, Stack, Text, Title} from "@mantine/core";
-import {appwrite} from "../utils/appwrite_utils";
+import {Button, Card, Center, Group, Loader, Paper, Stack, Text, Title} from "@mantine/core";
 import React, {useEffect, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
-import {Models} from "appwrite";
-import {Reservation} from "../model/Reservation";
 import ReservationComponent from "../components/Reservation";
-import GameTable from "../model/GameTable";
+import {useAuth} from "../components/AuthProvider";
+import {supabase} from "../utils/supabase_utils";
+import {GameTable, Reservation} from "../types/wrapper";
 
 interface IParams {
     gameTables: GameTable[]
 }
 
-function signOut(router: NextRouter) {
-    const promise = appwrite.account.deleteSession('current');
+async function signOut(router: NextRouter) {
+    const {error} = await supabase.auth.signOut()
 
-    promise.then(function (response) {
-        localStorage.removeItem('auth_state');
-        router.push("/signin")
-        console.log(response); // Success
-    }, function (error) {
+    if (error == null) {
+        await router.push("/signin")
+    } else {
         console.log('Auth', error);
         console.log(error); // Failure
-    });
+    }
 }
 
 export default function Profile(params: IParams) {
     const router = useRouter()
+    const auth = useAuth()
 
-    const [loading, setLoading] = useState(true)
-    const [user, setUser] = useState<Models.User<Models.Preferences>>(null)
     const [reservations, setReservations] = useState<Reservation[]>([])
 
     useEffect(() => {
         function refetchReservations() {
-            appwrite.database.listDocuments<Reservation>('62cdcab0e527f917eb34').then((res) => {
-                setReservations(res.documents)
-                console.log("Reservation updated")
-            });
+            supabase.from<Reservation>('rezervari')
+                .select('*')
+                .then(value => {
+                    if (value.data != null) {
+                        setReservations(value.data)
+                        console.log("Reservations updated")
+                    }
+                })
         }
 
-        if (user == null) {
-            appwrite.account.get()
-                .then((account) => {
-                    setUser(account);
-                    setLoading(false);
-                })
-                .catch(() => {
-                    setUser(null)
-                    setLoading(false);
-                    router.push("/signin")
-                })
-        } else {
-            refetchReservations();
+        if (!auth.loading) {
+            if (auth.user != null) {
+                refetchReservations();
 
-            return appwrite.client.subscribe('collections.62cdcab0e527f917eb34.documents', response => {
-                refetchReservations()
-                console.log(response);
-            });
+                const subscription = supabase.from<Reservation>('rezervari')
+                    .on('*', payload => {
+                        console.log(payload)
+                        refetchReservations()
+                    })
+                    .subscribe()
+
+                return () => {
+                    subscription?.unsubscribe()
+                }
+            } else {
+                router.push('/signin')
+            }
         }
-    }, [router, user]);
+    }, [auth, router]);
 
-    if (loading)
+    if (auth.loading)
         return <Center> <Loader/> </Center>;
 
-    if (user == null)
+    if (auth.user == null)
         return (<></>)
 
     return (<>
@@ -74,9 +73,11 @@ export default function Profile(params: IParams) {
 
             <Group position={"apart"}>
                 <Group noWrap={true}>
-                    <Avatar src={appwrite.avatars.getInitials(user.name, 64, 64).toString()} radius={"md"}/>
-
-                    <Text size="md">{user.name}</Text>
+                    {/*TODO <Avatar src={appwrite.avatars.getInitials(auth.profile.name, 64, 64).toString()} radius={"md"}/>
+*/}
+                    {auth.profile != null &&
+                        <Text size="md">{auth.profile.name}</Text>
+                    }
                 </Group>
 
                 <Button variant={"filled"} color={'red'} onClick={() => signOut(router)}>Sign out</Button>
@@ -92,11 +93,11 @@ export default function Profile(params: IParams) {
             }
 
             {reservations.map((reservation) => (
-                <Card key={reservation.$id}>
+                <Card key={reservation.id}>
                     {ReservationComponent(
-                            reservation,
-                            params.gameTables.find((element) => element.$id == reservation.table_id),
-                            true)}
+                        reservation,
+                        params.gameTables.find((element) => element.id == reservation.table_id),
+                        true)}
                 </Card>
             ))}
         </Stack>
@@ -104,10 +105,10 @@ export default function Profile(params: IParams) {
 }
 
 export async function getStaticProps({}) {
-    const gameTables = await appwrite.database.listDocuments<GameTable>("62cdcac1bb2c8a4e5e48")
+    const {data: gameTables} = await supabase.from<GameTable>('mese').select('*')
 
     const props: IParams = {
-        gameTables: gameTables.documents
+        gameTables
     }
 
     return {

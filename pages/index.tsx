@@ -1,30 +1,16 @@
 import React, {useEffect, useState} from "react";
 import Head from "next/head";
-import {
-    Button,
-    Card,
-    Divider,
-    Grid,
-    Group, MantineProvider,
-    Paper,
-    Radio,
-    Space,
-    Stack,
-    Text,
-    Title,
-    useMantineTheme
-} from "@mantine/core";
+import {Button, Card, Divider, Grid, Group, Paper, Radio, Space, Stack, Text, Title} from "@mantine/core";
 import {Calendar} from '@mantine/dates';
-import {BaseReservation, getEndDateDuration, getStartDate, Reservation, ReservationStatus} from "../model/Reservation";
-import GameTable from "../model/GameTable";
 import {useScrollIntoView} from "@mantine/hooks";
-import {appwrite, userIsLoggedIn} from "../utils/appwrite_utils";
 import {NextLink} from "@mantine/next";
 import ReservationComponent from "../components/Reservation";
 import {LocationName} from "../model/Room";
 import 'dayjs/locale/ro'
-import {MantineThemeColors} from "@mantine/styles/lib/theme/types/MantineColor";
 import {Tuple} from "@mantine/styles/lib/theme/types/Tuple";
+import {GameTable, getEndDateDuration, getStartDate, Reservation, ReservationStatus} from "../types/wrapper";
+import {supabase} from "../utils/supabase_utils";
+import {useAuth} from "../components/AuthProvider";
 
 function addDays(date, days) {
     const result = new Date(date);
@@ -62,14 +48,10 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     const minRange = addDays(new Date, 1)
     const maxRange = addDays(minRange, params.daysAhead)
 
+    const auth = useAuth()
     const [locationName, setLocationName] = useState(LocationName.Gara)
     const [selectedDate, setSelectedDate] = useState<Date>(null)
     const [selectedTable, setSelectedTable] = useState<SelectedTable>(null)
-    const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-    useEffect(() => {
-        userIsLoggedIn().then((value) => setIsLoggedIn(value))
-    }, [])
 
     function onSelectedDateChange(selectedDate: Date) {
         setSelectedDate(selectedDate)
@@ -89,7 +71,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
         <Space h="lg"/>
 
         <Paper>
-            {!isLoggedIn &&
+            {(!auth.loading && auth.user == null) &&
                 <>
                     <Paper shadow={"0"} p={"md"} sx={(theme) => ({
                         backgroundColor: theme.colors.orange,
@@ -101,60 +83,55 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                 </>
             }
 
-            <MantineProvider theme={{
-                colors: {brand: room.uiColor},
-                primaryColor: 'brand'
-            }}>
-                <Grid columns={12} gutter={"xl"}>
-                    <Grid.Col md={6} lg={6} xl={4} key={"calendar"}>
-                        <Stack>
-                            <Radio.Group
-                                value={locationName}
-                                onChange={(value) => {
-                                    switch (value) {
-                                        case LocationName.Gara.toString():
-                                            setLocationName(LocationName.Gara);
-                                            break;
-                                        case LocationName.Boromir.toString():
-                                            setLocationName(LocationName.Boromir);
-                                            break;
-                                    }
-                                }}
-                                label={"Alege locația unde faci rezervarea:"}
-                                size="md">
-                                <Radio value={LocationName.Gara} label={"Gară"}/>
-                                <Radio value={LocationName.Boromir} label={"Boromir"}/>
-                            </Radio.Group>
+            <Grid columns={12} gutter={"xl"}>
+                <Grid.Col md={6} lg={6} xl={4} key={"calendar"}>
+                    <Stack>
+                        <Radio.Group
+                            value={locationName}
+                            onChange={(value) => {
+                                switch (value) {
+                                    case LocationName.Gara.toString():
+                                        setLocationName(LocationName.Gara);
+                                        break;
+                                    case LocationName.Boromir.toString():
+                                        setLocationName(LocationName.Boromir);
+                                        break;
+                                }
+                            }}
+                            label={"Alege locația unde faci rezervarea:"}
+                            size="md">
+                            <Radio value={LocationName.Gara} label={"Gară"}/>
+                            <Radio value={LocationName.Boromir} label={"Boromir"}/>
+                        </Radio.Group>
 
-                            <Space h={"sm"}/>
+                        <Space h={"sm"}/>
 
-                            <Text>Alege ziua rezervării:</Text>
+                        <Text>Alege ziua rezervării:</Text>
 
-                            <Calendar
-                                minDate={minRange}
-                                maxDate={maxRange}
-                                hideOutsideDates={true}
-                                size={"xl"}
-                                locale={"ro"}
-                                value={selectedDate}
-                                onChange={(date) => {
-                                    if (isLoggedIn && date != null) onSelectedDateChange(date)
-                                }}
-                                excludeDate={(date) => date.getDay() === 0}
-                                fullWidth={true}
-                            />
-                        </Stack>
-                    </Grid.Col>
+                        <Calendar
+                            minDate={minRange}
+                            maxDate={maxRange}
+                            hideOutsideDates={true}
+                            size={"xl"}
+                            locale={"ro"}
+                            value={selectedDate}
+                            onChange={(date) => {
+                                if (auth.user != null && date != null) onSelectedDateChange(date)
+                            }}
+                            excludeDate={(date) => date.getDay() === 0}
+                            fullWidth={true}
+                        />
+                    </Stack>
+                </Grid.Col>
 
-                    <Grid.Col md={6} lg={6} xl={3} key={"tables"}>
-                        {SelectGameTable(room, selectedDate, selectedTable, setSelectedTable)}
-                    </Grid.Col>
+                <Grid.Col md={6} lg={6} xl={3} key={"tables"}>
+                    {SelectGameTable(room, selectedDate, selectedTable, setSelectedTable)}
+                </Grid.Col>
 
-                    <Grid.Col md={12} lg={12} xl={5} key={"confirm"}>
-                        {ConfirmSelection(room, selectedDate, selectedTable)}
-                    </Grid.Col>
-                </Grid>
-            </MantineProvider>
+                <Grid.Col md={12} lg={12} xl={5} key={"confirm"}>
+                    {ConfirmSelection(room, selectedDate, selectedTable)}
+                </Grid.Col>
+            </Grid>
         </Paper>
     </>);
 }
@@ -166,15 +143,15 @@ function SelectGameTable(room: Room,
 
     if (selectedDate == null) return null
 
-    const selectedTableId = selectedTable?.table?.$id;
+    const selectedTableId = selectedTable?.table?.id;
     const selectedStartHour = (selectedTable) ? selectedTable.startHour : -1;
 
     const tableButtons = function (startHour: number) {
         return room.tables.map((gameTable) => {
             return (
                 <Button
-                    variant={(gameTable.$id == selectedTableId && startHour == selectedStartHour) ? "filled" : "outline"}
-                    key={gameTable.$id}
+                    variant={(gameTable.id == selectedTableId && startHour == selectedStartHour) ? "filled" : "outline"}
+                    key={gameTable.id}
                     fullWidth={true}
                     onClick={() => onSelectTable(new SelectedTable(startHour, gameTable))}>
                     {gameTable.name}
@@ -208,13 +185,14 @@ function ConfirmSelection(
     room: Room,
     selectedDate: Date, selectedTable: SelectedTable
 ): JSX.Element {
-    enum ConfirmationStatus {
+    const enum ConfirmationStatus {
         None,
         Loading,
         Success,
         Fail
     }
 
+    const auth = useAuth()
     const [status, setStatus] = useState(ConfirmationStatus.None)
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
@@ -223,19 +201,28 @@ function ConfirmSelection(
 
     useEffect(() => {
         function refetchReservations() {
-            appwrite.database.listDocuments<Reservation>('62cdcab0e527f917eb34').then((res) => {
-                // Only show approved reservations
-                setReservations(res.documents.filter((value) => value.status == ReservationStatus.Approved))
-                console.log("Reservation updated")
-            });
+            supabase.from<Reservation>('rezervari')
+                .select('*')
+                .then(value => {
+                    if (value.data != null) {
+                        setReservations(value.data)
+                        console.log("Reservations updated")
+                    }
+                })
         }
 
         refetchReservations();
 
-        return appwrite.client.subscribe('collections.62cdcab0e527f917eb34.documents', response => {
-            refetchReservations()
-            console.log(response);
-        });
+        const subscription = supabase.from<Reservation>('rezervari')
+            .on('*', payload => {
+                console.log(JSON.stringify(payload))
+                refetchReservations() // TODO Could make this more efficient
+            })
+            .subscribe()
+
+        return () => {
+            subscription?.unsubscribe()
+        }
     }, [])
 
     useEffect(() => {
@@ -243,8 +230,8 @@ function ConfirmSelection(
             setCurrentSelectionReservations(
                 reservations.filter((reservation) => {
                         return getStartDate(reservation) == selectedDate
-                            && reservation.table_id == selectedTable.table.$id
-                            && reservation.location == room.locationName
+                            && reservation.table_id == selectedTable.table.id
+                            && selectedTable.table.location == room.locationName
                     }
                 )
             )
@@ -263,12 +250,12 @@ function ConfirmSelection(
 
     const startDate = getEndDateDuration(selectedDate, selectedTable.startHour)
     const isValid = currentSelectionReservations.length < room.maxReservations;
-    const baseReservation: BaseReservation = {
+    const baseReservation: Reservation = {
+        id: self.crypto.randomUUID(),
         start_date: startDate.toISOString(),
         duration: room.duration,
-        table_id: selectedTable.table.$id,
-        user_id: "",
-        location: room.locationName
+        table_id: selectedTable.table.id,
+        user_id: auth.user.id,
     }
 
     function DisplayConfirmationStatus(): JSX.Element {
@@ -335,27 +322,24 @@ function ConfirmSelection(
     </Card>)
 }
 
-async function publishReservation(baseReservation: BaseReservation): Promise<boolean> {
-    const reservation = {
-        ...baseReservation,
-        user_id: (await appwrite.account.getSession('current')).userId
-    }
-
+async function publishReservation(reservation: Reservation): Promise<boolean> {
     console.log(reservation)
 
-    try {
-        await appwrite.database.createDocument<Reservation>("62cdcab0e527f917eb34", "unique()", reservation, ["role:member"])
-        return true
-    } catch (e) {
-        console.log(e)
-        return false
+    const {error} = await supabase
+        .from<Reservation>('rezervari')
+        .insert([reservation])
+
+    if (error != null) {
+        console.log("Failed to create reservation: " + JSON.stringify(error))
     }
+
+    return error == null
 }
 
 export async function getStaticProps({}) {
-    const gameTables = await appwrite.database.listDocuments<GameTable>("62cdcac1bb2c8a4e5e48")
-    const garaTables = gameTables.documents.filter((value) => value.location == LocationName.Gara)
-    const boromirTables = gameTables.documents.filter((value) => value.location == LocationName.Boromir)
+    const {data: gameTables} = await supabase.from<GameTable>('mese').select('*')
+    const garaTables = gameTables.filter((value) => value.location == LocationName.Gara)
+    const boromirTables = gameTables.filter((value) => value.location == LocationName.Boromir)
 
     const props: IParams = {
         daysAhead: 14,
