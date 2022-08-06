@@ -1,7 +1,6 @@
 import React, {useCallback, useContext, useEffect, useState} from "react";
 import {supabase} from "../../utils/supabase_utils";
-import {User, ApiError, Provider, Session} from "@supabase/gotrue-js";
-import {definitions} from "../../types/supabase";
+import {ApiError, Provider, Session, User} from "@supabase/gotrue-js";
 import {Profile} from "../../types/wrapper";
 
 export interface LoginCredentials {
@@ -10,7 +9,7 @@ export interface LoginCredentials {
 }
 
 export interface AuthData {
-    signUp: (credentials: LoginCredentials, name: string) => Promise<boolean>,
+    signUp: (credentials: LoginCredentials, name: string) => Promise<boolean>
     signIn: (credentials: LoginCredentials) => Promise<{
         session: Session | null
         user: User | null
@@ -20,18 +19,20 @@ export interface AuthData {
     }>,
     signOut: () => Promise<{ error: ApiError | null }>
     loading: boolean,
-    user: User,
-    profile: definitions["profiles"]
+    user: User | null
+    profile: Profile | null
 }
 
 async function signUpAsync(credentials: LoginCredentials, name: string): Promise<boolean> {
     const {user, session, error} = await supabase.auth.signUp(credentials)
-    if (user != null || session != null) {
+    if (user != null) {
         await supabase.auth.signIn(credentials)
-        await supabase.from('profiles')
-            .insert([
-                {name}
-            ])
+        const profile: Profile = {
+            id: user.id,
+            name
+        }
+        await supabase.from<Profile>('profiles')
+            .insert([profile])
         return true
     }
 
@@ -39,7 +40,7 @@ async function signUpAsync(credentials: LoginCredentials, name: string): Promise
 }
 
 const default_value: AuthData = {
-    signUp: (credentials, name) => signUpAsync(credentials, name),
+    signUp: signUpAsync,
     signIn: (credentials) => supabase.auth.signIn(credentials),
     signOut: () => supabase.auth.signOut(),
     loading: true,
@@ -49,20 +50,28 @@ const default_value: AuthData = {
 const AuthContext = React.createContext(default_value)
 
 export default function AuthProvider({children}) {
-    const [user, setUser] = useState<User>(null)
-    const [profile, setProfile] = useState<Profile>(null)
+    const [user, setUser] = useState<User | null>(null)
+    const [profile, setProfile] = useState<Profile | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         async function updateProfile(newUser) {
-            if (newUser == null)
+            if (newUser == null) {
+                setProfile(null)
                 return;
+            }
 
-            const newProfile = await supabase
+            const {error, data: newProfile} = await supabase
                 .from<Profile>("profiles")
                 .select("*")
-                .eq("id", newUser.id)[0]
-            setProfile(newProfile)
+                .eq("id", newUser.id)
+                .limit(1)
+                .single()
+            if (error == null) {
+                setProfile(newProfile)
+            } else {
+                console.log(error)
+            }
         }
 
         // Check active sessions and sets the user
@@ -77,7 +86,7 @@ export default function AuthProvider({children}) {
             async (event, session) => {
                 const newUser = session?.user ?? null;
                 setUser(newUser)
-                updateProfile(session?.user ?? null)
+                updateProfile(newUser)
                 setLoading(false)
             }
         )

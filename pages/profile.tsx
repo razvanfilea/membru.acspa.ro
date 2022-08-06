@@ -1,4 +1,4 @@
-import {Button, Card, Center, Group, Loader, Paper, Stack, Text, Title} from "@mantine/core";
+import {Button, Card, Center, Group, Loader, Paper, Avatar, Stack, Text, Title} from "@mantine/core";
 import React, {useEffect, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
@@ -73,10 +73,13 @@ export default function Profile(params: IParams) {
 
             <Group position={"apart"}>
                 <Group noWrap={true}>
-                    {/*TODO <Avatar src={appwrite.avatars.getInitials(auth.profile.name, 64, 64).toString()} radius={"md"}/>
-*/}
                     {auth.profile != null &&
-                        <Text size="md">{auth.profile.name}</Text>
+                        <>
+                            <Avatar src={`https://ui-avatars.com/api/?name=${auth.profile.name}&background=random`}
+                                    radius={"md"}/>
+
+                            <Text size="md">{auth.profile.name}</Text>
+                        </>
                     }
                 </Group>
 

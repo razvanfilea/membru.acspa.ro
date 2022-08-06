@@ -8,7 +8,7 @@ import {useAuth} from "../components/AuthProvider";
 
 const REGEX_EMAIL = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(([a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))$/
 
-enum RegisterState {
+const enum RegisterState {
     None,
     Failed,
     Loading,
@@ -52,9 +52,9 @@ export default function LoginForm() {
                 <form style={{position: 'relative'}} onSubmit={
                     form.onSubmit(async (values) => {
                         setRegisterState(RegisterState.Loading)
-                        const {error} = await auth.signUp({email: values.email, password: values.password})
+                        const success = await auth.signUp({email: values.email, password: values.password}, values.name)
 
-                        setRegisterState(error == null ? RegisterState.LoginSuccess : RegisterState.Failed)
+                        setRegisterState(success ? RegisterState.LoginSuccess : RegisterState.Failed)
                     })}>
 
                     <Title>Înregistrare cont</Title>

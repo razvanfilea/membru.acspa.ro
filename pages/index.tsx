@@ -174,11 +174,11 @@ function SelectGameTable(room: Room,
         return content;
     };
 
-    return (<Stack>
+    return <Stack>
         <Text weight={600}>Data selectată: <Text color={"blue"}>{selectedDate.toLocaleDateString('ro-RO')}</Text></Text>
 
         {allButtons()}
-    </Stack>)
+    </Stack>
 }
 
 function ConfirmSelection(
@@ -250,12 +250,10 @@ function ConfirmSelection(
 
     const startDate = getEndDateDuration(selectedDate, selectedTable.startHour)
     const isValid = currentSelectionReservations.length < room.maxReservations;
-    const baseReservation: Reservation = {
-        id: self.crypto.randomUUID(),
-        start_date: startDate.toISOString(),
-        duration: room.duration,
-        table_id: selectedTable.table.id,
-        user_id: auth.user.id,
+    const reservationParams = {
+        start_date_input: startDate.toISOString(),
+        duration_input: room.duration,
+        table_id_input: selectedTable.table.id,
     }
 
     function DisplayConfirmationStatus(): JSX.Element {
@@ -265,7 +263,7 @@ function ConfirmSelection(
                 loading={status == ConfirmationStatus.Loading}
                 onClick={async () => {
                     setStatus(ConfirmationStatus.Loading)
-                    const success = await publishReservation(baseReservation)
+                    const success = await publishReservation(reservationParams)
                     setStatus(success ? ConfirmationStatus.Success : ConfirmationStatus.Fail)
                 }}>Confirmă rezervarea!</Button>
         } else if (status == ConfirmationStatus.Success) {
@@ -279,7 +277,7 @@ function ConfirmSelection(
                 </Paper>
 
                 <Group align={"center"}>
-                    <Text weight={600}>Verifică pe pagina ta de profil dacă rezervarea a fost aprobată:</Text>
+                    <Text weight={600}>Poți anula oricând această rezervare de pe pagina ta de profil:</Text>
                     <NextLink href={"/profile"}>
                         <Button variant={'light'}>Vezi profilul</Button>
                     </NextLink>
@@ -303,7 +301,7 @@ function ConfirmSelection(
 
         <Space h={"lg"}/>
 
-        {ReservationComponent(baseReservation, selectedTable.table, false)}
+        {ReservationComponent(reservationParams, selectedTable.table, false)}
 
         <Space h={"md"}/>
 
@@ -322,18 +320,13 @@ function ConfirmSelection(
     </Card>)
 }
 
-async function publishReservation(reservation: Reservation): Promise<boolean> {
-    console.log(reservation)
+async function publishReservation(reservationParams): Promise<boolean> {
+    console.log(reservationParams)
 
-    const {error} = await supabase
-        .from<Reservation>('rezervari')
-        .insert([reservation])
+    const {data} = await supabase.rpc('create_reservation', reservationParams)
 
-    if (error != null) {
-        console.log("Failed to create reservation: " + JSON.stringify(error))
-    }
-
-    return error == null
+    // @ts-ignore TypeScript is actually wrong here
+    return data == '' // An empty string means no errors
 }
 
 export async function getStaticProps({}) {

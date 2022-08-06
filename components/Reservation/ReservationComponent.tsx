@@ -15,17 +15,13 @@ function cancelReservation(reservation: Reservation) {
 export default function ReservationComponent(reservation, gameTable: GameTable, showStatus: boolean) {
     // const theme = useMantineTheme()
 
-    const state = reservation.status ?? ReservationStatus.PendingApproval;
+    const state = reservation.status ?? ReservationStatus.Canceled;
     const status: Status = (() => {
         switch (state) {
-            case ReservationStatus.PendingApproval:
-                return {icon: <Loader size={32}/>, message: "Se procesează"};
             case ReservationStatus.Canceled:
                 return {icon: <MdCancel size={32}/>, message: "Anulata"};
             case ReservationStatus.Approved:
                 return {icon: <MdDone size={32}/>, message: "Aprobată"};
-            case ReservationStatus.Invalid:
-                return {icon: <MdErrorOutline size={32}/>, message: "Eroare la aprobare"}
         }
     })();
 

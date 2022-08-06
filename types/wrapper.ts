@@ -19,8 +19,6 @@ export function getEndDate(reservation: Reservation): Date {
 }
 
 export const enum ReservationStatus {
-    PendingApproval = "pending",
     Approved = "approved",
     Canceled = "cancelled",
-    Invalid = "invalid"
 }

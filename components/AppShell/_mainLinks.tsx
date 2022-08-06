@@ -1,6 +1,6 @@
 import React from 'react';
 import {MdAccountBox, MdBookmarks, MdHome} from 'react-icons/md';
-import {Group, Text, ThemeIcon, UnstyledButton} from '@mantine/core';
+import {Avatar, Group, Text, ThemeIcon, UnstyledButton} from '@mantine/core';
 import styles from './MyAppShell.module.css'
 import Link from "next/link";
 import {useAuth} from "../AuthProvider";
@@ -43,7 +43,7 @@ function MainLink({icon, color, label, link}: MainLinkProps) {
 }
 
 
-function UserProfileLink(name: string) {
+function UserProfileLink(name: string | null) {
     return (
         <Link href={"/profile"} passHref={true} prefetch={false}>
             <UnstyledButton
@@ -62,14 +62,16 @@ function UserProfileLink(name: string) {
                     },
                 })}
             >
-                <Group noWrap={true}>
-                    {/*TODO <Avatar
-                        src={appwrite.avatars.getInitials(name, 64, 64).toString()}
-                        radius={"md"}
-                        style={{marginLeft: 6, marginRight: 6}}
-                    />*/}
-                    <Text size="md" className={styles.mainLinksText}>{name}</Text>
-                </Group>
+                {name != null &&
+                    <Group noWrap={true}>
+                        <>
+                            <Avatar src={`https://ui-avatars.com/api/?name=${name}&background=random`}
+                                    radius={"md"}/>
+
+                            <Text size="md">{name}</Text>
+                        </>
+                    </Group>
+                }
             </UnstyledButton>
         </Link>
     );
@@ -91,7 +93,7 @@ export default function MainLinks() {
         ))}
 
         {auth.user != null &&
-            UserProfileLink(auth.user.email)
+            UserProfileLink(auth.profile?.name ?? null)
         }
 
         {(!auth.loading && auth.user == null) &&

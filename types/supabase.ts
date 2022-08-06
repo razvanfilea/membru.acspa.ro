@@ -194,11 +194,10 @@ export interface paths {
       parameters: {
         query: {
           id?: parameters["rowFilter.mese.id"];
-          created_at?: parameters["rowFilter.mese.created_at"];
           name?: parameters["rowFilter.mese.name"];
-          color?: parameters["rowFilter.mese.color"];
           location?: parameters["rowFilter.mese.location"];
           type?: parameters["rowFilter.mese.type"];
+          color?: parameters["rowFilter.mese.color"];
           has_robot?: parameters["rowFilter.mese.has_robot"];
           /** Filtering Columns */
           select?: parameters["select"];
@@ -251,11 +250,10 @@ export interface paths {
       parameters: {
         query: {
           id?: parameters["rowFilter.mese.id"];
-          created_at?: parameters["rowFilter.mese.created_at"];
           name?: parameters["rowFilter.mese.name"];
-          color?: parameters["rowFilter.mese.color"];
           location?: parameters["rowFilter.mese.location"];
           type?: parameters["rowFilter.mese.type"];
+          color?: parameters["rowFilter.mese.color"];
           has_robot?: parameters["rowFilter.mese.has_robot"];
         };
         header: {
@@ -272,11 +270,10 @@ export interface paths {
       parameters: {
         query: {
           id?: parameters["rowFilter.mese.id"];
-          created_at?: parameters["rowFilter.mese.created_at"];
           name?: parameters["rowFilter.mese.name"];
-          color?: parameters["rowFilter.mese.color"];
           location?: parameters["rowFilter.mese.location"];
           type?: parameters["rowFilter.mese.type"];
+          color?: parameters["rowFilter.mese.color"];
           has_robot?: parameters["rowFilter.mese.has_robot"];
         };
         body: {
@@ -300,8 +297,8 @@ export interface paths {
         query: {
           id?: parameters["rowFilter.rezervari.id"];
           created_at?: parameters["rowFilter.rezervari.created_at"];
-          table_id?: parameters["rowFilter.rezervari.table_id"];
           user_id?: parameters["rowFilter.rezervari.user_id"];
+          table_id?: parameters["rowFilter.rezervari.table_id"];
           start_date?: parameters["rowFilter.rezervari.start_date"];
           duration?: parameters["rowFilter.rezervari.duration"];
           status?: parameters["rowFilter.rezervari.status"];
@@ -357,8 +354,8 @@ export interface paths {
         query: {
           id?: parameters["rowFilter.rezervari.id"];
           created_at?: parameters["rowFilter.rezervari.created_at"];
-          table_id?: parameters["rowFilter.rezervari.table_id"];
           user_id?: parameters["rowFilter.rezervari.user_id"];
+          table_id?: parameters["rowFilter.rezervari.table_id"];
           start_date?: parameters["rowFilter.rezervari.start_date"];
           duration?: parameters["rowFilter.rezervari.duration"];
           status?: parameters["rowFilter.rezervari.status"];
@@ -378,8 +375,8 @@ export interface paths {
         query: {
           id?: parameters["rowFilter.rezervari.id"];
           created_at?: parameters["rowFilter.rezervari.created_at"];
-          table_id?: parameters["rowFilter.rezervari.table_id"];
           user_id?: parameters["rowFilter.rezervari.user_id"];
+          table_id?: parameters["rowFilter.rezervari.table_id"];
           start_date?: parameters["rowFilter.rezervari.start_date"];
           duration?: parameters["rowFilter.rezervari.duration"];
           status?: parameters["rowFilter.rezervari.status"];
@@ -509,20 +506,13 @@ export interface definitions {
   };
   mese: {
     /**
-     * Format: bigint
+     * Format: uuid
      * @description Note:
      * This is a Primary Key.<pk/>
      */
-    id: number;
-    /**
-     * Format: timestamp with time zone
-     * @default now()
-     */
-    created_at: string;
+    id: string;
     /** Format: text */
     name: string;
-    /** Format: text */
-    color: string;
     /**
      * Format: text
      * @description Note:
@@ -531,6 +521,8 @@ export interface definitions {
     location: string;
     /** Format: text */
     type: string;
+    /** Format: text */
+    color: string;
     /**
      * Format: boolean
      * @default false
@@ -548,18 +540,21 @@ export interface definitions {
      * Format: timestamp with time zone
      * @default now()
      */
-    created_at: string;
+    created_at?: string;
+    /** Format: uuid */
+    user_id: string;
     /**
-     * Format: bigint
+     * Format: uuid
      * @description Note:
      * This is a Foreign Key to `mese.id`.<fk table='mese' column='id'/>
      */
-    table_id: number;
-    /** Format: uuid */
-    user_id: string;
+    table_id: string;
     /** Format: timestamp with time zone */
     start_date: string;
-    /** Format: integer */
+    /**
+     * Format: integer
+     * @default 1
+     */
     duration: number;
     /**
      * Format: text
@@ -567,7 +562,7 @@ export interface definitions {
      * This is a Foreign Key to `rezervari_status.status`.<fk table='rezervari_status' column='status'/>
      * @default pending
      */
-    status: string;
+    status?: string;
   };
   /** @description Locatiile fizice unde se pot face rezervari (de ex. gara, boromir) */
   locations: {
@@ -625,18 +620,16 @@ export interface parameters {
   "rowFilter.profiles.name": string;
   /** @description mese */
   "body.mese": definitions["mese"];
-  /** Format: bigint */
+  /** Format: uuid */
   "rowFilter.mese.id": string;
-  /** Format: timestamp with time zone */
-  "rowFilter.mese.created_at": string;
   /** Format: text */
   "rowFilter.mese.name": string;
-  /** Format: text */
-  "rowFilter.mese.color": string;
   /** Format: text */
   "rowFilter.mese.location": string;
   /** Format: text */
   "rowFilter.mese.type": string;
+  /** Format: text */
+  "rowFilter.mese.color": string;
   /** Format: boolean */
   "rowFilter.mese.has_robot": string;
   /** @description rezervari */
@@ -645,10 +638,10 @@ export interface parameters {
   "rowFilter.rezervari.id": string;
   /** Format: timestamp with time zone */
   "rowFilter.rezervari.created_at": string;
-  /** Format: bigint */
-  "rowFilter.rezervari.table_id": string;
   /** Format: uuid */
   "rowFilter.rezervari.user_id": string;
+  /** Format: uuid */
+  "rowFilter.rezervari.table_id": string;
   /** Format: timestamp with time zone */
   "rowFilter.rezervari.start_date": string;
   /** Format: integer */

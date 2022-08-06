@@ -1,7 +1,7 @@
 import '../styles/globals.css'
 import Head from 'next/head';
 import MyAppShell from "../components/AppShell";
-import React, {useEffect, useState} from "react";
+import React from "react";
 import {ColorScheme, ColorSchemeProvider, MantineProvider, Paper} from '@mantine/core';
 import {useColorScheme, useLocalStorage} from "@mantine/hooks";
 import AuthProvider from "../components/AuthProvider";
