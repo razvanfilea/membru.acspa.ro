@@ -85,7 +85,7 @@ const data = [
 export default function MainLinks() {
     const auth = useAuth()
 
-    const loginButtonData = {icon: <MdAccountBox size={22}/>, color: 'purple', label: 'Logare', link: '/signin'}
+    const loginButtonData = {icon: <MdAccountBox size={22}/>, color: 'purple', label: 'Logare', link: '/login'}
 
     return <Group noWrap={true}>
         {data.map((link) => (

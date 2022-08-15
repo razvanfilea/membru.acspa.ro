@@ -300,8 +300,9 @@ export interface paths {
           user_id?: parameters["rowFilter.rezervari.user_id"];
           table_id?: parameters["rowFilter.rezervari.table_id"];
           start_date?: parameters["rowFilter.rezervari.start_date"];
-          duration?: parameters["rowFilter.rezervari.duration"];
           status?: parameters["rowFilter.rezervari.status"];
+          start_hour?: parameters["rowFilter.rezervari.start_hour"];
+          duration?: parameters["rowFilter.rezervari.duration"];
           /** Filtering Columns */
           select?: parameters["select"];
           /** Ordering */
@@ -357,8 +358,9 @@ export interface paths {
           user_id?: parameters["rowFilter.rezervari.user_id"];
           table_id?: parameters["rowFilter.rezervari.table_id"];
           start_date?: parameters["rowFilter.rezervari.start_date"];
-          duration?: parameters["rowFilter.rezervari.duration"];
           status?: parameters["rowFilter.rezervari.status"];
+          start_hour?: parameters["rowFilter.rezervari.start_hour"];
+          duration?: parameters["rowFilter.rezervari.duration"];
         };
         header: {
           /** Preference */
@@ -378,8 +380,9 @@ export interface paths {
           user_id?: parameters["rowFilter.rezervari.user_id"];
           table_id?: parameters["rowFilter.rezervari.table_id"];
           start_date?: parameters["rowFilter.rezervari.start_date"];
-          duration?: parameters["rowFilter.rezervari.duration"];
           status?: parameters["rowFilter.rezervari.status"];
+          start_hour?: parameters["rowFilter.rezervari.start_hour"];
+          duration?: parameters["rowFilter.rezervari.duration"];
         };
         body: {
           /** rezervari */
@@ -401,6 +404,10 @@ export interface paths {
       parameters: {
         query: {
           name?: parameters["rowFilter.locations.name"];
+          reservation_duration?: parameters["rowFilter.locations.reservation_duration"];
+          max_reservations?: parameters["rowFilter.locations.max_reservations"];
+          start_hour?: parameters["rowFilter.locations.start_hour"];
+          end_hour?: parameters["rowFilter.locations.end_hour"];
           /** Filtering Columns */
           select?: parameters["select"];
           /** Ordering */
@@ -452,6 +459,10 @@ export interface paths {
       parameters: {
         query: {
           name?: parameters["rowFilter.locations.name"];
+          reservation_duration?: parameters["rowFilter.locations.reservation_duration"];
+          max_reservations?: parameters["rowFilter.locations.max_reservations"];
+          start_hour?: parameters["rowFilter.locations.start_hour"];
+          end_hour?: parameters["rowFilter.locations.end_hour"];
         };
         header: {
           /** Preference */
@@ -467,6 +478,10 @@ export interface paths {
       parameters: {
         query: {
           name?: parameters["rowFilter.locations.name"];
+          reservation_duration?: parameters["rowFilter.locations.reservation_duration"];
+          max_reservations?: parameters["rowFilter.locations.max_reservations"];
+          start_hour?: parameters["rowFilter.locations.start_hour"];
+          end_hour?: parameters["rowFilter.locations.end_hour"];
         };
         body: {
           /** locations */
@@ -480,6 +495,30 @@ export interface paths {
       responses: {
         /** No Content */
         204: never;
+      };
+    };
+  };
+  "/rpc/create_reservation": {
+    post: {
+      parameters: {
+        body: {
+          args: {
+            /** Format: date */
+            start_date_input: string;
+            /** Format: smallint */
+            start_hour_input: number;
+            /** Format: uuid */
+            table_id_input: string;
+          };
+        };
+        header: {
+          /** Preference */
+          Prefer?: parameters["preferParams"];
+        };
+      };
+      responses: {
+        /** OK */
+        200: unknown;
       };
     };
   };
@@ -534,13 +573,14 @@ export interface definitions {
      * Format: uuid
      * @description Note:
      * This is a Primary Key.<pk/>
+     * @default extensions.uuid_generate_v4()
      */
     id: string;
     /**
      * Format: timestamp with time zone
      * @default now()
      */
-    created_at?: string;
+    created_at: string;
     /** Format: uuid */
     user_id: string;
     /**
@@ -549,20 +589,18 @@ export interface definitions {
      * This is a Foreign Key to `mese.id`.<fk table='mese' column='id'/>
      */
     table_id: string;
-    /** Format: timestamp with time zone */
+    /** Format: date */
     start_date: string;
-    /**
-     * Format: integer
-     * @default 1
-     */
-    duration: number;
     /**
      * Format: text
      * @description Note:
      * This is a Foreign Key to `rezervari_status.status`.<fk table='rezervari_status' column='status'/>
-     * @default pending
      */
-    status?: string;
+    status: string;
+    /** Format: smallint */
+    start_hour: number;
+    /** Format: smallint */
+    duration: number;
   };
   /** @description Locatiile fizice unde se pot face rezervari (de ex. gara, boromir) */
   locations: {
@@ -572,6 +610,14 @@ export interface definitions {
      * This is a Primary Key.<pk/>
      */
     name: string;
+    /** Format: smallint */
+    reservation_duration: number;
+    /** Format: smallint */
+    max_reservations: number;
+    /** Format: smallint */
+    start_hour: number;
+    /** Format: smallint */
+    end_hour: number;
   };
 }
 
@@ -642,16 +688,26 @@ export interface parameters {
   "rowFilter.rezervari.user_id": string;
   /** Format: uuid */
   "rowFilter.rezervari.table_id": string;
-  /** Format: timestamp with time zone */
+  /** Format: date */
   "rowFilter.rezervari.start_date": string;
-  /** Format: integer */
-  "rowFilter.rezervari.duration": string;
   /** Format: text */
   "rowFilter.rezervari.status": string;
+  /** Format: smallint */
+  "rowFilter.rezervari.start_hour": string;
+  /** Format: smallint */
+  "rowFilter.rezervari.duration": string;
   /** @description locations */
   "body.locations": definitions["locations"];
   /** Format: text */
   "rowFilter.locations.name": string;
+  /** Format: smallint */
+  "rowFilter.locations.reservation_duration": string;
+  /** Format: smallint */
+  "rowFilter.locations.max_reservations": string;
+  /** Format: smallint */
+  "rowFilter.locations.start_hour": string;
+  /** Format: smallint */
+  "rowFilter.locations.end_hour": string;
 }
 
 export interface operations {}

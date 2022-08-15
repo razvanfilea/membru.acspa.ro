@@ -1,57 +1,51 @@
-import {Group, Button, Loader, Space, Stack, Text} from "@mantine/core";
+import {Button, Group, Space, Stack, Text} from "@mantine/core";
 import React from "react";
-import {MdCancel, MdDone, MdErrorOutline} from "react-icons/md";
-import {GameTable, getEndDate, getStartDate, Reservation, ReservationStatus} from "../../types/wrapper";
+import {MdCancel} from "react-icons/md";
+import {GameTable, LocationName, Reservation, ReservationStatus} from "../../types/wrapper";
+import {supabase} from "../../utils/supabase_utils";
 
-interface Status {
-    icon: React.ReactNode,
-    message: string
-}
+export default function ReservationComponent(reservation: Reservation, gameTable: GameTable, showStatus: boolean, onCancel: () => Promise<void>) {
+    const status = reservation.status ?? ReservationStatus.Cancelled;
 
-function cancelReservation(reservation: Reservation) {
-    // TODO
-}
-
-export default function ReservationComponent(reservation, gameTable: GameTable, showStatus: boolean) {
-    // const theme = useMantineTheme()
-
-    const state = reservation.status ?? ReservationStatus.Canceled;
-    const status: Status = (() => {
-        switch (state) {
-            case ReservationStatus.Canceled:
-                return {icon: <MdCancel size={32}/>, message: "Anulata"};
+    function ShowStatus() {
+        switch (status) {
+            case ReservationStatus.Cancelled:
+                return <Stack align={"center"} spacing={'xs'}>
+                    <MdCancel size={32}/>
+                    <Text weight={700}>Anulată</Text></Stack>
             case ReservationStatus.Approved:
-                return {icon: <MdDone size={32}/>, message: "Aprobată"};
+                return <Button
+                    gradient={{from: 'orange', to: 'red'}} variant={"outline"}
+                    onClick={async () => {
+                        await onCancel()
+                    }}>Anulează</Button>
         }
-    })();
-
-    const startDate = getStartDate(reservation);
-    const endDate = getEndDate(reservation);
+    }
 
     return (<Group position={"apart"}>
         <Stack spacing={0}>
-            <Text size={"lg"} weight={800}>{gameTable.name}</Text>
+            {gameTable.location == LocationName.Boromir &&
+                <Text size={"lg"} weight={800}>{gameTable.name}</Text>
+            }
 
-            <Text>Pe data de <b>{startDate.toLocaleDateString('ro-RO')}</b> de la ora <b>{startDate.getHours()}:{("0" + startDate.getMinutes()).slice(-2)}</b> la <b>{endDate.getHours()}:{("0" + endDate.getMinutes()).slice(-2)}</b></Text>
+            <Text>Pe data de <b>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</b> de la
+                ora <b>{reservation.start_hour}:{'00'}</b> la <b>{reservation.start_hour + reservation.duration}:{'00'}</b></Text>
 
             <Space h={"xs"}/>
 
-            <Text>Tipul mesei: <b>{gameTable.type.toUpperCase()}</b></Text>
-            <Text>Culoarea mesei: <b>{gameTable.color.toUpperCase()}</b></Text>
-            <Text>Robot: <b>{gameTable.has_robot ? "DA" : "NU"}</b></Text>
+            <Text>Locația: <b>{gameTable.location.toUpperCase()}</b></Text>
+
+            {gameTable.location == LocationName.Boromir &&
+                <>
+                    <Text>Tipul mesei: <b>{gameTable.type.toUpperCase()}</b></Text>
+                    <Text>Culoarea mesei: <b>{gameTable.color.toUpperCase()}</b></Text>
+                    <Text>Robot: <b>{gameTable.has_robot ? "DA" : "NU"}</b></Text>
+                </>
+            }
         </Stack>
 
         {showStatus &&
-            <Stack align={"center"}>
-                {status.icon}
-                <Text weight={700}>{status.message}</Text>
-
-                <Space h={"xs"} />
-
-                {reservation.status == ReservationStatus.Approved &&
-                    <Button gradient={{ from: 'orange', to: 'red' }} variant={"outline"} onClick={() => cancelReservation(reservation)}>Anulează</Button>
-                }
-            </Stack>
+            ShowStatus()
         }
     </Group>)
 }

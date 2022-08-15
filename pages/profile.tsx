@@ -4,7 +4,7 @@ import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
 import {useAuth} from "../components/AuthProvider";
 import {supabase} from "../utils/supabase_utils";
-import {GameTable, Reservation} from "../types/wrapper";
+import {GameTable, Reservation, ReservationStatus} from "../types/wrapper";
 
 interface IParams {
     gameTables: GameTable[]
@@ -14,7 +14,7 @@ async function signOut(router: NextRouter) {
     const {error} = await supabase.auth.signOut()
 
     if (error == null) {
-        await router.push("/signin")
+        await router.push("/login")
     } else {
         console.log('Auth', error);
         console.log(error); // Failure
@@ -28,36 +28,47 @@ export default function Profile(params: IParams) {
     const [reservations, setReservations] = useState<Reservation[]>([])
 
     useEffect(() => {
-        function refetchReservations() {
-            supabase.from<Reservation>('rezervari')
-                .select('*')
-                .then(value => {
-                    if (value.data != null) {
-                        setReservations(value.data)
-                        console.log("Reservations updated")
-                    }
-                })
-        }
+        if (!auth.loading && auth.user == null)
+            router.push('/login')
+    }, [auth, router])
 
-        if (!auth.loading) {
-            if (auth.user != null) {
-                refetchReservations();
+    async function fetchReservations() {
+        if (auth.user == null)
+            return;
 
-                const subscription = supabase.from<Reservation>('rezervari')
-                    .on('*', payload => {
-                        console.log(payload)
-                        refetchReservations()
-                    })
-                    .subscribe()
-
-                return () => {
-                    subscription?.unsubscribe()
+        supabase.from<Reservation>('rezervari')
+            .select('*')
+            .eq("user_id", auth.user.id)
+            .then(value => {
+                if (value.data != null) {
+                    setReservations(value.data)
+                    console.log("Reservations updated")
                 }
-            } else {
-                router.push('/signin')
-            }
+            })
+    }
+
+    useEffect(() => {
+        fetchReservations();
+
+        const subscription = supabase.from<Reservation>('rezervari')
+            .on('INSERT', payload => {
+                console.log(payload.new)
+                if (payload.new.status == ReservationStatus.Approved) {
+                    setReservations(prev => [...prev, payload.new])
+                }
+            })
+            .on('UPDATE', payload => {
+                setReservations(prev => [...prev.filter(value => value.id != payload.old.id), payload.new])
+            })
+            .on('DELETE', payload => {
+                setReservations(prev => prev.filter(value => value.id != payload.old.id))
+            })
+            .subscribe()
+
+        return () => {
+            subscription?.unsubscribe()
         }
-    }, [auth, router]);
+    }, [auth])
 
     if (auth.loading)
         return <Center> <Loader/> </Center>;
@@ -100,7 +111,21 @@ export default function Profile(params: IParams) {
                     {ReservationComponent(
                         reservation,
                         params.gameTables.find((element) => element.id == reservation.table_id),
-                        true)}
+                        true,
+                        async () => {
+                            const newData = {
+                                ...reservation,
+                                status: ReservationStatus.Cancelled
+                            }
+
+                            console.log("Hello")
+
+                            await supabase.from<Reservation>('rezervari')
+                                .update(newData, {returning: 'minimal'})
+
+                            console.log("There")
+                        }
+                    )}
                 </Card>
             ))}
         </Stack>

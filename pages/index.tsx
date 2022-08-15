@@ -1,14 +1,35 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import Head from "next/head";
-import {Button, Card, Divider, Grid, Group, Paper, Radio, Space, Stack, Text, Title} from "@mantine/core";
+import {
+    Button,
+    Card,
+    Divider,
+    Grid,
+    Group,
+    MantineProvider,
+    Paper,
+    Radio, SimpleGrid,
+    Space,
+    Stack,
+    Text,
+    Title
+} from "@mantine/core";
 import {Calendar} from '@mantine/dates';
 import {useScrollIntoView} from "@mantine/hooks";
 import {NextLink} from "@mantine/next";
 import ReservationComponent from "../components/Reservation";
-import {LocationName} from "../model/Room";
 import 'dayjs/locale/ro'
 import {Tuple} from "@mantine/styles/lib/theme/types/Tuple";
-import {GameTable, getEndDateDuration, getStartDate, Reservation, ReservationStatus} from "../types/wrapper";
+import {
+    GameTable,
+    getEndDateDuration,
+    getStartTime,
+    Location,
+    LocationName,
+    Profile,
+    Reservation,
+    ReservationStatus
+} from "../types/wrapper";
 import {supabase} from "../utils/supabase_utils";
 import {useAuth} from "../components/AuthProvider";
 
@@ -49,9 +70,20 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     const maxRange = addDays(minRange, params.daysAhead)
 
     const auth = useAuth()
-    const [locationName, setLocationName] = useState(LocationName.Gara)
+    const [locationName, /*setLocationName*/] = useState(LocationName.Gara)
     const [selectedDate, setSelectedDate] = useState<Date>(null)
     const [selectedTable, setSelectedTable] = useState<SelectedTable>(null)
+
+    const selectedDateISO = useMemo(() => {
+        if (selectedDate == null)
+            return null
+
+        const month = ("0" + (selectedDate.getMonth() + 1)).slice(-2)
+        const day = ("0" + selectedDate.getDate()).slice(-2)
+        const year = selectedDate.getFullYear()
+
+        return year + "-" + month + "-" + day;
+    }, [selectedDate])
 
     function onSelectedDateChange(selectedDate: Date) {
         setSelectedDate(selectedDate)
@@ -60,7 +92,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
 
     const room = locationName == LocationName.Gara ? params.gara : params.boromir;
 
-    return (<>
+    return <>
         <Head>
             <title>Rezervări</title>
             <meta name="viewport" content="initial-scale=1.0, width=device-width"/>
@@ -83,10 +115,13 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                 </>
             }
 
-            <Grid columns={12} gutter={"xl"}>
-                <Grid.Col md={6} lg={6} xl={4} key={"calendar"}>
-                    <Stack>
-                        <Radio.Group
+            <SimpleGrid
+                cols={1}
+                breakpoints={[
+                    {minWidth: 860, cols: 2},
+                ]}>
+                <Stack key={"calendar"}>
+                    {/*<Radio.Group
                             value={locationName}
                             onChange={(value) => {
                                 switch (value) {
@@ -104,44 +139,90 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                             <Radio value={LocationName.Boromir} label={"Boromir"}/>
                         </Radio.Group>
 
-                        <Space h={"sm"}/>
+                        <Space h={"sm"}/>*/}
 
-                        <Text>Alege ziua rezervării:</Text>
+                    <Text>Alege ziua rezervării:</Text>
 
-                        <Calendar
-                            minDate={minRange}
-                            maxDate={maxRange}
-                            hideOutsideDates={true}
-                            size={"xl"}
-                            locale={"ro"}
-                            value={selectedDate}
-                            onChange={(date) => {
-                                if (auth.user != null && date != null) onSelectedDateChange(date)
-                            }}
-                            excludeDate={(date) => date.getDay() === 0}
-                            fullWidth={true}
-                        />
-                    </Stack>
-                </Grid.Col>
+                    <Calendar
+                        minDate={minRange}
+                        maxDate={maxRange}
+                        hideOutsideDates={true}
+                        size={"xl"}
+                        locale={"ro"}
+                        value={selectedDate}
+                        onChange={(date) => {
+                            if (auth.user != null && date != null)
+                                onSelectedDateChange(date)
+                        }}
+                        excludeDate={(date) => date.getDay() === 0}
+                        fullWidth={true}
+                    />
+                </Stack>
 
-                <Grid.Col md={6} lg={6} xl={3} key={"tables"}>
-                    {SelectGameTable(room, selectedDate, selectedTable, setSelectedTable)}
-                </Grid.Col>
+                <Stack>
+                    {SelectGameTable(room, selectedDateISO, selectedTable, setSelectedTable)}
 
-                <Grid.Col md={12} lg={12} xl={5} key={"confirm"}>
-                    {ConfirmSelection(room, selectedDate, selectedTable)}
-                </Grid.Col>
-            </Grid>
+                    {ConfirmSelection(room, selectedDateISO, selectedTable)}
+                </Stack>
+            </SimpleGrid>
         </Paper>
-    </>);
+    </>;
 }
 
 function SelectGameTable(room: Room,
-                         selectedDate: Date,
-                         selectedTable: SelectedTable,
+                         selectedDateISO: string | null,
+                         selectedTable: SelectedTable | null,
                          onSelectTable: (s: SelectedTable) => void): JSX.Element {
 
-    if (selectedDate == null) return null
+    const [reservations, setReservations] = useState<Reservation[]>([])
+    const [allProfiles, setAllProfiles] = useState<Profile[]>([])
+
+    useEffect(() => {
+        function fetchReservations() {
+            supabase.from<Reservation>('rezervari')
+                .select('*')
+                .eq("status", ReservationStatus.Approved)
+                .then(value => {
+                    if (value.data != null) {
+                        setReservations(value.data)
+                        console.log("Reservations updated")
+                    }
+                })
+        }
+
+        supabase.from<Profile>('profiles').select('*').then(value => {
+            if (value.data != null) {
+                setAllProfiles(value.data)
+            }
+        })
+
+        fetchReservations();
+
+        const subscription = supabase.from<Reservation>('rezervari')
+            .on('INSERT', payload => {
+                console.log(payload.new)
+                if (payload.new.status == ReservationStatus.Approved) {
+                    setReservations(prev => [...prev, payload.new])
+                }
+            })
+            .on('UPDATE', payload => {
+                fetchReservations() // TODO Could make this more efficient
+            })
+            .on('DELETE', payload => {
+                setReservations(prev => prev.filter(value => value.id != payload.old.id))
+            })
+            .subscribe()
+
+        return () => {
+            subscription?.unsubscribe()
+        }
+    }, [])
+
+    const currentDateReservations = useMemo(() => {
+        return reservations.filter(reservation => reservation.start_date == selectedDateISO)
+    }, [reservations, selectedDateISO]);
+
+    if (selectedDateISO == null) return null
 
     const selectedTableId = selectedTable?.table?.id;
     const selectedStartHour = (selectedTable) ? selectedTable.startHour : -1;
@@ -152,7 +233,7 @@ function SelectGameTable(room: Room,
                 <Button
                     variant={(gameTable.id == selectedTableId && startHour == selectedStartHour) ? "filled" : "outline"}
                     key={gameTable.id}
-                    fullWidth={true}
+                    fullWidth={false}
                     onClick={() => onSelectTable(new SelectedTable(startHour, gameTable))}>
                     {gameTable.name}
                 </Button>
@@ -164,10 +245,20 @@ function SelectGameTable(room: Room,
         let content = [];
         for (let startHour = room.startHour; startHour < room.endHour; startHour += room.duration) {
             content.push(<Stack key={startHour}>
-                <Text>{`Ora ${startHour} - ${startHour + room.duration}`}:</Text>
-                <Group noWrap={true} style={{marginLeft: "1em", marginRight: "1em"}}>
+                <Group noWrap={true} style={{marginLeft: "1em", marginRight: "1em"}} spacing={'lg'}>
+                    <Text>{`Ora ${startHour} - ${startHour + room.duration}`}:</Text>
+
                     {tableButtons(startHour)}
                 </Group>
+
+                <Group style={{marginLeft: "1em", marginRight: "1em"}} spacing={"xs"}>
+                    <Text>Listă înscriși: </Text>
+                    {currentDateReservations.filter(value => value.start_hour == startHour).map((reservation) => {
+                        const profile = allProfiles.find(value => value.id == reservation.user_id)
+                        return <Text key={profile.id}>{profile.name}</Text>
+                    })}
+                </Group>
+
                 <Divider variant={"dashed"}/>
             </Stack>);
         }
@@ -175,7 +266,8 @@ function SelectGameTable(room: Room,
     };
 
     return <Stack>
-        <Text weight={600}>Data selectată: <Text color={"blue"}>{selectedDate.toLocaleDateString('ro-RO')}</Text></Text>
+        <Text weight={600}>Data selectată: <Text
+            color={"blue"}>{(new Date(selectedDateISO)).toLocaleDateString('ro-RO')}</Text></Text>
 
         {allButtons()}
     </Stack>
@@ -183,7 +275,7 @@ function SelectGameTable(room: Room,
 
 function ConfirmSelection(
     room: Room,
-    selectedDate: Date, selectedTable: SelectedTable
+    selectedDateISO: string, selectedTable: SelectedTable
 ): JSX.Element {
     const enum ConfirmationStatus {
         None,
@@ -192,68 +284,32 @@ function ConfirmSelection(
         Fail
     }
 
-    const auth = useAuth()
     const [status, setStatus] = useState(ConfirmationStatus.None)
+    const [errorMessage, setErrorMessage] = useState("")
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
-    const [reservations, setReservations] = useState<Reservation[]>([])
-    const [currentSelectionReservations, setCurrentSelectionReservations] = useState<Reservation[]>([])
-
     useEffect(() => {
-        function refetchReservations() {
-            supabase.from<Reservation>('rezervari')
-                .select('*')
-                .then(value => {
-                    if (value.data != null) {
-                        setReservations(value.data)
-                        console.log("Reservations updated")
-                    }
-                })
-        }
-
-        refetchReservations();
-
-        const subscription = supabase.from<Reservation>('rezervari')
-            .on('*', payload => {
-                console.log(JSON.stringify(payload))
-                refetchReservations() // TODO Could make this more efficient
-            })
-            .subscribe()
-
-        return () => {
-            subscription?.unsubscribe()
-        }
-    }, [])
-
-    useEffect(() => {
-        if (selectedDate != null && selectedTable != null) {
-            setCurrentSelectionReservations(
-                reservations.filter((reservation) => {
-                        return getStartDate(reservation) == selectedDate
-                            && reservation.table_id == selectedTable.table.id
-                            && selectedTable.table.location == room.locationName
-                    }
-                )
-            )
-        }
-    }, [reservations, room.locationName, selectedDate, selectedTable]);
-
-    useEffect(() => {
-        if (selectedDate && selectedTable) {
+        if (selectedDateISO && selectedTable) {
             scrollIntoView({alignment: 'center'})
             setStatus(ConfirmationStatus.None)
+            setErrorMessage("")
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedDate, selectedTable])
+    }, [selectedDateISO, selectedTable])
 
-    if (selectedDate == null || selectedTable == null) return null
+    if (selectedDateISO == null || selectedTable == null) return null
 
-    const startDate = getEndDateDuration(selectedDate, selectedTable.startHour)
-    const isValid = currentSelectionReservations.length < room.maxReservations;
-    const reservationParams = {
-        start_date_input: startDate.toISOString(),
-        duration_input: room.duration,
-        table_id_input: selectedTable.table.id,
+    const isValid = true //TODO currentSelectionReservations.length < room.maxReservations;
+    // Fake Reservation to display to user
+    const fakeReservation: Reservation = {
+        id: '',
+        created_at: '',
+        user_id: '',
+        table_id: selectedTable.table.id,
+        start_date: selectedDateISO,
+        start_hour: selectedTable.startHour,
+        duration: room.duration,
+        status: ReservationStatus.Approved
     }
 
     function DisplayConfirmationStatus(): JSX.Element {
@@ -261,10 +317,17 @@ function ConfirmSelection(
             return <Button
                 fullWidth style={{marginTop: 14}}
                 loading={status == ConfirmationStatus.Loading}
+                color={'blue'}
                 onClick={async () => {
                     setStatus(ConfirmationStatus.Loading)
-                    const success = await publishReservation(reservationParams)
-                    setStatus(success ? ConfirmationStatus.Success : ConfirmationStatus.Fail)
+                    const reservationParams = {
+                        table_id_input: selectedTable.table.id,
+                        start_date_input: selectedDateISO,
+                        start_hour_input: selectedTable.startHour,
+                    }
+                    const errorMessage = await publishReservation(reservationParams)
+                    setStatus(errorMessage == null ? ConfirmationStatus.Success : ConfirmationStatus.Fail)
+                    setErrorMessage(errorMessage ?? "")
                 }}>Confirmă rezervarea!</Button>
         } else if (status == ConfirmationStatus.Success) {
             return <Stack>
@@ -273,7 +336,7 @@ function ConfirmSelection(
                     marginTop: theme.spacing.sm,
                     marginBottom: theme.spacing.xs
                 })}>
-                    <Text align={"center"} color="#FFF"><b>Cererea ta de rezervare a fost înregistrată</b></Text>
+                    <Text align={"center"} color="#FFF"><b>Rezervarea ta a fost înregistrată</b></Text>
                 </Paper>
 
                 <Group align={"center"}>
@@ -289,19 +352,19 @@ function ConfirmSelection(
                 marginTop: theme.spacing.sm,
                 marginBottom: theme.spacing.xs
             })}>
-                <Text align={"center"} color="#FFF">Rezervarea nu a putut fi realizată.</Text>
+                <Text align={"center"} color="#FFF">Rezervarea nu a putut fi realizată: {errorMessage}</Text>
             </Paper>
         }
     }
 
     return (<Card p={"xl"} shadow={"sm"}>
         <div style={{marginTop: 'sm'}}>
-            <Title ref={targetRef}>Confirmă rezervarea:</Title>
+            <Title order={2} ref={targetRef}>Confirmă rezervarea:</Title>
         </div>
 
         <Space h={"lg"}/>
 
-        {ReservationComponent(reservationParams, selectedTable.table, false)}
+        {ReservationComponent(fakeReservation, selectedTable.table, false, async () => {})}
 
         <Space h={"md"}/>
 
@@ -309,24 +372,20 @@ function ConfirmSelection(
             DisplayConfirmationStatus()
         }
 
-        {!isValid &&
+        {!isValid && // TODO
             <Text>Nu se mai pot face rezervări la aceasta masă</Text>
         }
-
-        {/* { reservations.map(async (reservation) => {
-            // const user = appwrite.database.
-        })}*/}
 
     </Card>)
 }
 
-async function publishReservation(reservationParams): Promise<boolean> {
+async function publishReservation(reservationParams): Promise<string | null> {
     console.log(reservationParams)
 
     const {data} = await supabase.rpc('create_reservation', reservationParams)
 
     // @ts-ignore TypeScript is actually wrong here
-    return data == '' // An empty string means no errors
+    return data == '' ? null : data // An empty string means no errors
 }
 
 export async function getStaticProps({}) {
@@ -334,29 +393,31 @@ export async function getStaticProps({}) {
     const garaTables = gameTables.filter((value) => value.location == LocationName.Gara)
     const boromirTables = gameTables.filter((value) => value.location == LocationName.Boromir)
 
+    const {data: locations} = await supabase.from<Location>('locations').select('*')
+    const garaLocation = locations.find(value => value.name == LocationName.Gara)
+    const boromirLocation = locations.find(value => value.name == LocationName.Boromir)
+
     const props: IParams = {
         daysAhead: 14,
         gara: {
             locationName: LocationName.Gara,
             tables: garaTables,
-            startHour: 18,
-            endHour: 22,
-            duration: 2,
-            maxReservations: 8,
+            startHour: garaLocation.start_hour,
+            endHour: garaLocation.end_hour,
+            duration: garaLocation.reservation_duration,
+            maxReservations: garaLocation.max_reservations,
             uiColor: ['#e7f5ff', '#d0ebff', '#a5d8ff', '#74c0fc', '#4dabf7', '#339af0', '#228be6', '#1c7ed6', '#1971c2', '#1864ab']
         },
         boromir: {
             locationName: LocationName.Boromir,
             tables: boromirTables,
-            startHour: 10,
-            endHour: 20,
-            duration: 1,
-            maxReservations: 2,
+            startHour: boromirLocation.start_hour,
+            endHour: boromirLocation.end_hour,
+            duration: boromirLocation.reservation_duration,
+            maxReservations: boromirLocation.max_reservations,
             uiColor: ['#e6fcf5', '#c3fae8', '#96f2d7', '#63e6be', '#38d9a9', '#20c997', '#12b886', '#0ca678', '#099268', '#087f5b',]
         }
     }
 
-    return {
-        props: props
-    }
+    return {props}
 }

@@ -102,7 +102,7 @@ export default function LoginForm() {
                     <Space h="lg"/>
 
                     <Group position="apart" mt="md">
-                        <Link href={"/signin"} passHref={true}>
+                        <Link href={"/login"} passHref={true}>
                             <Button variant={"outline"} leftIcon={<MdAccountBox size={14}/>}>Am deja cont!</Button>
                         </Link>
 
