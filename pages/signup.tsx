@@ -1,19 +1,15 @@
 import {Box, Button, Group, Paper, PasswordInput, Space, Stack, Text, TextInput, Title} from "@mantine/core";
-import {MdAccountBox, MdAlternateEmail, MdPerson} from "react-icons/md";
+import {MdAlternateEmail, MdPerson} from "react-icons/md";
 import {useForm} from "@mantine/form";
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
-import Link from "next/link";
 import {useAuth} from "../components/AuthProvider";
-
-const REGEX_EMAIL = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(([a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))$/
 
 const enum RegisterState {
     None,
     Failed,
     Loading,
     Success,
-    LoginSuccess
 }
 
 export default function LoginForm() {
@@ -22,18 +18,16 @@ export default function LoginForm() {
     const form = useForm({
         initialValues: {
             name: '',
-            email: '',
             password: '',
             confirmPassword: '',
         },
 
         validate: {
             name: (value) => value.length <= 64 ? null : "Numele nu poate fi mai lung de 64 de litere",
-            email: (value) => REGEX_EMAIL.test(value.toLowerCase()) ? null : "Email invalid",
             password: (value) =>
                 (value.length >= 8) ? null : "Parola trebuie să aibă cel puțin 8 caractere",
             confirmPassword: (value, values) =>
-                value !== values.password ? 'Parolele nu se portivesc' : null,
+                value !== values.password ? 'Parolele nu se potrivesc' : null,
         },
         validateInputOnChange: true
     });
@@ -41,10 +35,10 @@ export default function LoginForm() {
     const [registerState, setRegisterState] = useState(RegisterState.None)
 
     useEffect(() => {
-        if (auth.user != null) {
+        if (auth.profile != null || registerState == RegisterState.Success) {
             router.push('/')
         }
-    }, [auth.user, router])
+    }, [auth.profile, registerState, router])
 
     return (<>
         <Box sx={{maxWidth: 480}} mx="auto">
@@ -52,14 +46,24 @@ export default function LoginForm() {
                 <form style={{position: 'relative'}} onSubmit={
                     form.onSubmit(async (values) => {
                         setRegisterState(RegisterState.Loading)
-                        const success = await auth.signUp({email: values.email, password: values.password}, values.name)
+                        const success = await auth.changePassword(values.name, values.password)
 
-                        setRegisterState(success ? RegisterState.LoginSuccess : RegisterState.Failed)
+                        setRegisterState(success ? RegisterState.Success : RegisterState.Failed)
                     })}>
 
                     <Title>Înregistrare cont</Title>
 
                     <Space h={"lg"}/>
+
+                    <TextInput
+                        type={"email"}
+                        label={"Email:"}
+                        contentEditable={'false'}
+                        value={auth.user?.email}
+                        icon={<MdAlternateEmail size={14}/>}
+                    />
+
+                    <Space h="md"/>
 
                     <TextInput
                         {...form.getInputProps('name')}
@@ -68,17 +72,6 @@ export default function LoginForm() {
                         placeholder={"Nume"}
                         required={true}
                         icon={<MdPerson size={14}/>}
-                    />
-
-                    <Space h="md"/>
-
-                    <TextInput
-                        {...form.getInputProps('email')}
-                        type={"email"}
-                        label={"Email:"}
-                        placeholder={"mail@example.com"}
-                        required={true}
-                        icon={<MdAlternateEmail size={14}/>}
                     />
 
                     <Space h="md"/>
@@ -102,12 +95,8 @@ export default function LoginForm() {
                     <Space h="lg"/>
 
                     <Group position="apart" mt="md">
-                        <Link href={"/login"} passHref={true}>
-                            <Button variant={"outline"} leftIcon={<MdAccountBox size={14}/>}>Am deja cont!</Button>
-                        </Link>
-
                         <Button type={"submit"}
-                                loading={registerState == RegisterState.Loading}>înregistrare</Button>
+                                loading={registerState == RegisterState.Loading}>Înregistrare</Button>
                     </Group>
                 </form>
 
@@ -115,7 +104,7 @@ export default function LoginForm() {
                     <Paper shadow={"0"} p={"md"} sx={(theme) => ({
                         backgroundColor: theme.colors.orange,
                     })}>
-                        <Text>A fost întâmpinată o eroare!</Text>
+                        <Text>A fost întâmpinată o eroare la înregistrare!</Text>
                     </Paper>
                 }
 

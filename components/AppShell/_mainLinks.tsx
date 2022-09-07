@@ -93,7 +93,7 @@ export default function MainLinks() {
         ))}
 
         {auth.user != null &&
-            UserProfileLink(auth.profile?.name ?? null)
+            UserProfileLink(auth.profile?.name || "Profil")
         }
 
         {(!auth.loading && auth.user == null) &&

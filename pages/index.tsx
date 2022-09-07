@@ -1,42 +1,29 @@
 import React, {useEffect, useMemo, useState} from "react";
 import Head from "next/head";
-import {
-    Button,
-    Card,
-    Divider,
-    Grid,
-    Group,
-    MantineProvider,
-    Paper,
-    Radio, SimpleGrid,
-    Space,
-    Stack,
-    Text,
-    Title
-} from "@mantine/core";
+import {Button, Card, Chip, Divider, Group, Paper, SimpleGrid, Space, Stack, Text, Title} from "@mantine/core";
 import {Calendar} from '@mantine/dates';
 import {useScrollIntoView} from "@mantine/hooks";
 import {NextLink} from "@mantine/next";
 import ReservationComponent from "../components/Reservation";
 import 'dayjs/locale/ro'
 import {Tuple} from "@mantine/styles/lib/theme/types/Tuple";
-import {
-    GameTable,
-    getEndDateDuration,
-    getStartTime,
-    Location,
-    LocationName,
-    Profile,
-    Reservation,
-    ReservationStatus
-} from "../types/wrapper";
+import {GameTable, Location, LocationName, Profile, Reservation, ReservationStatus} from "../types/wrapper";
 import {supabase} from "../utils/supabase_utils";
 import {useAuth} from "../components/AuthProvider";
+import {useRouter} from "next/router";
 
-function addDays(date, days) {
+function addDays(date: Date, days: number): Date {
     const result = new Date(date);
     result.setDate(result.getDate() + days);
     return result;
+}
+
+function dateToISOString(date: Date): string {
+    const month = ("0" + (date.getMonth() + 1)).slice(-2)
+    const day = ("0" + date.getDate()).slice(-2)
+    const year = date.getFullYear()
+
+    return year + "-" + month + "-" + day;
 }
 
 interface IParams {
@@ -66,10 +53,11 @@ class SelectedTable {
 }
 
 export default function MakeReservationPage(params: IParams): JSX.Element {
-    const minRange = addDays(new Date, 1)
+    const minRange = new Date
     const maxRange = addDays(minRange, params.daysAhead)
 
     const auth = useAuth()
+    const router = useRouter()
     const [locationName, /*setLocationName*/] = useState(LocationName.Gara)
     const [selectedDate, setSelectedDate] = useState<Date>(null)
     const [selectedTable, setSelectedTable] = useState<SelectedTable>(null)
@@ -77,18 +65,21 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     const selectedDateISO = useMemo(() => {
         if (selectedDate == null)
             return null
-
-        const month = ("0" + (selectedDate.getMonth() + 1)).slice(-2)
-        const day = ("0" + selectedDate.getDate()).slice(-2)
-        const year = selectedDate.getFullYear()
-
-        return year + "-" + month + "-" + day;
+        return dateToISOString(selectedDate)
     }, [selectedDate])
 
     function onSelectedDateChange(selectedDate: Date) {
         setSelectedDate(selectedDate)
         setSelectedTable(null)
     }
+
+    useEffect(() => {
+        if (!auth.loading && auth.user != null && auth.profile == null) {
+            router.push('/signup').then(() => {
+                console.log("Failed to redirect to signup")
+            })
+        }
+    })
 
     const room = locationName == LocationName.Gara ? params.gara : params.boromir;
 
@@ -154,7 +145,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                             if (auth.user != null && date != null)
                                 onSelectedDateChange(date)
                         }}
-                        excludeDate={(date) => date.getDay() === 0}
+                        // excludeDate={(date) => date.getDay() === 0}
                         fullWidth={true}
                     />
                 </Stack>
@@ -176,12 +167,15 @@ function SelectGameTable(room: Room,
 
     const [reservations, setReservations] = useState<Reservation[]>([])
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
+    const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
     useEffect(() => {
         function fetchReservations() {
             supabase.from<Reservation>('rezervari')
                 .select('*')
-                .eq("status", ReservationStatus.Approved)
+                .gte('start_date', dateToISOString(new Date))
+                .eq('status', ReservationStatus.Approved)
+                .order('created_at', {ascending: true})
                 .then(value => {
                     if (value.data != null) {
                         setReservations(value.data)
@@ -202,7 +196,9 @@ function SelectGameTable(room: Room,
             .on('INSERT', payload => {
                 console.log(payload.new)
                 if (payload.new.status == ReservationStatus.Approved) {
-                    setReservations(prev => [...prev, payload.new])
+                    setReservations(prev => [...prev, payload.new]
+                        .sort((a, b) => { // @ts-ignore
+                            return new Date(a.created_at) - new Date(b.created_at) }))
                 }
             })
             .on('UPDATE', payload => {
@@ -221,6 +217,13 @@ function SelectGameTable(room: Room,
     const currentDateReservations = useMemo(() => {
         return reservations.filter(reservation => reservation.start_date == selectedDateISO)
     }, [reservations, selectedDateISO]);
+
+    useEffect(() => {
+        if (selectedDateISO) {
+            scrollIntoView({alignment: 'center'})
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedDateISO])
 
     if (selectedDateISO == null) return null
 
@@ -253,9 +256,10 @@ function SelectGameTable(room: Room,
 
                 <Group style={{marginLeft: "1em", marginRight: "1em"}} spacing={"xs"}>
                     <Text>Listă înscriși: </Text>
-                    {currentDateReservations.filter(value => value.start_hour == startHour).map((reservation) => {
+                    {currentDateReservations.filter(value => value.start_hour == startHour).map((reservation, index) => {
                         const profile = allProfiles.find(value => value.id == reservation.user_id)
-                        return <Text key={profile.id}>{profile.name}</Text>
+                        return <Chip key={profile.id} variant={'filled'}
+                                     checked={false}>{index + 1}. {profile.name}</Chip>
                     })}
                 </Group>
 
@@ -266,7 +270,7 @@ function SelectGameTable(room: Room,
     };
 
     return <Stack>
-        <Text weight={600}>Data selectată: <Text
+        <Text weight={600} ref={targetRef}>Data selectată: <Text
             color={"blue"}>{(new Date(selectedDateISO)).toLocaleDateString('ro-RO')}</Text></Text>
 
         {allButtons()}
@@ -364,7 +368,8 @@ function ConfirmSelection(
 
         <Space h={"lg"}/>
 
-        {ReservationComponent(fakeReservation, selectedTable.table, false, async () => {})}
+        {ReservationComponent(fakeReservation, selectedTable.table, false, async () => {
+        })}
 
         <Space h={"md"}/>
 
@@ -382,7 +387,9 @@ function ConfirmSelection(
 async function publishReservation(reservationParams): Promise<string | null> {
     console.log(reservationParams)
 
-    const {data} = await supabase.rpc('create_reservation', reservationParams)
+    const {data, error} = await supabase.rpc('create_reservation', reservationParams)
+
+    if (error != null) return "a fost întâmpinată o eroare (" + error.message + ")"
 
     // @ts-ignore TypeScript is actually wrong here
     return data == '' ? null : data // An empty string means no errors

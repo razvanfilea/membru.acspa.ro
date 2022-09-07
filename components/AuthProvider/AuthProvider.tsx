@@ -9,7 +9,7 @@ export interface LoginCredentials {
 }
 
 export interface AuthData {
-    signUp: (credentials: LoginCredentials, name: string) => Promise<boolean>
+    changePassword: (name: string, password: string) => Promise<boolean>
     signIn: (credentials: LoginCredentials) => Promise<{
         session: Session | null
         user: User | null
@@ -23,31 +23,36 @@ export interface AuthData {
     profile: Profile | null
 }
 
-async function signUpAsync(credentials: LoginCredentials, name: string): Promise<boolean> {
-    const {user, session, error} = await supabase.auth.signUp(credentials)
+async function changePasswordAsync(name: string, password: string): Promise<boolean> {
+    console.log("Updating password")
+    const {user} = await supabase.auth.update({password})
+
     if (user != null) {
-        await supabase.auth.signIn(credentials)
+        console.log("Updating profile")
+
         const profile: Profile = {
             id: user.id,
             name
         }
         await supabase.from<Profile>('profiles')
             .insert([profile])
+
         return true
     }
+    console.log("Failed to change password")
 
     return false
 }
 
-const default_value: AuthData = {
-    signUp: signUpAsync,
+const defaultValue: AuthData = {
+    changePassword: changePasswordAsync,
     signIn: (credentials) => supabase.auth.signIn(credentials),
     signOut: () => supabase.auth.signOut(),
     loading: true,
     user: null,
     profile: null,
 }
-const AuthContext = React.createContext(default_value)
+const AuthContext = React.createContext(defaultValue)
 
 export default function AuthProvider({children}) {
     const [user, setUser] = useState<User | null>(null)
@@ -66,7 +71,8 @@ export default function AuthProvider({children}) {
                 .select("*")
                 .eq("id", newUser.id)
                 .limit(1)
-                .single()
+                .maybeSingle()
+
             if (error == null) {
                 setProfile(newProfile)
             } else {
@@ -77,16 +83,16 @@ export default function AuthProvider({children}) {
         // Check active sessions and sets the user
         const session = supabase.auth.session()
         setUser(session?.user ?? null)
-        updateProfile(session?.user ?? null)
-        setLoading(false)
-
+        updateProfile(session?.user ?? null).then(() => {
+            setLoading(false)
+        })
 
         // Listen for changes on auth state (logged in, signed out, etc.)
         const {data: listener} = supabase.auth.onAuthStateChange(
             async (event, session) => {
                 const newUser = session?.user ?? null;
                 setUser(newUser)
-                updateProfile(newUser)
+                await updateProfile(newUser)
                 setLoading(false)
             }
         )
@@ -99,7 +105,7 @@ export default function AuthProvider({children}) {
     // Will be passed down to Signup, Login and Dashboard components
     const authDataCallback = useCallback((): AuthData => {
         return {
-            signUp: signUpAsync,
+            changePassword: changePasswordAsync,
             signIn: (credentials) => supabase.auth.signIn(credentials),
             signOut: () => supabase.auth.signOut(),
             loading,

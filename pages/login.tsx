@@ -80,11 +80,7 @@ export default function LoginForm() {
 
                 <Space h="lg"/>
 
-                <Group position="apart" mt="md">
-                    <Link href={"/signup.html"} passHref={true}>
-                        <Button variant={"outline"} leftIcon={<MdAccountBox size={14}/>}>Nu am cont</Button>
-                    </Link>
-
+                <Group position="right" mt="md">
                     <Button type={"submit"}
                             loading={loginState == LoginState.Loading}>Logare</Button>
                 </Group>

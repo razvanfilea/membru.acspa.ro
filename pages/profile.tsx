@@ -1,10 +1,11 @@
-import {Button, Card, Center, Group, Loader, Paper, Avatar, Stack, Text, Title} from "@mantine/core";
+    import {ActionIcon, Button, Card, Center, Group, Loader, Paper, Avatar, Stack, Text, Title} from "@mantine/core";
 import React, {useEffect, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
 import {useAuth} from "../components/AuthProvider";
 import {supabase} from "../utils/supabase_utils";
 import {GameTable, Reservation, ReservationStatus} from "../types/wrapper";
+import {MdRefresh} from "react-icons/md";
 
 interface IParams {
     gameTables: GameTable[]
@@ -32,43 +33,24 @@ export default function Profile(params: IParams) {
             router.push('/login')
     }, [auth, router])
 
-    async function fetchReservations() {
+    useEffect(() => {
         if (auth.user == null)
             return;
 
-        supabase.from<Reservation>('rezervari')
+        fetchReservations().then(data => setReservations(data))
+        // We only want to run it once
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    async function fetchReservations() {
+        const {data} = await supabase.from<Reservation>('rezervari')
             .select('*')
             .eq("user_id", auth.user.id)
-            .then(value => {
-                if (value.data != null) {
-                    setReservations(value.data)
-                    console.log("Reservations updated")
-                }
-            })
+            .order('start_date', {ascending: true})
+            .order('start_hour', {ascending: true})
+
+        return data
     }
-
-    useEffect(() => {
-        fetchReservations();
-
-        const subscription = supabase.from<Reservation>('rezervari')
-            .on('INSERT', payload => {
-                console.log(payload.new)
-                if (payload.new.status == ReservationStatus.Approved) {
-                    setReservations(prev => [...prev, payload.new])
-                }
-            })
-            .on('UPDATE', payload => {
-                setReservations(prev => [...prev.filter(value => value.id != payload.old.id), payload.new])
-            })
-            .on('DELETE', payload => {
-                setReservations(prev => prev.filter(value => value.id != payload.old.id))
-            })
-            .subscribe()
-
-        return () => {
-            subscription?.unsubscribe()
-        }
-    }, [auth])
 
     if (auth.loading)
         return <Center> <Loader/> </Center>;
@@ -100,7 +82,11 @@ export default function Profile(params: IParams) {
         </Paper>
 
         <Stack p={"xl"}>
-            <Title order={2}>Rezervările tale:</Title>
+            <Group position={'apart'}>
+                <Title order={2}>Rezervările tale:</Title>
+
+                <ActionIcon size={32} variant={'transparent'}> <MdRefresh size={32}/> </ActionIcon>
+            </Group>
 
             {reservations.length == 0 &&
                 <Text size={"lg"}>Nu ați făcut nici o rezervare</Text>
@@ -118,12 +104,8 @@ export default function Profile(params: IParams) {
                                 status: ReservationStatus.Cancelled
                             }
 
-                            console.log("Hello")
-
-                            await supabase.from<Reservation>('rezervari')
-                                .update(newData, {returning: 'minimal'})
-
-                            console.log("There")
+                            const {data} = await supabase.from<Reservation>('rezervari').update(newData)
+                            setReservations(prev => [...prev.filter(value => value.id != data[0].id), data[0]])
                         }
                     )}
                 </Card>
