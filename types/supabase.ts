@@ -99,12 +99,103 @@ export interface paths {
       };
     };
   };
+  "/member_types": {
+    get: {
+      parameters: {
+        query: {
+          type?: parameters["rowFilter.member_types.type"];
+          /** Filtering Columns */
+          select?: parameters["select"];
+          /** Ordering */
+          order?: parameters["order"];
+          /** Limiting and Pagination */
+          offset?: parameters["offset"];
+          /** Limiting and Pagination */
+          limit?: parameters["limit"];
+        };
+        header: {
+          /** Limiting and Pagination */
+          Range?: parameters["range"];
+          /** Limiting and Pagination */
+          "Range-Unit"?: parameters["rangeUnit"];
+          /** Preference */
+          Prefer?: parameters["preferCount"];
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["member_types"][];
+        };
+        /** Partial Content */
+        206: unknown;
+      };
+    };
+    post: {
+      parameters: {
+        body: {
+          /** member_types */
+          member_types?: definitions["member_types"];
+        };
+        query: {
+          /** Filtering Columns */
+          select?: parameters["select"];
+        };
+        header: {
+          /** Preference */
+          Prefer?: parameters["preferReturn"];
+        };
+      };
+      responses: {
+        /** Created */
+        201: unknown;
+      };
+    };
+    delete: {
+      parameters: {
+        query: {
+          type?: parameters["rowFilter.member_types.type"];
+        };
+        header: {
+          /** Preference */
+          Prefer?: parameters["preferReturn"];
+        };
+      };
+      responses: {
+        /** No Content */
+        204: never;
+      };
+    };
+    patch: {
+      parameters: {
+        query: {
+          type?: parameters["rowFilter.member_types.type"];
+        };
+        body: {
+          /** member_types */
+          member_types?: definitions["member_types"];
+        };
+        header: {
+          /** Preference */
+          Prefer?: parameters["preferReturn"];
+        };
+      };
+      responses: {
+        /** No Content */
+        204: never;
+      };
+    };
+  };
   "/profiles": {
     get: {
       parameters: {
         query: {
           id?: parameters["rowFilter.profiles.id"];
           name?: parameters["rowFilter.profiles.name"];
+          active?: parameters["rowFilter.profiles.active"];
+          member_type?: parameters["rowFilter.profiles.member_type"];
+          /** Cine are cheie de la sala */
+          has_key?: parameters["rowFilter.profiles.has_key"];
           /** Filtering Columns */
           select?: parameters["select"];
           /** Ordering */
@@ -157,6 +248,10 @@ export interface paths {
         query: {
           id?: parameters["rowFilter.profiles.id"];
           name?: parameters["rowFilter.profiles.name"];
+          active?: parameters["rowFilter.profiles.active"];
+          member_type?: parameters["rowFilter.profiles.member_type"];
+          /** Cine are cheie de la sala */
+          has_key?: parameters["rowFilter.profiles.has_key"];
         };
         header: {
           /** Preference */
@@ -173,6 +268,10 @@ export interface paths {
         query: {
           id?: parameters["rowFilter.profiles.id"];
           name?: parameters["rowFilter.profiles.name"];
+          active?: parameters["rowFilter.profiles.active"];
+          member_type?: parameters["rowFilter.profiles.member_type"];
+          /** Cine are cheie de la sala */
+          has_key?: parameters["rowFilter.profiles.has_key"];
         };
         body: {
           /** profiles */
@@ -533,6 +632,14 @@ export interface definitions {
      */
     status: string;
   };
+  member_types: {
+    /**
+     * Format: text
+     * @description Note:
+     * This is a Primary Key.<pk/>
+     */
+    type: string;
+  };
   profiles: {
     /**
      * Format: uuid
@@ -542,6 +649,24 @@ export interface definitions {
     id: string;
     /** Format: text */
     name: string;
+    /**
+     * Format: boolean
+     * @default true
+     */
+    active?: boolean;
+    /**
+     * Format: text
+     * @description Note:
+     * This is a Foreign Key to `member_types.type`.<fk table='member_types' column='type'/>
+     * @default Membru
+     */
+    member_type?: string;
+    /**
+     * Format: boolean
+     * @description Cine are cheie de la sala
+     * @default false
+     */
+    has_key?: boolean;
   };
   mese: {
     /**
@@ -658,12 +783,25 @@ export interface parameters {
   "body.rezervari_status": definitions["rezervari_status"];
   /** Format: text */
   "rowFilter.rezervari_status.status": string;
+  /** @description member_types */
+  "body.member_types": definitions["member_types"];
+  /** Format: text */
+  "rowFilter.member_types.type": string;
   /** @description profiles */
   "body.profiles": definitions["profiles"];
   /** Format: uuid */
   "rowFilter.profiles.id": string;
   /** Format: text */
   "rowFilter.profiles.name": string;
+  /** Format: boolean */
+  "rowFilter.profiles.active": string;
+  /** Format: text */
+  "rowFilter.profiles.member_type": string;
+  /**
+   * Format: boolean
+   * @description Cine are cheie de la sala
+   */
+  "rowFilter.profiles.has_key": string;
   /** @description mese */
   "body.mese": definitions["mese"];
   /** Format: uuid */

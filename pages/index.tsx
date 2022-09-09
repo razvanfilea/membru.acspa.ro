@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from "react";
 import Head from "next/head";
-import {Button, Card, Chip, Divider, Group, Paper, SimpleGrid, Space, Stack, Text, Title} from "@mantine/core";
+import {Button, Card, Divider, Group, Paper, SimpleGrid, Space, Stack, Text, Title} from "@mantine/core";
 import {Calendar} from '@mantine/dates';
 import {useScrollIntoView} from "@mantine/hooks";
 import {NextLink} from "@mantine/next";
@@ -11,20 +11,8 @@ import {GameTable, Location, LocationName, Profile, Reservation, ReservationStat
 import {supabase} from "../utils/supabase_utils";
 import {useAuth} from "../components/AuthProvider";
 import {useRouter} from "next/router";
-
-function addDays(date: Date, days: number): Date {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-}
-
-function dateToISOString(date: Date): string {
-    const month = ("0" + (date.getMonth() + 1)).slice(-2)
-    const day = ("0" + date.getDate()).slice(-2)
-    const year = date.getFullYear()
-
-    return year + "-" + month + "-" + day;
-}
+import {MdVpnKey} from "react-icons/md";
+import {addDaysToDate, dateToISOString} from "../utils/date";
 
 interface IParams {
     gara: Room
@@ -54,7 +42,7 @@ class SelectedTable {
 
 export default function MakeReservationPage(params: IParams): JSX.Element {
     const minRange = new Date
-    const maxRange = addDays(minRange, params.daysAhead)
+    const maxRange = addDaysToDate(minRange, params.daysAhead)
 
     const auth = useAuth()
     const router = useRouter()
@@ -198,7 +186,8 @@ function SelectGameTable(room: Room,
                 if (payload.new.status == ReservationStatus.Approved) {
                     setReservations(prev => [...prev, payload.new]
                         .sort((a, b) => { // @ts-ignore
-                            return new Date(a.created_at) - new Date(b.created_at) }))
+                            return new Date(a.created_at) - new Date(b.created_at)
+                        }))
                 }
             })
             .on('UPDATE', payload => {
@@ -258,8 +247,10 @@ function SelectGameTable(room: Room,
                     <Text>Listă înscriși: </Text>
                     {currentDateReservations.filter(value => value.start_hour == startHour).map((reservation, index) => {
                         const profile = allProfiles.find(value => value.id == reservation.user_id)
-                        return <Chip key={profile.id} variant={'filled'}
-                                     checked={false}>{index + 1}. {profile.name}</Chip>
+
+                        return <Button key={profile.id} color={profile.has_key ? 'blue' : 'gray'} radius={'xl'}
+                                       size={'xs'} rightIcon={profile.has_key ?
+                            <MdVpnKey/> : <></>}>{index + 1}. {profile.name}</Button>
                     })}
                 </Group>
 
@@ -303,7 +294,6 @@ function ConfirmSelection(
 
     if (selectedDateISO == null || selectedTable == null) return null
 
-    const isValid = true //TODO currentSelectionReservations.length < room.maxReservations;
     // Fake Reservation to display to user
     const fakeReservation: Reservation = {
         id: '',
@@ -373,13 +363,7 @@ function ConfirmSelection(
 
         <Space h={"md"}/>
 
-        {isValid &&
-            DisplayConfirmationStatus()
-        }
-
-        {!isValid && // TODO
-            <Text>Nu se mai pot face rezervări la aceasta masă</Text>
-        }
+        {DisplayConfirmationStatus()}
 
     </Card>)
 }
