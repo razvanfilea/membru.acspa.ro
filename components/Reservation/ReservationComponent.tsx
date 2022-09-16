@@ -2,26 +2,23 @@ import {Button, Group, Space, Stack, Text} from "@mantine/core";
 import React from "react";
 import {MdCancel} from "react-icons/md";
 import {GameTable, LocationName, Reservation, ReservationStatus} from "../../types/wrapper";
-import {supabase} from "../../utils/supabase_utils";
+
+function ShowStatus(reservation: Reservation, onCancel: () => Promise<void>) {
+    const resStatus = reservation.status ?? ReservationStatus.Cancelled;
+
+    switch (resStatus) {
+        case ReservationStatus.Cancelled:
+            return <Stack align={"center"} spacing={'xs'}>
+                <MdCancel size={32}/>
+                <Text weight={700}>Anulată</Text></Stack>
+        case ReservationStatus.Approved:
+            return <Button
+                gradient={{from: 'orange', to: 'red'}} variant={"outline"}
+                onClick={onCancel}>Anulează</Button>
+    }
+}
 
 export default function ReservationComponent(reservation: Reservation, gameTable: GameTable, showStatus: boolean, onCancel: () => Promise<void>) {
-    const status = reservation.status ?? ReservationStatus.Cancelled;
-
-    function ShowStatus() {
-        switch (status) {
-            case ReservationStatus.Cancelled:
-                return <Stack align={"center"} spacing={'xs'}>
-                    <MdCancel size={32}/>
-                    <Text weight={700}>Anulată</Text></Stack>
-            case ReservationStatus.Approved:
-                return <Button
-                    gradient={{from: 'orange', to: 'red'}} variant={"outline"}
-                    onClick={async () => {
-                        await onCancel()
-                    }}>Anulează</Button>
-        }
-    }
-
     return (<Group position={"apart"}>
         <Stack spacing={0}>
             {gameTable.location == LocationName.Boromir &&
@@ -45,7 +42,7 @@ export default function ReservationComponent(reservation: Reservation, gameTable
         </Stack>
 
         {showStatus &&
-            ShowStatus()
+            ShowStatus(reservation, onCancel)
         }
     </Group>)
 }

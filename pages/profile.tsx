@@ -1,5 +1,18 @@
-    import {ActionIcon, Button, Card, Center, Group, Loader, Paper, Avatar, Stack, Text, Title} from "@mantine/core";
-import React, {useEffect, useState} from "react";
+import {
+    ActionIcon,
+    Avatar,
+    Button,
+    Card,
+    Center,
+    Checkbox,
+    Group,
+    Loader,
+    Paper,
+    Stack,
+    Text,
+    Title
+} from "@mantine/core";
+import React, {useEffect, useMemo, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
 import {useAuth} from "../components/AuthProvider";
@@ -27,6 +40,7 @@ export default function Profile(params: IParams) {
     const auth = useAuth()
 
     const [reservations, setReservations] = useState<Reservation[]>([])
+    const [showCancelled, setShowCancelled] = useState(false)
 
     useEffect(() => {
         if (!auth.loading && auth.user == null)
@@ -52,6 +66,10 @@ export default function Profile(params: IParams) {
         return data
     }
 
+    const filteredReservations = useMemo(() => {
+        return reservations.filter((res) => res.status == ReservationStatus.Approved || showCancelled)
+    }, [reservations, showCancelled])
+
     if (auth.loading)
         return <Center> <Loader/> </Center>;
 
@@ -59,9 +77,12 @@ export default function Profile(params: IParams) {
         return (<></>)
 
     return (<>
-        <Paper shadow={"md"} p={"xl"} sx={(theme) => ({
+        <Paper shadow={"md"} p={'lg'} sx={(theme) => ({
             backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[1],
-            margin: theme.spacing.md
+            margin: theme.spacing.lg,
+            '@media (max-width: 900px)': {
+                margin: theme.spacing.xs,
+            },
         })}>
 
             <Group position={"apart"}>
@@ -81,19 +102,33 @@ export default function Profile(params: IParams) {
 
         </Paper>
 
-        <Stack p={"xl"}>
+        <Stack sx={(theme) => ({
+            padding: theme.spacing.lg,
+            '@media (max-width: 900px)': {
+                paddingLeft: theme.spacing.md,
+                paddingRight: theme.spacing.md,
+            },
+            '@media (max-width: 600px)': {
+                paddingLeft: 0,
+                paddingRight: 0,
+            }
+        })}>
             <Group position={'apart'}>
                 <Title order={2}>Rezervările tale:</Title>
 
                 <ActionIcon size={32} variant={'transparent'}> <MdRefresh size={32}/> </ActionIcon>
             </Group>
 
+            <Checkbox label="Afișează anulate"
+                      checked={showCancelled}
+                      onChange={(event) => setShowCancelled(event.currentTarget.checked)}/>
+
             {reservations.length == 0 &&
-                <Text size={"lg"}>Nu ați făcut nici o rezervare</Text>
+                <Text size={"lg"}>Nu ați făcut nicio rezervare</Text>
             }
 
-            {reservations.map((reservation) => (
-                <Card key={reservation.id}>
+            {filteredReservations.map((reservation) => (
+                <Card key={reservation.id} shadow={"xs"}>
                     {ReservationComponent(
                         reservation,
                         params.gameTables.find((element) => element.id == reservation.table_id),

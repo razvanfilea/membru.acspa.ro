@@ -1,6 +1,18 @@
 import React, {useEffect, useMemo, useState} from "react";
 import Head from "next/head";
-import {Button, Card, Divider, Group, Paper, SimpleGrid, Space, Stack, Text, Title} from "@mantine/core";
+import {
+    Button,
+    Card,
+    Divider,
+    Group,
+    Paper,
+    SimpleGrid,
+    Space,
+    Stack,
+    Text,
+    Title,
+    useMantineTheme
+} from "@mantine/core";
 import {Calendar} from '@mantine/dates';
 import {useScrollIntoView} from "@mantine/hooks";
 import {NextLink} from "@mantine/next";
@@ -44,6 +56,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     const minRange = new Date
     const maxRange = addDaysToDate(minRange, params.daysAhead)
 
+    const theme = useMantineTheme()
     const auth = useAuth()
     const router = useRouter()
     const [locationName, /*setLocationName*/] = useState(LocationName.Gara)
@@ -126,14 +139,19 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                         minDate={minRange}
                         maxDate={maxRange}
                         hideOutsideDates={true}
-                        size={"xl"}
+                        allowLevelChange={false}
+                        size={"lg"}
                         locale={"ro"}
                         value={selectedDate}
                         onChange={(date) => {
                             if (auth.user != null && date != null)
                                 onSelectedDateChange(date)
                         }}
-                        // excludeDate={(date) => date.getDay() === 0}
+                        dayStyle={(date) =>
+                            (date.getDate() === minRange.getDate() && date.getDate() !== selectedDate?.getDate())
+                                ? {backgroundColor: theme.colors.blue[4], color: theme.white}
+                                : null
+                        }
                         fullWidth={true}
                     />
                 </Stack>
