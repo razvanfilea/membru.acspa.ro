@@ -1,6 +1,7 @@
 import React, {useEffect, useMemo, useState} from "react";
 import Head from "next/head";
 import {
+    ActionIcon,
     Button,
     Card,
     Divider,
@@ -23,7 +24,7 @@ import {GameTable, Location, LocationName, Profile, Reservation, ReservationStat
 import {supabase} from "../utils/supabase_utils";
 import {useAuth} from "../components/AuthProvider";
 import {useRouter} from "next/router";
-import {MdVpnKey} from "react-icons/md";
+import {MdRefresh, MdVpnKey} from "react-icons/md";
 import {addDaysToDate, dateToISOString} from "../utils/date";
 
 interface IParams {
@@ -53,9 +54,6 @@ class SelectedTable {
 }
 
 export default function MakeReservationPage(params: IParams): JSX.Element {
-    const minRange = new Date
-    const maxRange = addDaysToDate(minRange, params.daysAhead)
-
     const theme = useMantineTheme()
     const auth = useAuth()
     const router = useRouter()
@@ -75,7 +73,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     }
 
     useEffect(() => {
-        if (!auth.loading && auth.user != null && auth.profile == null) {
+        if (!auth.isLoading && auth.user != null && auth.profile == null) {
             router.push('/signup').then(() => {
                 console.log("Failed to redirect to signup")
             })
@@ -95,7 +93,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
         <Space h="lg"/>
 
         <Paper>
-            {(!auth.loading && auth.user == null) &&
+            {(!auth.isLoading && auth.user == null) &&
                 <>
                     <Paper shadow={"0"} p={"md"} sx={(theme) => ({
                         backgroundColor: theme.colors.orange,
@@ -135,25 +133,29 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
 
                     <Text>Alege ziua rezervării:</Text>
 
-                    <Calendar
-                        minDate={minRange}
-                        maxDate={maxRange}
-                        hideOutsideDates={true}
-                        allowLevelChange={false}
-                        size={"lg"}
-                        locale={"ro"}
-                        value={selectedDate}
-                        onChange={(date) => {
-                            if (auth.user != null && date != null)
-                                onSelectedDateChange(date)
-                        }}
-                        dayStyle={(date) =>
-                            (date.getDate() === minRange.getDate() && date.getDate() !== selectedDate?.getDate())
-                                ? {backgroundColor: theme.colors.blue[4], color: theme.white}
-                                : null
-                        }
-                        fullWidth={true}
-                    />
+                    {!auth.user != null &&
+                        <Calendar
+                            minDate={new Date}
+                            maxDate={addDaysToDate(new Date, params.daysAhead)}
+                            hideOutsideDates={true}
+                            allowLevelChange={false}
+                            size={"lg"}
+                            locale={"ro"}
+                            value={selectedDate}
+                            onChange={(date) => {
+                                if (auth.user != null && date != null)
+                                    onSelectedDateChange(date)
+                            }}
+                            dayStyle={(date) =>
+                                (date.getDate() === (new Date).getDate()
+                                    && date.getMonth() === (new Date).getMonth()
+                                    && date.getDate() !== selectedDate?.getDate())
+                                    ? {backgroundColor: theme.colors.blue[4], color: theme.white}
+                                    : null
+                            }
+                            fullWidth={true}
+                        />
+                    }
                 </Stack>
 
                 <Stack>
@@ -166,6 +168,20 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     </>;
 }
 
+function fetchReservations(setReservations: (data: Reservation[]) => void) {
+    supabase.from<Reservation>('rezervari')
+        .select('*')
+        .gte('start_date', dateToISOString(new Date))
+        .eq('status', ReservationStatus.Approved)
+        .order('created_at', {ascending: true})
+        .then(value => {
+            if (value.data != null) {
+                setReservations(value.data)
+                console.log("Reservations updated")
+            }
+        })
+}
+
 function SelectGameTable(room: Room,
                          selectedDateISO: string | null,
                          selectedTable: SelectedTable | null,
@@ -176,27 +192,13 @@ function SelectGameTable(room: Room,
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
     useEffect(() => {
-        function fetchReservations() {
-            supabase.from<Reservation>('rezervari')
-                .select('*')
-                .gte('start_date', dateToISOString(new Date))
-                .eq('status', ReservationStatus.Approved)
-                .order('created_at', {ascending: true})
-                .then(value => {
-                    if (value.data != null) {
-                        setReservations(value.data)
-                        console.log("Reservations updated")
-                    }
-                })
-        }
-
         supabase.from<Profile>('profiles').select('*').then(value => {
             if (value.data != null) {
                 setAllProfiles(value.data)
             }
         })
 
-        fetchReservations();
+        fetchReservations(setReservations);
 
         const subscription = supabase.from<Reservation>('rezervari')
             .on('INSERT', payload => {
@@ -209,7 +211,7 @@ function SelectGameTable(room: Room,
                 }
             })
             .on('UPDATE', payload => {
-                fetchReservations() // TODO Could make this more efficient
+                fetchReservations(setReservations) // TODO Could make this more efficient
             })
             .on('DELETE', payload => {
                 setReservations(prev => prev.filter(value => value.id != payload.old.id))
@@ -278,12 +280,19 @@ function SelectGameTable(room: Room,
         return content;
     };
 
-    return <Stack>
-        <Text weight={600} ref={targetRef}>Data selectată: <Text
-            color={"blue"}>{(new Date(selectedDateISO)).toLocaleDateString('ro-RO')}</Text></Text>
+    return <>
+        <Group position={'apart'} align={"center"}>
+            <Group align={"center"} spacing={'xs'}>
+                <Text weight={600} ref={targetRef}>Data selectată:</Text>
+                <Text color={"blue"}>{(new Date(selectedDateISO)).toLocaleDateString('ro-RO')}</Text>
+            </Group>
 
+            <ActionIcon variant={'light'} radius={'xl'} size={36} onClick={() => fetchReservations(setReservations)}>
+                <MdRefresh size={28}/>
+            </ActionIcon>
+        </Group>
         {allButtons()}
-    </Stack>
+    </>
 }
 
 function ConfirmSelection(

@@ -43,7 +43,7 @@ export default function Profile(params: IParams) {
     const [showCancelled, setShowCancelled] = useState(false)
 
     useEffect(() => {
-        if (!auth.loading && auth.user == null)
+        if (!auth.isLoading && auth.user == null)
             router.push('/login')
     }, [auth, router])
 
@@ -70,7 +70,7 @@ export default function Profile(params: IParams) {
         return reservations.filter((res) => res.status == ReservationStatus.Approved || showCancelled)
     }, [reservations, showCancelled])
 
-    if (auth.loading)
+    if (auth.isLoading)
         return <Center> <Loader/> </Center>;
 
     if (auth.user == null)
@@ -116,7 +116,9 @@ export default function Profile(params: IParams) {
             <Group position={'apart'}>
                 <Title order={2}>Rezervările tale:</Title>
 
-                <ActionIcon size={32} variant={'transparent'}> <MdRefresh size={32}/> </ActionIcon>
+                <ActionIcon variant={'light'} radius={'xl'} size={36} onClick={async () => await fetchReservations()}>
+                    <MdRefresh size={28}/>
+                </ActionIcon>
             </Group>
 
             <Checkbox label="Afișează anulate"

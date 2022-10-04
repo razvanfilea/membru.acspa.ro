@@ -96,7 +96,7 @@ export default function MainLinks() {
             UserProfileLink(auth.profile?.name || "Profil")
         }
 
-        {(!auth.loading && auth.user == null) &&
+        {(!auth.isLoading && auth.user == null) &&
             <MainLink {...loginButtonData} />
         }
     </Group>;

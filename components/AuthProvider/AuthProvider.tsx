@@ -18,7 +18,7 @@ export interface AuthData {
         error: ApiError | null
     }>,
     signOut: () => Promise<{ error: ApiError | null }>
-    loading: boolean,
+    isLoading: boolean,
     user: User | null
     profile: Profile | null
 }
@@ -48,7 +48,7 @@ const defaultValue: AuthData = {
     changePassword: changePasswordAsync,
     signIn: (credentials) => supabase.auth.signIn(credentials),
     signOut: () => supabase.auth.signOut(),
-    loading: true,
+    isLoading: true,
     user: null,
     profile: null,
 }
@@ -108,7 +108,7 @@ export default function AuthProvider({children}) {
             changePassword: changePasswordAsync,
             signIn: (credentials) => supabase.auth.signIn(credentials),
             signOut: () => supabase.auth.signOut(),
-            loading,
+            isLoading: loading,
             user,
             profile
         }
