@@ -19,7 +19,6 @@ import {useScrollIntoView} from "@mantine/hooks";
 import {NextLink} from "@mantine/next";
 import ReservationComponent from "../components/Reservation";
 import 'dayjs/locale/ro'
-import {Tuple} from "@mantine/styles/lib/theme/types/Tuple";
 import {GameTable, Location, LocationName, Profile, Reservation, ReservationStatus} from "../types/wrapper";
 import {supabase} from "../utils/supabase_utils";
 import {useAuth} from "../components/AuthProvider";
@@ -36,11 +35,13 @@ interface IParams {
 interface Room {
     locationName: LocationName
     tables: GameTable[]
+    maxReservations: number
     startHour: number
     endHour: number
     duration: number
-    maxReservations: number
-    uiColor: Tuple<string, 10>
+    weekendStartHour: number
+    weekendEndHour: number
+    weekendDuration: number
 }
 
 class SelectedTable {
@@ -234,6 +235,23 @@ function SelectGameTable(room: Room,
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedDateISO])
 
+    const startEnd = useMemo(() => {
+        const date = new Date(selectedDateISO)
+        if (date.getDay() === 6  || date.getDay() === 0) {
+            return {
+                start: room.weekendStartHour,
+                end: room.weekendEndHour,
+                duration: room.weekendDuration,
+            }
+        } else {
+            return {
+                start: room.startHour,
+                end: room.endHour,
+                duration: room.duration,
+            }
+        }
+    }, [room, selectedDateISO])
+
     if (selectedDateISO == null) return null
 
     const selectedTableId = selectedTable?.table?.id;
@@ -253,19 +271,19 @@ function SelectGameTable(room: Room,
         })
     }
 
-    const allButtons = () => {
+    const allButtons = ({start, end, duration}) => {
         let content = [];
-        for (let startHour = room.startHour; startHour < room.endHour; startHour += room.duration) {
-            content.push(<Stack key={startHour}>
+        for (let hour = start; hour < end; hour += duration) {
+            content.push(<Stack key={hour}>
                 <Group noWrap={true} style={{marginLeft: "1em", marginRight: "1em"}} spacing={'lg'}>
-                    <Text>{`Ora ${startHour} - ${startHour + room.duration}`}:</Text>
+                    <Text>{`Ora ${hour} - ${hour + duration}`}:</Text>
 
-                    {tableButtons(startHour)}
+                    {tableButtons(hour)}
                 </Group>
 
                 <Group style={{marginLeft: "1em", marginRight: "1em"}} spacing={"xs"}>
                     <Text>Listă înscriși: </Text>
-                    {currentDateReservations.filter(value => value.start_hour == startHour).map((reservation, index) => {
+                    {currentDateReservations.filter(value => value.start_hour == hour).map((reservation, index) => {
                         const profile = allProfiles.find(value => value.id == reservation.user_id)
 
                         return <Button key={profile.id} color={profile.has_key ? 'blue' : 'gray'} radius={'xl'}
@@ -291,7 +309,7 @@ function SelectGameTable(room: Room,
                 <MdRefresh size={28}/>
             </ActionIcon>
         </Group>
-        {allButtons()}
+        {allButtons(startEnd)}
     </>
 }
 
@@ -420,20 +438,24 @@ export async function getStaticProps({}) {
         gara: {
             locationName: LocationName.Gara,
             tables: garaTables,
+            maxReservations: garaLocation.max_reservations,
             startHour: garaLocation.start_hour,
             endHour: garaLocation.end_hour,
             duration: garaLocation.reservation_duration,
-            maxReservations: garaLocation.max_reservations,
-            uiColor: ['#e7f5ff', '#d0ebff', '#a5d8ff', '#74c0fc', '#4dabf7', '#339af0', '#228be6', '#1c7ed6', '#1971c2', '#1864ab']
+            weekendStartHour: garaLocation.weekend_start_hour,
+            weekendEndHour: garaLocation.weekend_end_hour,
+            weekendDuration: garaLocation.weekend_reservation_duration,
         },
         boromir: {
             locationName: LocationName.Boromir,
             tables: boromirTables,
             startHour: boromirLocation.start_hour,
+            maxReservations: boromirLocation.max_reservations,
             endHour: boromirLocation.end_hour,
             duration: boromirLocation.reservation_duration,
-            maxReservations: boromirLocation.max_reservations,
-            uiColor: ['#e6fcf5', '#c3fae8', '#96f2d7', '#63e6be', '#38d9a9', '#20c997', '#12b886', '#0ca678', '#099268', '#087f5b',]
+            weekendStartHour: boromirLocation.weekend_start_hour,
+            weekendEndHour: boromirLocation.weekend_end_hour,
+            weekendDuration: boromirLocation.end_hour,
         }
     }
 

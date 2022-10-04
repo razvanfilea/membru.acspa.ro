@@ -507,6 +507,9 @@ export interface paths {
           max_reservations?: parameters["rowFilter.locations.max_reservations"];
           start_hour?: parameters["rowFilter.locations.start_hour"];
           end_hour?: parameters["rowFilter.locations.end_hour"];
+          weekend_reservation_duration?: parameters["rowFilter.locations.weekend_reservation_duration"];
+          weekend_start_hour?: parameters["rowFilter.locations.weekend_start_hour"];
+          weekend_end_hour?: parameters["rowFilter.locations.weekend_end_hour"];
           /** Filtering Columns */
           select?: parameters["select"];
           /** Ordering */
@@ -562,6 +565,9 @@ export interface paths {
           max_reservations?: parameters["rowFilter.locations.max_reservations"];
           start_hour?: parameters["rowFilter.locations.start_hour"];
           end_hour?: parameters["rowFilter.locations.end_hour"];
+          weekend_reservation_duration?: parameters["rowFilter.locations.weekend_reservation_duration"];
+          weekend_start_hour?: parameters["rowFilter.locations.weekend_start_hour"];
+          weekend_end_hour?: parameters["rowFilter.locations.weekend_end_hour"];
         };
         header: {
           /** Preference */
@@ -581,6 +587,9 @@ export interface paths {
           max_reservations?: parameters["rowFilter.locations.max_reservations"];
           start_hour?: parameters["rowFilter.locations.start_hour"];
           end_hour?: parameters["rowFilter.locations.end_hour"];
+          weekend_reservation_duration?: parameters["rowFilter.locations.weekend_reservation_duration"];
+          weekend_start_hour?: parameters["rowFilter.locations.weekend_start_hour"];
+          weekend_end_hour?: parameters["rowFilter.locations.weekend_end_hour"];
         };
         body: {
           /** locations */
@@ -743,6 +752,12 @@ export interface definitions {
     start_hour: number;
     /** Format: smallint */
     end_hour: number;
+    /** Format: smallint */
+    weekend_reservation_duration: number;
+    /** Format: smallint */
+    weekend_start_hour: number;
+    /** Format: smallint */
+    weekend_end_hour: number;
   };
 }
 
@@ -846,6 +861,12 @@ export interface parameters {
   "rowFilter.locations.start_hour": string;
   /** Format: smallint */
   "rowFilter.locations.end_hour": string;
+  /** Format: smallint */
+  "rowFilter.locations.weekend_reservation_duration": string;
+  /** Format: smallint */
+  "rowFilter.locations.weekend_start_hour": string;
+  /** Format: smallint */
+  "rowFilter.locations.weekend_end_hour": string;
 }
 
 export interface operations {}
