@@ -51,7 +51,7 @@ export default function Profile(params: IParams) {
         if (auth.user == null)
             return;
 
-        fetchReservations().then(data => setReservations(data))
+        fetchReservations().then(data => setReservations(data || []))
         // We only want to run it once
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -59,7 +59,7 @@ export default function Profile(params: IParams) {
     async function fetchReservations() {
         const {data} = await supabase.from<Reservation>('rezervari')
             .select('*')
-            .eq("user_id", auth.user.id)
+            .eq("user_id", auth.user!.id)
             .order('start_date', {ascending: true})
             .order('start_hour', {ascending: true})
 
@@ -133,7 +133,7 @@ export default function Profile(params: IParams) {
                 <Card key={reservation.id} shadow={"xs"}>
                     {ReservationComponent(
                         reservation,
-                        params.gameTables.find((element) => element.id == reservation.table_id),
+                        params.gameTables.find((element) => element.id == reservation.table_id)!,
                         true,
                         async () => {
                             const newData = {
@@ -142,7 +142,7 @@ export default function Profile(params: IParams) {
                             }
 
                             const {data} = await supabase.from<Reservation>('rezervari').update(newData)
-                            setReservations(prev => [...prev.filter(value => value.id != data[0].id), data[0]])
+                            setReservations(prev => [...prev.filter(value => value.id != data![0].id), data![0]])
                         }
                     )}
                 </Card>
@@ -155,7 +155,7 @@ export async function getStaticProps({}) {
     const {data: gameTables} = await supabase.from<GameTable>('mese').select('*')
 
     const props: IParams = {
-        gameTables
+        gameTables: gameTables!
     }
 
     return {

@@ -1,14 +1,14 @@
-import {Box, Button, Group, Paper, PasswordInput, Space, Stack, Text, TextInput, Title} from "@mantine/core";
-import {MdAccountBox, MdAlternateEmail, MdPassword} from "react-icons/md";
+import {Box, Button, Group, Paper, Space, Stack, Text, TextInput, Title} from "@mantine/core";
+import {MdAlternateEmail} from "react-icons/md";
 import {useForm} from "@mantine/form";
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
-import Link from "next/link";
 import {useAuth} from "../components/AuthProvider";
+import {supabase} from "../utils/supabase_utils";
 
 const REGEX_EMAIL = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(([a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))$/
 
-const enum LoginState {
+const enum Status {
     None,
     Failed,
     Loading,
@@ -21,41 +21,33 @@ export default function LoginForm() {
     const form = useForm({
         initialValues: {
             email: '',
-            password: '',
         },
 
         validate: {
             email: (value) => REGEX_EMAIL.test(value.toLowerCase()) ? null : "Email invalid",
-            password: (value) => (value.length >= 8) ? null : "Parola trebuie sa aibă cel putin 8 caractere"
         },
         validateInputOnChange: true
     });
 
-    const [loginState, setLoginState] = useState(LoginState.None)
+    const [resetStatus, setResetStatus] = useState(Status.None)
 
     useEffect(() => {
         if (auth.user != null) {
-            setLoginState(LoginState.Success)
-        }
-    }, [auth.user])
-
-    useEffect(() => {
-        if (loginState == LoginState.Success) {
             router.back()
         }
-    }, [loginState, router])
+    }, [router, auth.user])
 
     return <Box sx={{maxWidth: 480}} mx="auto">
         <Stack>
             <form style={{position: 'relative'}} onSubmit={
                 form.onSubmit(async (values) => {
-                    setLoginState(LoginState.Loading)
-                    const {error} = await auth.signIn({email: values.email, password: values.password})
+                    setResetStatus(Status.Loading)
+                    const {error} = await supabase.auth.api.resetPasswordForEmail(values.email)
 
-                    setLoginState(error == null ? LoginState.Success : LoginState.Failed)
+                    setResetStatus(error == null ? Status.Success : Status.Failed)
                 })}>
 
-                <Title>Login</Title>
+                <Title>Resetare parolă</Title>
 
                 <Space h={"lg"}/>
 
@@ -68,27 +60,17 @@ export default function LoginForm() {
                     icon={<MdAlternateEmail size={14}/>}
                 />
 
-                <Space h={"lg"}/>
-
-                <PasswordInput
-                    {...form.getInputProps('password')}
-                    label={"Parola:"}
-                    placeholder={"Parola"}
-                    required={true}
-                    icon={<MdPassword size={14}/>}
-                />
-
                 <Space h="lg"/>
 
-                <Group position="apart" mt="md">
-                    <Button variant={'subtle'}><Link href={'/reset_password'}>Am uitat parola</Link></Button>
-
-                    <Button type={"submit"}
-                            loading={loginState == LoginState.Loading}>Logare</Button>
+                <Group position="right" mt="md">
+                    <Button type={"submit"} disabled={resetStatus != Status.Success
+                    
+                    }
+                            loading={resetStatus == Status.Loading}>Resetează parola</Button>
                 </Group>
             </form>
 
-            {loginState == LoginState.Failed &&
+            {resetStatus == Status.Failed &&
                 <Paper shadow={"0"} p={"md"} sx={(theme) => ({
                     backgroundColor: theme.colors.orange,
                 })}>
@@ -96,8 +78,8 @@ export default function LoginForm() {
                 </Paper>
             }
 
-            {loginState == LoginState.Success &&
-                <Text>Te-ai logat cu succes!</Text>
+            {resetStatus == Status.Success &&
+                <Text>Un email a fost trimis la adresa ta, de unde îți vei putea reseta parola</Text>
             }
         </Stack>
 

@@ -59,8 +59,8 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     const auth = useAuth()
     const router = useRouter()
     const [locationName, /*setLocationName*/] = useState(LocationName.Gara)
-    const [selectedDate, setSelectedDate] = useState<Date>(null)
-    const [selectedTable, setSelectedTable] = useState<SelectedTable>(null)
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+    const [selectedTable, setSelectedTable] = useState<SelectedTable | null>(null)
 
     const selectedDateISO = useMemo(() => {
         if (selectedDate == null)
@@ -151,8 +151,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                                 (date.getDate() === (new Date).getDate()
                                     && date.getMonth() === (new Date).getMonth()
                                     && date.getDate() !== selectedDate?.getDate())
-                                    ? {backgroundColor: theme.colors.blue[4], color: theme.white}
-                                    : null
+                                    ? {backgroundColor: theme.colors.blue[4], color: theme.white} : {}
                             }
                             fullWidth={true}
                         />
@@ -236,8 +235,11 @@ function SelectGameTable(room: Room,
     }, [selectedDateISO])
 
     const startEnd = useMemo(() => {
+        if (selectedDateISO == null) {
+            return {start: 0, end: 0, duration: 0}
+        }
         const date = new Date(selectedDateISO)
-        if (date.getDay() === 6  || date.getDay() === 0) {
+        if (date.getDay() === 6 || date.getDay() === 0) {
             return {
                 start: room.weekendStartHour,
                 end: room.weekendEndHour,
@@ -252,7 +254,7 @@ function SelectGameTable(room: Room,
         }
     }, [room, selectedDateISO])
 
-    if (selectedDateISO == null) return null
+    if (selectedDateISO == null) return <></>
 
     const selectedTableId = selectedTable?.table?.id;
     const selectedStartHour = (selectedTable) ? selectedTable.startHour : -1;
@@ -272,7 +274,7 @@ function SelectGameTable(room: Room,
     }
 
     const allButtons = ({start, end, duration}) => {
-        let content = [];
+        let content: JSX.Element[] = [];
         for (let hour = start; hour < end; hour += duration) {
             content.push(<Stack key={hour}>
                 <Group noWrap={true} style={{marginLeft: "1em", marginRight: "1em"}} spacing={'lg'}>
@@ -286,9 +288,12 @@ function SelectGameTable(room: Room,
                     {currentDateReservations.filter(value => value.start_hour == hour).map((reservation, index) => {
                         const profile = allProfiles.find(value => value.id == reservation.user_id)
 
-                        return <Button key={profile.id} color={profile.has_key ? 'blue' : 'gray'} radius={'xl'}
-                                       size={'xs'} rightIcon={profile.has_key ?
-                            <MdVpnKey/> : <></>}>{index + 1}. {profile.name}</Button>
+                        if (profile)
+                            return <Button key={profile.id} color={profile.has_key ? 'blue' : 'gray'} radius={'xl'}
+                                           size={'xs'} rightIcon={profile.has_key ?
+                                <MdVpnKey/> : <></>}>{index + 1}. {profile.name}</Button>
+                        else
+                            return <></>
                     })}
                 </Group>
 
@@ -315,7 +320,8 @@ function SelectGameTable(room: Room,
 
 function ConfirmSelection(
     room: Room,
-    selectedDateISO: string, selectedTable: SelectedTable
+    selectedDateISO: string | null,
+    selectedTable: SelectedTable | null
 ): JSX.Element {
     const enum ConfirmationStatus {
         None,
@@ -337,7 +343,7 @@ function ConfirmSelection(
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedDateISO, selectedTable])
 
-    if (selectedDateISO == null || selectedTable == null) return null
+    if (selectedDateISO == null || selectedTable == null) return <></>
 
     // Fake Reservation to display to user
     const fakeReservation: Reservation = {
@@ -360,9 +366,9 @@ function ConfirmSelection(
                 onClick={async () => {
                     setStatus(ConfirmationStatus.Loading)
                     const reservationParams = {
-                        table_id_input: selectedTable.table.id,
+                        table_id_input: selectedTable!.table.id,
                         start_date_input: selectedDateISO,
-                        start_hour_input: selectedTable.startHour,
+                        start_hour_input: selectedTable!.startHour,
                     }
                     const errorMessage = await publishReservation(reservationParams)
                     setStatus(errorMessage == null ? ConfirmationStatus.Success : ConfirmationStatus.Fail)
@@ -426,36 +432,36 @@ async function publishReservation(reservationParams): Promise<string | null> {
 
 export async function getStaticProps({}) {
     const {data: gameTables} = await supabase.from<GameTable>('mese').select('*')
-    const garaTables = gameTables.filter((value) => value.location == LocationName.Gara)
-    const boromirTables = gameTables.filter((value) => value.location == LocationName.Boromir)
+    const garaTables = gameTables!.filter((value) => value.location == LocationName.Gara)
+    const boromirTables = gameTables!.filter((value) => value.location == LocationName.Boromir)
 
     const {data: locations} = await supabase.from<Location>('locations').select('*')
-    const garaLocation = locations.find(value => value.name == LocationName.Gara)
-    const boromirLocation = locations.find(value => value.name == LocationName.Boromir)
+    const garaLocation = locations!.find(value => value.name == LocationName.Gara)
+    const boromirLocation = locations!.find(value => value.name == LocationName.Boromir)
 
     const props: IParams = {
         daysAhead: 14,
         gara: {
             locationName: LocationName.Gara,
             tables: garaTables,
-            maxReservations: garaLocation.max_reservations,
-            startHour: garaLocation.start_hour,
-            endHour: garaLocation.end_hour,
-            duration: garaLocation.reservation_duration,
-            weekendStartHour: garaLocation.weekend_start_hour,
-            weekendEndHour: garaLocation.weekend_end_hour,
-            weekendDuration: garaLocation.weekend_reservation_duration,
+            maxReservations: garaLocation!.max_reservations,
+            startHour: garaLocation!.start_hour,
+            endHour: garaLocation!.end_hour,
+            duration: garaLocation!.reservation_duration,
+            weekendStartHour: garaLocation!.weekend_start_hour,
+            weekendEndHour: garaLocation!.weekend_end_hour,
+            weekendDuration: garaLocation!.weekend_reservation_duration,
         },
         boromir: {
             locationName: LocationName.Boromir,
             tables: boromirTables,
-            startHour: boromirLocation.start_hour,
-            maxReservations: boromirLocation.max_reservations,
-            endHour: boromirLocation.end_hour,
-            duration: boromirLocation.reservation_duration,
-            weekendStartHour: boromirLocation.weekend_start_hour,
-            weekendEndHour: boromirLocation.weekend_end_hour,
-            weekendDuration: boromirLocation.end_hour,
+            startHour: boromirLocation!.start_hour,
+            maxReservations: boromirLocation!.max_reservations,
+            endHour: boromirLocation!.end_hour,
+            duration: boromirLocation!.reservation_duration,
+            weekendStartHour: boromirLocation!.weekend_start_hour,
+            weekendEndHour: boromirLocation!.weekend_end_hour,
+            weekendDuration: boromirLocation!.end_hour,
         }
     }
 

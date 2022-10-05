@@ -9,7 +9,7 @@ export interface LoginCredentials {
 }
 
 export interface AuthData {
-    changePassword: (name: string, password: string) => Promise<boolean>
+    changePassword: (userName: string | null, password: string) => Promise<boolean>
     signIn: (credentials: LoginCredentials) => Promise<{
         session: Session | null
         user: User | null
@@ -23,20 +23,21 @@ export interface AuthData {
     profile: Profile | null
 }
 
-async function changePasswordAsync(name: string, password: string): Promise<boolean> {
+async function changePasswordAsync(userName: string | null, password: string): Promise<boolean> {
     console.log("Updating password")
     const {user} = await supabase.auth.update({password})
 
     if (user != null) {
-        console.log("Updating profile")
+        if (userName != null) {
+            console.log("Updating profile")
 
-        const profile: Profile = {
-            id: user.id,
-            name
+            const profile: Profile = {
+                id: user.id,
+                name: userName
+            }
+
+            await supabase.from<Profile>('profiles').insert([profile])
         }
-        await supabase.from<Profile>('profiles')
-            .insert([profile])
-
         return true
     }
     console.log("Failed to change password")
@@ -90,10 +91,23 @@ export default function AuthProvider({children}) {
         // Listen for changes on auth state (logged in, signed out, etc.)
         const {data: listener} = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                const newUser = session?.user ?? null;
-                setUser(newUser)
-                await updateProfile(newUser)
-                setLoading(false)
+                if (event == "PASSWORD_RECOVERY") {
+                    let newPassword: string | null = null;
+                    while (!newPassword || newPassword.length < 8)
+                        newPassword = prompt("Noua ta parolă")
+
+                    const {data, error} = await supabase.auth.update({
+                        password: newPassword,
+                    })
+
+                    if (data) alert("Parola ta a fost schimbată")
+                    if (error) alert("A apărut o eroare la actualizarea parolei")
+                } else {
+                    const newUser = session?.user ?? null;
+                    setUser(newUser)
+                    await updateProfile(newUser)
+                    setLoading(false)
+                }
             }
         )
 
