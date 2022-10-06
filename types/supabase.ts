@@ -99,6 +99,102 @@ export interface paths {
       };
     };
   };
+  "/reservations_restrictions": {
+    get: {
+      parameters: {
+        query: {
+          id?: parameters["rowFilter.reservations_restrictions.id"];
+          date?: parameters["rowFilter.reservations_restrictions.date"];
+          start_hour?: parameters["rowFilter.reservations_restrictions.start_hour"];
+          message?: parameters["rowFilter.reservations_restrictions.message"];
+          /** Filtering Columns */
+          select?: parameters["select"];
+          /** Ordering */
+          order?: parameters["order"];
+          /** Limiting and Pagination */
+          offset?: parameters["offset"];
+          /** Limiting and Pagination */
+          limit?: parameters["limit"];
+        };
+        header: {
+          /** Limiting and Pagination */
+          Range?: parameters["range"];
+          /** Limiting and Pagination */
+          "Range-Unit"?: parameters["rangeUnit"];
+          /** Preference */
+          Prefer?: parameters["preferCount"];
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["reservations_restrictions"][];
+        };
+        /** Partial Content */
+        206: unknown;
+      };
+    };
+    post: {
+      parameters: {
+        body: {
+          /** reservations_restrictions */
+          reservations_restrictions?: definitions["reservations_restrictions"];
+        };
+        query: {
+          /** Filtering Columns */
+          select?: parameters["select"];
+        };
+        header: {
+          /** Preference */
+          Prefer?: parameters["preferReturn"];
+        };
+      };
+      responses: {
+        /** Created */
+        201: unknown;
+      };
+    };
+    delete: {
+      parameters: {
+        query: {
+          id?: parameters["rowFilter.reservations_restrictions.id"];
+          date?: parameters["rowFilter.reservations_restrictions.date"];
+          start_hour?: parameters["rowFilter.reservations_restrictions.start_hour"];
+          message?: parameters["rowFilter.reservations_restrictions.message"];
+        };
+        header: {
+          /** Preference */
+          Prefer?: parameters["preferReturn"];
+        };
+      };
+      responses: {
+        /** No Content */
+        204: never;
+      };
+    };
+    patch: {
+      parameters: {
+        query: {
+          id?: parameters["rowFilter.reservations_restrictions.id"];
+          date?: parameters["rowFilter.reservations_restrictions.date"];
+          start_hour?: parameters["rowFilter.reservations_restrictions.start_hour"];
+          message?: parameters["rowFilter.reservations_restrictions.message"];
+        };
+        body: {
+          /** reservations_restrictions */
+          reservations_restrictions?: definitions["reservations_restrictions"];
+        };
+        header: {
+          /** Preference */
+          Prefer?: parameters["preferReturn"];
+        };
+      };
+      responses: {
+        /** No Content */
+        204: never;
+      };
+    };
+  };
   "/member_types": {
     get: {
       parameters: {
@@ -641,6 +737,22 @@ export interface definitions {
      */
     status: string;
   };
+  /** @description Date si ore in care nu se pot face rezervari */
+  reservations_restrictions: {
+    /**
+     * Format: uuid
+     * @description Note:
+     * This is a Primary Key.<pk/>
+     * @default extensions.uuid_generate_v4()
+     */
+    id: string;
+    /** Format: date */
+    date: string;
+    /** Format: smallint */
+    start_hour: number;
+    /** Format: text */
+    message: string;
+  };
   member_types: {
     /**
      * Format: text
@@ -798,6 +910,16 @@ export interface parameters {
   "body.rezervari_status": definitions["rezervari_status"];
   /** Format: text */
   "rowFilter.rezervari_status.status": string;
+  /** @description reservations_restrictions */
+  "body.reservations_restrictions": definitions["reservations_restrictions"];
+  /** Format: uuid */
+  "rowFilter.reservations_restrictions.id": string;
+  /** Format: date */
+  "rowFilter.reservations_restrictions.date": string;
+  /** Format: smallint */
+  "rowFilter.reservations_restrictions.start_hour": string;
+  /** Format: text */
+  "rowFilter.reservations_restrictions.message": string;
   /** @description member_types */
   "body.member_types": definitions["member_types"];
   /** Format: text */

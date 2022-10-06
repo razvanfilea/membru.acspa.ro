@@ -13,6 +13,8 @@ export type Profile = definitions['profiles']
 
 export type Reservation = definitions['rezervari']
 
+export type ReservationRestriction = definitions['reservations_restrictions']
+
 export function getStartTime(reservation: Reservation): Date {
     return new Date(reservation.start_date);
 }
@@ -28,4 +30,10 @@ export function getEndTime(reservation: Reservation): Date {
 export const enum ReservationStatus {
     Approved = "approved",
     Cancelled = "cancelled",
+}
+
+export const enum MemberTypes {
+    Membru = "Membru",
+    Cotizant = "Cotizant",
+    Fondator = "Fondator"
 }

@@ -17,8 +17,9 @@ import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
 import {useAuth} from "../components/AuthProvider";
 import {supabase} from "../utils/supabase_utils";
-import {GameTable, Reservation, ReservationStatus} from "../types/wrapper";
+import {GameTable, MemberTypes, Reservation, ReservationStatus} from "../types/wrapper";
 import {MdRefresh} from "react-icons/md";
+import Link from "next/link";
 
 interface IParams {
     gameTables: GameTable[]
@@ -92,7 +93,10 @@ export default function Profile(params: IParams) {
                             <Avatar src={`https://ui-avatars.com/api/?name=${auth.profile.name}&background=random`}
                                     radius={"md"}/>
 
-                            <Text size="md">{auth.profile.name}</Text>
+                            <Stack spacing={1}>
+                                <Text size="md" weight={500}>{auth.profile.name}</Text>
+                                <Text size="sm">{auth.profile.member_type}</Text>
+                            </Stack>
                         </>
                     }
                 </Group>
@@ -101,6 +105,17 @@ export default function Profile(params: IParams) {
             </Group>
 
         </Paper>
+
+        {auth.profile?.member_type === MemberTypes.Fondator &&
+            <Card>
+                <Text size={'lg'}>Panou fondatori</Text>
+                <Group>
+                    <Link href={'/admin/restricted_reservations'}>
+                        <Button>Restricționare rezervări</Button>
+                    </Link>
+                </Group>
+            </Card>
+        }
 
         <Stack sx={(theme) => ({
             padding: theme.spacing.lg,
@@ -159,6 +174,6 @@ export async function getStaticProps({}) {
     }
 
     return {
-        props: props
+        props
     }
 }
