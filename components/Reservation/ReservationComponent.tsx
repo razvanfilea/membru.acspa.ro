@@ -3,7 +3,7 @@ import React from "react";
 import {MdCancel} from "react-icons/md";
 import {GameTable, LocationName, Reservation, ReservationStatus} from "../../types/wrapper";
 
-function ShowStatus(reservation: Reservation, onCancel: () => Promise<void>) {
+function ShowStatus(reservation: Reservation, onCancel: (() => Promise<void>) | null) {
     const resStatus = reservation.status ?? ReservationStatus.Cancelled;
 
     switch (resStatus) {
@@ -12,13 +12,22 @@ function ShowStatus(reservation: Reservation, onCancel: () => Promise<void>) {
                 <MdCancel size={32}/>
                 <Text weight={700}>Anulată</Text></Stack>
         case ReservationStatus.Approved:
-            return <Button
-                gradient={{from: 'orange', to: 'red'}} variant={"outline"}
-                onClick={onCancel}>Anulează</Button>
+            return <>
+                {onCancel != null &&
+                    <Button
+                        gradient={{from: 'orange', to: 'red'}} variant={"outline"}
+                        onClick={onCancel}>Anulează</Button>
+                }
+            </>
     }
 }
 
-export default function ReservationComponent(reservation: Reservation, gameTable: GameTable, showStatus: boolean, onCancel: () => Promise<void>) {
+export default function ReservationComponent(
+    reservation: Reservation,
+    gameTable: GameTable,
+    showStatus: boolean,
+    onCancel: (() => Promise<void>) | null
+) {
     return (<Group position={"apart"}>
         <Stack spacing={0}>
             {gameTable.location == LocationName.Boromir &&

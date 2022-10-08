@@ -98,8 +98,7 @@ export function ConfirmSelection(
 
         <Space h={"lg"}/>
 
-        {ReservationComponent(fakeReservation, selectedTable.table, false, async () => {
-        })}
+        {ReservationComponent(fakeReservation, selectedTable.table, false, null)}
 
         <Space h={"md"}/>
 

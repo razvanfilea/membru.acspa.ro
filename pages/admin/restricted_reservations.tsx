@@ -16,7 +16,7 @@ import {
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useRouter} from "next/router";
 import {useAuth} from "../../components/AuthProvider";
-import {Location, LocationName, MemberTypes, ReservationRestriction} from "../../types/wrapper";
+import {Location, LocationName, MemberTypes, Profile, ReservationRestriction} from "../../types/wrapper";
 import {MdAdd, MdRefresh} from "react-icons/md";
 import {supabase} from "../../utils/supabase_utils";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
@@ -33,6 +33,7 @@ export default function RestrictedReservations(params: IParams) {
     const router = useRouter()
     const auth = useAuth()
 
+    const [allProfiles, setAllProfiles] = useState<Profile[]>([])
     const [restrictions, setRestrictions] = useState<ReservationRestriction[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [createModalOpened, setCreateModalOpened] = useState(false)
@@ -41,7 +42,7 @@ export default function RestrictedReservations(params: IParams) {
     const newRestrictionForm = useForm({
         initialValues: {
             date: new Date(),
-            startHour: 12,
+            startHour: 0,
             message: '',
         },
 
@@ -61,6 +62,12 @@ export default function RestrictedReservations(params: IParams) {
     useEffect(() => {
         if (auth.user == null)
             return;
+
+        supabase.from<Profile>('profiles').select('*').then(value => {
+            if (value.data != null) {
+                setAllProfiles(value.data)
+            }
+        })
 
         fetchRestrictions().then(data => setRestrictions(data || []))
         setIsLoading(false)
@@ -185,6 +192,7 @@ export default function RestrictedReservations(params: IParams) {
                 <Card key={reservation.id} shadow={"xs"}>
                     {ReservationRestrictionComponent(
                         reservation,
+                        allProfiles.find(profile => profile.id === reservation.user_id)?.name || null,
                         async () => {
                             await supabase.from<ReservationRestriction>('reservations_restrictions')
                                 .delete()

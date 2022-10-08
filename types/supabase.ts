@@ -107,6 +107,7 @@ export interface paths {
           date?: parameters["rowFilter.reservations_restrictions.date"];
           start_hour?: parameters["rowFilter.reservations_restrictions.start_hour"];
           message?: parameters["rowFilter.reservations_restrictions.message"];
+          user_id?: parameters["rowFilter.reservations_restrictions.user_id"];
           /** Filtering Columns */
           select?: parameters["select"];
           /** Ordering */
@@ -161,6 +162,7 @@ export interface paths {
           date?: parameters["rowFilter.reservations_restrictions.date"];
           start_hour?: parameters["rowFilter.reservations_restrictions.start_hour"];
           message?: parameters["rowFilter.reservations_restrictions.message"];
+          user_id?: parameters["rowFilter.reservations_restrictions.user_id"];
         };
         header: {
           /** Preference */
@@ -179,6 +181,7 @@ export interface paths {
           date?: parameters["rowFilter.reservations_restrictions.date"];
           start_hour?: parameters["rowFilter.reservations_restrictions.start_hour"];
           message?: parameters["rowFilter.reservations_restrictions.message"];
+          user_id?: parameters["rowFilter.reservations_restrictions.user_id"];
         };
         body: {
           /** reservations_restrictions */
@@ -752,6 +755,11 @@ export interface definitions {
     start_hour: number;
     /** Format: text */
     message: string;
+    /**
+     * Format: uuid
+     * @default auth.uid()
+     */
+    user_id: string;
   };
   member_types: {
     /**
@@ -920,6 +928,8 @@ export interface parameters {
   "rowFilter.reservations_restrictions.start_hour": string;
   /** Format: text */
   "rowFilter.reservations_restrictions.message": string;
+  /** Format: uuid */
+  "rowFilter.reservations_restrictions.user_id": string;
   /** @description member_types */
   "body.member_types": definitions["member_types"];
   /** Format: text */

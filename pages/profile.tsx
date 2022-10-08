@@ -45,7 +45,7 @@ export default function Profile(params: IParams) {
 
     useEffect(() => {
         if (!auth.isLoading && auth.user == null)
-            router.push('/login')
+            router.push('/login').then(() => {})
     }, [auth, router])
 
     useEffect(() => {
@@ -107,7 +107,7 @@ export default function Profile(params: IParams) {
         </Paper>
 
         {auth.profile?.member_type === MemberTypes.Fondator &&
-            <Card>
+            <Card sx={(theme) => ({margin: theme.spacing.md})}>
                 <Text size={'lg'}>Panou fondatori</Text>
                 <Space h={'md'}/>
                 <Group>
@@ -151,7 +151,7 @@ export default function Profile(params: IParams) {
                         reservation,
                         params.gameTables.find((element) => element.id == reservation.table_id)!,
                         true,
-                        async () => {
+                        (new Date(reservation.start_date).getTime() > new Date().getTime()) ? ( async () => {
                             const newData = {
                                 ...reservation,
                                 status: ReservationStatus.Cancelled
@@ -159,7 +159,7 @@ export default function Profile(params: IParams) {
 
                             const {data} = await supabase.from<Reservation>('rezervari').update(newData)
                             setReservations(prev => [...prev.filter(value => value.id != data![0].id), data![0]])
-                        }
+                        }) : null
                     )}
                 </Card>
             ))}
