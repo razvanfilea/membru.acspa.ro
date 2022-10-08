@@ -7,7 +7,7 @@ import {
     Checkbox,
     Group,
     Loader,
-    Paper,
+    Paper, Space,
     Stack,
     Text,
     Title
@@ -109,6 +109,7 @@ export default function Profile(params: IParams) {
         {auth.profile?.member_type === MemberTypes.Fondator &&
             <Card>
                 <Text size={'lg'}>Panou fondatori</Text>
+                <Space h={'md'}/>
                 <Group>
                     <Link href={'/admin/restricted_reservations'}>
                         <Button>Restricționare rezervări</Button>

@@ -8,29 +8,28 @@ import {
     Loader,
     Modal,
     NumberInput,
+    NumberInputHandlers,
     Stack,
     TextInput,
     Title
 } from "@mantine/core";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useRouter} from "next/router";
 import {useAuth} from "../../components/AuthProvider";
-import {MemberTypes, ReservationRestriction} from "../../types/wrapper";
+import {Location, LocationName, MemberTypes, ReservationRestriction} from "../../types/wrapper";
 import {MdAdd, MdRefresh} from "react-icons/md";
 import {supabase} from "../../utils/supabase_utils";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
 import {DatePicker} from "@mantine/dates";
-import {dateToISOString} from "../../utils/date";
+import {dateToISOString, isWeekend} from "../../utils/date";
 
-const hoursSelection = [...Array(23).keys()].map((_, index) => {
-    return {
-        key: (index + 1).toString(),
-        value: `${index + 1}`
-    }
-});
+interface IParams {
+    location: Location
+}
 
-export default function RestrictedReservations() {
+export default function RestrictedReservations(params: IParams) {
+    const location = params.location
     const router = useRouter()
     const auth = useAuth()
 
@@ -38,10 +37,11 @@ export default function RestrictedReservations() {
     const [isLoading, setIsLoading] = useState(true)
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
+    const hourInputHandlers = useRef<NumberInputHandlers>();
     const newRestrictionForm = useForm({
         initialValues: {
             date: new Date(),
-            startHour: 7,
+            startHour: 12,
             message: '',
         },
 
@@ -54,9 +54,8 @@ export default function RestrictedReservations() {
     });
 
     useEffect(() => {
-        if (!auth.isLoading && auth.user == null || auth.profile?.member_type !== MemberTypes.Fondator)
-            router.push('/').then(() => {
-            })
+        if ((!auth.isLoading && auth.user == null) || auth.profile?.member_type !== MemberTypes.Fondator)
+            router.back()
     }, [auth, router])
 
     useEffect(() => {
@@ -77,6 +76,10 @@ export default function RestrictedReservations() {
 
         return data
     }
+
+    const hasSelectedWeekend = useMemo(() => {
+        return isWeekend(newRestrictionForm.values.date)
+    }, [newRestrictionForm.values.date])
 
     if (auth.isLoading || isLoading)
         return <Center> <Loader/> </Center>;
@@ -115,14 +118,28 @@ export default function RestrictedReservations() {
                         withAsterisk locale="ro"
                         inputFormat="YYYY-MM-DD"/>
 
-                    <NumberInput
-                        {...newRestrictionForm.getInputProps('startHour')}
-                        placeholder="Ora"
-                        label="Ora"
-                        required={true}
-                        min={7}
-                        max={23}
-                    />
+                    <Group spacing={8} noWrap={true} align={'end'}>
+                        <NumberInput
+                            {...newRestrictionForm.getInputProps('startHour')}
+                            handlersRef={hourInputHandlers}
+                            hideControls={true}
+                            placeholder="Ora"
+                            label="Ora"
+                            required={true}
+                            step={hasSelectedWeekend ? location.weekend_reservation_duration : location.reservation_duration}
+                            min={hasSelectedWeekend ? location.weekend_start_hour : location.start_hour}
+                            max={hasSelectedWeekend ? (location.weekend_end_hour - location.weekend_reservation_duration)
+                                : (location.end_hour - location.reservation_duration)}
+                        />
+                        <ActionIcon size={36} variant="default"
+                                    onClick={() => hourInputHandlers.current!.decrement()}>
+                            –
+                        </ActionIcon>
+                        <ActionIcon size={36} variant="default"
+                                    onClick={() => hourInputHandlers.current!.increment()}>
+                            +
+                        </ActionIcon>
+                    </Group>
 
                     <TextInput
                         {...newRestrictionForm.getInputProps('message')}
@@ -179,4 +196,18 @@ export default function RestrictedReservations() {
             ))}
         </Stack>
     </>)
+}
+
+export async function getStaticProps({}) {
+    const {data: location} = await supabase.from<Location>('locations')
+        .select('*')
+        .eq('name', LocationName.Gara)
+        .limit(1)
+        .single()
+
+    const props: IParams = {
+        location: location!
+    }
+
+    return {props}
 }
