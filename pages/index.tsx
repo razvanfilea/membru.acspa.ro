@@ -3,7 +3,6 @@ import Head from "next/head";
 import {
     ActionIcon,
     Button,
-    Card,
     Divider,
     Group,
     Paper,
@@ -16,42 +15,20 @@ import {
 } from "@mantine/core";
 import {Calendar} from '@mantine/dates';
 import {useScrollIntoView} from "@mantine/hooks";
-import {NextLink} from "@mantine/next";
-import ReservationComponent from "../components/Reservation";
 import 'dayjs/locale/ro'
 import {GameTable, Location, LocationName, Profile, Reservation, ReservationStatus} from "../types/wrapper";
 import {supabase} from "../utils/supabase_utils";
 import {useAuth} from "../components/AuthProvider";
 import {useRouter} from "next/router";
 import {MdRefresh, MdVpnKey} from "react-icons/md";
-import {addDaysToDate, dateToISOString} from "../utils/date";
+import {addDaysToDate, dateToISOString, isWeekend} from "../utils/date";
+import ConfirmSelection from "../components/ConfirmSelection";
+import {Room, SelectedTable} from "../types/room";
 
 interface IParams {
     gara: Room
     boromir: Room
     daysAhead: number
-}
-
-interface Room {
-    locationName: LocationName
-    tables: GameTable[]
-    maxReservations: number
-    startHour: number
-    endHour: number
-    duration: number
-    weekendStartHour: number
-    weekendEndHour: number
-    weekendDuration: number
-}
-
-class SelectedTable {
-    readonly startHour: number
-    readonly table: GameTable
-
-    constructor(startHour: number, table: GameTable) {
-        this.startHour = startHour
-        this.table = table
-    }
 }
 
 export default function MakeReservationPage(params: IParams): JSX.Element {
@@ -238,8 +215,7 @@ function SelectGameTable(room: Room,
         if (selectedDateISO == null) {
             return {start: 0, end: 0, duration: 0}
         }
-        const date = new Date(selectedDateISO)
-        if (date.getDay() === 6 || date.getDay() === 0) {
+        if (isWeekend(new Date(selectedDateISO))) {
             return {
                 start: room.weekendStartHour,
                 end: room.weekendEndHour,
@@ -318,119 +294,22 @@ function SelectGameTable(room: Room,
     </>
 }
 
-function ConfirmSelection(
-    room: Room,
-    selectedDateISO: string | null,
-    selectedTable: SelectedTable | null
-): JSX.Element {
-    const enum ConfirmationStatus {
-        None,
-        Loading,
-        Success,
-        Fail
-    }
-
-    const [status, setStatus] = useState(ConfirmationStatus.None)
-    const [errorMessage, setErrorMessage] = useState("")
-    const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
-
-    useEffect(() => {
-        if (selectedDateISO && selectedTable) {
-            scrollIntoView({alignment: 'center'})
-            setStatus(ConfirmationStatus.None)
-            setErrorMessage("")
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedDateISO, selectedTable])
-
-    if (selectedDateISO == null || selectedTable == null) return <></>
-
-    // Fake Reservation to display to user
-    const fakeReservation: Reservation = {
-        id: '',
-        created_at: '',
-        user_id: '',
-        table_id: selectedTable.table.id,
-        start_date: selectedDateISO,
-        start_hour: selectedTable.startHour,
-        duration: room.duration,
-        status: ReservationStatus.Approved
-    }
-
-    function DisplayConfirmationStatus(): JSX.Element {
-        if (status == ConfirmationStatus.None || status == ConfirmationStatus.Loading) {
-            return <Button
-                fullWidth style={{marginTop: 14}}
-                loading={status == ConfirmationStatus.Loading}
-                color={'blue'}
-                onClick={async () => {
-                    setStatus(ConfirmationStatus.Loading)
-                    const reservationParams = {
-                        table_id_input: selectedTable!.table.id,
-                        start_date_input: selectedDateISO,
-                        start_hour_input: selectedTable!.startHour,
-                    }
-                    const errorMessage = await publishReservation(reservationParams)
-                    setStatus(errorMessage == null ? ConfirmationStatus.Success : ConfirmationStatus.Fail)
-                    setErrorMessage(errorMessage ?? "")
-                }}>Confirmă rezervarea!</Button>
-        } else if (status == ConfirmationStatus.Success) {
-            return <Stack>
-                <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-                    backgroundColor: theme.colors.green,
-                    marginTop: theme.spacing.sm,
-                    marginBottom: theme.spacing.xs
-                })}>
-                    <Text align={"center"} color="#FFF"><b>Rezervarea ta a fost înregistrată</b></Text>
-                </Paper>
-
-                <Group align={"center"}>
-                    <Text weight={600}>Poți anula oricând această rezervare de pe pagina ta de profil:</Text>
-                    <NextLink href={"/profile"}>
-                        <Button variant={'light'}>Vezi profilul</Button>
-                    </NextLink>
-                </Group>
-            </Stack>
-        } else {
-            return <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-                backgroundColor: theme.colors.orange,
-                marginTop: theme.spacing.sm,
-                marginBottom: theme.spacing.xs
-            })}>
-                <Text align={"center"} color="#FFF">Rezervarea nu a putut fi realizată: {errorMessage}</Text>
-            </Paper>
-        }
-    }
-
-    return (<Card p={"xl"} shadow={"sm"}>
-        <div style={{marginTop: 'sm'}}>
-            <Title order={2} ref={targetRef}>Confirmă rezervarea:</Title>
-        </div>
-
-        <Space h={"lg"}/>
-
-        {ReservationComponent(fakeReservation, selectedTable.table, false, async () => {
-        })}
-
-        <Space h={"md"}/>
-
-        {DisplayConfirmationStatus()}
-
-    </Card>)
-}
-
-async function publishReservation(reservationParams): Promise<string | null> {
-    console.log(reservationParams)
-
-    const {data, error} = await supabase.rpc('create_reservation', reservationParams)
-
-    if (error != null) return "a fost întâmpinată o eroare (" + error.message + ")"
-
-    // @ts-ignore TypeScript is actually wrong here
-    return data == '' ? null : data // An empty string means no errors
-}
 
 export async function getStaticProps({}) {
+    function locationToRoom(location: Location, tables: GameTable[]): Room {
+        return {
+            locationName: location.name as LocationName,
+            tables,
+            maxReservations: location!.max_reservations,
+            startHour: location!.start_hour,
+            endHour: location!.end_hour,
+            duration: location!.reservation_duration,
+            weekendStartHour: location!.weekend_start_hour,
+            weekendEndHour: location!.weekend_end_hour,
+            weekendDuration: location!.weekend_reservation_duration,
+        }
+    }
+
     const {data: gameTables} = await supabase.from<GameTable>('mese').select('*')
     const garaTables = gameTables!.filter((value) => value.location == LocationName.Gara)
     const boromirTables = gameTables!.filter((value) => value.location == LocationName.Boromir)
@@ -441,28 +320,8 @@ export async function getStaticProps({}) {
 
     const props: IParams = {
         daysAhead: 14,
-        gara: {
-            locationName: LocationName.Gara,
-            tables: garaTables,
-            maxReservations: garaLocation!.max_reservations,
-            startHour: garaLocation!.start_hour,
-            endHour: garaLocation!.end_hour,
-            duration: garaLocation!.reservation_duration,
-            weekendStartHour: garaLocation!.weekend_start_hour,
-            weekendEndHour: garaLocation!.weekend_end_hour,
-            weekendDuration: garaLocation!.weekend_reservation_duration,
-        },
-        boromir: {
-            locationName: LocationName.Boromir,
-            tables: boromirTables,
-            startHour: boromirLocation!.start_hour,
-            maxReservations: boromirLocation!.max_reservations,
-            endHour: boromirLocation!.end_hour,
-            duration: boromirLocation!.reservation_duration,
-            weekendStartHour: boromirLocation!.weekend_start_hour,
-            weekendEndHour: boromirLocation!.weekend_end_hour,
-            weekendDuration: boromirLocation!.end_hour,
-        }
+        gara: locationToRoom(garaLocation!, garaTables),
+        boromir:  locationToRoom(boromirLocation!, boromirTables)
     }
 
     return {props}

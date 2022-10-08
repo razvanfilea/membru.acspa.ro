@@ -25,7 +25,7 @@ export interface AuthData {
 
 async function changePasswordAsync(userName: string | null, password: string): Promise<boolean> {
     console.log("Updating password")
-    const {user} = await supabase.auth.update({password})
+    const {error, user} = await supabase.auth.update({password})
 
     if (user != null) {
         if (userName != null) {
@@ -40,7 +40,7 @@ async function changePasswordAsync(userName: string | null, password: string): P
         }
         return true
     }
-    console.log("Failed to change password")
+    console.log("Failed to change password", error)
 
     return false
 }
