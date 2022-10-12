@@ -29,7 +29,7 @@ export default function LoginForm() {
             confirmPassword: (value, values) =>
                 value !== values.password ? 'Parolele nu se potrivesc' : null,
         },
-        validateInputOnChange: true
+        validateInputOnBlur: true
     });
 
     const [registerState, setRegisterState] = useState(RegisterState.None)

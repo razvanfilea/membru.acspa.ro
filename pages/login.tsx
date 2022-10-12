@@ -1,5 +1,5 @@
 import {Box, Button, Group, Paper, PasswordInput, Space, Stack, Text, TextInput, Title} from "@mantine/core";
-import {MdAccountBox, MdAlternateEmail, MdPassword} from "react-icons/md";
+import {MdAlternateEmail, MdPassword} from "react-icons/md";
 import {useForm} from "@mantine/form";
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
@@ -28,7 +28,7 @@ export default function LoginForm() {
             email: (value) => REGEX_EMAIL.test(value.toLowerCase()) ? null : "Email invalid",
             password: (value) => (value.length >= 8) ? null : "Parola trebuie sa aibă cel putin 8 caractere"
         },
-        validateInputOnChange: true
+        validateInputOnBlur: true
     });
 
     const [loginState, setLoginState] = useState(LoginState.None)

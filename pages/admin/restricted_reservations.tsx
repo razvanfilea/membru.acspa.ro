@@ -51,7 +51,7 @@ export default function RestrictedReservations(params: IParams) {
             // startHour: (value) => (!isNaN(parseInt(value))) ? null : "Număr de oră invalid",
             message: (value) => (value.length >= 10) ? null : "Mesajul este prea scurt",
         },
-        validateInputOnChange: true
+        validateInputOnBlur: true
     });
 
     useEffect(() => {

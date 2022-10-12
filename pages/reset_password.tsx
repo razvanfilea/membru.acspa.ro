@@ -26,7 +26,7 @@ export default function LoginForm() {
         validate: {
             email: (value) => REGEX_EMAIL.test(value.toLowerCase()) ? null : "Email invalid",
         },
-        validateInputOnChange: true
+        validateInputOnBlur: true
     });
 
     const [resetStatus, setResetStatus] = useState(Status.None)

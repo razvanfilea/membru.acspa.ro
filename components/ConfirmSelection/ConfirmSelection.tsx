@@ -2,10 +2,10 @@ import React, {useEffect, useState} from "react";
 import {useScrollIntoView} from "@mantine/hooks";
 import {Reservation, ReservationStatus} from "../../types/wrapper";
 import {Button, Card, Group, Paper, Space, Stack, Text, Title} from "@mantine/core";
-import {NextLink} from "@mantine/next";
 import ReservationComponent from "../Reservation";
 import {supabase} from "../../utils/supabase_utils";
 import {Room, SelectedTable} from "../../types/room";
+import Link from "next/link";
 
 export function ConfirmSelection(
     room: Room,
@@ -74,10 +74,10 @@ export function ConfirmSelection(
                 </Paper>
 
                 <Group align={"center"}>
-                    <Text weight={600}>Poți anula oricând această rezervare de pe pagina ta de profil:</Text>
-                    <NextLink href={"/profile"}>
+                    <Text weight={600}>Rezervarea poate fi anulată cu o zi înainte de pe pagina ta de profil:</Text>
+                    <Link href={"/profile"}>
                         <Button variant={'light'}>Vezi profilul</Button>
-                    </NextLink>
+                    </Link>
                 </Group>
             </Stack>
         } else {
