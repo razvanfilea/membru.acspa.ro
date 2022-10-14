@@ -16,7 +16,15 @@ import {
 import {Calendar} from '@mantine/dates';
 import {useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
-import {GameTable, Location, LocationName, Profile, Reservation, ReservationStatus} from "../types/wrapper";
+import {
+    GameTable,
+    Location,
+    LocationName,
+    Profile,
+    Reservation,
+    ReservationRestriction,
+    ReservationStatus
+} from "../types/wrapper";
 import {supabase} from "../utils/supabase_utils";
 import {useAuth} from "../components/AuthProvider";
 import {useRouter} from "next/router";
@@ -56,14 +64,13 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                 console.log("Failed to redirect to signup")
             })
         }
-    })
+    }, [auth, router])
 
     const room = locationName == LocationName.Gara ? params.gara : params.boromir;
 
     return <>
         <Head>
             <title>Rezervări</title>
-            <meta name="viewport" content="initial-scale=1.0, width=device-width"/>
         </Head>
 
         <Title>Rezervări</Title>
@@ -145,7 +152,10 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     </>;
 }
 
-function fetchReservations(setReservations: (data: Reservation[]) => void) {
+function fetchReservations(
+    setReservations: (data: Reservation[]) => void,
+    setRestrictions: (data: ReservationRestriction[]) => void
+) {
     supabase.from<Reservation>('rezervari')
         .select('*')
         .gte('start_date', dateToISOString(new Date))
@@ -157,15 +167,28 @@ function fetchReservations(setReservations: (data: Reservation[]) => void) {
                 console.log("Reservations updated")
             }
         })
+
+    supabase.from<ReservationRestriction>('reservations_restrictions')
+        .select('*')
+        .gte('date', dateToISOString(new Date))
+        .then(value => {
+            if (value.data != null) {
+                setRestrictions(value.data)
+                console.log("Restrictions updated")
+            }
+        })
 }
 
-function SelectGameTable(room: Room,
-                         selectedDateISO: string | null,
-                         selectedTable: SelectedTable | null,
-                         onSelectTable: (s: SelectedTable) => void): JSX.Element {
+function SelectGameTable(
+    room: Room,
+    selectedDateISO: string | null,
+    selectedTable: SelectedTable | null,
+    onSelectTable: (s: SelectedTable) => void,
+): JSX.Element {
 
     const [reservations, setReservations] = useState<Reservation[]>([])
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
+    const [restrictions, setRestrictions] = useState<ReservationRestriction[]>([])
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
     useEffect(() => {
@@ -175,7 +198,7 @@ function SelectGameTable(room: Room,
             }
         })
 
-        fetchReservations(setReservations);
+        fetchReservations(setReservations, setRestrictions);
 
         const subscription = supabase.from<Reservation>('rezervari')
             .on('INSERT', payload => {
@@ -188,7 +211,7 @@ function SelectGameTable(room: Room,
                 }
             })
             .on('UPDATE', payload => {
-                fetchReservations(setReservations) // TODO Could make this more efficient
+                fetchReservations(setReservations, setRestrictions) // TODO Could make this more efficient
             })
             .on('DELETE', payload => {
                 setReservations(prev => prev.filter(value => value.id != payload.old.id))
@@ -252,26 +275,37 @@ function SelectGameTable(room: Room,
     const allButtons = ({start, end, duration}) => {
         let content: JSX.Element[] = [];
         for (let hour = start; hour < end; hour += duration) {
+            const restriction =
+                restrictions.find(restriction => restriction.date == selectedDateISO && restriction.start_hour == hour)
+
             content.push(<Stack key={hour}>
                 <Group noWrap={true} style={{marginLeft: "1em", marginRight: "1em"}} spacing={'lg'}>
                     <Text>{`Ora ${hour} - ${hour + duration}`}:</Text>
 
-                    {tableButtons(hour)}
+                    {!restriction &&
+                        tableButtons(hour)
+                    }
+
+                    {restriction &&
+                        <Text>Nu se poate face rezervare -1 {restriction.message}</Text>
+                    }
                 </Group>
 
-                <Group style={{marginLeft: "1em", marginRight: "1em"}} spacing={"xs"}>
-                    <Text>Listă înscriși: </Text>
-                    {currentDateReservations.filter(value => value.start_hour == hour).map((reservation, index) => {
-                        const profile = allProfiles.find(value => value.id == reservation.user_id)
+                {!restriction &&
+                    <Group style={{marginLeft: "1em", marginRight: "1em"}} spacing={"xs"}>
+                        <Text>Listă înscriși: </Text>
+                        {currentDateReservations.filter(value => value.start_hour == hour).map((reservation, index) => {
+                            const profile = allProfiles.find(value => value.id == reservation.user_id)
 
-                        if (profile)
-                            return <Button key={profile.id} color={profile.has_key ? 'blue' : 'gray'} radius={'xl'}
-                                           size={'xs'} rightIcon={profile.has_key ?
-                                <MdVpnKey/> : <></>}>{index + 1}. {profile.name}</Button>
-                        else
-                            return <></>
-                    })}
-                </Group>
+                            if (profile)
+                                return <Button key={profile.id} color={profile.has_key ? 'blue' : 'gray'} radius={'xl'}
+                                               size={'xs'} rightIcon={profile.has_key ?
+                                    <MdVpnKey/> : <></>}>{index + 1}. {profile.name}</Button>
+                            else
+                                return <></>
+                        })}
+                    </Group>
+                }
 
                 <Divider variant={"dashed"}/>
             </Stack>);
@@ -286,7 +320,8 @@ function SelectGameTable(room: Room,
                 <Text color={"blue"}>{(new Date(selectedDateISO)).toLocaleDateString('ro-RO')}</Text>
             </Group>
 
-            <ActionIcon variant={'light'} radius={'xl'} size={36} onClick={() => fetchReservations(setReservations)}>
+            <ActionIcon variant={'light'} radius={'xl'} size={36}
+                        onClick={() => fetchReservations(setReservations, setRestrictions)}>
                 <MdRefresh size={28}/>
             </ActionIcon>
         </Group>
@@ -321,7 +356,7 @@ export async function getStaticProps({}) {
     const props: IParams = {
         daysAhead: 14,
         gara: locationToRoom(garaLocation!, garaTables),
-        boromir:  locationToRoom(boromirLocation!, boromirTables)
+        boromir: locationToRoom(boromirLocation!, boromirTables)
     }
 
     return {props}

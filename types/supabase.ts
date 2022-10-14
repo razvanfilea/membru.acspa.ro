@@ -291,7 +291,6 @@ export interface paths {
         query: {
           id?: parameters["rowFilter.profiles.id"];
           name?: parameters["rowFilter.profiles.name"];
-          active?: parameters["rowFilter.profiles.active"];
           member_type?: parameters["rowFilter.profiles.member_type"];
           /** Cine are cheie de la sala */
           has_key?: parameters["rowFilter.profiles.has_key"];
@@ -347,7 +346,6 @@ export interface paths {
         query: {
           id?: parameters["rowFilter.profiles.id"];
           name?: parameters["rowFilter.profiles.name"];
-          active?: parameters["rowFilter.profiles.active"];
           member_type?: parameters["rowFilter.profiles.member_type"];
           /** Cine are cheie de la sala */
           has_key?: parameters["rowFilter.profiles.has_key"];
@@ -367,7 +365,6 @@ export interface paths {
         query: {
           id?: parameters["rowFilter.profiles.id"];
           name?: parameters["rowFilter.profiles.name"];
-          active?: parameters["rowFilter.profiles.active"];
           member_type?: parameters["rowFilter.profiles.member_type"];
           /** Cine are cheie de la sala */
           has_key?: parameters["rowFilter.profiles.has_key"];
@@ -774,28 +771,24 @@ export interface definitions {
      * Format: uuid
      * @description Note:
      * This is a Primary Key.<pk/>
+     * @default auth.uid()
      */
     id: string;
     /** Format: text */
     name: string;
-    /**
-     * Format: boolean
-     * @default true
-     */
-    active?: boolean;
     /**
      * Format: text
      * @description Note:
      * This is a Foreign Key to `member_types.type`.<fk table='member_types' column='type'/>
      * @default Membru
      */
-    member_type?: string;
+    member_type: string;
     /**
      * Format: boolean
      * @description Cine are cheie de la sala
      * @default false
      */
-    has_key?: boolean;
+    has_key: boolean;
   };
   mese: {
     /**
@@ -940,8 +933,6 @@ export interface parameters {
   "rowFilter.profiles.id": string;
   /** Format: text */
   "rowFilter.profiles.name": string;
-  /** Format: boolean */
-  "rowFilter.profiles.active": string;
   /** Format: text */
   "rowFilter.profiles.member_type": string;
   /**

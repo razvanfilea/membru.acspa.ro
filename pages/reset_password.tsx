@@ -63,9 +63,7 @@ export default function LoginForm() {
                 <Space h="lg"/>
 
                 <Group position="right" mt="md">
-                    <Button type={"submit"} disabled={resetStatus != Status.Success
-                    
-                    }
+                    <Button type={"submit"} disabled={resetStatus == Status.Success}
                             loading={resetStatus == Status.Loading}>Resetează parola</Button>
                 </Group>
             </form>

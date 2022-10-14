@@ -31,12 +31,9 @@ async function changePasswordAsync(userName: string | null, password: string): P
         if (userName != null) {
             console.log("Updating profile")
 
-            const profile: Profile = {
-                id: user.id,
-                name: userName
-            }
+            const profile = {name: userName}
 
-            await supabase.from<Profile>('profiles').insert([profile])
+            await supabase.from('profiles').insert([profile])
         }
         return true
     }

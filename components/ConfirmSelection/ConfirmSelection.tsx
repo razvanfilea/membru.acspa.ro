@@ -102,7 +102,7 @@ export function ConfirmSelection(
 
         <Space h={"md"}/>
 
-        {DisplayConfirmationStatus()}
+        <DisplayConfirmationStatus/>
 
     </Card>)
 }

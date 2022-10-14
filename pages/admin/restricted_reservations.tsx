@@ -28,7 +28,7 @@ interface IParams {
     location: Location
 }
 
-export default function RestrictedReservations(params: IParams) {
+export default function RestrictedReservationsList(params: IParams) {
     const location = params.location
     const router = useRouter()
     const auth = useAuth()
@@ -132,6 +132,7 @@ export default function RestrictedReservations(params: IParams) {
                             hideControls={true}
                             placeholder="Ora"
                             label="Ora"
+                            disabled={true}
                             required={true}
                             step={hasSelectedWeekend ? location.weekend_reservation_duration : location.reservation_duration}
                             min={hasSelectedWeekend ? location.weekend_start_hour : location.start_hour}
