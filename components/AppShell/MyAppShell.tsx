@@ -1,17 +1,31 @@
-import React from 'react';
-import {AppShell, Header, Image, Navbar} from '@mantine/core';
+import React, {useState} from 'react';
+import {AppShell, Burger, Header, Image, MediaQuery, Navbar, useMantineTheme} from '@mantine/core';
 import LightAndDarkModeButton from "../LightAndDarkModeButton";
 import MainLinks from "./_mainLinks";
+import UserProfile from "./_user";
 
 export default function MyAppShell({children}): JSX.Element {
-    return (<AppShell
+    const theme = useMantineTheme()
+    const [opened, setOpened] = useState(false)
+
+    return <AppShell
         navbarOffsetBreakpoint="sm"
         header={
-            <Header height={100} p="md">
+            <Header height={70} p="md">
                 <div style={{display: 'flex', alignItems: 'center', height: '100%'}}>
-                    <div style={{marginRight: '1.2em'}}>
+                    <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
+                        <Burger
+                            opened={opened}
+                            onClick={() => setOpened((o) => !o)}
+                            size="sm"
+                            color={theme.colors.gray[6]}
+                            mr="xl"
+                        />
+                    </MediaQuery>
+
+                    <div>
                         <Image src={"https://acspa.ro/wp-content/uploads/2020/04/cropped-ACS-dd-oval-400-190x127.png"}
-                               height={90}
+                               height={55}
                                fit={'contain'}
                                alt="ACS Perpetuum Activ"/>
                     </div>
@@ -20,13 +34,20 @@ export default function MyAppShell({children}): JSX.Element {
                         <LightAndDarkModeButton/>
                     </div>
 
-                    <div style={{marginLeft: '1em', marginRight: '1em'}}>
-                        <MainLinks/>
-                    </div>
                 </div>
             </Header>
         }
+        navbar={
+            <Navbar hiddenBreakpoint="sm" p="xs" hidden={!opened} width={{ base: 300 }}>
+                <Navbar.Section mt="md">
+                    <MainLinks />
+                </Navbar.Section>
+                <Navbar.Section mt="md">
+                    <UserProfile />
+                </Navbar.Section>
+            </Navbar>
+        }
     >
         {children}
-    </AppShell>);
+    </AppShell>
 }

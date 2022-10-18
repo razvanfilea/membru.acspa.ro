@@ -61,7 +61,7 @@ export default function Profile(params: IParams) {
         const {data} = await supabase.from<Reservation>('rezervari')
             .select('*')
             .eq("user_id", auth.user!.id)
-            .order('start_date', {ascending: true})
+            .order('start_date', {ascending: false})
             .order('start_hour', {ascending: true})
 
         return data
@@ -90,7 +90,7 @@ export default function Profile(params: IParams) {
                 <Group noWrap={true}>
                     {auth.profile != null &&
                         <>
-                            <Avatar src={`https://ui-avatars.com/api/?name=${auth.profile.name}&background=random`}
+                            <Avatar src={`https://ui-avatars.com/api/?name=${auth.profile.name}&background=random&rounded=true`}
                                     radius={"md"}/>
 
                             <Stack spacing={1}>

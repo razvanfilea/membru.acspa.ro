@@ -93,10 +93,12 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
             <SimpleGrid
                 cols={1}
                 breakpoints={[
-                    {minWidth: 860, cols: 2},
+                    {minWidth: 1120, cols: 2},
                 ]}>
-                <Stack key={"calendar"}>
-                    {/*<Radio.Group
+
+                {!auth.isLoading && auth.user != null &&
+                    <Stack key={"calendar"}>
+                        {/*<Radio.Group
                             value={locationName}
                             onChange={(value) => {
                                 switch (value) {
@@ -116,9 +118,8 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
 
                         <Space h={"sm"}/>*/}
 
-                    <Text>Alege ziua rezervării:</Text>
+                        <Text>Alege ziua rezervării:</Text>
 
-                    {!auth.user != null &&
                         <Calendar
                             minDate={new Date}
                             maxDate={addDaysToDate(new Date, params.daysAhead)}
@@ -139,8 +140,8 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                             }
                             fullWidth={true}
                         />
-                    }
-                </Stack>
+                    </Stack>
+                }
 
                 <Stack>
                     {SelectGameTable(room, selectedDateISO, selectedTable, setSelectedTable)}
@@ -287,7 +288,7 @@ function SelectGameTable(
                     }
 
                     {restriction &&
-                        <Text>Nu se poate face rezervare -1 {restriction.message}</Text>
+                        <Text>{restriction.message}</Text>
                     }
                 </Group>
 
