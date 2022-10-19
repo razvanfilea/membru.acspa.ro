@@ -20,6 +20,7 @@ import {supabase} from "../utils/supabase_utils";
 import {GameTable, MemberTypes, Reservation, ReservationStatus} from "../types/wrapper";
 import {MdRefresh} from "react-icons/md";
 import Link from "next/link";
+import {isReservationCancelable} from "../utils/date";
 
 interface IParams {
     gameTables: GameTable[]
@@ -151,7 +152,7 @@ export default function Profile(params: IParams) {
                         reservation,
                         params.gameTables.find((element) => element.id == reservation.table_id)!,
                         true,
-                        (new Date(reservation.start_date).getTime() > new Date().getTime()) ? ( async () => {
+                        (isReservationCancelable(reservation)) ? ( async () => {
                             const newData = {
                                 ...reservation,
                                 status: ReservationStatus.Cancelled

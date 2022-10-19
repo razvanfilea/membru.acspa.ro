@@ -1,3 +1,4 @@
+import {Reservation} from "../types/wrapper";
 
 export function addDaysToDate(date: Date, days: number): Date {
     const result = new Date(date);
@@ -15,4 +16,11 @@ export function dateToISOString(date: Date): string {
 
 export function isWeekend(date: Date): boolean {
     return date.getDay() === 6 || date.getDay() === 0
+}
+
+export function isReservationCancelable(reservation: Reservation): boolean {
+    const reservationDate = new Date(reservation.start_date)
+    const now = new Date();
+    return reservationDate.getTime() > now.getTime() ||
+        (reservation.start_date == dateToISOString(now) && reservation.start_hour > now.getHours())
 }

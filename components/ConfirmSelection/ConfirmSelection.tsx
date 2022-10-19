@@ -74,7 +74,7 @@ export function ConfirmSelection(
                 </Paper>
 
                 <Group align={"center"}>
-                    <Text weight={600}>Rezervarea poate fi anulată cu o zi înainte de pe pagina ta de profil:</Text>
+                    <Text weight={600}>Rezervarea poate fi anulată de pe pagina ta de profil:</Text>
                     <Link href={"/profile"}>
                         <Button variant={'light'}>Vezi profilul</Button>
                     </Link>

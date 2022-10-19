@@ -1,12 +1,21 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {AppShell, Burger, Header, Image, MediaQuery, Navbar, useMantineTheme} from '@mantine/core';
 import LightAndDarkModeButton from "../LightAndDarkModeButton";
 import MainLinks from "./_mainLinks";
 import UserProfile from "./_user";
+import {router} from "next/client";
+import {useRouter} from "next/router";
 
 export default function MyAppShell({children}): JSX.Element {
+    const router = useRouter()
     const theme = useMantineTheme()
     const [opened, setOpened] = useState(false)
+
+    useEffect(() => {
+        router.events.on("routeChangeComplete", () => {
+            setOpened(false)
+        });
+    }, [router.events]);
 
     return <AppShell
         navbarOffsetBreakpoint="sm"
