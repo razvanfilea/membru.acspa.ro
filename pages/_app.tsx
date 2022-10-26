@@ -18,12 +18,11 @@ export default function MyApp({Component, pageProps}): JSX.Element {
         setLocalColorScheme(newValue)
     }
 
-    return (<>
+    return <>
         <Head>
-            <title>ACS Perpetuum</title>
-            {/*<link rel="icon" href="/favicon.ico"/>*/}
+            <title>ACSPA</title>
             <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width"/>
-            <meta name="description" content=""/>
+            <meta name="description" content="Site pentru membrii Asociației ACS Perpetuum Activ"/>
         </Head>
 
         <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
@@ -46,5 +45,5 @@ export default function MyApp({Component, pageProps}): JSX.Element {
                 </Paper>
             </MantineProvider>
         </ColorSchemeProvider>
-    </>);
+    </>;
 }

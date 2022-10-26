@@ -147,7 +147,7 @@ export default function Profile(params: IParams) {
             }
 
             {filteredReservations.map((reservation) => (
-                <Card key={reservation.id} shadow={"xs"}>
+                <Card key={reservation.id}>
                     {ReservationComponent(
                         reservation,
                         params.gameTables.find((element) => element.id == reservation.table_id)!,

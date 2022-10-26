@@ -33,10 +33,10 @@ export default function MyAppShell({children}): JSX.Element {
                     </MediaQuery>
 
                     <div>
-                        <Image src={"https://acspa.ro/wp-content/uploads/2020/04/cropped-ACS-dd-oval-400-190x127.png"}
+                        <Image src={"logo.webp"}
                                height={55}
                                fit={'contain'}
-                               alt="ACS Perpetuum Activ"/>
+                               alt="Logo"/>
                     </div>
 
                     <div style={{marginLeft: 'auto'}}>
