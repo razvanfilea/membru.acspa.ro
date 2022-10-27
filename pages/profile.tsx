@@ -107,18 +107,6 @@ export default function Profile(params: IParams) {
 
         </Paper>
 
-        {auth.profile?.member_type === MemberTypes.Fondator &&
-            <Card sx={(theme) => ({margin: theme.spacing.md})}>
-                <Text size={'lg'}>Panou fondatori</Text>
-                <Space h={'md'}/>
-                <Group>
-                    <Link href={'/admin/restricted_reservations'}>
-                        <Button>Restricționare rezervări</Button>
-                    </Link>
-                </Group>
-            </Card>
-        }
-
         <Stack sx={(theme) => ({
             padding: theme.spacing.lg,
             '@media (max-width: 900px)': {

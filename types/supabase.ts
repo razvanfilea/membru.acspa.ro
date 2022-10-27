@@ -103,7 +103,6 @@ export interface paths {
     get: {
       parameters: {
         query: {
-          id?: parameters["rowFilter.reservations_restrictions.id"];
           date?: parameters["rowFilter.reservations_restrictions.date"];
           start_hour?: parameters["rowFilter.reservations_restrictions.start_hour"];
           message?: parameters["rowFilter.reservations_restrictions.message"];
@@ -158,7 +157,6 @@ export interface paths {
     delete: {
       parameters: {
         query: {
-          id?: parameters["rowFilter.reservations_restrictions.id"];
           date?: parameters["rowFilter.reservations_restrictions.date"];
           start_hour?: parameters["rowFilter.reservations_restrictions.start_hour"];
           message?: parameters["rowFilter.reservations_restrictions.message"];
@@ -177,7 +175,6 @@ export interface paths {
     patch: {
       parameters: {
         query: {
-          id?: parameters["rowFilter.reservations_restrictions.id"];
           date?: parameters["rowFilter.reservations_restrictions.date"];
           start_hour?: parameters["rowFilter.reservations_restrictions.start_hour"];
           message?: parameters["rowFilter.reservations_restrictions.message"];
@@ -372,6 +369,105 @@ export interface paths {
         body: {
           /** profiles */
           profiles?: definitions["profiles"];
+        };
+        header: {
+          /** Preference */
+          Prefer?: parameters["preferReturn"];
+        };
+      };
+      responses: {
+        /** No Content */
+        204: never;
+      };
+    };
+  };
+  "/guest_invites": {
+    get: {
+      parameters: {
+        query: {
+          created_at?: parameters["rowFilter.guest_invites.created_at"];
+          user_id?: parameters["rowFilter.guest_invites.user_id"];
+          guest_name?: parameters["rowFilter.guest_invites.guest_name"];
+          date?: parameters["rowFilter.guest_invites.date"];
+          start_hour?: parameters["rowFilter.guest_invites.start_hour"];
+          /** Filtering Columns */
+          select?: parameters["select"];
+          /** Ordering */
+          order?: parameters["order"];
+          /** Limiting and Pagination */
+          offset?: parameters["offset"];
+          /** Limiting and Pagination */
+          limit?: parameters["limit"];
+        };
+        header: {
+          /** Limiting and Pagination */
+          Range?: parameters["range"];
+          /** Limiting and Pagination */
+          "Range-Unit"?: parameters["rangeUnit"];
+          /** Preference */
+          Prefer?: parameters["preferCount"];
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["guest_invites"][];
+        };
+        /** Partial Content */
+        206: unknown;
+      };
+    };
+    post: {
+      parameters: {
+        body: {
+          /** guest_invites */
+          guest_invites?: definitions["guest_invites"];
+        };
+        query: {
+          /** Filtering Columns */
+          select?: parameters["select"];
+        };
+        header: {
+          /** Preference */
+          Prefer?: parameters["preferReturn"];
+        };
+      };
+      responses: {
+        /** Created */
+        201: unknown;
+      };
+    };
+    delete: {
+      parameters: {
+        query: {
+          created_at?: parameters["rowFilter.guest_invites.created_at"];
+          user_id?: parameters["rowFilter.guest_invites.user_id"];
+          guest_name?: parameters["rowFilter.guest_invites.guest_name"];
+          date?: parameters["rowFilter.guest_invites.date"];
+          start_hour?: parameters["rowFilter.guest_invites.start_hour"];
+        };
+        header: {
+          /** Preference */
+          Prefer?: parameters["preferReturn"];
+        };
+      };
+      responses: {
+        /** No Content */
+        204: never;
+      };
+    };
+    patch: {
+      parameters: {
+        query: {
+          created_at?: parameters["rowFilter.guest_invites.created_at"];
+          user_id?: parameters["rowFilter.guest_invites.user_id"];
+          guest_name?: parameters["rowFilter.guest_invites.guest_name"];
+          date?: parameters["rowFilter.guest_invites.date"];
+          start_hour?: parameters["rowFilter.guest_invites.start_hour"];
+        };
+        body: {
+          /** guest_invites */
+          guest_invites?: definitions["guest_invites"];
         };
         header: {
           /** Preference */
@@ -740,15 +836,16 @@ export interface definitions {
   /** @description Date si ore in care nu se pot face rezervari */
   reservations_restrictions: {
     /**
-     * Format: uuid
+     * Format: date
      * @description Note:
      * This is a Primary Key.<pk/>
-     * @default extensions.uuid_generate_v4()
      */
-    id: string;
-    /** Format: date */
     date: string;
-    /** Format: smallint */
+    /**
+     * Format: smallint
+     * @description Note:
+     * This is a Primary Key.<pk/>
+     */
     start_hour: number;
     /** Format: text */
     message: string;
@@ -789,6 +886,36 @@ export interface definitions {
      * @default false
      */
     has_key: boolean;
+  };
+  guest_invites: {
+    /**
+     * Format: timestamp with time zone
+     * @default now()
+     */
+    created_at: string;
+    /**
+     * Format: uuid
+     * @default auth.uid()
+     */
+    user_id: string;
+    /**
+     * Format: text
+     * @description Note:
+     * This is a Primary Key.<pk/>
+     */
+    guest_name: string;
+    /**
+     * Format: date
+     * @description Note:
+     * This is a Primary Key.<pk/>
+     */
+    date: string;
+    /**
+     * Format: smallint
+     * @description Note:
+     * This is a Primary Key.<pk/>
+     */
+    start_hour: number;
   };
   mese: {
     /**
@@ -913,8 +1040,6 @@ export interface parameters {
   "rowFilter.rezervari_status.status": string;
   /** @description reservations_restrictions */
   "body.reservations_restrictions": definitions["reservations_restrictions"];
-  /** Format: uuid */
-  "rowFilter.reservations_restrictions.id": string;
   /** Format: date */
   "rowFilter.reservations_restrictions.date": string;
   /** Format: smallint */
@@ -940,6 +1065,18 @@ export interface parameters {
    * @description Cine are cheie de la sala
    */
   "rowFilter.profiles.has_key": string;
+  /** @description guest_invites */
+  "body.guest_invites": definitions["guest_invites"];
+  /** Format: timestamp with time zone */
+  "rowFilter.guest_invites.created_at": string;
+  /** Format: uuid */
+  "rowFilter.guest_invites.user_id": string;
+  /** Format: text */
+  "rowFilter.guest_invites.guest_name": string;
+  /** Format: date */
+  "rowFilter.guest_invites.date": string;
+  /** Format: smallint */
+  "rowFilter.guest_invites.start_hour": string;
   /** @description mese */
   "body.mese": definitions["mese"];
   /** Format: uuid */

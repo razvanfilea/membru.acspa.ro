@@ -8,7 +8,7 @@ const withPWA = require("next-pwa")({
 
 module.exports = withPWA({
     reactStrictMode: true,
-    webpack: (config, { dev, isServer }) => {
+    webpack: (config, {dev, isServer}) => {
 
         // Note, preact is only enabled for production builds (`next build`)
         if (!dev && !isServer) {

@@ -16,42 +16,36 @@ import {
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useRouter} from "next/router";
 import {useAuth} from "../../components/AuthProvider";
-import {Location, LocationName, MemberTypes, Profile, ReservationRestriction} from "../../types/wrapper";
+import {GuestInvite, Location, LocationName, MemberTypes, Profile} from "../../types/wrapper";
 import {MdAdd, MdRefresh} from "react-icons/md";
 import {supabase} from "../../utils/supabase_utils";
-import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
 import {DatePicker} from "@mantine/dates";
 import {dateToISOString, isWeekend} from "../../utils/date";
+import {useListState} from "@mantine/hooks";
+import GuestInviteComponent from "../../components/GuestInvite";
 
 interface IParams {
     location: Location
 }
 
-export default function RestrictedReservationsList(params: IParams) {
+export default function GuestManager(params: IParams) {
     const location = params.location
     const router = useRouter()
     const auth = useAuth()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
-    const [restrictions, setRestrictions] = useState<ReservationRestriction[]>([])
+    const [guests, guestHandler] = useListState<GuestInvite>([])
     const [isLoading, setIsLoading] = useState(true)
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
     const hourInputHandlers = useRef<NumberInputHandlers>();
-    const newRestrictionForm = useForm({
+    const newInviteForm = useForm({
         initialValues: {
             date: new Date(),
             startHour: 0,
-            message: '',
-        },
-
-        validate: {
-            // date: (value) => true,
-            // startHour: (value) => (!isNaN(parseInt(value))) ? null : "Număr de oră invalid",
-            message: (value) => (value.length >= 10) ? null : "Mesajul este prea scurt",
-        },
-        validateInputOnBlur: true
+            guestName: '',
+        }
     });
 
     useEffect(() => {
@@ -69,24 +63,24 @@ export default function RestrictedReservationsList(params: IParams) {
             }
         })
 
-        fetchRestrictions().then(data => setRestrictions(data || []))
+        fetchGuests().then(data => guestHandler.setState(data))
         setIsLoading(false)
         // We only want to run it once
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [auth.user])
 
-    async function fetchRestrictions() {
-        const {data} = await supabase.from<ReservationRestriction>('reservations_restrictions')
+    async function fetchGuests() {
+        const {data} = await supabase.from<GuestInvite>('guest_invites')
             .select('*')
             .order('date', {ascending: true})
             .order('start_hour', {ascending: true})
 
-        return data
+        return data || []
     }
 
     const hasSelectedWeekend = useMemo(() => {
-        return isWeekend(newRestrictionForm.values.date)
-    }, [newRestrictionForm.values.date])
+        return isWeekend(newInviteForm.values.date)
+    }, [newInviteForm.values.date])
 
     if (auth.isLoading || isLoading)
         return <Center> <Loader/> </Center>;
@@ -98,28 +92,33 @@ export default function RestrictedReservationsList(params: IParams) {
         <Modal
             opened={createModalOpened}
             onClose={() => setCreateModalOpened(false)}
-            title="Restricționează rezervarea"
+            title="Adaugă o invitație"
         >
             <form style={{position: 'relative'}} onSubmit={
-                newRestrictionForm.onSubmit(async (values) => {
+                newInviteForm.onSubmit(async (values) => {
                     setCreateModalOpened(false)
                     console.log(values.date)
-                    const newRestriction = {
+                    const newGuest = {
                         date: dateToISOString(values.date),
                         start_hour: values.startHour,
-                        message: values.message
+                        guest_name: values.guestName
                     }
-                    newRestrictionForm.reset()
+                    newInviteForm.reset()
 
-                    const {error} = await supabase.from('reservations_restrictions').insert([newRestriction])
+                    const {error} = await supabase.from('guest_invites').insert([newGuest])
                     console.log(error)
-                    setRestrictions(await fetchRestrictions() || [])
+                    guestHandler.setState(await fetchGuests())
                 })}>
 
                 <Stack>
 
+                    <TextInput
+                        {...newInviteForm.getInputProps('guestName')}
+                        label={'Nume invitat'}
+                        required={true}/>
+
                     <DatePicker
-                        {...newRestrictionForm.getInputProps('date')}
+                        {...newInviteForm.getInputProps('date')}
                         placeholder="Alege data"
                         label="Data"
                         withAsterisk locale="ro"
@@ -127,7 +126,7 @@ export default function RestrictedReservationsList(params: IParams) {
 
                     <Group spacing={8} noWrap={true} align={'end'}>
                         <NumberInput
-                            {...newRestrictionForm.getInputProps('startHour')}
+                            {...newInviteForm.getInputProps('startHour')}
                             handlersRef={hourInputHandlers}
                             hideControls={true}
                             placeholder="Ora"
@@ -149,12 +148,6 @@ export default function RestrictedReservationsList(params: IParams) {
                         </ActionIcon>
                     </Group>
 
-                    <TextInput
-                        {...newRestrictionForm.getInputProps('message')}
-                        label={'Mesaj'}
-                        placeholder={'Motivul pentru care nu se pot face rezervări'}
-                        required={true}/>
-
                     <Button type={"submit"}>Submit</Button>
 
                 </Stack>
@@ -173,7 +166,7 @@ export default function RestrictedReservationsList(params: IParams) {
             }
         })}>
             <Group position={'apart'}>
-                <Title order={2}>Rezervările blocate:</Title>
+                <Title order={2}>Invitații:</Title>
 
                 <Group spacing={'lg'}>
                     <ActionIcon variant={'filled'} color={'green'} radius={'xl'} size={36}
@@ -182,23 +175,24 @@ export default function RestrictedReservationsList(params: IParams) {
                     </ActionIcon>
 
                     <ActionIcon variant={'filled'} radius={'xl'} size={36} onClick={async () => {
-                        setRestrictions(await fetchRestrictions() || [])
+                        guestHandler.setState(await fetchGuests())
                     }}>
                         <MdRefresh size={28}/>
                     </ActionIcon>
                 </Group>
             </Group>
 
-            {restrictions.map((reservation) => (
-                <Card key={reservation.id} shadow={"xs"}>
-                    {ReservationRestrictionComponent(
-                        reservation,
-                        allProfiles.find(profile => profile.id === reservation.user_id)?.name || null,
+            {guests.map((guest) => (
+                <Card key={guest.date + guest.start_hour} shadow={"xs"}>
+                    {GuestInviteComponent(
+                        guest,
+                        allProfiles.find(profile => profile.id === guest.user_id)?.name || null,
                         async () => {
-                            await supabase.from<ReservationRestriction>('reservations_restrictions')
+                            await supabase.from<GuestInvite>('guest_invites')
                                 .delete()
-                                .eq('id', reservation.id)
-                            setRestrictions(prev => prev.filter(value => value.id !== reservation.id))
+                                .eq('date', guest.date)
+                                .eq('start_hour', guest.start_hour)
+                            guestHandler.filter(value => value.date !== guest.date && value.start_hour !== guest.start_hour)
                         }
                     )}
                 </Card>

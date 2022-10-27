@@ -5,6 +5,8 @@ export const enum LocationName {
     Boromir = "boromir"
 }
 
+export type GuestInvite = definitions['guest_invites']
+
 export type Location = definitions['locations']
 
 export type GameTable = definitions['mese']

@@ -17,7 +17,7 @@ import {Calendar} from '@mantine/dates';
 import {useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
 import {
-    GameTable,
+    GameTable, GuestInvite,
     Location,
     LocationName,
     Profile,
@@ -28,10 +28,11 @@ import {
 import {supabase} from "../utils/supabase_utils";
 import {useAuth} from "../components/AuthProvider";
 import {useRouter} from "next/router";
-import {MdRefresh, MdVpnKey} from "react-icons/md";
+import {MdOutlineNoAccounts, MdRefresh, MdVpnKey} from "react-icons/md";
 import {addDaysToDate, dateToISOString, isWeekend} from "../utils/date";
 import ConfirmSelection from "../components/ConfirmSelection";
 import {Room, SelectedTable} from "../types/room";
+import guestInvite from "../components/GuestInvite";
 
 interface IParams {
     gara: Room
@@ -190,6 +191,7 @@ function SelectGameTable(
     const [reservations, setReservations] = useState<Reservation[]>([])
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
     const [restrictions, setRestrictions] = useState<ReservationRestriction[]>([])
+    const [invites, setInvites] = useState<GuestInvite[]>([])
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
     useEffect(() => {
@@ -200,6 +202,13 @@ function SelectGameTable(
         })
 
         fetchReservations(setReservations, setRestrictions);
+
+        supabase.from<GuestInvite>('guest_invites')
+            .select('*')
+            .then(value => {
+                if (value.data !== null)
+                    setInvites(value.data)
+            })
 
         const subscription = supabase.from<Reservation>('rezervari')
             .on('INSERT', payload => {
@@ -227,6 +236,10 @@ function SelectGameTable(
     const currentDateReservations = useMemo(() => {
         return reservations.filter(reservation => reservation.start_date == selectedDateISO)
     }, [reservations, selectedDateISO]);
+
+    const currentDateInvites = useMemo(() => {
+        return invites.filter(invite => invite.date == selectedDateISO)
+    }, [invites, selectedDateISO]);
 
     useEffect(() => {
         if (selectedDateISO) {
@@ -305,6 +318,11 @@ function SelectGameTable(
                             else
                                 return <></>
                         })}
+
+                        {currentDateInvites.filter(value => value.start_hour == hour).map((invite) => {
+                            return <Button key={invite.date + invite.start_hour} color={'cyan'} radius={'xl'}
+                                           size={'xs'} rightIcon={<MdOutlineNoAccounts/>}>{invite.guest_name}</Button>
+                        })}
                     </Group>
                 }
 
@@ -326,6 +344,7 @@ function SelectGameTable(
                 <MdRefresh size={28}/>
             </ActionIcon>
         </Group>
+
         {allButtons(startEnd)}
     </>
 }

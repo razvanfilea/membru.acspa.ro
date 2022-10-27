@@ -1,7 +1,8 @@
-import React from 'react';
-import {MdBookmarks, MdHome} from 'react-icons/md';
+import React, {useMemo} from 'react';
+import {MdAdminPanelSettings, MdBookmarks, MdHome} from 'react-icons/md';
 import {Group, Stack, Text, ThemeIcon, UnstyledButton} from '@mantine/core';
 import Link from "next/link";
+import {AuthData, useAuth} from "../AuthProvider";
 
 interface MainLinkProps {
     icon: React.ReactNode;
@@ -39,15 +40,37 @@ function MainLink({icon, color, label, link}: MainLinkProps) {
     );
 }
 
-const data = [
+interface MainLinkData {
+    icon: React.ReactNode;
+    color: string;
+    label: string;
+    link: string;
+    cond?: (auth: AuthData) => boolean;
+}
+
+const linkData: MainLinkData[] = [
     {icon: <MdBookmarks size={22}/>, color: 'green', label: 'Rezervări', link: '/'},
     {icon: <MdHome size={22}/>, color: 'blue', label: 'Site ACSPA', link: 'https://acspa.ro'},
+    {
+        icon: <MdAdminPanelSettings size={22}/>,
+        color: 'red',
+        label: 'Admin',
+        link: '/admin',
+        cond: (auth: AuthData) => auth.profile?.member_type === 'Fondator'
+    },
 ];
 
 export default function MainLinks() {
-    return <Stack>
-        {data.map((link) => (
-            <MainLink {...link} key={link.label}/>
-        ))}
-    </Stack>
+    const auth = useAuth()
+
+    const links = useMemo(() => {
+        return linkData.map((link) => {
+            if (link.cond == null || link.cond(auth)) {
+                return <MainLink {...link} key={link.label}/>
+            }
+            return <React.Fragment key={link.label}/>
+        })
+    }, [auth])
+
+    return <Stack>{links}</Stack>
 }

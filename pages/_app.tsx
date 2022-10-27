@@ -3,13 +3,13 @@ import Head from 'next/head';
 import MyAppShell from "../components/AppShell";
 import React from "react";
 import {ColorScheme, ColorSchemeProvider, MantineProvider, Paper} from '@mantine/core';
-import {useColorScheme, useLocalStorage} from "@mantine/hooks";
+import {useLocalStorage} from "@mantine/hooks";
 import AuthProvider from "../components/AuthProvider";
 
 export default function MyApp({Component, pageProps}): JSX.Element {
     const [colorScheme, setLocalColorScheme] = useLocalStorage<ColorScheme>({
         key: 'color-scheme',
-        defaultValue: useColorScheme(),
+        defaultValue: 'dark',
         getInitialValueInEffect: true,
     });
 
