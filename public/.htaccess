@@ -1,0 +1,20 @@
+
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.membru\.acspa\.ro$
+RewriteRule ^membru\.acspa\.ro$ "https\:\/\/membru\.acspa\.ro\/" [R=301,L]
+RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.membru\.acspa\.ro$
+RewriteRule ^profile$ "https\:\/\/membru\.acspa\.ro\/profile\.html" [R=302,L]
+RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.membru\.acspa\.ro$
+RewriteRule ^login$ "https\:\/\/membru\.acspa\.ro\/login\.html" [R=302,L]
+RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.membru\.acspa\.ro$
+RewriteRule ^signup$ "https\:\/\/membru\.acspa\.ro\/signup\.html" [R=302,L]
+RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.membru\.acspa\.ro$
+RewriteRule ^reset_password$ "https\:\/\/membru\.acspa\.ro\/reset_password\.html" [R=302,L]
+RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.membru\.acspa\.ro$
+RewriteRule ^admin$ "https\:\/\/membru\.acspa\.ro\/admin\.html" [R=302,L]

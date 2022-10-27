@@ -7,7 +7,6 @@ import {
     Group,
     Loader,
     Modal,
-    NumberInput,
     NumberInputHandlers,
     Stack,
     TextInput,
@@ -24,6 +23,7 @@ import {DatePicker} from "@mantine/dates";
 import {dateToISOString, isWeekend} from "../../utils/date";
 import {useListState} from "@mantine/hooks";
 import GuestInviteComponent from "../../components/GuestInvite";
+import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 
 interface IParams {
     location: Location
@@ -45,7 +45,12 @@ export default function GuestManager(params: IParams) {
             date: new Date(),
             startHour: 0,
             guestName: '',
-        }
+        },
+        validate: {
+            guestName: (value) => (value.length >= 3) ? null : "Numele invitatului este prea scurt",
+            startHour: (value) => value !== 0 ? null : "Ora de început trebuie să fie diferită de 0",
+        },
+        validateInputOnBlur: true
     });
 
     useEffect(() => {
@@ -122,33 +127,18 @@ export default function GuestManager(params: IParams) {
                         placeholder="Alege data"
                         label="Data"
                         withAsterisk locale="ro"
+                        minDate={new Date()}
+                        clearable={false}
                         inputFormat="YYYY-MM-DD"/>
 
-                    <Group spacing={8} noWrap={true} align={'end'}>
-                        <NumberInput
-                            {...newInviteForm.getInputProps('startHour')}
-                            handlersRef={hourInputHandlers}
-                            hideControls={true}
-                            placeholder="Ora"
-                            label="Ora"
-                            disabled={true}
-                            required={true}
-                            step={hasSelectedWeekend ? location.weekend_reservation_duration : location.reservation_duration}
-                            min={hasSelectedWeekend ? location.weekend_start_hour : location.start_hour}
-                            max={hasSelectedWeekend ? (location.weekend_end_hour - location.weekend_reservation_duration)
-                                : (location.end_hour - location.reservation_duration)}
-                        />
-                        <ActionIcon size={36} variant="default"
-                                    onClick={() => hourInputHandlers.current!.decrement()}>
-                            –
-                        </ActionIcon>
-                        <ActionIcon size={36} variant="default"
-                                    onClick={() => hourInputHandlers.current!.increment()}>
-                            +
-                        </ActionIcon>
-                    </Group>
+                    <AdminHourInput
+                        formProps={newInviteForm.getInputProps('startHour')}
+                        inputHandler={hourInputHandlers}
+                        gameLocation={location}
+                        isWeekend={hasSelectedWeekend}
+                    />
 
-                    <Button type={"submit"}>Submit</Button>
+                    <Button type={"submit"}>Adaugă</Button>
 
                 </Stack>
             </form>
@@ -165,25 +155,13 @@ export default function GuestManager(params: IParams) {
                 paddingRight: 0,
             }
         })}>
-            <Group position={'apart'}>
-                <Title order={2}>Invitații:</Title>
-
-                <Group spacing={'lg'}>
-                    <ActionIcon variant={'filled'} color={'green'} radius={'xl'} size={36}
-                                onClick={() => setCreateModalOpened(true)}>
-                        <MdAdd size={28}/>
-                    </ActionIcon>
-
-                    <ActionIcon variant={'filled'} radius={'xl'} size={36} onClick={async () => {
-                        guestHandler.setState(await fetchGuests())
-                    }}>
-                        <MdRefresh size={28}/>
-                    </ActionIcon>
-                </Group>
-            </Group>
+            <AdminTopBar
+                title={'Invitații:'}
+                onAdd={() => setCreateModalOpened(true)}
+                onRefresh={async () => guestHandler.setState(await fetchGuests())}/>
 
             {guests.map((guest) => (
-                <Card key={guest.date + guest.start_hour} shadow={"xs"}>
+                <Card key={guest.date + guest.start_hour + guest.guest_name} shadow={"xs"}>
                     {GuestInviteComponent(
                         guest,
                         allProfiles.find(profile => profile.id === guest.user_id)?.name || null,

@@ -33,7 +33,7 @@ export default function MyAppShell({children}): JSX.Element {
                     </MediaQuery>
 
                     <div>
-                        <Image src={"logo.webp"}
+                        <Image src={"/logo.webp"}
                                height={55}
                                fit={'contain'}
                                alt="Logo"/>

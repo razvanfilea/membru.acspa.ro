@@ -14,7 +14,7 @@ import {
     useMantineTheme
 } from "@mantine/core";
 import {Calendar} from '@mantine/dates';
-import {useScrollIntoView} from "@mantine/hooks";
+import {useListState, useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
 import {
     GameTable, GuestInvite,
@@ -188,7 +188,7 @@ function SelectGameTable(
     onSelectTable: (s: SelectedTable) => void,
 ): JSX.Element {
 
-    const [reservations, setReservations] = useState<Reservation[]>([])
+    const [reservations, reservationsHandle] = useListState<Reservation>([])
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
     const [restrictions, setRestrictions] = useState<ReservationRestriction[]>([])
     const [invites, setInvites] = useState<GuestInvite[]>([])
@@ -201,7 +201,7 @@ function SelectGameTable(
             }
         })
 
-        fetchReservations(setReservations, setRestrictions);
+        fetchReservations(reservationsHandle.setState, setRestrictions);
 
         supabase.from<GuestInvite>('guest_invites')
             .select('*')
@@ -214,23 +214,24 @@ function SelectGameTable(
             .on('INSERT', payload => {
                 console.log(payload.new)
                 if (payload.new.status == ReservationStatus.Approved) {
-                    setReservations(prev => [...prev, payload.new]
+                    reservationsHandle.setState(prev => [...prev, payload.new]
                         .sort((a, b) => { // @ts-ignore
                             return new Date(a.created_at) - new Date(b.created_at)
                         }))
                 }
             })
             .on('UPDATE', payload => {
-                fetchReservations(setReservations, setRestrictions) // TODO Could make this more efficient
+                fetchReservations(reservationsHandle.setState, setRestrictions) // TODO Could make this more efficient
             })
             .on('DELETE', payload => {
-                setReservations(prev => prev.filter(value => value.id != payload.old.id))
+                reservationsHandle.filter(value => value.id != payload.old.id)
             })
             .subscribe()
 
         return () => {
             subscription?.unsubscribe()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const currentDateReservations = useMemo(() => {
@@ -340,7 +341,7 @@ function SelectGameTable(
             </Group>
 
             <ActionIcon variant={'light'} radius={'xl'} size={36}
-                        onClick={() => fetchReservations(setReservations, setRestrictions)}>
+                        onClick={() => fetchReservations(reservationsHandle.setState, setRestrictions)}>
                 <MdRefresh size={28}/>
             </ActionIcon>
         </Group>

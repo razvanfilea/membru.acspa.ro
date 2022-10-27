@@ -54,7 +54,7 @@ const linkData: MainLinkData[] = [
     {
         icon: <MdAdminPanelSettings size={22}/>,
         color: 'red',
-        label: 'Admin',
+        label: 'Panou Fondator',
         link: '/admin',
         cond: (auth: AuthData) => auth.profile?.member_type === 'Fondator'
     },

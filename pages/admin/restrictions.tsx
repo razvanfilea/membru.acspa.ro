@@ -1,28 +1,15 @@
 import 'dayjs/locale/ro';
-import {
-    ActionIcon,
-    Button,
-    Card,
-    Center,
-    Group,
-    Loader,
-    Modal,
-    NumberInput,
-    NumberInputHandlers,
-    Stack,
-    TextInput,
-    Title
-} from "@mantine/core";
+import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useRouter} from "next/router";
 import {useAuth} from "../../components/AuthProvider";
 import {Location, LocationName, MemberTypes, Profile, ReservationRestriction} from "../../types/wrapper";
-import {MdAdd, MdRefresh} from "react-icons/md";
 import {supabase} from "../../utils/supabase_utils";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
 import {DatePicker} from "@mantine/dates";
 import {dateToISOString, isWeekend} from "../../utils/date";
+import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 
 interface IParams {
     location: Location
@@ -47,9 +34,8 @@ export default function RestrictedReservationsList(params: IParams) {
         },
 
         validate: {
-            // date: (value) => true,
-            // startHour: (value) => (!isNaN(parseInt(value))) ? null : "Număr de oră invalid",
-            message: (value) => (value.length >= 10) ? null : "Mesajul este prea scurt",
+            startHour: (value) => value !== 0 ? null : "Ora de început trebuie să fie diferită de 0",
+            message: (value) => (value.length >= 5) ? null : "Mesajul este prea scurt",
         },
         validateInputOnBlur: true
     });
@@ -69,7 +55,7 @@ export default function RestrictedReservationsList(params: IParams) {
             }
         })
 
-        fetchRestrictions().then(data => setRestrictions(data || []))
+        fetchRestrictions().then(data => setRestrictions(data))
         setIsLoading(false)
         // We only want to run it once
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,7 +67,7 @@ export default function RestrictedReservationsList(params: IParams) {
             .order('date', {ascending: true})
             .order('start_hour', {ascending: true})
 
-        return data
+        return data || []
     }
 
     const hasSelectedWeekend = useMemo(() => {
@@ -113,7 +99,7 @@ export default function RestrictedReservationsList(params: IParams) {
 
                     const {error} = await supabase.from('reservations_restrictions').insert([newRestriction])
                     console.log(error)
-                    setRestrictions(await fetchRestrictions() || [])
+                    setRestrictions(await fetchRestrictions())
                 })}>
 
                 <Stack>
@@ -123,31 +109,16 @@ export default function RestrictedReservationsList(params: IParams) {
                         placeholder="Alege data"
                         label="Data"
                         withAsterisk locale="ro"
+                        minDate={new Date()}
+                        clearable={false}
                         inputFormat="YYYY-MM-DD"/>
 
-                    <Group spacing={8} noWrap={true} align={'end'}>
-                        <NumberInput
-                            {...newRestrictionForm.getInputProps('startHour')}
-                            handlersRef={hourInputHandlers}
-                            hideControls={true}
-                            placeholder="Ora"
-                            label="Ora"
-                            disabled={true}
-                            required={true}
-                            step={hasSelectedWeekend ? location.weekend_reservation_duration : location.reservation_duration}
-                            min={hasSelectedWeekend ? location.weekend_start_hour : location.start_hour}
-                            max={hasSelectedWeekend ? (location.weekend_end_hour - location.weekend_reservation_duration)
-                                : (location.end_hour - location.reservation_duration)}
-                        />
-                        <ActionIcon size={36} variant="default"
-                                    onClick={() => hourInputHandlers.current!.decrement()}>
-                            –
-                        </ActionIcon>
-                        <ActionIcon size={36} variant="default"
-                                    onClick={() => hourInputHandlers.current!.increment()}>
-                            +
-                        </ActionIcon>
-                    </Group>
+                    <AdminHourInput
+                        formProps={newRestrictionForm.getInputProps('startHour')}
+                        inputHandler={hourInputHandlers}
+                        gameLocation={location}
+                        isWeekend={hasSelectedWeekend}
+                    />
 
                     <TextInput
                         {...newRestrictionForm.getInputProps('message')}
@@ -155,7 +126,7 @@ export default function RestrictedReservationsList(params: IParams) {
                         placeholder={'Motivul pentru care nu se pot face rezervări'}
                         required={true}/>
 
-                    <Button type={"submit"}>Submit</Button>
+                    <Button type={"submit"}>Adaugă</Button>
 
                 </Stack>
             </form>
@@ -172,22 +143,10 @@ export default function RestrictedReservationsList(params: IParams) {
                 paddingRight: 0,
             }
         })}>
-            <Group position={'apart'}>
-                <Title order={2}>Rezervările blocate:</Title>
-
-                <Group spacing={'lg'}>
-                    <ActionIcon variant={'filled'} color={'green'} radius={'xl'} size={36}
-                                onClick={() => setCreateModalOpened(true)}>
-                        <MdAdd size={28}/>
-                    </ActionIcon>
-
-                    <ActionIcon variant={'filled'} radius={'xl'} size={36} onClick={async () => {
-                        setRestrictions(await fetchRestrictions() || [])
-                    }}>
-                        <MdRefresh size={28}/>
-                    </ActionIcon>
-                </Group>
-            </Group>
+            <AdminTopBar
+                title={'Rezervările blocate:'}
+                onAdd={() => setCreateModalOpened(true)}
+                onRefresh={async () => setRestrictions(await fetchRestrictions())}/>
 
             {restrictions.map((restriction) => (
                 <Card key={restriction.date + restriction.start_hour} shadow={"xs"}>
