@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useState, Suspense} from "react";
 import Head from "next/head";
 import {
     ActionIcon,
@@ -13,11 +13,11 @@ import {
     Title,
     useMantineTheme
 } from "@mantine/core";
-import {Calendar} from '@mantine/dates';
 import {useListState, useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
 import {
-    GameTable, GuestInvite,
+    GameTable,
+    GuestInvite,
     Location,
     LocationName,
     Profile,
@@ -29,10 +29,14 @@ import {supabase} from "../utils/supabase_utils";
 import {useAuth} from "../components/AuthProvider";
 import {useRouter} from "next/router";
 import {MdOutlineNoAccounts, MdRefresh, MdVpnKey} from "react-icons/md";
-import {addDaysToDate, dateToISOString, isWeekend} from "../utils/date";
+import {addDaysToDate, dateToISOString, isDateWeekend} from "../utils/date";
 import ConfirmSelection from "../components/ConfirmSelection";
 import {Room, SelectedTable} from "../types/room";
-import guestInvite from "../components/GuestInvite";
+import dynamic from "next/dynamic";
+
+const DynamicCalendar = dynamic(() => import('../components/MantineCalendar'), {
+    suspense: true,
+})
 
 interface IParams {
     gara: Room
@@ -121,26 +125,28 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
 
                         <Text>Alege ziua rezervării:</Text>
 
-                        <Calendar
-                            minDate={new Date}
-                            maxDate={addDaysToDate(new Date, params.daysAhead)}
-                            hideOutsideDates={true}
-                            allowLevelChange={false}
-                            size={"lg"}
-                            locale={"ro"}
-                            value={selectedDate}
-                            onChange={(date) => {
-                                if (auth.user != null && date != null)
-                                    onSelectedDateChange(date)
-                            }}
-                            dayStyle={(date) =>
-                                (date.getDate() === (new Date).getDate()
-                                    && date.getMonth() === (new Date).getMonth()
-                                    && date.getDate() !== selectedDate?.getDate())
-                                    ? {backgroundColor: theme.colors.blue[4], color: theme.white} : {}
-                            }
-                            fullWidth={true}
-                        />
+                        <Suspense fallback={`Loading Calendar...`}>
+                            <DynamicCalendar
+                                minDate={new Date}
+                                maxDate={addDaysToDate(new Date, params.daysAhead)}
+                                hideOutsideDates={true}
+                                allowLevelChange={false}
+                                size={"lg"}
+                                locale={"ro"}
+                                value={selectedDate}
+                                onChange={(date) => {
+                                    if (auth.user != null && date != null)
+                                        onSelectedDateChange(date)
+                                }}
+                                dayStyle={(date) =>
+                                    (date.getDate() === (new Date).getDate()
+                                        && date.getMonth() === (new Date).getMonth()
+                                        && date.getDate() !== selectedDate?.getDate())
+                                        ? {backgroundColor: theme.colors.blue[4], color: theme.white} : {}
+                                }
+                                fullWidth={true}
+                            />
+                        </Suspense>
                     </Stack>
                 }
 
@@ -218,7 +224,7 @@ function SelectGameTable(
                         .sort((a, b) => { // @ts-ignore
                             return new Date(a.created_at) - new Date(b.created_at)
                         }))
-                }
+                 }
             })
             .on('UPDATE', payload => {
                 fetchReservations(reservationsHandle.setState, setRestrictions) // TODO Could make this more efficient
@@ -253,7 +259,7 @@ function SelectGameTable(
         if (selectedDateISO == null) {
             return {start: 0, end: 0, duration: 0}
         }
-        if (isWeekend(new Date(selectedDateISO))) {
+        if (isDateWeekend(new Date(selectedDateISO))) {
             return {
                 start: room.weekendStartHour,
                 end: room.weekendEndHour,

@@ -8,7 +8,7 @@ import {supabase} from "../../utils/supabase_utils";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
 import {DatePicker} from "@mantine/dates";
-import {dateToISOString, isWeekend} from "../../utils/date";
+import {dateToISOString, isDateWeekend} from "../../utils/date";
 import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 
 interface IParams {
@@ -71,7 +71,7 @@ export default function RestrictedReservationsList(params: IParams) {
     }
 
     const hasSelectedWeekend = useMemo(() => {
-        return isWeekend(newRestrictionForm.values.date)
+        return isDateWeekend(newRestrictionForm.values.date)
     }, [newRestrictionForm.values.date])
 
     if (auth.isLoading || isLoading)
@@ -126,8 +126,7 @@ export default function RestrictedReservationsList(params: IParams) {
                         placeholder={'Motivul pentru care nu se pot face rezervări'}
                         required={true}/>
 
-                    <Button type={"submit"}>Adaugă</Button>
-
+                    <Button type={"submit"} color={'green'}>Adaugă</Button>
                 </Stack>
             </form>
         </Modal>

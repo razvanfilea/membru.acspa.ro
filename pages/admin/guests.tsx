@@ -20,7 +20,7 @@ import {MdAdd, MdRefresh} from "react-icons/md";
 import {supabase} from "../../utils/supabase_utils";
 import {useForm} from "@mantine/form";
 import {DatePicker} from "@mantine/dates";
-import {dateToISOString, isWeekend} from "../../utils/date";
+import {dateToISOString, isDateWeekend} from "../../utils/date";
 import {useListState} from "@mantine/hooks";
 import GuestInviteComponent from "../../components/GuestInvite";
 import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
@@ -84,7 +84,7 @@ export default function GuestManager(params: IParams) {
     }
 
     const hasSelectedWeekend = useMemo(() => {
-        return isWeekend(newInviteForm.values.date)
+        return isDateWeekend(newInviteForm.values.date)
     }, [newInviteForm.values.date])
 
     if (auth.isLoading || isLoading)
@@ -138,8 +138,7 @@ export default function GuestManager(params: IParams) {
                         isWeekend={hasSelectedWeekend}
                     />
 
-                    <Button type={"submit"}>Adaugă</Button>
-
+                    <Button type={"submit"} color={'green'}>Adaugă</Button>
                 </Stack>
             </form>
         </Modal>
@@ -170,6 +169,7 @@ export default function GuestManager(params: IParams) {
                                 .delete()
                                 .eq('date', guest.date)
                                 .eq('start_hour', guest.start_hour)
+                                .eq('guest_name', guest.guest_name)
                             guestHandler.filter(value => value.date !== guest.date && value.start_hour !== guest.start_hour)
                         }
                     )}

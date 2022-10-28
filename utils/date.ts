@@ -14,7 +14,7 @@ export function dateToISOString(date: Date): string {
     return year + "-" + month + "-" + day;
 }
 
-export function isWeekend(date: Date): boolean {
+export function isDateWeekend(date: Date): boolean {
     return date.getDay() === 6 || date.getDay() === 0
 }
 

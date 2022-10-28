@@ -29,6 +29,7 @@ export default function MyAppShell({children}): JSX.Element {
                             size="sm"
                             color={theme.colors.gray[6]}
                             mr="xl"
+                            title="Open menu"
                         />
                     </MediaQuery>
 
