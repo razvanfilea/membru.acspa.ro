@@ -1,21 +1,23 @@
-import {definitions} from "./supabase";
+import {Database} from "./database.types";
 
 export const enum LocationName {
     Gara = "gara",
     Boromir = "boromir"
 }
 
-export type GuestInvite = definitions['guest_invites']
+type Tables = Database['public']['Tables']
 
-export type Location = definitions['locations']
+export type GuestInvite = Tables['guest_invites']['Row']
 
-export type GameTable = definitions['mese']
+export type Location = Tables['locations']['Row']
 
-export type Profile = definitions['profiles']
+export type GameTable = Tables['mese']['Row']
 
-export type Reservation = definitions['rezervari']
+export type Profile = Tables['profiles']['Row']
 
-export type ReservationRestriction = definitions['reservations_restrictions']
+export type Reservation = Tables['rezervari']['Row']
+
+export type ReservationRestriction = Tables['reservations_restrictions']['Row']
 
 export function getStartTime(reservation: Reservation): Date {
     return new Date(reservation.start_date);

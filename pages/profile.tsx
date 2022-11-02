@@ -7,7 +7,7 @@ import {
     Checkbox,
     Group,
     Loader,
-    Paper, Space,
+    Paper,
     Stack,
     Text,
     Title
@@ -15,18 +15,20 @@ import {
 import React, {useEffect, useMemo, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
-import {useAuth} from "../components/AuthProvider";
-import {supabase} from "../utils/supabase_utils";
-import {GameTable, MemberTypes, Reservation, ReservationStatus} from "../types/wrapper";
+import {useProfile} from "../components/ProfileProvider";
+import {GameTable, Profile, Reservation, ReservationStatus} from "../types/wrapper";
 import {MdRefresh} from "react-icons/md";
-import Link from "next/link";
 import {isReservationCancelable} from "../utils/date";
+import {Database} from "../types/database.types";
+import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
+import {useListState} from "@mantine/hooks";
+import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
 
 interface IParams {
     gameTables: GameTable[]
 }
 
-async function signOut(router: NextRouter) {
+async function signOut(supabase: SupabaseClient<Database>, router: NextRouter) {
     const {error} = await supabase.auth.signOut()
 
     if (error == null) {
@@ -37,45 +39,52 @@ async function signOut(router: NextRouter) {
     }
 }
 
-export default function Profile(params: IParams) {
-    const router = useRouter()
-    const auth = useAuth()
+function fetchReservations(
+    supabase: SupabaseClient<Database>,
+    profile: Profile,
+    setReservations: (data: Reservation[]) => void,
+) {
+    supabase.from('rezervari')
+        .select('*')
+        .eq("user_id", profile.id)
+        .order('start_date', {ascending: false})
+        .order('start_hour', {ascending: true})
+        .then(res => {
+            setReservations(res.data || [])
+        })
+}
 
-    const [reservations, setReservations] = useState<Reservation[]>([])
+export default function ProfilePage(params: IParams) {
+    const supabase = useSupabaseClient<Database>()
+    const router = useRouter()
+    const profileData = useProfile()
+
+    const [reservations, reservationsHandle] = useListState<Reservation>([])
     const [showCancelled, setShowCancelled] = useState(false)
 
     useEffect(() => {
-        if (!auth.isLoading && auth.user == null)
-            router.push('/login').then(() => {})
-    }, [auth, router])
+        if (!profileData.isLoading && profileData.profile == null)
+            router.push('/login').then(() => {
+            })
+    }, [profileData, router])
 
     useEffect(() => {
-        if (auth.user == null)
+        if (profileData.profile == null)
             return;
 
-        fetchReservations().then(data => setReservations(data || []))
+        fetchReservations(supabase, profileData.profile, reservationsHandle.setState)
         // We only want to run it once
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-
-    async function fetchReservations() {
-        const {data} = await supabase.from<Reservation>('rezervari')
-            .select('*')
-            .eq("user_id", auth.user!.id)
-            .order('start_date', {ascending: false})
-            .order('start_hour', {ascending: true})
-
-        return data
-    }
 
     const filteredReservations = useMemo(() => {
         return reservations.filter((res) => res.status == ReservationStatus.Approved || showCancelled)
     }, [reservations, showCancelled])
 
-    if (auth.isLoading)
+    if (profileData.isLoading)
         return <Center> <Loader/> </Center>;
 
-    if (auth.user == null)
+    if (profileData.profile == null)
         return (<></>)
 
     return (<>
@@ -89,20 +98,17 @@ export default function Profile(params: IParams) {
 
             <Group position={"apart"}>
                 <Group noWrap={true}>
-                    {auth.profile != null &&
-                        <>
-                            <Avatar src={`https://ui-avatars.com/api/?name=${auth.profile.name}&background=random&rounded=true`}
-                                    radius={"md"}/>
+                    <Avatar
+                        src={`https://ui-avatars.com/api/?name=${profileData.profile.name}&background=random&rounded=true`}
+                        radius={"md"}/>
 
-                            <Stack spacing={1}>
-                                <Text size="md" weight={500}>{auth.profile.name}</Text>
-                                <Text size="sm">{auth.profile.member_type}</Text>
-                            </Stack>
-                        </>
-                    }
+                    <Stack spacing={1}>
+                        <Text size="md" weight={500}>{profileData.profile.name}</Text>
+                        <Text size="sm">{profileData.profile.member_type}</Text>
+                    </Stack>
                 </Group>
 
-                <Button variant={"filled"} color={'red'} onClick={() => signOut(router)}>Sign out</Button>
+                <Button variant={"filled"} color={'red'} onClick={() => signOut(supabase, router)}>Sign out</Button>
             </Group>
 
         </Paper>
@@ -121,7 +127,8 @@ export default function Profile(params: IParams) {
             <Group position={'apart'}>
                 <Title order={2}>Rezervările tale:</Title>
 
-                <ActionIcon variant={'light'} radius={'xl'} size={36} onClick={async () => await fetchReservations()}>
+                <ActionIcon variant={'light'} radius={'xl'} size={36}
+                            onClick={() => fetchReservations(supabase, profileData.profile!, reservationsHandle.setState)}>
                     <MdRefresh size={28}/>
                 </ActionIcon>
             </Group>
@@ -140,14 +147,15 @@ export default function Profile(params: IParams) {
                         reservation,
                         params.gameTables.find((element) => element.id == reservation.table_id)!,
                         true,
-                        (isReservationCancelable(reservation)) ? ( async () => {
+                        (isReservationCancelable(reservation)) ? (async () => {
                             const newData = {
                                 ...reservation,
                                 status: ReservationStatus.Cancelled
                             }
 
-                            const {data} = await supabase.from<Reservation>('rezervari').update(newData)
-                            setReservations(prev => [...prev.filter(value => value.id != data![0].id), data![0]])
+                            const {data} = await supabase.from('rezervari').update(newData).select()
+                            reservationsHandle.filter(value => value.id != data![0].id)
+                            reservationsHandle.append(data![0])
                         }) : null
                     )}
                 </Card>
@@ -157,7 +165,8 @@ export default function Profile(params: IParams) {
 }
 
 export async function getStaticProps({}) {
-    const {data: gameTables} = await supabase.from<GameTable>('mese').select('*')
+    const supabase = createBrowserSupabaseClient<Database>()
+    const {data: gameTables} = await supabase.from('mese').select('*')
 
     const props: IParams = {
         gameTables: gameTables!

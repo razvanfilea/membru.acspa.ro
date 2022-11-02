@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState, Suspense} from "react";
+import React, {Suspense, useEffect, useMemo, useState} from "react";
 import Head from "next/head";
 import {
     ActionIcon,
@@ -13,7 +13,7 @@ import {
     Title,
     useMantineTheme
 } from "@mantine/core";
-import {useListState, useScrollIntoView} from "@mantine/hooks";
+import {useListState, useLocalStorage, useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
 import {
     GameTable,
@@ -25,14 +25,16 @@ import {
     ReservationRestriction,
     ReservationStatus
 } from "../types/wrapper";
-import {supabase} from "../utils/supabase_utils";
-import {useAuth} from "../components/AuthProvider";
+import {useProfile} from "../components/ProfileProvider";
 import {useRouter} from "next/router";
-import {MdOutlineNoAccounts, MdRefresh, MdVpnKey} from "react-icons/md";
+import {MdClose, MdOutlineNoAccounts, MdRefresh, MdVpnKey} from "react-icons/md";
 import {addDaysToDate, dateToISOString, isDateWeekend} from "../utils/date";
 import ConfirmSelection from "../components/ConfirmSelection";
 import {Room, SelectedTable} from "../types/room";
 import dynamic from "next/dynamic";
+import {SupabaseClient, useSupabaseClient, useUser} from "@supabase/auth-helpers-react";
+import {Database} from "../types/database.types";
+import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
 
 const DynamicCalendar = dynamic(() => import('../components/MantineCalendar'), {
     suspense: true,
@@ -45,9 +47,11 @@ interface IParams {
 }
 
 export default function MakeReservationPage(params: IParams): JSX.Element {
-    const theme = useMantineTheme()
-    const auth = useAuth()
     const router = useRouter()
+    const theme = useMantineTheme()
+    const user = useUser()
+    const profileData = useProfile()
+
     const [locationName, /*setLocationName*/] = useState(LocationName.Gara)
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
     const [selectedTable, setSelectedTable] = useState<SelectedTable | null>(null)
@@ -64,12 +68,18 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     }
 
     useEffect(() => {
-        if (!auth.isLoading && auth.user != null && auth.profile == null) {
+        if (!profileData.isLoading && user != null && profileData.profile == null) {
             router.push('/signup').then(() => {
                 console.log("Failed to redirect to signup")
             })
         }
-    }, [auth, router])
+    }, [user, profileData, router])
+
+    const [showInformationPopup, setInformationPopup] = useLocalStorage({
+        key: 'show-information-popup',
+        defaultValue: true,
+        getInitialValueInEffect: true,
+    })
 
     const room = locationName == LocationName.Gara ? params.gara : params.boromir;
 
@@ -83,7 +93,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
         <Space h="lg"/>
 
         <Paper>
-            {(!auth.isLoading && auth.user == null) &&
+            {profileData.profile == null &&
                 <>
                     <Paper shadow={"0"} p={"md"} sx={(theme) => ({
                         backgroundColor: theme.colors.orange,
@@ -95,13 +105,31 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                 </>
             }
 
+            {profileData.profile != null && showInformationPopup &&
+                <>
+                    <Paper shadow={"0"} p={"sm"} sx={(theme) => ({
+                        backgroundColor: theme.colors.cyan[9],
+                    })}>
+                        <Group noWrap={true}>
+                            <Text style={{width: '100%'}}>Rezervările se fac până la ora 16 pentru ziua respectivă. Max 8 jucători pentru un
+                                interval orar. Când știți că nu ajungeți, retrageți-vă pentru a lăsa loc liber altor
+                                jucători. Spor la joc!</Text>
+                            <ActionIcon onClick={() => setInformationPopup(false)} size={48}>
+                                <MdClose size={24}/>
+                            </ActionIcon>
+                        </Group>
+                    </Paper>
+                    <Space h="md"/>
+                </>
+            }
+
             <SimpleGrid
                 cols={1}
                 breakpoints={[
                     {minWidth: 1120, cols: 2},
                 ]}>
 
-                {!auth.isLoading && auth.user != null &&
+                {!profileData.isLoading && profileData.profile != null &&
                     <Stack key={"calendar"}>
                         {/*<Radio.Group
                             value={locationName}
@@ -135,7 +163,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                                 locale={"ro"}
                                 value={selectedDate}
                                 onChange={(date) => {
-                                    if (auth.user != null && date != null)
+                                    if (profileData.profile != null && date != null)
                                         onSelectedDateChange(date)
                                 }}
                                 dayStyle={(date) =>
@@ -161,10 +189,11 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
 }
 
 function fetchReservations(
+    supabase: SupabaseClient<Database>,
     setReservations: (data: Reservation[]) => void,
     setRestrictions: (data: ReservationRestriction[]) => void
 ) {
-    supabase.from<Reservation>('rezervari')
+    supabase.from('rezervari')
         .select('*')
         .gte('start_date', dateToISOString(new Date))
         .eq('status', ReservationStatus.Approved)
@@ -176,7 +205,7 @@ function fetchReservations(
             }
         })
 
-    supabase.from<ReservationRestriction>('reservations_restrictions')
+    supabase.from('reservations_restrictions')
         .select('*')
         .gte('date', dateToISOString(new Date))
         .then(value => {
@@ -193,6 +222,7 @@ function SelectGameTable(
     selectedTable: SelectedTable | null,
     onSelectTable: (s: SelectedTable) => void,
 ): JSX.Element {
+    const supabase = useSupabaseClient<Database>()
 
     const [reservations, reservationsHandle] = useListState<Reservation>([])
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
@@ -201,41 +231,46 @@ function SelectGameTable(
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
     useEffect(() => {
-        supabase.from<Profile>('profiles').select('*').then(value => {
+        supabase.from('profiles').select('*').then(value => {
             if (value.data != null) {
                 setAllProfiles(value.data)
             }
         })
 
-        fetchReservations(reservationsHandle.setState, setRestrictions);
+        fetchReservations(supabase, reservationsHandle.setState, setRestrictions);
 
-        supabase.from<GuestInvite>('guest_invites')
+        supabase.from('guest_invites')
             .select('*')
             .then(value => {
                 if (value.data !== null)
                     setInvites(value.data)
             })
 
-        const subscription = supabase.from<Reservation>('rezervari')
-            .on('INSERT', payload => {
-                console.log(payload.new)
-                if (payload.new.status == ReservationStatus.Approved) {
-                    reservationsHandle.setState(prev => [...prev, payload.new]
-                        .sort((a, b) => { // @ts-ignore
-                            return new Date(a.created_at) - new Date(b.created_at)
-                        }))
-                 }
-            })
-            .on('UPDATE', payload => {
-                fetchReservations(reservationsHandle.setState, setRestrictions) // TODO Could make this more efficient
-            })
-            .on('DELETE', payload => {
-                reservationsHandle.filter(value => value.id != payload.old.id)
-            })
+        const reservationListener = supabase.channel('rezervari')
+            .on(
+                'postgres_changes',
+                {event: '*', schema: 'public', table: 'rezervari'},
+                (payload) => {
+                    if (payload.eventType == "INSERT") {
+                        if (payload.new.status == ReservationStatus.Approved) {
+                            // @ts-ignore // TODO
+                            reservationsHandle.setState(prev => [...prev, payload.new]
+                                .sort((a, b) => {
+                                    // @ts-ignore
+                                    return new Date(a.created_at) - new Date(b.created_at)
+                                }))
+                        }
+                    } else if (payload.eventType == "UPDATE") {
+                        fetchReservations(supabase, reservationsHandle.setState, setRestrictions) // TODO Could make this more efficient
+                    } else {
+                        reservationsHandle.filter(value => value.id != payload.old.id)
+                    }
+                }
+            )
             .subscribe()
 
         return () => {
-            subscription?.unsubscribe()
+            reservationListener?.unsubscribe()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -347,7 +382,7 @@ function SelectGameTable(
             </Group>
 
             <ActionIcon variant={'light'} radius={'xl'} size={36}
-                        onClick={() => fetchReservations(reservationsHandle.setState, setRestrictions)}>
+                        onClick={() => fetchReservations(supabase, reservationsHandle.setState, setRestrictions)}>
                 <MdRefresh size={28}/>
             </ActionIcon>
         </Group>
@@ -358,6 +393,8 @@ function SelectGameTable(
 
 
 export async function getStaticProps({}) {
+    const supabase = createBrowserSupabaseClient<Database>()
+
     function locationToRoom(location: Location, tables: GameTable[]): Room {
         return {
             locationName: location.name as LocationName,
@@ -372,11 +409,11 @@ export async function getStaticProps({}) {
         }
     }
 
-    const {data: gameTables} = await supabase.from<GameTable>('mese').select('*')
+    const {data: gameTables} = await supabase.from('mese').select('*')
     const garaTables = gameTables!.filter((value) => value.location == LocationName.Gara)
     const boromirTables = gameTables!.filter((value) => value.location == LocationName.Boromir)
 
-    const {data: locations} = await supabase.from<Location>('locations').select('*')
+    const {data: locations} = await supabase.from('locations').select('*')
     const garaLocation = locations!.find(value => value.name == LocationName.Gara)
     const boromirLocation = locations!.find(value => value.name == LocationName.Boromir)
 

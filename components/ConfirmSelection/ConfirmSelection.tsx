@@ -3,21 +3,24 @@ import {useScrollIntoView} from "@mantine/hooks";
 import {Reservation, ReservationStatus} from "../../types/wrapper";
 import {Button, Card, Group, Paper, Space, Stack, Text, Title} from "@mantine/core";
 import ReservationComponent from "../Reservation";
-import {supabase} from "../../utils/supabase_utils";
 import {Room, SelectedTable} from "../../types/room";
 import Link from "next/link";
+import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
+import {Database} from "../../types/database.types";
+
+const enum ConfirmationStatus {
+    None,
+    Loading,
+    Success,
+    Fail
+}
 
 export function ConfirmSelection(
     room: Room,
     selectedDateISO: string | null,
     selectedTable: SelectedTable | null
 ): JSX.Element {
-    const enum ConfirmationStatus {
-        None,
-        Loading,
-        Success,
-        Fail
-    }
+    const supabase = useSupabaseClient<Database>()
 
     const [status, setStatus] = useState(ConfirmationStatus.None)
     const [errorMessage, setErrorMessage] = useState("")
@@ -59,7 +62,7 @@ export function ConfirmSelection(
                         start_date_input: selectedDateISO,
                         start_hour_input: selectedTable!.startHour,
                     }
-                    const errorMessage = await publishReservation(reservationParams)
+                    const errorMessage = await publishReservation(supabase, reservationParams)
                     setStatus(errorMessage == null ? ConfirmationStatus.Success : ConfirmationStatus.Fail)
                     setErrorMessage(errorMessage ?? "")
                 }}>Confirmă rezervarea!</Button>
@@ -107,7 +110,7 @@ export function ConfirmSelection(
     </Card>)
 }
 
-async function publishReservation(reservationParams): Promise<string | null> {
+async function publishReservation(supabase: SupabaseClient<Database>, reservationParams): Promise<string | null> {
     console.log(reservationParams)
 
     const {data, error} = await supabase.rpc('create_reservation', reservationParams)

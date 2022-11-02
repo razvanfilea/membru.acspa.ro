@@ -2,23 +2,26 @@ import 'dayjs/locale/ro';
 import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useRouter} from "next/router";
-import {useAuth} from "../../components/AuthProvider";
+import {useProfile} from "../../components/ProfileProvider";
 import {Location, LocationName, MemberTypes, Profile, ReservationRestriction} from "../../types/wrapper";
-import {supabase} from "../../utils/supabase_utils";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
 import {DatePicker} from "@mantine/dates";
 import {dateToISOString, isDateWeekend} from "../../utils/date";
 import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
+import {Database} from "../../types/database.types";
+import {useSupabaseClient} from "@supabase/auth-helpers-react";
+import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
 
 interface IParams {
     location: Location
 }
 
 export default function RestrictedReservationsList(params: IParams) {
+    const supabase = useSupabaseClient<Database>()
     const location = params.location
     const router = useRouter()
-    const auth = useAuth()
+    const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
     const [restrictions, setRestrictions] = useState<ReservationRestriction[]>([])
@@ -41,15 +44,12 @@ export default function RestrictedReservationsList(params: IParams) {
     });
 
     useEffect(() => {
-        if ((!auth.isLoading && auth.user == null) || auth.profile?.member_type !== MemberTypes.Fondator)
+        if ((!profileData.isLoading && profileData.profile == null) || profileData.profile?.member_type !== MemberTypes.Fondator)
             router.back()
-    }, [auth, router])
+    }, [profileData, router])
 
     useEffect(() => {
-        if (auth.user == null)
-            return;
-
-        supabase.from<Profile>('profiles').select('*').then(value => {
+        supabase.from('profiles').select('*').then(value => {
             if (value.data != null) {
                 setAllProfiles(value.data)
             }
@@ -59,10 +59,10 @@ export default function RestrictedReservationsList(params: IParams) {
         setIsLoading(false)
         // We only want to run it once
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [auth.user])
+    }, [])
 
     async function fetchRestrictions() {
-        const {data} = await supabase.from<ReservationRestriction>('reservations_restrictions')
+        const {data} = await supabase.from('reservations_restrictions')
             .select('*')
             .order('date', {ascending: true})
             .order('start_hour', {ascending: true})
@@ -74,10 +74,10 @@ export default function RestrictedReservationsList(params: IParams) {
         return isDateWeekend(newRestrictionForm.values.date)
     }, [newRestrictionForm.values.date])
 
-    if (auth.isLoading || isLoading)
+    if (profileData.isLoading || isLoading)
         return <Center> <Loader/> </Center>;
 
-    if (auth.user == null)
+    if (profileData.profile == null)
         return (<></>)
 
     return (<>
@@ -153,7 +153,7 @@ export default function RestrictedReservationsList(params: IParams) {
                         restriction,
                         allProfiles.find(profile => profile.id === restriction.user_id)?.name || null,
                         async () => {
-                            await supabase.from<ReservationRestriction>('reservations_restrictions')
+                            await supabase.from('reservations_restrictions')
                                 .delete()
                                 .eq('date', restriction.date)
                                 .eq('start_hour', restriction.start_hour)
@@ -167,7 +167,8 @@ export default function RestrictedReservationsList(params: IParams) {
 }
 
 export async function getStaticProps({}) {
-    const {data: location} = await supabase.from<Location>('locations')
+    const supabase = createBrowserSupabaseClient<Database>()
+    const {data: location} = await supabase.from('locations')
         .select('*')
         .eq('name', LocationName.Gara)
         .limit(1)

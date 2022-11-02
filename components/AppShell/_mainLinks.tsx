@@ -2,7 +2,7 @@ import React, {useMemo} from 'react';
 import {MdAdminPanelSettings, MdBookmarks, MdHome} from 'react-icons/md';
 import {Group, Stack, Text, ThemeIcon, UnstyledButton} from '@mantine/core';
 import Link from "next/link";
-import {AuthData, useAuth} from "../AuthProvider";
+import {ProfileData, useProfile} from "../ProfileProvider";
 
 interface MainLinkProps {
     icon: React.ReactNode;
@@ -45,7 +45,7 @@ interface MainLinkData {
     color: string;
     label: string;
     link: string;
-    cond?: (auth: AuthData) => boolean;
+    cond?: (auth: ProfileData) => boolean;
 }
 
 const linkData: MainLinkData[] = [
@@ -56,21 +56,21 @@ const linkData: MainLinkData[] = [
         color: 'red',
         label: 'Panou Fondator',
         link: '/admin',
-        cond: (auth: AuthData) => auth.profile?.member_type === 'Fondator'
+        cond: (profileData: ProfileData) => profileData.profile?.member_type === 'Fondator'
     },
 ];
 
 export default function MainLinks() {
-    const auth = useAuth()
+    const profileData = useProfile()
 
     const links = useMemo(() => {
         return linkData.map((link) => {
-            if (link.cond == null || link.cond(auth)) {
+            if (link.cond == null || link.cond(profileData)) {
                 return <MainLink {...link} key={link.label}/>
             }
             return <React.Fragment key={link.label}/>
         })
-    }, [auth])
+    }, [profileData])
 
     return <Stack>{links}</Stack>
 }

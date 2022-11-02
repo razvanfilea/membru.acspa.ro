@@ -1,13 +1,15 @@
 import React from 'react';
 import {Avatar, Box, Group, Text, ThemeIcon, UnstyledButton, useMantineTheme} from '@mantine/core';
-import {useAuth} from "../AuthProvider";
+import {useProfile} from "../ProfileProvider";
 import {MdAccountCircle, MdArrowRight} from "react-icons/md";
 import Link from "next/link";
+import {useUser} from "@supabase/auth-helpers-react";
 
 
 export default function UserProfile() {
     const theme = useMantineTheme()
-    const auth = useAuth()
+    const user = useUser()
+    const profileData = useProfile()
 
     return <Link href='/profile' passHref={true}>
         <Box
@@ -33,14 +35,14 @@ export default function UserProfile() {
                 }}
             >
                 <Group>
-                    {auth.profile?.name &&
+                    {profileData.profile?.name &&
                         <Avatar
-                            src={`https://ui-avatars.com/api/?name=${auth.profile?.name}&background=random&rounded=true`}
+                            src={`https://ui-avatars.com/api/?name=${profileData.profile?.name}&background=random&rounded=true`}
                             radius="xl"
                         />
                     }
 
-                    {auth.profile == null &&
+                    {profileData.profile == null &&
                         <ThemeIcon radius={"xl"} variant={'outline'} color={'purple'} size={42} p={2}>
                             <MdAccountCircle size={40}/>
                         </ThemeIcon>
@@ -49,11 +51,11 @@ export default function UserProfile() {
                     <Box sx={{flex: 1}}>
 
                         <Text size="sm" weight={500}>
-                            {auth.user ? (auth.profile?.name || "Profil") : "Logare"}
+                            {profileData.profile ? (profileData.profile?.name || "Profil") : "Logare"}
                         </Text>
-                        {auth.user?.email &&
+                        {user?.email &&
                             <Text color="dimmed" size="xs">
-                                {auth.user?.email}
+                                {user?.email}
                             </Text>
                         }
                     </Box>

@@ -1,38 +1,28 @@
 import 'dayjs/locale/ro';
-import {
-    ActionIcon,
-    Button,
-    Card,
-    Center,
-    Group,
-    Loader,
-    Modal,
-    NumberInputHandlers,
-    Stack,
-    TextInput,
-    Title
-} from "@mantine/core";
+import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useRouter} from "next/router";
-import {useAuth} from "../../components/AuthProvider";
+import {useProfile} from "../../components/ProfileProvider";
 import {GuestInvite, Location, LocationName, MemberTypes, Profile} from "../../types/wrapper";
-import {MdAdd, MdRefresh} from "react-icons/md";
-import {supabase} from "../../utils/supabase_utils";
 import {useForm} from "@mantine/form";
 import {DatePicker} from "@mantine/dates";
 import {dateToISOString, isDateWeekend} from "../../utils/date";
 import {useListState} from "@mantine/hooks";
 import GuestInviteComponent from "../../components/GuestInvite";
 import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
+import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
+import {Database} from "../../types/database.types";
+import {useSupabaseClient} from "@supabase/auth-helpers-react";
 
 interface IParams {
     location: Location
 }
 
 export default function GuestManager(params: IParams) {
+    const supabase = useSupabaseClient<Database>()
     const location = params.location
     const router = useRouter()
-    const auth = useAuth()
+    const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
     const [guests, guestHandler] = useListState<GuestInvite>([])
@@ -54,15 +44,12 @@ export default function GuestManager(params: IParams) {
     });
 
     useEffect(() => {
-        if ((!auth.isLoading && auth.user == null) || auth.profile?.member_type !== MemberTypes.Fondator)
+        if ((!profileData.isLoading && profileData.profile == null) || profileData.profile?.member_type !== MemberTypes.Fondator)
             router.back()
-    }, [auth, router])
+    }, [profileData, router])
 
     useEffect(() => {
-        if (auth.user == null)
-            return;
-
-        supabase.from<Profile>('profiles').select('*').then(value => {
+        supabase.from('profiles').select('*').then(value => {
             if (value.data != null) {
                 setAllProfiles(value.data)
             }
@@ -70,12 +57,11 @@ export default function GuestManager(params: IParams) {
 
         fetchGuests().then(data => guestHandler.setState(data))
         setIsLoading(false)
-        // We only want to run it once
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [auth.user])
+    }, [])
 
     async function fetchGuests() {
-        const {data} = await supabase.from<GuestInvite>('guest_invites')
+        const {data} = await supabase.from('guest_invites')
             .select('*')
             .order('date', {ascending: true})
             .order('start_hour', {ascending: true})
@@ -87,10 +73,10 @@ export default function GuestManager(params: IParams) {
         return isDateWeekend(newInviteForm.values.date)
     }, [newInviteForm.values.date])
 
-    if (auth.isLoading || isLoading)
+    if (profileData.isLoading || isLoading)
         return <Center> <Loader/> </Center>;
 
-    if (auth.user == null)
+    if (profileData.profile == null)
         return (<></>)
 
     return (<>
@@ -165,7 +151,7 @@ export default function GuestManager(params: IParams) {
                         guest,
                         allProfiles.find(profile => profile.id === guest.user_id)?.name || null,
                         async () => {
-                            await supabase.from<GuestInvite>('guest_invites')
+                            await supabase.from('guest_invites')
                                 .delete()
                                 .eq('date', guest.date)
                                 .eq('start_hour', guest.start_hour)
@@ -180,7 +166,8 @@ export default function GuestManager(params: IParams) {
 }
 
 export async function getStaticProps({}) {
-    const {data: location} = await supabase.from<Location>('locations')
+    const supabase = createBrowserSupabaseClient<Database>()
+    const {data: location} = await supabase.from('locations')
         .select('*')
         .eq('name', LocationName.Gara)
         .limit(1)

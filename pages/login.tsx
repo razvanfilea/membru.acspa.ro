@@ -4,7 +4,8 @@ import {useForm} from "@mantine/form";
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
 import Link from "next/link";
-import {useAuth} from "../components/AuthProvider";
+import {useSession, useSupabaseClient} from "@supabase/auth-helpers-react";
+import {Database} from "../types/database.types";
 
 const REGEX_EMAIL = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(([a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))$/
 
@@ -16,8 +17,9 @@ const enum LoginState {
 }
 
 export default function LoginForm() {
+    const supabase = useSupabaseClient<Database>()
+    const session = useSession()
     const router = useRouter()
-    const auth = useAuth()
     const form = useForm({
         initialValues: {
             email: '',
@@ -34,10 +36,10 @@ export default function LoginForm() {
     const [loginState, setLoginState] = useState(LoginState.None)
 
     useEffect(() => {
-        if (auth.user != null) {
+        if (session != null) {
             setLoginState(LoginState.Success)
         }
-    }, [auth.user])
+    }, [session])
 
     useEffect(() => {
         if (loginState == LoginState.Success) {
@@ -50,7 +52,7 @@ export default function LoginForm() {
             <form style={{position: 'relative'}} onSubmit={
                 form.onSubmit(async (values) => {
                     setLoginState(LoginState.Loading)
-                    const {error} = await auth.signIn({email: values.email, password: values.password})
+                    const {error} = await supabase.auth.signInWithPassword({email: values.email, password: values.password})
 
                     setLoginState(error == null ? LoginState.Success : LoginState.Failed)
                 })}>

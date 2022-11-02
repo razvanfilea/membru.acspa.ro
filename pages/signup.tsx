@@ -3,7 +3,9 @@ import {MdAlternateEmail, MdPerson} from "react-icons/md";
 import {useForm} from "@mantine/form";
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
-import {useAuth} from "../components/AuthProvider";
+import {useSupabaseClient, useUser} from "@supabase/auth-helpers-react";
+import {Database} from "../types/database.types";
+import {changePasswordAsync} from "../components/AppShell";
 
 const enum RegisterState {
     None,
@@ -13,8 +15,10 @@ const enum RegisterState {
 }
 
 export default function LoginForm() {
-    const auth = useAuth()
+    const supabase = useSupabaseClient<Database>()
+    const user = useUser()
     const router = useRouter()
+
     const form = useForm({
         initialValues: {
             name: '',
@@ -35,10 +39,10 @@ export default function LoginForm() {
     const [registerState, setRegisterState] = useState(RegisterState.None)
 
     useEffect(() => {
-        if (auth.profile != null || registerState == RegisterState.Success) {
+        if (user != null || registerState == RegisterState.Success) {
             router.push('/')
         }
-    }, [auth.profile, registerState, router])
+    }, [user, registerState, router])
 
     return (<>
         <Box sx={{maxWidth: 480}} mx="auto">
@@ -46,7 +50,7 @@ export default function LoginForm() {
                 <form style={{position: 'relative'}} onSubmit={
                     form.onSubmit(async (values) => {
                         setRegisterState(RegisterState.Loading)
-                        const success = await auth.changePassword(values.name, values.password)
+                        const success = await changePasswordAsync(supabase, values.name, values.password)
 
                         setRegisterState(success ? RegisterState.Success : RegisterState.Failed)
                     })}>
@@ -58,8 +62,8 @@ export default function LoginForm() {
                     <TextInput
                         type={"email"}
                         label={"Email:"}
-                        contentEditable={'false'}
-                        value={auth.user?.email}
+                        readOnly={true}
+                        value={user?.email}
                         icon={<MdAlternateEmail size={14}/>}
                     />
 

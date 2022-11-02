@@ -1,15 +1,16 @@
 import React, {useEffect, useState} from 'react';
-import {AppShell, Burger, Header, Image, MediaQuery, Navbar, useMantineTheme} from '@mantine/core';
+import {AppShell, Burger, Header, Image, Navbar, Transition, useMantineTheme} from '@mantine/core';
 import LightAndDarkModeButton from "../LightAndDarkModeButton";
 import MainLinks from "./_mainLinks";
 import UserProfile from "./_user";
-import {router} from "next/client";
 import {useRouter} from "next/router";
+import {useMediaQuery} from "@mantine/hooks";
 
 export default function MyAppShell({children}): JSX.Element {
     const router = useRouter()
     const theme = useMantineTheme()
     const [opened, setOpened] = useState(false)
+    const navbarQuery = useMediaQuery('(min-width: 800px)', false, {getInitialValueInEffect: false});
 
     useEffect(() => {
         router.events.on("routeChangeComplete", () => {
@@ -22,7 +23,7 @@ export default function MyAppShell({children}): JSX.Element {
         header={
             <Header height={70} p="md">
                 <div style={{display: 'flex', alignItems: 'center', height: '100%'}}>
-                    <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
+                    {!navbarQuery &&
                         <Burger
                             opened={opened}
                             onClick={() => setOpened((o) => !o)}
@@ -31,7 +32,7 @@ export default function MyAppShell({children}): JSX.Element {
                             mr="xl"
                             title="Open menu"
                         />
-                    </MediaQuery>
+                    }
 
                     <div>
                         <Image src={"/logo.webp"}
@@ -48,14 +49,18 @@ export default function MyAppShell({children}): JSX.Element {
             </Header>
         }
         navbar={
-            <Navbar hiddenBreakpoint="sm" p="xs" hidden={!opened} width={{ base: 300 }}>
-                <Navbar.Section mt="md">
-                    <MainLinks />
-                </Navbar.Section>
-                <Navbar.Section mt="md">
-                    <UserProfile />
-                </Navbar.Section>
-            </Navbar>
+            <Transition transition='slide-right' duration={300} timingFunction='ease' mounted={opened || navbarQuery}>
+                {(styles) =>
+                    <Navbar style={styles} p="xs" width={{base: 300}}>
+                        <Navbar.Section mt="md">
+                            <MainLinks/>
+                        </Navbar.Section>
+                        <Navbar.Section mt="md">
+                            <UserProfile/>
+                        </Navbar.Section>
+                    </Navbar>
+                }
+            </Transition>
         }
     >
         {children}

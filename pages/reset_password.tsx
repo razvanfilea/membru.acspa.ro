@@ -3,8 +3,9 @@ import {MdAlternateEmail} from "react-icons/md";
 import {useForm} from "@mantine/form";
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
-import {useAuth} from "../components/AuthProvider";
-import {supabase} from "../utils/supabase_utils";
+import {useProfile} from "../components/ProfileProvider";
+import {useSupabaseClient} from "@supabase/auth-helpers-react";
+import {Database} from "../types/database.types";
 
 const REGEX_EMAIL = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(([a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))$/
 
@@ -16,8 +17,10 @@ const enum Status {
 }
 
 export default function LoginForm() {
+    const supabase = useSupabaseClient<Database>()
     const router = useRouter()
-    const auth = useAuth()
+    const profileData = useProfile()
+
     const form = useForm({
         initialValues: {
             email: '',
@@ -32,17 +35,17 @@ export default function LoginForm() {
     const [resetStatus, setResetStatus] = useState(Status.None)
 
     useEffect(() => {
-        if (auth.user != null) {
+        if (!profileData.isLoading && profileData.profile != null) {
             router.back()
         }
-    }, [router, auth.user])
+    }, [profileData, router])
 
     return <Box sx={{maxWidth: 480}} mx="auto">
         <Stack>
             <form style={{position: 'relative'}} onSubmit={
                 form.onSubmit(async (values) => {
                     setResetStatus(Status.Loading)
-                    const {error} = await supabase.auth.api.resetPasswordForEmail(values.email)
+                    const {error} = await supabase.auth.resetPasswordForEmail(values.email)
 
                     setResetStatus(error == null ? Status.Success : Status.Failed)
                 })}>
