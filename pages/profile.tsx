@@ -104,7 +104,7 @@ export default function ProfilePage(params: IParams) {
 
                     <Stack spacing={1}>
                         <Text size="md" weight={500}>{profileData.profile.name}</Text>
-                        <Text size="sm">{profileData.profile.member_type}</Text>
+                        <Text size="sm">{profileData.profile.role}</Text>
                     </Stack>
                 </Group>
 

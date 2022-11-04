@@ -64,15 +64,15 @@ export interface Database {
           weekend_end_hour?: number
         }
       }
-      member_types: {
+      member_roles: {
         Row: {
-          type: string
+          role: string
         }
         Insert: {
-          type: string
+          role: string
         }
         Update: {
-          type?: string
+          role?: string
         }
       }
       mese: {
@@ -105,19 +105,19 @@ export interface Database {
         Row: {
           id: string
           name: string
-          member_type: string
+          role: string
           has_key: boolean
         }
         Insert: {
           id?: string
           name: string
-          member_type?: string
+          role?: string
           has_key?: boolean
         }
         Update: {
           id?: string
           name?: string
-          member_type?: string
+          role?: string
           has_key?: boolean
         }
       }

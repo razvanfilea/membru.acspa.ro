@@ -1,18 +1,6 @@
 import React, {Suspense, useEffect, useMemo, useState} from "react";
 import Head from "next/head";
-import {
-    ActionIcon,
-    Button,
-    Divider,
-    Group,
-    Paper,
-    SimpleGrid,
-    Space,
-    Stack,
-    Text,
-    Title,
-    useMantineTheme
-} from "@mantine/core";
+import {ActionIcon, Group, Paper, SimpleGrid, Space, Stack, Text, Title, useMantineTheme} from "@mantine/core";
 import {useListState, useLocalStorage, useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
 import {
@@ -27,17 +15,19 @@ import {
 } from "../types/wrapper";
 import {useProfile} from "../components/ProfileProvider";
 import {useRouter} from "next/router";
-import {MdClose, MdOutlineNoAccounts, MdRefresh, MdVpnKey} from "react-icons/md";
+import {MdClose, MdRefresh} from "react-icons/md";
 import {addDaysToDate, dateToISOString, isDateWeekend} from "../utils/date";
 import ConfirmSelection from "../components/ConfirmSelection";
 import {Room, SelectedTable} from "../types/room";
 import dynamic from "next/dynamic";
-import {SupabaseClient, useSupabaseClient, useUser} from "@supabase/auth-helpers-react";
+import {SupabaseClient, useSession, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../types/database.types";
 import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
+import RegistrationHours from "../components/RegistrastationHours";
 
 const DynamicCalendar = dynamic(() => import('../components/MantineCalendar'), {
     suspense: true,
+    ssr: true,
 })
 
 interface IParams {
@@ -49,18 +39,14 @@ interface IParams {
 export default function MakeReservationPage(params: IParams): JSX.Element {
     const router = useRouter()
     const theme = useMantineTheme()
-    const user = useUser()
+    const session = useSession()
     const profileData = useProfile()
 
     const [locationName, /*setLocationName*/] = useState(LocationName.Gara)
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date)
     const [selectedTable, setSelectedTable] = useState<SelectedTable | null>(null)
 
-    const selectedDateISO = useMemo(() => {
-        if (selectedDate == null)
-            return null
-        return dateToISOString(selectedDate)
-    }, [selectedDate])
+    const selectedDateISO = useMemo(() => dateToISOString(selectedDate), [selectedDate])
 
     function onSelectedDateChange(selectedDate: Date) {
         setSelectedDate(selectedDate)
@@ -68,12 +54,15 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     }
 
     useEffect(() => {
-        if (!profileData.isLoading && user != null && profileData.profile == null) {
-            router.push('/signup').then(() => {
-                console.log("Failed to redirect to signup")
-            })
+        if (!profileData.isLoading && profileData.profile == null) {
+            const redirectPath = session == null ? '/login' : '/signup'
+            const timer = setTimeout(() => {
+                router.push(redirectPath).then(null)
+            }, 400)
+
+            return () => clearTimeout(timer)
         }
-    }, [user, profileData, router])
+    }, [session, profileData, router])
 
     const [showInformationPopup, setInformationPopup] = useLocalStorage({
         key: 'show-information-popup',
@@ -93,25 +82,14 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
         <Space h="lg"/>
 
         <Paper>
-            {profileData.profile == null &&
-                <>
-                    <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-                        backgroundColor: theme.colors.orange,
-                        marginTop: theme.spacing.sm
-                    })}>
-                        <Text>Trebuie să ai un cont și să fi un membru pentru a putea face rezervări!</Text>
-                    </Paper>
-                    <Space h="md"/>
-                </>
-            }
-
             {profileData.profile != null && showInformationPopup &&
                 <>
                     <Paper shadow={"0"} p={"sm"} sx={(theme) => ({
                         backgroundColor: theme.colors.cyan[9],
                     })}>
                         <Group noWrap={true}>
-                            <Text style={{width: '100%'}}>Rezervările se fac până la ora 16 pentru ziua respectivă. Max 8 jucători pentru un
+                            <Text style={{width: '100%'}}>Rezervările se fac până la ora 16 pentru ziua respectivă. Max
+                                8 jucători pentru un
                                 interval orar. Când știți că nu ajungeți, retrageți-vă pentru a lăsa loc liber altor
                                 jucători. Spor la joc!</Text>
                             <ActionIcon onClick={() => setInformationPopup(false)} size={48}>
@@ -184,6 +162,8 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                     {ConfirmSelection(room, selectedDateISO, selectedTable)}
                 </Stack>
             </SimpleGrid>
+
+            <Space h="xl"/>
         </Paper>
     </>;
 }
@@ -218,7 +198,7 @@ function fetchReservations(
 
 function SelectGameTable(
     room: Room,
-    selectedDateISO: string | null,
+    selectedDateISO: string,
     selectedTable: SelectedTable | null,
     onSelectTable: (s: SelectedTable) => void,
 ): JSX.Element {
@@ -275,22 +255,10 @@ function SelectGameTable(
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    const currentDateReservations = useMemo(() => {
-        return reservations.filter(reservation => reservation.start_date == selectedDateISO)
-    }, [reservations, selectedDateISO]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => scrollIntoView({alignment: 'center'}), [selectedDateISO])
 
-    const currentDateInvites = useMemo(() => {
-        return invites.filter(invite => invite.date == selectedDateISO)
-    }, [invites, selectedDateISO]);
-
-    useEffect(() => {
-        if (selectedDateISO) {
-            scrollIntoView({alignment: 'center'})
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedDateISO])
-
-    const startEnd = useMemo(() => {
+    const registrationHours = useMemo(() => {
         if (selectedDateISO == null) {
             return {start: 0, end: 0, duration: 0}
         }
@@ -309,76 +277,18 @@ function SelectGameTable(
         }
     }, [room, selectedDateISO])
 
-    if (selectedDateISO == null) return <></>
-
-    const selectedTableId = selectedTable?.table?.id;
-    const selectedStartHour = (selectedTable) ? selectedTable.startHour : -1;
-
-    const tableButtons = function (startHour: number) {
-        return room.tables.map((gameTable) => {
-            return (
-                <Button
-                    variant={(gameTable.id == selectedTableId && startHour == selectedStartHour) ? "filled" : "outline"}
-                    key={gameTable.id}
-                    fullWidth={false}
-                    onClick={() => onSelectTable(new SelectedTable(startHour, gameTable))}>
-                    {gameTable.name}
-                </Button>
-            )
-        })
-    }
-
-    const allButtons = ({start, end, duration}) => {
-        let content: JSX.Element[] = [];
-        for (let hour = start; hour < end; hour += duration) {
-            const restriction =
-                restrictions.find(restriction => restriction.date == selectedDateISO && restriction.start_hour == hour)
-
-            content.push(<Stack key={hour}>
-                <Group noWrap={true} style={{marginLeft: "1em", marginRight: "1em"}} spacing={'lg'}>
-                    <Text>{`Ora ${hour} - ${hour + duration}`}:</Text>
-
-                    {!restriction &&
-                        tableButtons(hour)
-                    }
-
-                    {restriction &&
-                        <Text>{restriction.message}</Text>
-                    }
-                </Group>
-
-                {!restriction &&
-                    <Group style={{marginLeft: "1em", marginRight: "1em"}} spacing={"xs"}>
-                        <Text>Listă înscriși: </Text>
-                        {currentDateReservations.filter(value => value.start_hour == hour).map((reservation, index) => {
-                            const profile = allProfiles.find(value => value.id == reservation.user_id)
-
-                            if (profile)
-                                return <Button key={profile.id} color={profile.has_key ? 'blue' : 'gray'} radius={'xl'}
-                                               size={'xs'} rightIcon={profile.has_key ?
-                                    <MdVpnKey/> : <></>}>{index + 1}. {profile.name}</Button>
-                            else
-                                return <></>
-                        })}
-
-                        {currentDateInvites.filter(value => value.start_hour == hour).map((invite) => {
-                            return <Button key={invite.date + invite.start_hour} color={'cyan'} radius={'xl'}
-                                           size={'xs'} rightIcon={<MdOutlineNoAccounts/>}>{invite.guest_name}</Button>
-                        })}
-                    </Group>
-                }
-
-                <Divider variant={"dashed"}/>
-            </Stack>);
-        }
-        return content;
-    };
+    const selectedDateReservations
+        = useMemo(() => reservations.filter(value => value.start_date == selectedDateISO), [reservations, selectedDateISO])
+    const selectedDateInvites
+        = useMemo(() => invites.filter(value => value.date == selectedDateISO), [invites, selectedDateISO])
+    const selectedDateRestrictions
+        = useMemo(() => restrictions.filter(value => value.date == selectedDateISO), [restrictions, selectedDateISO])
 
     return <>
         <Group position={'apart'} align={"center"}>
             <Group align={"center"} spacing={'xs'}>
                 <Text weight={600} ref={targetRef}>Data selectată:</Text>
-                <Text color={"blue"}>{(new Date(selectedDateISO)).toLocaleDateString('ro-RO')}</Text>
+                <Text color={"blue"}>{new Date(selectedDateISO).toLocaleDateString('ro-RO')}</Text>
             </Group>
 
             <ActionIcon variant={'light'} radius={'xl'} size={36}
@@ -387,7 +297,7 @@ function SelectGameTable(
             </ActionIcon>
         </Group>
 
-        {allButtons(startEnd)}
+        {RegistrationHours(room.tables, selectedDateReservations, selectedDateRestrictions, selectedDateInvites, allProfiles, selectedTable, onSelectTable, registrationHours)}
     </>
 }
 

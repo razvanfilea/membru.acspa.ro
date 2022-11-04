@@ -3,6 +3,7 @@ import {MdAdminPanelSettings, MdBookmarks, MdHome} from 'react-icons/md';
 import {Group, Stack, Text, ThemeIcon, UnstyledButton} from '@mantine/core';
 import Link from "next/link";
 import {ProfileData, useProfile} from "../ProfileProvider";
+import {MemberTypes} from "../../types/wrapper";
 
 interface MainLinkProps {
     icon: React.ReactNode;
@@ -56,7 +57,7 @@ const linkData: MainLinkData[] = [
         color: 'red',
         label: 'Panou Fondator',
         link: '/admin',
-        cond: (profileData: ProfileData) => profileData.profile?.member_type === 'Fondator'
+        cond: (profileData: ProfileData) => profileData.profile?.role === MemberTypes.Fondator
     },
 ];
 

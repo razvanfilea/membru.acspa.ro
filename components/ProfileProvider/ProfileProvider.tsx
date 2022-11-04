@@ -52,7 +52,7 @@ export default function ProfileProvider({children}) {
         }
 
         const {data: listener} = supabase.auth.onAuthStateChange(
-            async (event, session) => {
+            async (event) => {
                 if (event == "PASSWORD_RECOVERY") {
                     let newPassword: string | null = null;
                     while (!newPassword || newPassword.length < 8)

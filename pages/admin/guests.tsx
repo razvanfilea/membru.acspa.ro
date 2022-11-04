@@ -44,7 +44,7 @@ export default function GuestManager(params: IParams) {
     });
 
     useEffect(() => {
-        if ((!profileData.isLoading && profileData.profile == null) || profileData.profile?.member_type !== MemberTypes.Fondator)
+        if ((!profileData.isLoading && profileData.profile == null) || profileData.profile?.role !== MemberTypes.Fondator)
             router.back()
     }, [profileData, router])
 
