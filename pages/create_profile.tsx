@@ -6,6 +6,7 @@ import {useRouter} from "next/router";
 import {useSupabaseClient, useUser} from "@supabase/auth-helpers-react";
 import {Database} from "../types/database.types";
 import {changePasswordAsync} from "../components/AppShell";
+import {useProfile} from "../components/ProfileProvider";
 
 const enum RegisterState {
     None,
@@ -14,8 +15,9 @@ const enum RegisterState {
     Success,
 }
 
-export default function LoginForm() {
+export default function CreateProfile() {
     const supabase = useSupabaseClient<Database>()
+    const profileData = useProfile()
     const user = useUser()
     const router = useRouter()
 
@@ -39,10 +41,10 @@ export default function LoginForm() {
     const [registerState, setRegisterState] = useState(RegisterState.None)
 
     useEffect(() => {
-        if (user != null || registerState == RegisterState.Success) {
-            router.push('/')
+        if (profileData.profile != null || registerState == RegisterState.Success) {
+            router.push('/').then(null)
         }
-    }, [user, registerState, router])
+    }, [profileData, registerState, router])
 
     return (<>
         <Box sx={{maxWidth: 480}} mx="auto">

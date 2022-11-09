@@ -11,7 +11,7 @@ RewriteCond %{HTTP_HOST} ^www\.membru\.acspa\.ro$
 RewriteRule ^login$ "https\:\/\/membru\.acspa\.ro\/login\.html" [R=302,L]
 RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
 RewriteCond %{HTTP_HOST} ^www\.membru\.acspa\.ro$
-RewriteRule ^signup$ "https\:\/\/membru\.acspa\.ro\/signup\.html" [R=302,L]
+RewriteRule ^create_profile$ "https\:\/\/membru\.acspa\.ro\/create_profile\.html" [R=302,L]
 RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
 RewriteCond %{HTTP_HOST} ^www\.membru\.acspa\.ro$
 RewriteRule ^reset_password$ "https\:\/\/membru\.acspa\.ro\/reset_password\.html" [R=302,L]

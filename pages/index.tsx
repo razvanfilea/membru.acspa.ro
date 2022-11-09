@@ -36,6 +36,11 @@ interface IParams {
     daysAhead: number
 }
 
+interface IShowInformationPopup {
+    readonly value: boolean
+    readonly expiry: number
+}
+
 export default function MakeReservationPage(params: IParams): JSX.Element {
     const router = useRouter()
     const theme = useMantineTheme()
@@ -55,7 +60,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
 
     useEffect(() => {
         if (!profileData.isLoading && profileData.profile == null) {
-            const redirectPath = session == null ? '/login' : '/signup'
+            const redirectPath = session == null ? '/login' : '/create_profile'
             const timer = setTimeout(() => {
                 router.push(redirectPath).then(null)
             }, 400)
@@ -64,11 +69,15 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
         }
     }, [session, profileData, router])
 
-    const [showInformationPopup, setInformationPopup] = useLocalStorage({
-        key: 'show-information-popup',
-        defaultValue: true,
+    const [showInformationPopup, setInformationPopup] = useLocalStorage<IShowInformationPopup>({
+        key: 'show-info-popup',
+        defaultValue: {
+            value: true,
+            expiry: new Date().getTime() - 1000
+        },
         getInitialValueInEffect: true,
     })
+
 
     const room = locationName == LocationName.Gara ? params.gara : params.boromir;
 
@@ -82,17 +91,25 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
         <Space h="lg"/>
 
         <Paper>
-            {profileData.profile != null && showInformationPopup &&
+            {(showInformationPopup.value || showInformationPopup.expiry < new Date().getTime()) &&
                 <>
                     <Paper shadow={"0"} p={"sm"} sx={(theme) => ({
                         backgroundColor: theme.colors.cyan[9],
                     })}>
                         <Group noWrap={true}>
-                            <Text style={{width: '100%'}}>Rezervările se fac până la ora 16 pentru ziua respectivă. Max
-                                8 jucători pentru un
+                            <Text style={{width: '100%'}}>
+                                Rezervările se fac până la ora 16 pentru ziua respectivă. Max 8 jucători pentru un
                                 interval orar. Când știți că nu ajungeți, retrageți-vă pentru a lăsa loc liber altor
-                                jucători. Spor la joc!</Text>
-                            <ActionIcon onClick={() => setInformationPopup(false)} size={48}>
+                                jucători. Rezervările se fac până la ora 16 pentru ziua în curs. Spor la joc!</Text>
+                            <ActionIcon onClick={() => {
+                                const daysInMilliseconds = 3 * 24 * 60 * 60 * 10000 // 3 days in milliseconds
+                                const item: IShowInformationPopup = {
+                                    value: false,
+                                    expiry: new Date().getTime() + daysInMilliseconds
+                                }
+
+                                setInformationPopup(item)
+                            }} size={48}>
                                 <MdClose size={24}/>
                             </ActionIcon>
                         </Group>
