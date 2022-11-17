@@ -63,15 +63,14 @@ export default function GuestManager(params: IParams) {
     async function fetchGuests() {
         const {data} = await supabase.from('guest_invites')
             .select('*')
-            .order('date', {ascending: true})
+            .order('start_date', {ascending: false})
             .order('start_hour', {ascending: true})
 
         return data || []
     }
 
-    const hasSelectedWeekend = useMemo(() => {
-        return isDateWeekend(newInviteForm.values.date)
-    }, [newInviteForm.values.date])
+    const hasSelectedWeekend = useMemo(() => isDateWeekend(newInviteForm.values.date),
+        [newInviteForm.values.date])
 
     if (profileData.isLoading || isLoading)
         return <Center> <Loader/> </Center>;
@@ -90,7 +89,7 @@ export default function GuestManager(params: IParams) {
                     setCreateModalOpened(false)
                     console.log(values.date)
                     const newGuest = {
-                        date: dateToISOString(values.date),
+                        start_date: dateToISOString(values.date),
                         start_hour: values.startHour,
                         guest_name: values.guestName
                     }
@@ -106,6 +105,7 @@ export default function GuestManager(params: IParams) {
                     <TextInput
                         {...newInviteForm.getInputProps('guestName')}
                         label={'Nume invitat'}
+                        size={'lg'}
                         required={true}/>
 
                     <DatePicker
@@ -115,6 +115,7 @@ export default function GuestManager(params: IParams) {
                         withAsterisk locale="ro"
                         minDate={new Date()}
                         clearable={false}
+                        size={'lg'}
                         inputFormat="YYYY-MM-DD"/>
 
                     <AdminHourInput
@@ -146,17 +147,18 @@ export default function GuestManager(params: IParams) {
                 onRefresh={async () => guestHandler.setState(await fetchGuests())}/>
 
             {guests.map((guest) => (
-                <Card key={guest.date + guest.start_hour + guest.guest_name} shadow={"xs"}>
+                <Card key={guest.start_date + guest.start_hour + guest.guest_name} shadow={"xs"}>
                     {GuestInviteComponent(
                         guest,
                         allProfiles.find(profile => profile.id === guest.user_id)?.name || null,
                         async () => {
                             await supabase.from('guest_invites')
                                 .delete()
-                                .eq('date', guest.date)
+                                .eq('start_date', guest.start_date)
                                 .eq('start_hour', guest.start_hour)
                                 .eq('guest_name', guest.guest_name)
-                            guestHandler.filter(value => value.date !== guest.date && value.start_hour !== guest.start_hour)
+                            guestHandler.filter(value => value.start_date !== guest.start_date
+                                && value.start_hour !== guest.start_hour && value.guest_name !== guest.guest_name)
                         }
                     )}
                 </Card>

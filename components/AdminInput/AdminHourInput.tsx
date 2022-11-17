@@ -18,7 +18,7 @@ export default function AdminHourInput({inputHandler, isWeekend, gameLocation, f
             hideControls={true}
             placeholder="Ora"
             label="Ora"
-            disabled={true}
+            size={'lg'}
             required={true}
             step={isWeekend ? gameLocation.weekend_reservation_duration : gameLocation.reservation_duration}
             min={isWeekend ? gameLocation.weekend_start_hour : gameLocation.start_hour}
@@ -26,12 +26,12 @@ export default function AdminHourInput({inputHandler, isWeekend, gameLocation, f
                 : (gameLocation.end_hour - gameLocation.reservation_duration)}
         />
 
-        <ActionIcon size={36} variant="default"
+        <ActionIcon size={50} variant="default"
                     onClick={() => inputHandler.current!.decrement()}>
             –
         </ActionIcon>
 
-        <ActionIcon size={36} variant="default"
+        <ActionIcon size={50} variant="default"
                     onClick={() => inputHandler.current!.increment()}>
             +
         </ActionIcon>

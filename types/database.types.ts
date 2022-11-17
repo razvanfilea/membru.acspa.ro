@@ -14,21 +14,21 @@ export interface Database {
           created_at: string
           user_id: string
           guest_name: string
-          date: string
+          start_date: string
           start_hour: number
         }
         Insert: {
           created_at?: string
           user_id?: string
           guest_name: string
-          date: string
+          start_date: string
           start_hour: number
         }
         Update: {
           created_at?: string
           user_id?: string
           guest_name?: string
-          date?: string
+          start_date?: string
           start_hour?: number
         }
       }

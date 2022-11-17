@@ -98,9 +98,9 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                     })}>
                         <Group noWrap={true}>
                             <Text style={{width: '100%'}}>
-                                Rezervările se fac până la ora 16 pentru ziua respectivă. Max 8 jucători pentru un
+                                Rezervările se fac până la ora 17 respectiv 19 pentru ziua respectivă. Max 8 jucători pentru un
                                 interval orar. Când știți că nu ajungeți, retrageți-vă pentru a lăsa loc liber altor
-                                jucători. Rezervările se fac până la ora 16 pentru ziua în curs. Spor la joc!</Text>
+                                jucători. Spor la joc!</Text>
                             <ActionIcon onClick={() => {
                                 const daysInMilliseconds = 3 * 24 * 60 * 60 * 10000 // 3 days in milliseconds
                                 const item: IShowInformationPopup = {
@@ -142,9 +142,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                             size="md">
                             <Radio value={LocationName.Gara} label={"Gară"}/>
                             <Radio value={LocationName.Boromir} label={"Boromir"}/>
-                        </Radio.Group>
-
-                        <Space h={"sm"}/>*/}
+                        </Radio.Group>*/}
 
                         <Text>Alege ziua rezervării:</Text>
 
@@ -250,12 +248,14 @@ function SelectGameTable(
                 (payload) => {
                     if (payload.eventType == "INSERT") {
                         if (payload.new.status == ReservationStatus.Approved) {
-                            // @ts-ignore // TODO
-                            reservationsHandle.setState(prev => [...prev, payload.new]
-                                .sort((a, b) => {
-                                    // @ts-ignore
-                                    return new Date(a.created_at) - new Date(b.created_at)
-                                }))
+                            reservationsHandle.setState((prev) => {
+                                    return [...prev, payload.new as Reservation]
+                                        .sort((a, b) => {
+                                            // @ts-ignore
+                                            return new Date(a.created_at) - new Date(b.created_at)
+                                        })
+                                }
+                            )
                         }
                     } else if (payload.eventType == "UPDATE") {
                         fetchReservations(supabase, reservationsHandle.setState, setRestrictions) // TODO Could make this more efficient
@@ -297,7 +297,7 @@ function SelectGameTable(
     const selectedDateReservations
         = useMemo(() => reservations.filter(value => value.start_date == selectedDateISO), [reservations, selectedDateISO])
     const selectedDateInvites
-        = useMemo(() => invites.filter(value => value.date == selectedDateISO), [invites, selectedDateISO])
+        = useMemo(() => invites.filter(value => value.start_date == selectedDateISO), [invites, selectedDateISO])
     const selectedDateRestrictions
         = useMemo(() => restrictions.filter(value => value.date == selectedDateISO), [restrictions, selectedDateISO])
 

@@ -111,6 +111,7 @@ export default function RestrictedReservationsList(params: IParams) {
                         withAsterisk locale="ro"
                         minDate={new Date()}
                         clearable={false}
+                        size={'lg'}
                         inputFormat="YYYY-MM-DD"/>
 
                     <AdminHourInput
@@ -123,6 +124,7 @@ export default function RestrictedReservationsList(params: IParams) {
                     <TextInput
                         {...newRestrictionForm.getInputProps('message')}
                         label={'Mesaj'}
+                        size={'lg'}
                         placeholder={'Motivul pentru care nu se pot face rezervări'}
                         required={true}/>
 

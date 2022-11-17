@@ -116,7 +116,7 @@ export default function RegistrationHours(
 
                     {selectedDateInvites.filter(value => value.start_hour == hour).map((invite, index) => {
                         return <Button
-                            key={invite.date + invite.start_hour + invite.guest_name} color={'cyan'} radius={'xl'}
+                            key={invite.start_date + invite.start_hour + invite.guest_name} color={'cyan'} radius={'xl'}
                             size={'xs'} rightIcon={<MdOutlineNoAccounts/>}>
                             {lastIndex + index + 2}. {invite.guest_name}
                         </Button>
