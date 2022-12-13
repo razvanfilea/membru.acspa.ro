@@ -41,7 +41,7 @@ export default function ReservationComponent(
 
             <Text>Locația: <b>{gameTable.location.toUpperCase()}</b></Text>
 
-            {gameTable.location == LocationName.Boromir &&
+            {gameTable.location === LocationName.Boromir &&
                 <>
                     <Text>Tipul mesei: <b>{gameTable.type.toUpperCase()}</b></Text>
                     <Text>Culoarea mesei: <b>{gameTable.color.toUpperCase()}</b></Text>

@@ -1,4 +1,4 @@
-import {Button, Card, Group, Paper, SimpleGrid, Text} from "@mantine/core";
+import {Button, Card, Group, Paper, SimpleGrid, Space, Text} from "@mantine/core";
 import Link from "next/link";
 
 export default function AdminPage() {
@@ -8,12 +8,20 @@ export default function AdminPage() {
             <Text size={'sm'} sx={(theme) => ({margin: theme.spacing.xs})}>
                 Este necesară discreția utilizatorului: datele de intrare nu sunt validate.<br/>
                 Dezvoltatorul nu își asumă nicio responsabilitate pentru această parte a aplicației!</Text>
+
+            <Space h={'md'}/>
+
             <Group position={"apart"}>
                 <Link href={'/admin/restrictions'}>
                     <Button>Restricționare rezervări</Button>
                 </Link>
+
                 <Link href={'/admin/guests'}>
                     <Button>Adăugare invitați</Button>
+                </Link>
+
+                <Link href={'/admin/inspect_user'}>
+                    <Button>Inspecția!</Button>
                 </Link>
             </Group>
         </Card>
