@@ -1,4 +1,4 @@
-import {Button, Card, Group, Paper, SimpleGrid, Space, Text} from "@mantine/core";
+import {Button, Card, Group, Paper, SimpleGrid, Space, Stack, Text} from "@mantine/core";
 import Link from "next/link";
 
 export default function AdminPage() {
@@ -11,19 +11,19 @@ export default function AdminPage() {
 
             <Space h={'md'}/>
 
-            <Group position={"apart"}>
+            <Stack spacing={'lg'}>
                 <Link href={'/admin/restrictions'}>
-                    <Button>Restricționare rezervări</Button>
+                    <Button color={'red'}>Restricționare rezervări</Button>
                 </Link>
 
                 <Link href={'/admin/guests'}>
-                    <Button>Adăugare invitați</Button>
+                    <Button color={'blue'}>Adăugare invitați</Button>
                 </Link>
 
-                <Link href={'/admin/inspect_user'}>
-                    <Button>Inspecția!</Button>
+                <Link href={'/admin/situation'}>
+                    <Button>Situație rezervări</Button>
                 </Link>
-            </Group>
+            </Stack>
         </Card>
     </Paper>
 }

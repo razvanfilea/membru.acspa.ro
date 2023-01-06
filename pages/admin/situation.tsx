@@ -4,12 +4,12 @@ import {useRouter} from "next/router";
 import {useProfile} from "../../components/ProfileProvider";
 import React, {useEffect, useMemo, useState} from "react";
 import {MemberTypes, Profile, Reservation, ReservationStatus} from "../../types/wrapper";
-import {Card, Center, Indicator, Loader, Select, SimpleGrid, Space, Stack, Text} from "@mantine/core";
+import {Card, Center, Group, Indicator, Loader, Select, SimpleGrid, Space, Stack, Text} from "@mantine/core";
 import {RangeCalendar} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
 
-export default function InspectUser() {
+export default function SituationPage() {
     const supabase = useSupabaseClient<Database>()
     const router = useRouter()
     const profileData = useProfile()
@@ -35,19 +35,24 @@ export default function InspectUser() {
                     setIsLoading(false)
                 }
             })
-
-        supabase.from('rezervari').select('*')
-            .eq('status', ReservationStatus.Approved)
-            .order('start_date', {ascending: false})
-            .order('start_hour', {ascending: true})
-            .then(value => {
-                if (value.data != null) {
-                    setReservations(value.data)
-                }
-            })
         // We only want to run it once
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    useEffect(() => {
+        if (selectedProfileId != null) {
+            supabase.from('rezervari').select('*')
+                .eq('status', ReservationStatus.Approved)
+                .eq('user_id', selectedProfileId)
+                .order('start_date', {ascending: false})
+                .order('start_hour', {ascending: true})
+                .then(value => {
+                    if (value.data != null) {
+                        setReservations(value.data)
+                    }
+                })
+        }
+    }, [selectedProfileId, supabase])
 
     const selectedProfile = useMemo(
         () => allProfiles.find(it => it.id === selectedProfileId) || null,
@@ -94,6 +99,7 @@ export default function InspectUser() {
                     onChange={setDateRange}
                     size={"lg"}
                     locale="ro"
+                    fullWidth={true}
                     renderDay={(date) => {
                         return (
                             <Indicator size={8} color="green" offset={8}
@@ -122,14 +128,16 @@ function SelectedUserReservations(profile: Profile, reservations: Reservation[])
         <Text size={'xl'}>Total: {reservations.length}</Text>
 
         {
-            reservations.map(reservation => {
+            reservations.map((reservation, index) => {
                 return <Card key={reservation.id}>
-                    <Stack>
+                    <Group position={'apart'}>
+                        <Text>{index + 1}</Text>
+
                         <Text weight={900}>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</Text>
 
                         <Text>De
                             la <b>{reservation.start_hour}:{'00'}</b> la <b>{reservation.start_hour + reservation.duration}:{'00'}</b></Text>
-                    </Stack>
+                    </Group>
                 </Card>
             })
         }
