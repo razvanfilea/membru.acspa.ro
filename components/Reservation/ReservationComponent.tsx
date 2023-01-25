@@ -28,7 +28,7 @@ export default function ReservationComponent(
     showStatus: boolean,
     onCancel: (() => Promise<void>) | null
 ) {
-    return (<Group position={"apart"}>
+    return <Group position={"apart"}>
         <Stack spacing={0}>
             {gameTable.location == LocationName.Boromir &&
                 <Text size={"lg"} weight={800}>{gameTable.name}</Text>
@@ -53,5 +53,5 @@ export default function ReservationComponent(
         {showStatus &&
             ShowStatus(reservation, onCancel)
         }
-    </Group>)
+    </Group>
 }

@@ -12,56 +12,59 @@ export interface Database {
       guest_invites: {
         Row: {
           created_at: string
-          user_id: string
           guest_name: string
+          special: boolean
           start_date: string
           start_hour: number
+          user_id: string
         }
         Insert: {
           created_at?: string
-          user_id?: string
           guest_name: string
+          special: boolean
           start_date: string
           start_hour: number
+          user_id?: string
         }
         Update: {
           created_at?: string
-          user_id?: string
           guest_name?: string
+          special?: boolean
           start_date?: string
           start_hour?: number
+          user_id?: string
         }
       }
       locations: {
         Row: {
+          end_hour: number
+          max_reservations: number
           name: string
           reservation_duration: number
-          max_reservations: number
           start_hour: number
-          end_hour: number
+          weekend_end_hour: number
           weekend_reservation_duration: number
           weekend_start_hour: number
-          weekend_end_hour: number
         }
         Insert: {
+          end_hour: number
+          max_reservations: number
           name: string
           reservation_duration: number
-          max_reservations: number
           start_hour: number
-          end_hour: number
+          weekend_end_hour?: number
           weekend_reservation_duration?: number
           weekend_start_hour?: number
-          weekend_end_hour?: number
         }
         Update: {
+          end_hour?: number
+          max_reservations?: number
           name?: string
           reservation_duration?: number
-          max_reservations?: number
           start_hour?: number
-          end_hour?: number
+          weekend_end_hour?: number
           weekend_reservation_duration?: number
           weekend_start_hour?: number
-          weekend_end_hour?: number
         }
       }
       member_roles: {
@@ -77,100 +80,100 @@ export interface Database {
       }
       mese: {
         Row: {
-          id: string
-          name: string
-          location: string
-          type: string
           color: string
           has_robot: boolean
+          id: string
+          location: string
+          name: string
+          type: string
         }
         Insert: {
-          id: string
-          name: string
-          location: string
-          type: string
           color: string
           has_robot?: boolean
+          id: string
+          location: string
+          name: string
+          type: string
         }
         Update: {
-          id?: string
-          name?: string
-          location?: string
-          type?: string
           color?: string
           has_robot?: boolean
+          id?: string
+          location?: string
+          name?: string
+          type?: string
         }
       }
       profiles: {
         Row: {
+          has_key: boolean
           id: string
           name: string
           role: string
-          has_key: boolean
         }
         Insert: {
+          has_key?: boolean
           id?: string
           name: string
           role?: string
-          has_key?: boolean
         }
         Update: {
+          has_key?: boolean
           id?: string
           name?: string
           role?: string
-          has_key?: boolean
         }
       }
       reservations_restrictions: {
         Row: {
           date: string
-          start_hour: number
           message: string
+          start_hour: number
           user_id: string
         }
         Insert: {
           date: string
-          start_hour: number
           message: string
+          start_hour: number
           user_id?: string
         }
         Update: {
           date?: string
-          start_hour?: number
           message?: string
+          start_hour?: number
           user_id?: string
         }
       }
       rezervari: {
         Row: {
-          id: string
           created_at: string
-          user_id: string
-          table_id: string
-          start_date: string
-          status: string
-          start_hour: number
           duration: number
+          id: string
+          start_date: string
+          start_hour: number
+          status: string
+          table_id: string
+          user_id: string
         }
         Insert: {
-          id?: string
           created_at?: string
-          user_id: string
-          table_id: string
-          start_date: string
-          status: string
-          start_hour: number
           duration: number
+          id?: string
+          start_date: string
+          start_hour: number
+          status: string
+          table_id: string
+          user_id: string
         }
         Update: {
-          id?: string
           created_at?: string
-          user_id?: string
-          table_id?: string
-          start_date?: string
-          status?: string
-          start_hour?: number
           duration?: number
+          id?: string
+          start_date?: string
+          start_hour?: number
+          status?: string
+          table_id?: string
+          user_id?: string
         }
       }
       rezervari_status: {

@@ -1,9 +1,8 @@
 import 'dayjs/locale/ro';
 import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {useRouter} from "next/router";
 import {useProfile} from "../../components/ProfileProvider";
-import {Location, LocationName, MemberTypes, Profile, ReservationRestriction} from "../../types/wrapper";
+import {Location, LocationName, Profile, ReservationRestriction} from "../../types/wrapper";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
 import {DatePicker} from "@mantine/dates";
@@ -12,6 +11,7 @@ import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
+import {useExitIfNotFounder} from "../../utils/admin_tools";
 
 interface IParams {
     location: Location
@@ -20,7 +20,6 @@ interface IParams {
 export default function RestrictedReservationsList(params: IParams) {
     const supabase = useSupabaseClient<Database>()
     const location = params.location
-    const router = useRouter()
     const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
@@ -43,10 +42,7 @@ export default function RestrictedReservationsList(params: IParams) {
         validateInputOnBlur: true
     });
 
-    useEffect(() => {
-        if ((!profileData.isLoading && profileData.profile == null) || profileData.profile?.role !== MemberTypes.Fondator)
-            router.back()
-    }, [profileData, router])
+    useExitIfNotFounder();
 
     useEffect(() => {
         supabase.from('profiles').select('*').then(value => {

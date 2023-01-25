@@ -16,6 +16,9 @@ export default function GuestInviteComponent(
 
             <Text>Data: <b>{(new Date(guestInvite.start_date)).toLocaleDateString('ro-RO')}</b></Text>
             <Text>De la ora {guestInvite.start_hour}:{'00'}</Text>
+            { guestInvite.special &&
+                <Text size={"sm"} color={'pink'}>Invitat special</Text>
+            }
             <Text size={"sm"}>Creat de {userName || guestInvite.user_id} pe {new Date(guestInvite.created_at).toLocaleDateString()}</Text>
         </Stack>
 

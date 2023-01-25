@@ -1,9 +1,8 @@
 import 'dayjs/locale/ro';
-import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, TextInput} from "@mantine/core";
+import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, Switch, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {useRouter} from "next/router";
 import {useProfile} from "../../components/ProfileProvider";
-import {GuestInvite, Location, LocationName, MemberTypes, Profile} from "../../types/wrapper";
+import {GuestInvite, Location, LocationName, Profile} from "../../types/wrapper";
 import {useForm} from "@mantine/form";
 import {DatePicker} from "@mantine/dates";
 import {dateToISOString, isDateWeekend} from "../../utils/date";
@@ -13,6 +12,7 @@ import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
+import {useExitIfNotFounder} from "../../utils/admin_tools";
 
 interface IParams {
     location: Location
@@ -21,7 +21,6 @@ interface IParams {
 export default function GuestManager(params: IParams) {
     const supabase = useSupabaseClient<Database>()
     const location = params.location
-    const router = useRouter()
     const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
@@ -35,6 +34,7 @@ export default function GuestManager(params: IParams) {
             date: new Date(),
             startHour: 0,
             guestName: '',
+            special: false,
         },
         validate: {
             guestName: (value) => (value.length >= 3) ? null : "Numele invitatului este prea scurt",
@@ -43,10 +43,7 @@ export default function GuestManager(params: IParams) {
         validateInputOnBlur: true
     });
 
-    useEffect(() => {
-        if ((!profileData.isLoading && profileData.profile == null) || profileData.profile?.role !== MemberTypes.Fondator)
-            router.back()
-    }, [profileData, router])
+    useExitIfNotFounder();
 
     useEffect(() => {
         supabase.from('profiles').select('*').then(value => {
@@ -91,7 +88,8 @@ export default function GuestManager(params: IParams) {
                     const newGuest = {
                         start_date: dateToISOString(values.date),
                         start_hour: values.startHour,
-                        guest_name: values.guestName
+                        guest_name: values.guestName,
+                        special: values.special,
                     }
                     newInviteForm.reset()
 
@@ -108,6 +106,11 @@ export default function GuestManager(params: IParams) {
                         size={'lg'}
                         required={true}/>
 
+                    <Switch
+                        {...newInviteForm.getInputProps('special')}
+                        label="Special"
+                        size={'lg'}/>
+
                     <DatePicker
                         {...newInviteForm.getInputProps('date')}
                         placeholder="Alege data"
@@ -122,8 +125,7 @@ export default function GuestManager(params: IParams) {
                         formProps={newInviteForm.getInputProps('startHour')}
                         inputHandler={hourInputHandlers}
                         gameLocation={location}
-                        isWeekend={hasSelectedWeekend}
-                    />
+                        isWeekend={hasSelectedWeekend}/>
 
                     <Button type={"submit"} color={'green'}>Adaugă</Button>
                 </Stack>
@@ -157,6 +159,7 @@ export default function GuestManager(params: IParams) {
                                 .eq('start_date', guest.start_date)
                                 .eq('start_hour', guest.start_hour)
                                 .eq('guest_name', guest.guest_name)
+
                             guestHandler.filter(value => value.start_date !== guest.start_date
                                 && value.start_hour !== guest.start_hour && value.guest_name !== guest.guest_name)
                         }

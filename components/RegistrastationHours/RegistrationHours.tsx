@@ -90,12 +90,13 @@ export default function RegistrationHours(
                                 <Button color={profile.has_key ? 'blue' : 'gray'} radius={'xl'}
                                         size={'xs'} rightIcon={icon}>{index + 1}. {profile.name}</Button>
                             </Popover.Target>
+
                             <Popover.Dropdown>
                                 <Stack align={'center'}>
                                     <Text size="sm">Creat
                                         pe {new Date(reservation.created_at).toLocaleDateString("ro-RO")}</Text>
 
-                                    {userProfile.profile?.role === MemberTypes.Fondator &&
+                                    {(userProfile.profile?.role === MemberTypes.Fondator || reservation.user_id === userProfile.profile?.id) &&
 
                                         <Button onClick={async () => {
                                             const newData = {
@@ -116,7 +117,7 @@ export default function RegistrationHours(
 
                     {selectedDateInvites.filter(value => value.start_hour == hour).map((invite, index) => {
                         return <Button
-                            key={invite.start_date + invite.start_hour + invite.guest_name} color={'cyan'} radius={'xl'}
+                            key={invite.start_date + invite.start_hour + invite.guest_name} color={invite.special ? 'pink' : 'cyan'} radius={'xl'}
                             size={'xs'} rightIcon={<MdOutlineNoAccounts/>}>
                             {lastIndex + index + 2}. {invite.guest_name}
                         </Button>

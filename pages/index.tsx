@@ -1,4 +1,4 @@
-import React, {Suspense, useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import Head from "next/head";
 import {ActionIcon, Group, Paper, SimpleGrid, Space, Stack, Text, Title, useMantineTheme} from "@mantine/core";
 import {useListState, useLocalStorage, useScrollIntoView} from "@mantine/hooks";
@@ -19,16 +19,11 @@ import {MdClose, MdRefresh} from "react-icons/md";
 import {addDaysToDate, dateToISOString, isDateWeekend} from "../utils/date";
 import ConfirmSelection from "../components/ConfirmSelection";
 import {Room, SelectedTable} from "../types/room";
-import dynamic from "next/dynamic";
 import {SupabaseClient, useSession, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../types/database.types";
 import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
 import RegistrationHours from "../components/RegistrastationHours";
-
-const DynamicCalendar = dynamic(() => import('../components/MantineCalendar'), {
-    suspense: true,
-    ssr: true,
-})
+import {Calendar} from "@mantine/dates";
 
 interface IParams {
     gara: Room
@@ -98,7 +93,8 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                     })}>
                         <Group noWrap={true}>
                             <Text style={{width: '100%'}}>
-                                Rezervările se fac până la ora 17 respectiv 19 pentru ziua respectivă. Max 8 jucători pentru un
+                                Rezervările se fac până la ora 17 respectiv 19 pentru ziua respectivă. Max 8 jucători
+                                pentru un
                                 interval orar. Când știți că nu ajungeți, retrageți-vă pentru a lăsa loc liber altor
                                 jucători. Spor la joc!</Text>
                             <ActionIcon onClick={() => {
@@ -146,28 +142,26 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
 
                         <Text>Alege ziua rezervării:</Text>
 
-                        <Suspense fallback={`Loading Calendar...`}>
-                            <DynamicCalendar
-                                minDate={new Date}
-                                maxDate={addDaysToDate(new Date, params.daysAhead)}
-                                hideOutsideDates={true}
-                                allowLevelChange={false}
-                                size={"lg"}
-                                locale={"ro"}
-                                value={selectedDate}
-                                onChange={(date) => {
-                                    if (profileData.profile != null && date != null)
-                                        onSelectedDateChange(date)
-                                }}
-                                dayStyle={(date) =>
-                                    (date.getDate() === (new Date).getDate()
-                                        && date.getMonth() === (new Date).getMonth()
-                                        && date.getDate() !== selectedDate?.getDate())
-                                        ? {backgroundColor: theme.colors.blue[4], color: theme.white} : {}
-                                }
-                                fullWidth={true}
-                            />
-                        </Suspense>
+                        <Calendar
+                            minDate={new Date}
+                            maxDate={addDaysToDate(new Date, params.daysAhead)}
+                            hideOutsideDates={true}
+                            allowLevelChange={false}
+                            size={"lg"}
+                            locale={"ro"}
+                            value={selectedDate}
+                            onChange={(date) => {
+                                if (profileData.profile != null && date != null)
+                                    onSelectedDateChange(date)
+                            }}
+                            dayStyle={(date) =>
+                                (date.getDate() === (new Date).getDate()
+                                    && date.getMonth() === (new Date).getMonth()
+                                    && date.getDate() !== selectedDate?.getDate())
+                                    ? {backgroundColor: theme.colors.blue[4], color: theme.white} : {}
+                            }
+                            fullWidth={true}
+                        />
                     </Stack>
                 }
 
@@ -236,6 +230,7 @@ function SelectGameTable(
 
         supabase.from('guest_invites')
             .select('*')
+            .order('special', {ascending: false})
             .then(value => {
                 if (value.data !== null)
                     setInvites(value.data)

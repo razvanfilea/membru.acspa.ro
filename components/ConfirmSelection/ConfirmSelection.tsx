@@ -67,22 +67,7 @@ export function ConfirmSelection(
                     setErrorMessage(errorMessage ?? "")
                 }}>Confirmă rezervarea!</Button>
         } else if (status == ConfirmationStatus.Success) {
-            return <Stack>
-                <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-                    backgroundColor: theme.colors.green,
-                    marginTop: theme.spacing.sm,
-                    marginBottom: theme.spacing.xs
-                })}>
-                    <Text align={"center"} color="#FFF"><b>Rezervarea ta a fost înregistrată</b></Text>
-                </Paper>
-
-                <Group align={"center"}>
-                    <Text weight={600}>Rezervarea poate fi anulată de pe pagina ta de profil:</Text>
-                    <Link href={"/profile"}>
-                        <Button variant={'light'}>Vezi profilul</Button>
-                    </Link>
-                </Group>
-            </Stack>
+            return <></>
         } else {
             return <Paper shadow={"0"} p={"md"} sx={(theme) => ({
                 backgroundColor: theme.colors.orange,
@@ -95,17 +80,41 @@ export function ConfirmSelection(
     }
 
     return (<Card p={"xl"} shadow={"sm"}>
-        <div style={{marginTop: 'sm'}}>
-            <Title order={2} ref={targetRef}>Confirmă rezervarea:</Title>
-        </div>
+        { status !== ConfirmationStatus.Success &&
+            <>
+                <div style={{marginTop: 'sm'}}>
+                    <Title order={2} ref={targetRef}>Confirmă rezervarea:</Title>
+                </div>
 
-        <Space h={"lg"}/>
+                <Space h={"lg"}/>
 
-        {ReservationComponent(fakeReservation, selectedTable.table, false, null)}
+                {ReservationComponent(fakeReservation, selectedTable.table, false, null)}
 
-        <Space h={"md"}/>
+                <Space h={"md"}/>
 
-        <DisplayConfirmationStatus/>
+                <DisplayConfirmationStatus/>
+            </>
+        }
+
+        { status === ConfirmationStatus.Success &&
+            <Stack>
+                <Paper shadow={"0"} p={"md"} sx={(theme) => ({
+                    backgroundColor: theme.colors.green,
+                    marginTop: theme.spacing.sm,
+                    marginBottom: theme.spacing.xs
+                })}>
+                    <Text align={"center"} color="#FFF">Ai rezervare pe <b>{(new Date(fakeReservation.start_date)).toLocaleDateString('ro-RO')}</b> de la
+                        ora <b>{fakeReservation.start_hour}:{'00'}</b> la <b>{fakeReservation.start_hour + fakeReservation.duration}:{'00'}</b></Text>
+                </Paper>
+
+                <Group align={"center"}>
+                    <Text weight={600}>Rezervarea poate fi anulată de pe pagina ta de profil:</Text>
+                    <Link href={"/profile"}>
+                        <Button variant={'light'}>Vezi profilul</Button>
+                    </Link>
+                </Group>
+            </Stack>
+        }
 
     </Card>)
 }

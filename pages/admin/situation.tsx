@@ -1,17 +1,17 @@
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
-import {useRouter} from "next/router";
 import {useProfile} from "../../components/ProfileProvider";
 import React, {useEffect, useMemo, useState} from "react";
-import {MemberTypes, Profile, Reservation, ReservationStatus} from "../../types/wrapper";
-import {Card, Center, Group, Indicator, Loader, Select, SimpleGrid, Space, Stack, Text} from "@mantine/core";
+import {Profile, Reservation, ReservationStatus} from "../../types/wrapper";
+import {Button, Card, Center, Group, Indicator, Loader, Select, SimpleGrid, Space, Stack, Text} from "@mantine/core";
 import {RangeCalendar} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
+import {useExitIfNotFounder} from "../../utils/admin_tools";
+import JsPDF from 'jspdf';
 
 export default function SituationPage() {
     const supabase = useSupabaseClient<Database>()
-    const router = useRouter()
     const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
@@ -21,10 +21,7 @@ export default function SituationPage() {
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
     const [startRange, endRange] = dateRange;
 
-    useEffect(() => {
-        if ((!profileData.isLoading && profileData.profile == null) || profileData.profile?.role !== MemberTypes.Fondator)
-            router.back()
-    }, [profileData, router])
+    useExitIfNotFounder();
 
     useEffect(() => {
         supabase.from('profiles').select('*')
@@ -111,19 +108,33 @@ export default function SituationPage() {
                 />
             </Stack>
 
-            <Stack p={'md'}>
+            <Stack p={'md'} id={"report"}
+                   sx={(theme) => ({backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[0]})}>
                 {selectedProfile &&
                     SelectedUserReservations(selectedProfile, filteredReservations)
                 }
             </Stack>
         </SimpleGrid>
 
+        {selectedProfile && endRange &&
+            <Button onClick={() => generatePDF(`${selectedProfile!.name} ${dateToISOString(startRange)}-${dateToISOString(endRange)}`)}>Export</Button>
+        }
+
         <Space h="xl"/>
     </>
 }
 
+const generatePDF = (name: string) => {
+
+    const report = new JsPDF('portrait', 'pt', 'a4');
+    const toRender = document.querySelector('#report');
+    // @ts-ignore
+    report.html(toRender!).then(() => {
+        report.save(name + '.pdf');
+    });
+}
+
 function SelectedUserReservations(profile: Profile, reservations: Reservation[]) {
-    console.log(reservations)
     return <>
         <Text size={'xl'}>Total: {reservations.length}</Text>
 
