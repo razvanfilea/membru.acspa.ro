@@ -60,7 +60,7 @@ export default function RestrictedReservationsList(params: IParams) {
     async function fetchRestrictions() {
         const {data} = await supabase.from('reservations_restrictions')
             .select('*')
-            .order('date', {ascending: true})
+            .order('date', {ascending: false})
             .order('start_hour', {ascending: true})
 
         return data || []

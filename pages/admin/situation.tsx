@@ -9,6 +9,7 @@ import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
 import JsPDF from 'jspdf';
+import html2canvas from "html2canvas";
 
 export default function SituationPage() {
     const supabase = useSupabaseClient<Database>()
@@ -116,7 +117,7 @@ export default function SituationPage() {
             </Stack>
         </SimpleGrid>
 
-        {selectedProfile && endRange &&
+        {(selectedProfile && startRange && endRange) &&
             <Button onClick={() => generatePDF(`${selectedProfile!.name} ${dateToISOString(startRange)}-${dateToISOString(endRange)}`)}>Export</Button>
         }
 
@@ -127,11 +128,16 @@ export default function SituationPage() {
 const generatePDF = (name: string) => {
 
     const report = new JsPDF('portrait', 'pt', 'a4');
-    const toRender = document.querySelector('#report');
     // @ts-ignore
-    report.html(toRender!).then(() => {
-        report.save(name + '.pdf');
-    });
+    const toRender: HTMLElement = document.querySelector('#report');
+    html2canvas(toRender, {
+        height: toRender.clientHeight,
+        width: toRender.clientWidth,
+    }).then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        report.addImage(imgData, 'PNG', 0, 0, toRender.clientWidth, toRender.clientHeight);
+        report.save(`${name}.pdf`);
+    })
 }
 
 function SelectedUserReservations(profile: Profile, reservations: Reservation[]) {
