@@ -1,10 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {AppShell, Burger, Header, Image, Navbar, Transition, useMantineTheme} from '@mantine/core';
-import LightAndDarkModeButton from "../LightAndDarkModeButton";
+import {AppShell, Burger, Group, Header, Image, Navbar, Space, Transition, useMantineTheme} from '@mantine/core';
+import LightAndDarkModeButton from "./_themeButton";
 import MainLinks from "./_mainLinks";
 import UserProfile from "./_user";
 import {useRouter} from "next/router";
 import {useMediaQuery} from "@mantine/hooks";
+import HelpButton from "./_help";
 
 export default function MyAppShell({children}): JSX.Element {
     const router = useRouter()
@@ -41,9 +42,10 @@ export default function MyAppShell({children}): JSX.Element {
                                alt="Logo"/>
                     </div>
 
-                    <div style={{marginLeft: 'auto'}}>
+                    <Group style={{marginLeft: 'auto'}}>
+                        <HelpButton />
                         <LightAndDarkModeButton/>
-                    </div>
+                    </Group>
 
                 </div>
             </Header>

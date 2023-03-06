@@ -10,6 +10,7 @@ export default function LightAndDarkModeButton({}) {
             <ActionIcon
                 variant="filled"
                 radius={'md'}
+                size={'lg'}
                 color={dark ? 'yellow' : 'blue'}
                 onClick={() => toggleColorScheme()}
                 title="Schimbă tema"

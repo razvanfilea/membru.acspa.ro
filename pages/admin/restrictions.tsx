@@ -1,5 +1,5 @@
 import 'dayjs/locale/ro';
-import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, TextInput} from "@mantine/core";
+import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, Switch, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useProfile} from "../../components/ProfileProvider";
 import {Location, LocationName, Profile, ReservationRestriction} from "../../types/wrapper";
@@ -31,12 +31,13 @@ export default function RestrictedReservationsList(params: IParams) {
     const newRestrictionForm = useForm({
         initialValues: {
             date: new Date(),
+            allDay: false,
             startHour: 0,
             message: '',
         },
 
         validate: {
-            startHour: (value) => value !== 0 ? null : "Ora de început trebuie să fie diferită de 0",
+            startHour: (value, values) => value !== 0 || values.allDay ? null : "Ora de început trebuie să fie diferită de 0",
             message: (value) => (value.length >= 5) ? null : "Mesajul este prea scurt",
         },
         validateInputOnBlur: true
@@ -86,16 +87,37 @@ export default function RestrictedReservationsList(params: IParams) {
                 newRestrictionForm.onSubmit(async (values) => {
                     setCreateModalOpened(false)
                     console.log(values.date)
-                    const newRestriction = {
-                        date: dateToISOString(values.date),
-                        start_hour: values.startHour,
-                        message: values.message
-                    }
-                    newRestrictionForm.reset()
 
-                    const {error} = await supabase.from('reservations_restrictions').insert([newRestriction])
-                    console.log(error)
+                    if (values.allDay) {
+                        const step = hasSelectedWeekend ? location.weekend_reservation_duration : location.reservation_duration;
+                        const min = hasSelectedWeekend ? location.weekend_start_hour : location.start_hour;
+                        const max = hasSelectedWeekend ? (location.weekend_end_hour - location.weekend_reservation_duration)
+                            : (location.end_hour - location.reservation_duration);
+
+                        let newRestrictions: ReservationRestriction[] = []
+                        for (let i = min; i <= max; i += step) {
+                            const res = {
+                                date: dateToISOString(values.date),
+                                start_hour: i,
+                                message: values.message
+                            }
+                            newRestrictions.push(res as ReservationRestriction)
+                        }
+
+                        const {error} = await supabase.from('reservations_restrictions').insert(newRestrictions)
+                        console.log(error)
+                    } else {
+                        const newRestriction = {
+                            date: dateToISOString(values.date),
+                            start_hour: values.startHour,
+                            message: values.message
+                        }
+
+                        const {error} = await supabase.from('reservations_restrictions').insert([newRestriction])
+                        console.log(error)
+                    }
                     setRestrictions(await fetchRestrictions())
+                    newRestrictionForm.reset()
                 })}>
 
                 <Stack>
@@ -110,12 +132,16 @@ export default function RestrictedReservationsList(params: IParams) {
                         size={'lg'}
                         inputFormat="YYYY-MM-DD"/>
 
-                    <AdminHourInput
-                        formProps={newRestrictionForm.getInputProps('startHour')}
-                        inputHandler={hourInputHandlers}
-                        gameLocation={location}
-                        isWeekend={hasSelectedWeekend}
-                    />
+                    <Switch {...newRestrictionForm.getInputProps('allDay')} label="Toată ziua" size={'lg'}/>
+
+                    {!newRestrictionForm.getInputProps('allDay').value &&
+                        <AdminHourInput
+                            formProps={newRestrictionForm.getInputProps('startHour')}
+                            inputHandler={hourInputHandlers}
+                            gameLocation={location}
+                            isWeekend={hasSelectedWeekend}
+                        />
+                    }
 
                     <TextInput
                         {...newRestrictionForm.getInputProps('message')}
@@ -155,7 +181,8 @@ export default function RestrictedReservationsList(params: IParams) {
                                 .delete()
                                 .eq('date', restriction.date)
                                 .eq('start_hour', restriction.start_hour)
-                            setRestrictions(prev => prev.filter(value => value.date !== restriction.date && value.start_hour !== restriction.start_hour))
+
+                            setRestrictions(await fetchRestrictions())
                         }
                     )}
                 </Card>

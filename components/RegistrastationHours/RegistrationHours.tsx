@@ -70,7 +70,7 @@ export default function RegistrationHours(
                 {!restriction ? (
                     TableButtons(gameTables, selectedTableId, hour, selectedStartHour, onSelectTable)
                 ) : (
-                    <Text>{restriction.message}</Text>
+                    <Text color={'red'} size={'lg'}>{restriction.message}</Text>
                 )}
             </Group>
 
@@ -85,9 +85,11 @@ export default function RegistrationHours(
                             return <></>
 
                         const icon = profile.has_key ? <MdVpnKey/> : <></>;
+                        const buttonColor = profile.role == MemberTypes.Antrenor ? 'orange' : (profile.has_key ? 'blue' : 'gray');
+
                         return <Popover width={200} withArrow={true} shadow={"md"} key={profile.id}>
                             <Popover.Target>
-                                <Button color={profile.has_key ? 'blue' : 'gray'} radius={'xl'}
+                                <Button color={buttonColor} radius={'xl'}
                                         size={'xs'} rightIcon={icon}>{index + 1}. {profile.name}</Button>
                             </Popover.Target>
 
