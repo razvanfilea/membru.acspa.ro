@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from "react";
 import Head from "next/head";
-import {ActionIcon, Group, Paper, SimpleGrid, Space, Stack, Text, Title, useMantineTheme} from "@mantine/core";
+import {ActionIcon, Group, Paper, SimpleGrid, Space, Stack, Text, Title} from "@mantine/core";
 import {useListState, useLocalStorage, useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
 import {
@@ -23,7 +23,7 @@ import {SupabaseClient, useSession, useSupabaseClient} from "@supabase/auth-help
 import {Database} from "../types/database.types";
 import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
 import RegistrationHours from "../components/RegistrastationHours";
-import {Calendar} from "@mantine/dates";
+import {DatePicker} from "@mantine/dates";
 
 interface IParams {
     gara: Room
@@ -38,7 +38,6 @@ interface IShowInformationPopup {
 
 export default function MakeReservationPage(params: IParams): JSX.Element {
     const router = useRouter()
-    const theme = useMantineTheme()
     const session = useSession()
     const profileData = useProfile()
 
@@ -142,25 +141,32 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
 
                         <Text>Alege ziua rezervării:</Text>
 
-                        <Calendar
+                        <DatePicker
                             minDate={new Date}
                             maxDate={addDaysToDate(new Date, params.daysAhead)}
                             hideOutsideDates={true}
-                            allowLevelChange={false}
+                            maxLevel={'month'}
                             size={"lg"}
                             locale={"ro"}
-                            value={selectedDate}
+                            date={selectedDate}
                             onChange={(date) => {
                                 if (profileData.profile != null && date != null)
                                     onSelectedDateChange(date)
                             }}
-                            dayStyle={(date) =>
-                                (date.getDate() === (new Date).getDate()
+                            getDayProps={(date) => {
+                                if (date.getDate() === (new Date).getDate()
                                     && date.getMonth() === (new Date).getMonth()
-                                    && date.getDate() !== selectedDate?.getDate())
-                                    ? {backgroundColor: theme.colors.blue[4], color: theme.white} : {}
-                            }
-                            fullWidth={true}
+                                    && date.getDate() !== selectedDate?.getDate()) {
+                                    return {
+                                        sx: (theme) => ({
+                                            backgroundColor: theme.colors.blue[7],
+                                            color: theme.white
+                                        })
+                                    };
+                                }
+                                return {};
+                            }}
+                            withCellSpacing={true}
                         />
                     </Stack>
                 }

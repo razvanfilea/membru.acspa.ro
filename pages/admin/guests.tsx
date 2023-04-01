@@ -1,10 +1,10 @@
 import 'dayjs/locale/ro';
-import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, Switch, TextInput} from "@mantine/core";
+import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Radio, Stack, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useProfile} from "../../components/ProfileProvider";
 import {GuestInvite, Location, LocationName, Profile} from "../../types/wrapper";
 import {useForm} from "@mantine/form";
-import {DatePicker} from "@mantine/dates";
+import {DatePickerInput} from "@mantine/dates";
 import {dateToISOString, isDateWeekend} from "../../utils/date";
 import {useListState} from "@mantine/hooks";
 import GuestInviteComponent from "../../components/GuestInvite";
@@ -34,7 +34,7 @@ export default function GuestManager(params: IParams) {
             date: new Date(),
             startHour: 0,
             guestName: '',
-            special: false,
+            guestType: 'antrenament',
         },
         validate: {
             guestName: (value) => (value.length >= 3) ? null : "Numele invitatului este prea scurt",
@@ -89,7 +89,7 @@ export default function GuestManager(params: IParams) {
                         start_date: dateToISOString(values.date),
                         start_hour: values.startHour,
                         guest_name: values.guestName,
-                        special: values.special,
+                        special: values.guestType === 'special',
                     }
                     newInviteForm.reset()
 
@@ -106,12 +106,18 @@ export default function GuestManager(params: IParams) {
                         size={'lg'}
                         required={true}/>
 
-                    <Switch
-                        {...newInviteForm.getInputProps('special')}
-                        label="Special"
-                        size={'lg'}/>
+                    <Radio.Group
+                        label={"Tip de invitat"}
+                        withAsterisk
+                        size={'lg'}
+                        {...newInviteForm.getInputProps('guestType')}>
+                        <Stack py={'sm'}>
+                            <Radio value={'special'} label={'Invitat Special'}/>
+                            <Radio value={'antrenament'} label={'Invitat Antrenament'}/>
+                        </Stack>
+                    </Radio.Group>
 
-                    <DatePicker
+                    <DatePickerInput
                         {...newInviteForm.getInputProps('date')}
                         placeholder="Alege data"
                         label="Data"
@@ -119,7 +125,7 @@ export default function GuestManager(params: IParams) {
                         minDate={new Date()}
                         clearable={false}
                         size={'lg'}
-                        inputFormat="YYYY-MM-DD"/>
+                        valueFormat="YYYY-MM-DD"/>
 
                     <AdminHourInput
                         formProps={newInviteForm.getInputProps('startHour')}
@@ -160,8 +166,7 @@ export default function GuestManager(params: IParams) {
                                 .eq('start_hour', guest.start_hour)
                                 .eq('guest_name', guest.guest_name)
 
-                            guestHandler.filter(value => value.start_date !== guest.start_date
-                                && value.start_hour !== guest.start_hour && value.guest_name !== guest.guest_name)
+                            guestHandler.setState(await fetchGuests())
                         }
                     )}
                 </Card>

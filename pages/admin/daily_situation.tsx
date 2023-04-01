@@ -3,8 +3,8 @@ import {Database} from "../../types/database.types";
 import {useProfile} from "../../components/ProfileProvider";
 import React, {useEffect, useMemo, useState} from "react";
 import {Profile, Reservation, ReservationStatus} from "../../types/wrapper";
-import {Button, Center, Divider, Group, Loader, SimpleGrid, Space, Stack, Text} from "@mantine/core";
-import {Calendar} from "@mantine/dates";
+import {Button, Center, Divider, Grid, Group, Loader, Space, Stack, Text} from "@mantine/core";
+import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
@@ -22,7 +22,7 @@ export default function DailySituationPage() {
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
     const [reservations, setReservations] = useState<Reservation[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [date, setDate] = useState<Date | null>(null);
+    const [date, setDate] = useState<Date | undefined>(undefined);
 
     useExitIfNotFounder();
 
@@ -40,7 +40,7 @@ export default function DailySituationPage() {
     }, [])
 
     useEffect(() => {
-        if (date != null) {
+        if (date) {
             supabase.from('rezervari').select('*')
                 .eq('status', ReservationStatus.Approved)
                 .eq('start_date', dateToISOString(date))
@@ -63,26 +63,32 @@ export default function DailySituationPage() {
         return (<></>)
 
     return <>
-        <SimpleGrid
-            cols={1}
-            breakpoints={[
-                {minWidth: 1120, cols: 2},
-            ]}>
+        <Grid
+            grow={true}
+            columns={4}
+        >
 
-            <Calendar
-                value={date}
-                onChange={setDate}
-                size={"lg"}
-                locale="ro"
-                fullWidth={true}
-            />
+            <Grid.Col span={"auto"}>
+                <DatePicker
+                    value={date}
+                    onChange={(newDate) => setDate(newDate || undefined)}
+                    size={"lg"}
+                    locale="ro"
+                />
+            </Grid.Col>
 
-            <Stack p={'md'}>
-                {date !== null &&
-                    SelectedDateReservations(allProfiles, groupedReservations)
-                }
-            </Stack>
-        </SimpleGrid>
+            <Grid.Col span={2}>
+                <Stack p={'md'}>
+                    {date &&
+                        SelectedDateReservations(allProfiles, groupedReservations)
+                    }
+
+                    {!date &&
+                        <Text size={'xl'}>Selectează o dată pentru a vedea rezervările</Text>
+                    }
+                </Stack>
+            </Grid.Col>
+        </Grid>
 
         <Space h="xl"/>
     </>

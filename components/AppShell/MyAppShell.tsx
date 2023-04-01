@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {AppShell, Burger, Group, Header, Image, Navbar, Space, Transition, useMantineTheme} from '@mantine/core';
+import {AppShell, Burger, Group, Header, Image, Navbar, Transition, useMantineTheme} from '@mantine/core';
 import LightAndDarkModeButton from "./_themeButton";
 import MainLinks from "./_mainLinks";
 import UserProfile from "./_user";

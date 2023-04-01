@@ -3,13 +3,11 @@ import {Database} from "../../types/database.types";
 import {useProfile} from "../../components/ProfileProvider";
 import React, {useEffect, useMemo, useState} from "react";
 import {Profile, Reservation, ReservationStatus} from "../../types/wrapper";
-import {Button, Card, Center, Group, Indicator, Loader, Select, SimpleGrid, Space, Stack, Text} from "@mantine/core";
-import {RangeCalendar} from "@mantine/dates";
+import {Card, Center, Grid, Group, Indicator, Loader, Select, Space, Stack, Text} from "@mantine/core";
+import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
-import JsPDF from 'jspdf';
-import html2canvas from "html2canvas";
 
 export default function SituationPage() {
     const supabase = useSupabaseClient<Database>()
@@ -73,71 +71,57 @@ export default function SituationPage() {
         return (<></>)
 
     return <>
-        <SimpleGrid
-            cols={1}
-            breakpoints={[
-                {minWidth: 1120, cols: 2},
-            ]}>
+        <Grid
+            grow={true}
+            columns={4}
+        >
 
-            <Stack p={'md'}>
-                <Select
-                    label="Alege un utilizator"
-                    placeholder="Utilizator"
-                    searchable
-                    transition="pop-top-left"
-                    transitionDuration={80}
-                    transitionTimingFunction="ease"
-                    data={allProfiles.map(profile => ({value: profile.id, label: profile.name}))}
-                    value={selectedProfileId}
-                    onChange={setSelectedProfileId}
-                />
+            <Grid.Col span={"auto"}>
+                <Stack p={'md'}>
+                    <Select
+                        label="Alege un utilizator"
+                        placeholder="Utilizator"
+                        searchable
+                        transitionProps={{
+                            transition: "pop-top-left",
+                            duration: 80,
+                            timingFunction: "ease"
+                        }}
+                        data={allProfiles.map(profile => ({value: profile.id, label: profile.name}))}
+                        value={selectedProfileId}
+                        onChange={setSelectedProfileId}
+                    />
 
-                <RangeCalendar
-                    value={dateRange}
-                    onChange={setDateRange}
-                    size={"lg"}
-                    locale="ro"
-                    fullWidth={true}
-                    renderDay={(date) => {
-                        return (
-                            <Indicator size={8} color="green" offset={8}
-                                       disabled={!filteredReservations.some(it => it.start_date === dateToISOString(date))}>
-                                <div>{date.getDate()}</div>
-                            </Indicator>
-                        );
-                    }}
-                />
-            </Stack>
+                    <DatePicker
+                        type='range'
+                        value={dateRange}
+                        onChange={setDateRange}
+                        size={"lg"}
+                        locale="ro"
+                        renderDay={(date) => {
+                            return (
+                                <Indicator size={8} color="green" offset={-5}
+                                           disabled={!filteredReservations.some(it => it.start_date === dateToISOString(date))}>
+                                    <div>{date.getDate()}</div>
+                                </Indicator>
+                            );
+                        }}
+                    />
+                </Stack>
+            </Grid.Col>
 
-            <Stack p={'md'} id={"report"}
-                   sx={(theme) => ({backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[0]})}>
-                {selectedProfile &&
-                    SelectedUserReservations(selectedProfile, filteredReservations)
-                }
-            </Stack>
-        </SimpleGrid>
-
-        {(selectedProfile && startRange && endRange) &&
-            <Button onClick={() => generatePDF(`${selectedProfile!.name} ${dateToISOString(startRange)}-${dateToISOString(endRange)}`)}>Export</Button>
-        }
+            <Grid.Col span={2}>
+                <Stack p={'md'} id={"report"}
+                       sx={(theme) => ({backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[0]})}>
+                    {selectedProfile &&
+                        SelectedUserReservations(selectedProfile, filteredReservations)
+                    }
+                </Stack>
+            </Grid.Col>
+        </Grid>
 
         <Space h="xl"/>
     </>
-}
-
-const generatePDF = (name: string) => {
-
-    const report = new JsPDF('portrait', 'pt', 'a4');
-    // @ts-ignore
-    const toRender: HTMLElement = document.querySelector('#report');
-    html2canvas(toRender, {
-        height: toRender.clientHeight,
-        width: toRender.clientWidth,
-    }).then((canvas) => {
-        const imgData = canvas.toDataURL('image/png');
-        report.addImage(imgData, 'PNG', 0, 0, toRender.clientWidth, toRender.clientHeight);
-        report.save(`${name}.pdf`);
-    })
 }
 
 function SelectedUserReservations(profile: Profile, reservations: Reservation[]) {

@@ -5,7 +5,7 @@ import {useProfile} from "../../components/ProfileProvider";
 import {Location, LocationName, Profile, ReservationRestriction} from "../../types/wrapper";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
-import {DatePicker} from "@mantine/dates";
+import {DatePickerInput} from "@mantine/dates";
 import {dateToISOString, isDateWeekend} from "../../utils/date";
 import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 import {Database} from "../../types/database.types";
@@ -122,7 +122,7 @@ export default function RestrictedReservationsList(params: IParams) {
 
                 <Stack>
 
-                    <DatePicker
+                    <DatePickerInput
                         {...newRestrictionForm.getInputProps('date')}
                         placeholder="Alege data"
                         label="Data"
@@ -130,7 +130,7 @@ export default function RestrictedReservationsList(params: IParams) {
                         minDate={new Date()}
                         clearable={false}
                         size={'lg'}
-                        inputFormat="YYYY-MM-DD"/>
+                        valueFormat="YYYY-MM-DD"/>
 
                     <Switch {...newRestrictionForm.getInputProps('allDay')} label="Toată ziua" size={'lg'}/>
 
@@ -150,7 +150,7 @@ export default function RestrictedReservationsList(params: IParams) {
                         placeholder={'Motivul pentru care nu se pot face rezervări'}
                         required={true}/>
 
-                    <Button type={"submit"} color={'green'}>Adaugă</Button>
+                    <Button type={"submit"} color={'green'} px={'sm'}>Adaugă</Button>
                 </Stack>
             </form>
         </Modal>
