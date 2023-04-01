@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from "react";
 import Head from "next/head";
-import {ActionIcon, Group, Paper, SimpleGrid, Space, Stack, Text, Title} from "@mantine/core";
+import {ActionIcon, Grid, Group, Paper, Space, Stack, Text, Title} from "@mantine/core";
 import {useListState, useLocalStorage, useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
 import {
@@ -113,15 +113,14 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                 </>
             }
 
-            <SimpleGrid
-                cols={1}
-                breakpoints={[
-                    {minWidth: 1120, cols: 2},
-                ]}>
+            <Grid
+                grow={true}
+                columns={4}>
 
-                {!profileData.isLoading && profileData.profile != null &&
-                    <Stack key={"calendar"}>
-                        {/*<Radio.Group
+                <Grid.Col span={'auto'}>
+                    {!profileData.isLoading && profileData.profile != null &&
+                        <Stack key={"calendar"}>
+                            {/*<Radio.Group
                             value={locationName}
                             onChange={(value) => {
                                 switch (value) {
@@ -139,44 +138,47 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                             <Radio value={LocationName.Boromir} label={"Boromir"}/>
                         </Radio.Group>*/}
 
-                        <Text>Alege ziua rezervării:</Text>
+                            <Text>Alege ziua rezervării:</Text>
 
-                        <DatePicker
-                            minDate={new Date}
-                            maxDate={addDaysToDate(new Date, params.daysAhead)}
-                            hideOutsideDates={true}
-                            maxLevel={'month'}
-                            size={"lg"}
-                            locale={"ro"}
-                            date={selectedDate}
-                            onChange={(date) => {
-                                if (profileData.profile != null && date != null)
-                                    onSelectedDateChange(date)
-                            }}
-                            getDayProps={(date) => {
-                                if (date.getDate() === (new Date).getDate()
-                                    && date.getMonth() === (new Date).getMonth()
-                                    && date.getDate() !== selectedDate?.getDate()) {
-                                    return {
-                                        sx: (theme) => ({
-                                            backgroundColor: theme.colors.blue[7],
-                                            color: theme.white
-                                        })
-                                    };
-                                }
-                                return {};
-                            }}
-                            withCellSpacing={true}
-                        />
+                            <DatePicker
+                                minDate={new Date}
+                                maxDate={addDaysToDate(new Date, params.daysAhead)}
+                                hideOutsideDates={true}
+                                maxLevel={'month'}
+                                size={"lg"}
+                                locale={"ro"}
+                                date={selectedDate}
+                                onChange={(date) => {
+                                    if (profileData.profile != null && date != null)
+                                        onSelectedDateChange(date)
+                                }}
+                                getDayProps={(date) => {
+                                    if (date.getDate() === (new Date).getDate()
+                                        && date.getMonth() === (new Date).getMonth()
+                                        && date.getDate() !== selectedDate?.getDate()) {
+                                        return {
+                                            sx: (theme) => ({
+                                                backgroundColor: theme.colors.blue[7],
+                                                color: theme.white
+                                            })
+                                        };
+                                    }
+                                    return {};
+                                }}
+                                withCellSpacing={true}
+                            />
+                        </Stack>
+                    }
+                </Grid.Col>
+
+                <Grid.Col span={2}>
+                    <Stack>
+                        {SelectGameTable(room, selectedDateISO, selectedTable, setSelectedTable)}
+
+                        {ConfirmSelection(room, selectedDateISO, selectedTable)}
                     </Stack>
-                }
-
-                <Stack>
-                    {SelectGameTable(room, selectedDateISO, selectedTable, setSelectedTable)}
-
-                    {ConfirmSelection(room, selectedDateISO, selectedTable)}
-                </Stack>
-            </SimpleGrid>
+                </Grid.Col>
+            </Grid>
 
             <Space h="xl"/>
         </Paper>
