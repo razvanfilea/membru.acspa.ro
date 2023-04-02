@@ -153,9 +153,15 @@ export default function ProfilePage(params: IParams) {
                                 status: ReservationStatus.Cancelled
                             }
 
-                            const {data} = await supabase.from('rezervari').update(newData).select()
-                            reservationsHandle.filter(value => value.id != data![0].id)
-                            reservationsHandle.append(data![0])
+                            const {data} = await supabase.from('rezervari')
+                                .update(newData)
+                                .eq('id', reservation.id)
+                                .select()
+
+                            if (data) {
+                                reservationsHandle.filter(value => value.id != data![0].id)
+                                reservationsHandle.append(data![0])
+                            }
                         }) : null
                     )}
                 </Card>

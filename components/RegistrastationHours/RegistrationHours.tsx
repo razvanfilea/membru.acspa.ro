@@ -106,7 +106,9 @@ export default function RegistrationHours(
                                                 status: ReservationStatus.Cancelled
                                             }
 
-                                            await supabase.from('rezervari').update(newData)
+                                            await supabase.from('rezervari')
+                                                .update(newData)
+                                                .eq('id', reservation.id)
                                         }
                                         }>Anulează</Button>
 
