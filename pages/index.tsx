@@ -147,7 +147,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
                                 maxLevel={'month'}
                                 size={"lg"}
                                 locale={"ro"}
-                                date={selectedDate}
+                                value={selectedDate}
                                 onChange={(date) => {
                                     if (profileData.profile != null && date != null)
                                         onSelectedDateChange(date)
