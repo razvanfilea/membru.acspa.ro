@@ -11,18 +11,18 @@
     "start": "serve out"
   },
   "dependencies": {
-    "@emotion/react": "11.10.6",
-    "@mantine/core": "6.0.6",
-    "@mantine/dates": "6.0.6",
-    "@mantine/form": "6.0.6",
-    "@mantine/hooks": "6.0.6",
-    "@mantine/next": "6.0.6",
-    "@supabase/supabase-js": "2.15.0",
+    "@emotion/react": "11.10.8",
+    "@mantine/core": "6.0.10",
+    "@mantine/dates": "6.0.10",
+    "@mantine/form": "6.0.10",
+    "@mantine/hooks": "6.0.10",
+    "@mantine/next": "6.0.10",
+    "@supabase/supabase-js": "2.21.0",
     "@supabase/auth-helpers-react": "0.3.1",
-    "@supabase/auth-helpers-nextjs": "0.6.0",
-    "@types/react": "18.0.33",
-    "@types/react-dom": "18.0.11",
-    "next": "13.3.0",
+    "@supabase/auth-helpers-nextjs": "0.6.1",
+    "@types/react": "18.2.0",
+    "@types/react-dom": "18.2.1",
+    "next": "13.3.4",
     "next-pwa": "5.6.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
@@ -30,8 +30,8 @@
     "typescript": "5.0.4"
   },
   "devDependencies": {
-    "@types/node": "18.15.11",
-    "eslint": "8.37.0",
-    "eslint-config-next": "13.3.0"
+    "@types/node": "18.16.3",
+    "eslint": "8.39.0",
+    "eslint-config-next": "13.3.4"
   }
 }
