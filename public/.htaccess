@@ -1,5 +1,5 @@
-
 RewriteEngine on
+
 RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
 RewriteCond %{HTTP_HOST} ^www\.membru\.acspa\.ro$
 RewriteRule ^membru\.acspa\.ro$ "https\:\/\/membru\.acspa\.ro\/" [R=301,L]
@@ -19,10 +19,10 @@ RewriteRule ^reset_password$ "https\:\/\/membru\.acspa\.ro\/reset_password\.html
 RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
 RewriteRule ^admin$ "https\:\/\/membru\.acspa\.ro\/admin\.html" [R=302,L]
 RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
-RewriteRule ^admin$ "https\:\/\/membru\.acspa\.ro\/admin\/guests\.html" [R=302,L]
+RewriteRule ^admin\/guests$ "https\:\/\/membru\.acspa\.ro\/admin\/guests\.html" [R=302,L]
 RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
-RewriteRule ^admin$ "https\:\/\/membru\.acspa\.ro\/admin\/daily_situation\.html" [R=302,L]
+RewriteRule ^admin\/daily_situation$ "https\:\/\/membru\.acspa\.ro\/admin\/daily_situation\.html" [R=302,L]
 RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
-RewriteRule ^admin$ "https\:\/\/membru\.acspa\.ro\/admin\/situation\.html" [R=302,L]
+RewriteRule ^admin\/situation$ "https\:\/\/membru\.acspa\.ro\/admin\/situation\.html" [R=302,L]
 RewriteCond %{HTTP_HOST} ^membru\.acspa\.ro$ [OR]
-RewriteRule ^admin$ "https\:\/\/membru\.acspa\.ro\/admin\/restrictions\.html" [R=302,L]
+RewriteRule ^admin\/restrictions$ "https\:\/\/membru\.acspa\.ro\/admin\/restrictions\.html" [R=302,L]

@@ -20,7 +20,7 @@ interface IParams {
 
 export default function GuestManager(params: IParams) {
     const supabase = useSupabaseClient<Database>()
-    const location = params.location
+    const game_location = params.location
     const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
@@ -62,6 +62,7 @@ export default function GuestManager(params: IParams) {
             .select('*')
             .order('start_date', {ascending: false})
             .order('start_hour', {ascending: true})
+            .limit(50)
 
         return data || []
     }
@@ -125,12 +126,13 @@ export default function GuestManager(params: IParams) {
                         minDate={new Date()}
                         clearable={false}
                         size={'lg'}
+                        dropdownType={'modal'}
                         valueFormat="YYYY-MM-DD"/>
 
                     <AdminHourInput
                         formProps={newInviteForm.getInputProps('startHour')}
                         inputHandler={hourInputHandlers}
-                        gameLocation={location}
+                        gameLocation={game_location}
                         isWeekend={hasSelectedWeekend}/>
 
                     <Button type={"submit"} color={'green'}>Adaugă</Button>
@@ -151,8 +153,7 @@ export default function GuestManager(params: IParams) {
         })}>
             <AdminTopBar
                 title={'Invitații:'}
-                onAdd={() => setCreateModalOpened(true)}
-                onRefresh={async () => guestHandler.setState(await fetchGuests())}/>
+                onAdd={() => setCreateModalOpened(true)}/>
 
             {guests.map((guest) => (
                 <Card key={guest.start_date + guest.start_hour + guest.guest_name} shadow={"xs"}>

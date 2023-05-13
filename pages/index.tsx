@@ -238,6 +238,7 @@ function SelectGameTable(
 
         supabase.from('guest_invites')
             .select('*')
+            .gte('start_date', dateToISOString(new Date))
             .order('special', {ascending: false})
             .then(value => {
                 if (value.data !== null)
@@ -312,7 +313,9 @@ function SelectGameTable(
             </Group>
 
             <ActionIcon variant={'light'} radius={'xl'} size={36}
-                        onClick={() => fetchReservations(supabase, reservationsHandle.setState, setRestrictions)}>
+                        onClick={() => {
+                            location.reload()
+                        }}>
                 <MdRefresh size={28}/>
             </ActionIcon>
         </Group>

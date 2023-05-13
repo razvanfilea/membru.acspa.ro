@@ -19,7 +19,7 @@ interface IParams {
 
 export default function RestrictedReservationsList(params: IParams) {
     const supabase = useSupabaseClient<Database>()
-    const location = params.location
+    const game_location = params.location
     const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
@@ -89,10 +89,10 @@ export default function RestrictedReservationsList(params: IParams) {
                     console.log(values.date)
 
                     if (values.allDay) {
-                        const step = hasSelectedWeekend ? location.weekend_reservation_duration : location.reservation_duration;
-                        const min = hasSelectedWeekend ? location.weekend_start_hour : location.start_hour;
-                        const max = hasSelectedWeekend ? (location.weekend_end_hour - location.weekend_reservation_duration)
-                            : (location.end_hour - location.reservation_duration);
+                        const step = hasSelectedWeekend ? game_location.weekend_reservation_duration : game_location.reservation_duration;
+                        const min = hasSelectedWeekend ? game_location.weekend_start_hour : game_location.start_hour;
+                        const max = hasSelectedWeekend ? (game_location.weekend_end_hour - game_location.weekend_reservation_duration)
+                            : (game_location.end_hour - game_location.reservation_duration);
 
                         let newRestrictions: ReservationRestriction[] = []
                         for (let i = min; i <= max; i += step) {
@@ -130,6 +130,7 @@ export default function RestrictedReservationsList(params: IParams) {
                         minDate={new Date()}
                         clearable={false}
                         size={'lg'}
+                        dropdownType={'modal'}
                         valueFormat="YYYY-MM-DD"/>
 
                     <Switch {...newRestrictionForm.getInputProps('allDay')} label="Toată ziua" size={'lg'}/>
@@ -138,7 +139,7 @@ export default function RestrictedReservationsList(params: IParams) {
                         <AdminHourInput
                             formProps={newRestrictionForm.getInputProps('startHour')}
                             inputHandler={hourInputHandlers}
-                            gameLocation={location}
+                            gameLocation={game_location}
                             isWeekend={hasSelectedWeekend}
                         />
                     }
@@ -168,8 +169,7 @@ export default function RestrictedReservationsList(params: IParams) {
         })}>
             <AdminTopBar
                 title={'Rezervările blocate:'}
-                onAdd={() => setCreateModalOpened(true)}
-                onRefresh={async () => setRestrictions(await fetchRestrictions())}/>
+                onAdd={() => setCreateModalOpened(true)}/>
 
             {restrictions.map((restriction) => (
                 <Card key={restriction.date + restriction.start_hour} shadow={"xs"}>

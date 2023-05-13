@@ -17,38 +17,39 @@ const AuthContext = React.createContext(defaultValue)
 export default function ProfileProvider({children}) {
     const supabase = useSupabaseClient<Database>()
     const session = useSession()
-    const [profile, setProfile] = useState<Profile | null>(null)
-    const [loading, setLoading] = useState(true)
+    const [profileData, setProfileData] = useState<ProfileData>({
+        isLoading: true,
+        profile: null
+    })
 
     useEffect(() => {
         async function getProfile(user: User) {
             try {
-                setLoading(true)
+                setProfileData({isLoading: true, profile: null})
 
-                let { data, error} = await supabase
+                let {data, error} = await supabase
                     .from('profiles')
                     .select('*')
                     .eq('id', user.id)
                     .single()
 
                 if (error) {
-                    console.log(error)
+                    console.error(error)
                 } else {
-                    setProfile(data);
+                    setProfileData({isLoading: false, profile: data})
                 }
 
             } catch (error) {
                 alert('Error loading user data!')
-                console.log(error)
-            } finally {
-                setLoading(false)
+                console.error(error)
+                setProfileData({isLoading: false, profile: null})
             }
         }
 
         if (session?.user) {
-            getProfile(session!.user).then(() => console.log("Profile loaded"))
+            getProfile(session!.user).then(() => console.log("Profile loaded successfully"))
         } else {
-            setLoading(false)
+            console.log("Failed to get user session")
         }
 
         const {data: listener} = supabase.auth.onAuthStateChange(
@@ -75,11 +76,8 @@ export default function ProfileProvider({children}) {
 
     // Will be passed down to Signup, Login and Dashboard components
     const authDataCallback = useCallback((): ProfileData => {
-        return {
-            isLoading: loading,
-            profile
-        }
-    }, [loading, profile])
+        return profileData
+    }, [profileData])
 
     return (
         <AuthContext.Provider value={authDataCallback()}>

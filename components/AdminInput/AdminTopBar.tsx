@@ -1,14 +1,16 @@
 import {ActionIcon, Group, Title} from "@mantine/core";
 import {MdAdd, MdRefresh} from "react-icons/md";
 import React from "react";
+import {useRouter} from "next/router";
 
 interface IParams {
     title: string;
     onAdd: () => void;
-    onRefresh: () => Promise<void>;
 }
 
-export default function AdminTopBar({title, onAdd, onRefresh}: IParams) {
+export default function AdminTopBar({title, onAdd}: IParams) {
+    const router = useRouter()
+
     return <Group position={'apart'}>
         <Title order={2}>{title}</Title>
 
@@ -22,7 +24,7 @@ export default function AdminTopBar({title, onAdd, onRefresh}: IParams) {
                 <MdAdd size={28}/>
             </ActionIcon>
 
-            <ActionIcon variant={'filled'} radius={'xl'} size={36} onClick={onRefresh}>
+            <ActionIcon variant={'filled'} radius={'xl'} size={36} onClick={() => router.reload()}>
                 <MdRefresh size={28}/>
             </ActionIcon>
         </Group>

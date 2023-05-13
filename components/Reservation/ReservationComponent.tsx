@@ -16,7 +16,7 @@ function ShowStatus(reservation: Reservation, onCancel: (() => Promise<void>) | 
                 {onCancel != null &&
                     <Button
                         gradient={{from: 'orange', to: 'red'}} variant={"outline"}
-                        onClick={onCancel}>Anulează</Button>
+                        onClick={onCancel}>ă</Button>
                 }
             </>
     }

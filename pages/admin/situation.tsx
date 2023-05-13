@@ -38,7 +38,6 @@ export default function SituationPage() {
     useEffect(() => {
         if (selectedProfileId != null) {
             supabase.from('rezervari').select('*')
-                .eq('status', ReservationStatus.Approved)
                 .eq('user_id', selectedProfileId)
                 .order('start_date', {ascending: false})
                 .order('start_hour', {ascending: true})
@@ -99,10 +98,14 @@ export default function SituationPage() {
                         size={"lg"}
                         locale="ro"
                         renderDay={(date) => {
+                            const disabled = !filteredReservations.some(it =>
+                                it.start_date === dateToISOString(date) && it.status == ReservationStatus.Approved);
+
                             return (
-                                <Indicator size={8} color="green" offset={-5}
-                                           disabled={!filteredReservations.some(it => it.start_date === dateToISOString(date))}>
-                                    <div>{date.getDate()}</div>
+                                <Indicator
+                                    size={8} color="green" offset={-5}
+                                    disabled={disabled}>
+                                    {date.getDate()}
                                 </Indicator>
                             );
                         }}
@@ -125,11 +128,32 @@ export default function SituationPage() {
 }
 
 function SelectedUserReservations(profile: Profile, reservations: Reservation[]) {
+    const approvedReservations = reservations.filter((it) => it.status === ReservationStatus.Approved)
+    const cancelledReservations = reservations.filter((it) => it.status === ReservationStatus.Cancelled)
+
     return <>
-        <Text size={'xl'}>Total: {reservations.length}</Text>
+        <Text size={'xl'}>Total rezervări: {approvedReservations.length}</Text>
 
         {
-            reservations.map((reservation, index) => {
+            approvedReservations.map((reservation, index) => {
+                return <Card key={reservation.id}>
+                    <Group position={'apart'}>
+                        <Text>{index + 1}</Text>
+
+                        <Text weight={900}>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</Text>
+
+                        <Text>De
+                            la <b>{reservation.start_hour}:{'00'}</b> la <b>{reservation.start_hour + reservation.duration}:{'00'}</b></Text>
+                    </Group>
+                </Card>
+            })
+        }
+
+        <Space h={'lg'}/>
+
+        <Text size={'xl'}>Total rezervări anulate: {cancelledReservations.length}</Text>
+        {
+            cancelledReservations.map((reservation, index) => {
                 return <Card key={reservation.id}>
                     <Group position={'apart'}>
                         <Text>{index + 1}</Text>
