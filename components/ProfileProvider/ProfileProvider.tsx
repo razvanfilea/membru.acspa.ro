@@ -50,6 +50,7 @@ export default function ProfileProvider({children}) {
             getProfile(session!.user).then(() => console.log("Profile loaded successfully"))
         } else {
             console.log("Failed to get user session")
+            setProfileData({isLoading: false, profile: null})
         }
 
         const {data: listener} = supabase.auth.onAuthStateChange(
