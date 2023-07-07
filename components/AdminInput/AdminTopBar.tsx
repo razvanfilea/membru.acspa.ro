@@ -5,7 +5,7 @@ import {useRouter} from "next/router";
 
 interface IParams {
     title: string;
-    onAdd: () => void;
+    onAdd: (() => void) | null;
 }
 
 export default function AdminTopBar({title, onAdd}: IParams) {
@@ -15,14 +15,16 @@ export default function AdminTopBar({title, onAdd}: IParams) {
         <Title order={2}>{title}</Title>
 
         <Group spacing={'lg'}>
-            <ActionIcon
-                variant={'filled'}
-                color={'green'}
-                radius={'xl'}
-                size={36}
-                onClick={onAdd}>
-                <MdAdd size={28}/>
-            </ActionIcon>
+            {onAdd &&
+                <ActionIcon
+                    variant={'filled'}
+                    color={'green'}
+                    radius={'xl'}
+                    size={36}
+                    onClick={onAdd}>
+                    <MdAdd size={28}/>
+                </ActionIcon>
+            }
 
             <ActionIcon variant={'filled'} radius={'xl'} size={36} onClick={() => router.reload()}>
                 <MdRefresh size={28}/>

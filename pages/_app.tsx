@@ -6,7 +6,7 @@ import {ColorScheme, ColorSchemeProvider, MantineProvider, Paper} from '@mantine
 import {useLocalStorage} from "@mantine/hooks";
 import ProfileProvider from "../components/ProfileProvider";
 import {AppProps} from "next/app";
-import {createBrowserSupabaseClient} from '@supabase/auth-helpers-nextjs'
+import {createPagesBrowserClient} from '@supabase/auth-helpers-nextjs'
 import {Session, SessionContextProvider} from '@supabase/auth-helpers-react'
 
 export default function MyApp({
@@ -15,7 +15,7 @@ export default function MyApp({
                               }: AppProps<{
     initialSession: Session,
 }>): JSX.Element {
-    const [supabaseClient] = React.useState(() => createBrowserSupabaseClient())
+    const [supabaseClient] = React.useState(() => createPagesBrowserClient())
 
     const [colorScheme, setLocalColorScheme] = useLocalStorage<ColorScheme>({
         key: 'color-scheme',

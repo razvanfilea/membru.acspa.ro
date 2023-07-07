@@ -52,28 +52,26 @@ export default function ProfileProvider({children}) {
             console.log("Failed to get user session")
             setProfileData({isLoading: false, profile: null})
         }
+    }, [session, supabase]);
 
-        const {data: listener} = supabase.auth.onAuthStateChange(
-            async (event) => {
-                if (event == "PASSWORD_RECOVERY") {
-                    let newPassword: string | null = null;
-                    while (!newPassword || newPassword.length < 8)
-                        newPassword = prompt("Noua ta parolă")
+    useEffect(() => {
+        supabase.auth.onAuthStateChange((event, session) => {
+            console.log(event)
+            if (event === "PASSWORD_RECOVERY") {
 
-                    const {data, error} = await supabase.auth.updateUser({
-                        password: newPassword,
-                    })
+                let newPassword: string | null = null;
+                while (!newPassword || newPassword.length < 8)
+                    newPassword = prompt("Scrie noua ta parolă:")
 
+                supabase.auth.updateUser({
+                    password: newPassword,
+                }).then(({data, error}) => {
                     if (data) alert("Parola ta a fost schimbată")
                     if (error) alert("A apărut o eroare la actualizarea parolei")
-                }
+                })
             }
-        )
-
-        return () => {
-            listener?.subscription?.unsubscribe()
-        }
-    }, [session, supabase]);
+        })
+    }, [supabase]);
 
     // Will be passed down to Signup, Login and Dashboard components
     const authDataCallback = useCallback((): ProfileData => {

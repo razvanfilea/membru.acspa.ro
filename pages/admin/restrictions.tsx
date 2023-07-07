@@ -10,7 +10,7 @@ import {dateToISOString, isDateWeekend} from "../../utils/date";
 import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
-import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
+import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
 
 interface IParams {
@@ -192,7 +192,7 @@ export default function RestrictedReservationsList(params: IParams) {
 }
 
 export async function getStaticProps({}) {
-    const supabase = createBrowserSupabaseClient<Database>()
+    const supabase = createPagesBrowserClient<Database>()
     const {data: location} = await supabase.from('locations')
         .select('*')
         .eq('name', LocationName.Gara)

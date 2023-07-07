@@ -6,8 +6,7 @@ import {useRouter} from "next/router";
 import Link from "next/link";
 import {useSession, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../types/database.types";
-
-const REGEX_EMAIL = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(([a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))$/
+import {REGEX_EMAIL_PATTERN} from "../utils/regex";
 
 const enum LoginState {
     None,
@@ -27,7 +26,7 @@ export default function LoginForm() {
         },
 
         validate: {
-            email: (value) => REGEX_EMAIL.test(value.toLowerCase()) ? null : "Email invalid",
+            email: (value) => REGEX_EMAIL_PATTERN.test(value.toLowerCase()) ? null : "Email invalid",
             password: (value) => (value.length >= 8) ? null : "Parola trebuie sa aibă cel putin 8 caractere"
         },
         validateInputOnBlur: true

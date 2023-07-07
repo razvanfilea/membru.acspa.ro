@@ -87,7 +87,7 @@ export default function RegistrationHours(
                         const icon = profile.has_key ? <MdVpnKey/> : <></>;
                         const buttonColor = profile.role == MemberTypes.Antrenor ? 'orange' : (profile.has_key ? 'blue' : 'gray');
 
-                        return <Popover width={200} withArrow={true} shadow={"md"} key={profile.id}>
+                        return <Popover width={200} withArrow={true} shadow={"md"} key={reservation.id + profile.id}>
                             <Popover.Target>
                                 <Button color={buttonColor} radius={'xl'}
                                         size={'xs'} rightIcon={icon}>{index + 1}. {profile.name}</Button>

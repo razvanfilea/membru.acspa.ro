@@ -1,14 +1,26 @@
 export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json }
-  | Json[]
+    | string
+    | number
+    | boolean
+    | null
+    | { [key: string]: Json | undefined }
+    | Json[]
 
 export interface Database {
   public: {
     Tables: {
+      admin_vars: {
+        Row: {
+          service_role: string
+        }
+        Insert: {
+          service_role?: string
+        }
+        Update: {
+          service_role?: string
+        }
+        Relationships: []
+      }
       guest_invites: {
         Row: {
           created_at: string
@@ -34,6 +46,14 @@ export interface Database {
           start_hour?: number
           user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "guest_invites_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       locations: {
         Row: {
@@ -66,6 +86,7 @@ export interface Database {
           weekend_reservation_duration?: number
           weekend_start_hour?: number
         }
+        Relationships: []
       }
       member_roles: {
         Row: {
@@ -77,6 +98,7 @@ export interface Database {
         Update: {
           role?: string
         }
+        Relationships: []
       }
       mese: {
         Row: {
@@ -103,6 +125,14 @@ export interface Database {
           name?: string
           type?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "mese_location_fkey"
+            columns: ["location"]
+            referencedRelation: "locations"
+            referencedColumns: ["name"]
+          }
+        ]
       }
       profiles: {
         Row: {
@@ -123,6 +153,20 @@ export interface Database {
           name?: string
           role?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_role_fkey"
+            columns: ["role"]
+            referencedRelation: "member_roles"
+            referencedColumns: ["role"]
+          }
+        ]
       }
       reservations_restrictions: {
         Row: {
@@ -143,6 +187,14 @@ export interface Database {
           start_hour?: number
           user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_restrictions_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       rezervari: {
         Row: {
@@ -175,6 +227,26 @@ export interface Database {
           table_id?: string
           user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "rezervari_status_fkey"
+            columns: ["status"]
+            referencedRelation: "rezervari_status"
+            referencedColumns: ["status"]
+          },
+          {
+            foreignKeyName: "rezervari_table_id_fkey"
+            columns: ["table_id"]
+            referencedRelation: "mese"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rezervari_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       rezervari_status: {
         Row: {
@@ -186,12 +258,20 @@ export interface Database {
         Update: {
           status?: string
         }
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      create_guest_from_current_user: {
+        Args: {
+          start_date_input: string
+          start_hour_input: number
+        }
+        Returns: undefined
+      }
       create_reservation: {
         Args: {
           table_id_input: string
@@ -202,6 +282,9 @@ export interface Database {
       }
     }
     Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
       [_ in never]: never
     }
   }

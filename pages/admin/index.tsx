@@ -1,4 +1,4 @@
-import {Button, Card, Group, Paper, SimpleGrid, Space, Stack, Text} from "@mantine/core";
+import {Button, Card, Paper, Space, Stack, Text} from "@mantine/core";
 import Link from "next/link";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
 
@@ -28,6 +28,10 @@ export default function AdminPage() {
 
                 <Link href={'/admin/daily_situation'}>
                     <Button color={'pink'}>Situație zilnică</Button>
+                </Link>
+
+                <Link href={'/admin/members_list'}>
+                    <Button color={'cyan'}>Listă membrii</Button>
                 </Link>
             </Stack>
         </Card>

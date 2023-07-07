@@ -19,9 +19,9 @@ import {MdClose, MdRefresh} from "react-icons/md";
 import {addDaysToDate, dateToISOString, isDateWeekend} from "../utils/date";
 import ConfirmSelection from "../components/ConfirmSelection";
 import {Room, SelectedTable} from "../types/room";
-import {SupabaseClient, useSession, useSupabaseClient} from "@supabase/auth-helpers-react";
+import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../types/database.types";
-import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
+import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import RegistrationHours from "../components/RegistrastationHours";
 import {DatePicker} from "@mantine/dates";
 
@@ -38,7 +38,6 @@ interface IShowInformationPopup {
 
 export default function MakeReservationPage(params: IParams): JSX.Element {
     const router = useRouter()
-    const session = useSession()
     const profileData = useProfile()
 
     const [locationName, /*setLocationName*/] = useState(LocationName.Gara)
@@ -54,14 +53,13 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
 
     useEffect(() => {
         if (!profileData.isLoading && profileData.profile == null) {
-            const redirectPath = session == null ? '/login' : '/create_profile'
             const timer = setTimeout(() => {
-                router.push(redirectPath).then(null)
+                router.push('/login').then(null)
             }, 400)
 
             return () => clearTimeout(timer)
         }
-    }, [session, profileData, router])
+    }, [profileData, router])
 
     const [showInformationPopup, setInformationPopup] = useLocalStorage<IShowInformationPopup>({
         key: 'show-info-popup',
@@ -326,7 +324,7 @@ function SelectGameTable(
 
 
 export async function getStaticProps({}) {
-    const supabase = createBrowserSupabaseClient<Database>()
+    const supabase = createPagesBrowserClient<Database>()
 
     function locationToRoom(location: Location, tables: GameTable[]): Room {
         return {

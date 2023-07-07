@@ -9,7 +9,7 @@ import {dateToISOString, isDateWeekend} from "../../utils/date";
 import {useListState} from "@mantine/hooks";
 import GuestInviteComponent from "../../components/GuestInvite";
 import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
-import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
+import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
@@ -152,7 +152,7 @@ export default function GuestManager(params: IParams) {
             }
         })}>
             <AdminTopBar
-                title={'Invitații:'}
+                title={'Invitați:'}
                 onAdd={() => setCreateModalOpened(true)}/>
 
             {guests.map((guest) => (
@@ -177,7 +177,7 @@ export default function GuestManager(params: IParams) {
 }
 
 export async function getStaticProps({}) {
-    const supabase = createBrowserSupabaseClient<Database>()
+    const supabase = createPagesBrowserClient<Database>()
     const {data: location} = await supabase.from('locations')
         .select('*')
         .eq('name', LocationName.Gara)

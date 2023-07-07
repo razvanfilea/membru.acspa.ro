@@ -1,17 +1,4 @@
-import {
-    ActionIcon,
-    Avatar,
-    Button,
-    Card,
-    Center,
-    Checkbox,
-    Group,
-    Loader,
-    Paper,
-    Stack,
-    Text,
-    Title
-} from "@mantine/core";
+import {ActionIcon, Button, Card, Center, Checkbox, Group, Loader, Paper, Stack, Text, Title} from "@mantine/core";
 import React, {useEffect, useMemo, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
@@ -22,7 +9,8 @@ import {isReservationCancelable} from "../utils/date";
 import {Database} from "../types/database.types";
 import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useListState} from "@mantine/hooks";
-import {createBrowserSupabaseClient} from "@supabase/auth-helpers-nextjs";
+import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
+import {UserProfileLayout} from "../components/UserProfileLayout";
 
 interface IParams {
     gameTables: GameTable[]
@@ -97,16 +85,7 @@ export default function ProfilePage(params: IParams) {
         })}>
 
             <Group position={"apart"}>
-                <Group noWrap={true}>
-                    <Avatar
-                        src={`https://ui-avatars.com/api/?name=${profileData.profile.name}&background=random&rounded=true`}
-                        radius={"md"}/>
-
-                    <Stack spacing={1}>
-                        <Text size="md" weight={500}>{profileData.profile.name}</Text>
-                        <Text size="sm">{profileData.profile.role}</Text>
-                    </Stack>
-                </Group>
+                <UserProfileLayout profile={profileData.profile} />
 
                 <Button variant={"filled"} color={'red'} onClick={() => signOut(supabase, router)}>Sign out</Button>
             </Group>
@@ -171,7 +150,7 @@ export default function ProfilePage(params: IParams) {
 }
 
 export async function getStaticProps({}) {
-    const supabase = createBrowserSupabaseClient<Database>()
+    const supabase = createPagesBrowserClient<Database>()
     const {data: gameTables} = await supabase.from('mese').select('*')
 
     const props: IParams = {
