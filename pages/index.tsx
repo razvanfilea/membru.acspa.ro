@@ -1,10 +1,9 @@
-import React, {useEffect, useMemo, useState} from "react";
+import React, {ReactElement, useEffect, useMemo, useState} from "react";
 import Head from "next/head";
 import {ActionIcon, Grid, Group, Paper, Space, Stack, Text, Title} from "@mantine/core";
 import {useListState, useLocalStorage, useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
 import {
-    GameTable,
     GuestInvite,
     Location,
     LocationName,
@@ -18,7 +17,6 @@ import {useRouter} from "next/router";
 import {MdClose, MdRefresh} from "react-icons/md";
 import {addDaysToDate, dateToISOString, isDateWeekend} from "../utils/date";
 import ConfirmSelection from "../components/ConfirmSelection";
-import {Room, SelectedTable} from "../types/room";
 import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../types/database.types";
 import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
@@ -26,8 +24,8 @@ import RegistrationHours from "../components/RegistrastationHours";
 import {DatePicker} from "@mantine/dates";
 
 interface IParams {
-    gara: Room
-    boromir: Room
+    gara: Location
+    boromir: Location
     daysAhead: number
 }
 
@@ -36,13 +34,13 @@ interface IShowInformationPopup {
     readonly expiry: number
 }
 
-export default function MakeReservationPage(params: IParams): JSX.Element {
+export default function MakeReservationPage(params: IParams): ReactElement {
     const router = useRouter()
     const profileData = useProfile()
 
     const [locationName, /*setLocationName*/] = useState(LocationName.Gara)
     const [selectedDate, setSelectedDate] = useState<Date>(new Date)
-    const [selectedTable, setSelectedTable] = useState<SelectedTable | null>(null)
+    const [selectedTable, setSelectedTable] = useState<number | null>(null)
 
     const selectedDateISO = useMemo(() => dateToISOString(selectedDate), [selectedDate])
 
@@ -71,7 +69,7 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
     })
 
 
-    const room = locationName == LocationName.Gara ? params.gara : params.boromir;
+    const location = locationName == LocationName.Gara ? params.gara : params.boromir;
 
     return <>
         <Head>
@@ -171,9 +169,9 @@ export default function MakeReservationPage(params: IParams): JSX.Element {
 
                 <Grid.Col span={2}>
                     <Stack>
-                        {SelectGameTable(room, selectedDateISO, selectedTable, setSelectedTable)}
+                        {SelectGameTable(location, selectedDateISO, selectedTable, setSelectedTable)}
 
-                        {ConfirmSelection(room, selectedDateISO, selectedTable)}
+                        {ConfirmSelection(location, selectedDateISO, selectedTable)}
                     </Stack>
                 </Grid.Col>
             </Grid>
@@ -212,12 +210,13 @@ function fetchReservations(
 }
 
 function SelectGameTable(
-    room: Room,
+    location: Location,
     selectedDateISO: string,
-    selectedTable: SelectedTable | null,
-    onSelectTable: (s: SelectedTable) => void,
-): JSX.Element {
+    selectedStartHour: number | null,
+    onSetStartHour: (s: number) => void,
+): ReactElement {
     const supabase = useSupabaseClient<Database>()
+    const router = useRouter()
 
     const [reservations, reservationsHandle] = useListState<Reservation>([])
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
@@ -283,18 +282,18 @@ function SelectGameTable(
         }
         if (isDateWeekend(new Date(selectedDateISO))) {
             return {
-                start: room.weekendStartHour,
-                end: room.weekendEndHour,
-                duration: room.weekendDuration,
+                start: location.weekend_start_hour,
+                end: location.weekend_end_hour,
+                duration: location.weekend_reservation_duration,
             }
         } else {
             return {
-                start: room.startHour,
-                end: room.endHour,
-                duration: room.duration,
+                start: location.start_hour,
+                end: location.end_hour,
+                duration: location.reservation_duration,
             }
         }
-    }, [room, selectedDateISO])
+    }, [location, selectedDateISO])
 
     const selectedDateReservations
         = useMemo(() => reservations.filter(value => value.start_date == selectedDateISO), [reservations, selectedDateISO])
@@ -312,13 +311,13 @@ function SelectGameTable(
 
             <ActionIcon variant={'light'} radius={'xl'} size={36}
                         onClick={() => {
-                            location.reload()
+                            router.reload()
                         }}>
                 <MdRefresh size={28}/>
             </ActionIcon>
         </Group>
 
-        {RegistrationHours(room.tables, selectedDateReservations, selectedDateRestrictions, selectedDateInvites, allProfiles, selectedTable, onSelectTable, registrationHours)}
+        {RegistrationHours(location.name as LocationName, selectedDateReservations, selectedDateRestrictions, selectedDateInvites, allProfiles, selectedStartHour, onSetStartHour, registrationHours)}
     </>
 }
 
@@ -326,32 +325,14 @@ function SelectGameTable(
 export async function getStaticProps({}) {
     const supabase = createPagesBrowserClient<Database>()
 
-    function locationToRoom(location: Location, tables: GameTable[]): Room {
-        return {
-            locationName: location.name as LocationName,
-            tables,
-            maxReservations: location!.max_reservations,
-            startHour: location!.start_hour,
-            endHour: location!.end_hour,
-            duration: location!.reservation_duration,
-            weekendStartHour: location!.weekend_start_hour,
-            weekendEndHour: location!.weekend_end_hour,
-            weekendDuration: location!.weekend_reservation_duration,
-        }
-    }
-
-    const {data: gameTables} = await supabase.from('mese').select('*')
-    const garaTables = gameTables!.filter((value) => value.location == LocationName.Gara)
-    const boromirTables = gameTables!.filter((value) => value.location == LocationName.Boromir)
-
     const {data: locations} = await supabase.from('locations').select('*')
     const garaLocation = locations!.find(value => value.name == LocationName.Gara)
     const boromirLocation = locations!.find(value => value.name == LocationName.Boromir)
 
     const props: IParams = {
         daysAhead: 14,
-        gara: locationToRoom(garaLocation!, garaTables),
-        boromir: locationToRoom(boromirLocation!, boromirTables)
+        gara: garaLocation!,
+        boromir: boromirLocation!
     }
 
     return {props}

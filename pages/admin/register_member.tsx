@@ -1,11 +1,11 @@
 import 'dayjs/locale/ro';
-import {Button, Group, Paper, Space, Stack, Text, TextInput, Title} from "@mantine/core";
+import {Button, Paper, Space, Stack, Text, TextInput, Title} from "@mantine/core";
 import React, {useEffect, useState} from "react";
 import {useForm} from "@mantine/form";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
-import {MdAlternateEmail, MdPerson} from "react-icons/md";
+import {MdAlternateEmail, MdPassword, MdPerson} from "react-icons/md";
 import {REGEX_EMAIL_PATTERN} from "../../utils/regex";
 import {createClient} from "@supabase/supabase-js";
 
@@ -77,8 +77,9 @@ export default function CreateMember() {
                     setRegisterState(RegisterState.Loading)
 
                     const { data, error } = await adminAuthClient.createUser({
-                        email: form.values.email,
-                        password: form.values.password,
+                        email: values.email,
+                        password: values.password,
+                        email_confirm: true,
                     })
 
                     if (error != null) {
@@ -87,7 +88,7 @@ export default function CreateMember() {
                         return
                     }
 
-                    const result = await supabase.from('profiles').insert([{id: data.user?.id!, name: form.values.name}])
+                    const result = await supabase.from('profiles').insert([{id: data.user?.id!, name: values.name}])
                     if (result.error != null) {
                         setError(`Eroare: ${result.error.message}`)
                         setRegisterState(RegisterState.Failed)
@@ -129,13 +130,12 @@ export default function CreateMember() {
                     type={"text"}
                     placeholder={"Parola"}
                     required={true}
+                    icon={<MdPassword size={14}/>}
                 />
                 <Space h="lg"/>
 
-                <Group position="apart" mt="md">
-                    <Button type={"submit"}
-                            loading={registerState == RegisterState.Loading}>Înregistrează</Button>
-                </Group>
+                <Button type={"submit"}
+                        loading={registerState == RegisterState.Loading}>Înregistrează</Button>
             </form>
 
             {registerState == RegisterState.Failed &&

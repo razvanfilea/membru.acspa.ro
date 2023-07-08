@@ -1,10 +1,9 @@
 import {Button, Divider, Group, Popover, Stack, Text} from "@mantine/core";
-import {SelectedTable} from "../../types/room";
-import React from "react";
+import React, {ReactElement} from "react";
 import {MdOutlineNoAccounts, MdVpnKey} from "react-icons/md";
 import {
-    GameTable,
     GuestInvite,
+    LocationName,
     MemberTypes,
     Profile,
     Reservation,
@@ -15,24 +14,21 @@ import {useProfile} from "../ProfileProvider";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 
-function TableButtons(
-    gameTable: GameTable[],
-    selectedTableId: string | null,
+function TableButton(
+    locationName: LocationName,
     startHour: number,
     selectedStartHour: number | null,
-    onSelectTable: (s: SelectedTable) => void
+    onSetStartHour: (s: number) => void
 ) {
-    return gameTable.map((gameTable) => {
-        return (
-            <Button
-                variant={(gameTable.id == selectedTableId && startHour == selectedStartHour) ? "filled" : "outline"}
-                key={gameTable.id}
-                fullWidth={false}
-                onClick={() => onSelectTable(new SelectedTable(startHour, gameTable))}>
-                {gameTable.name}
-            </Button>
-        )
-    })
+    return (
+        <Button
+            variant={(startHour == selectedStartHour) ? "filled" : "outline"}
+            key={startHour}
+            fullWidth={false}
+            onClick={() => onSetStartHour(startHour)}>
+            Rezervare
+        </Button>
+    )
 }
 
 interface IRegistrationHoursProps {
@@ -42,23 +38,20 @@ interface IRegistrationHoursProps {
 }
 
 export default function RegistrationHours(
-    gameTables: GameTable[],
+    locationName: LocationName,
     selectedDateReservations: Reservation[],
     selectedRestrictions: ReservationRestriction[],
     selectedDateInvites: GuestInvite[],
     profiles: Profile[],
-    selectedTable: SelectedTable | null,
-    onSelectTable: (s: SelectedTable) => void,
+    selectedStartHour: number | null,
+    onSetStartHour: (s: number) => void,
     {start, end, duration}: IRegistrationHoursProps
 ) {
     const supabase = useSupabaseClient<Database>()
     const userProfile = useProfile()
 
-    const selectedTableId = selectedTable?.table?.id || null;
-    const selectedStartHour = selectedTable?.startHour || -1;
-
     let lastIndex = 0;
-    let content: JSX.Element[] = [];
+    let content: ReactElement[] = [];
 
     for (let hour = start; hour < end; hour += duration) {
         const restriction = selectedRestrictions.find(value => value.start_hour == hour)
@@ -68,7 +61,7 @@ export default function RegistrationHours(
                 <Text>{`Ora ${hour} - ${hour + duration}`}:</Text>
 
                 {!restriction ? (
-                    TableButtons(gameTables, selectedTableId, hour, selectedStartHour, onSelectTable)
+                    TableButton(locationName, hour, selectedStartHour, onSetStartHour)
                 ) : (
                     <Text color={'red'} size={'lg'}>{restriction.message}</Text>
                 )}

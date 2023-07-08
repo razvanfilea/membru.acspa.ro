@@ -1,10 +1,10 @@
 export type Json =
-    | string
-    | number
-    | boolean
-    | null
-    | { [key: string]: Json | undefined }
-    | Json[]
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export interface Database {
   public: {
@@ -100,40 +100,6 @@ export interface Database {
         }
         Relationships: []
       }
-      mese: {
-        Row: {
-          color: string
-          has_robot: boolean
-          id: string
-          location: string
-          name: string
-          type: string
-        }
-        Insert: {
-          color: string
-          has_robot?: boolean
-          id: string
-          location: string
-          name: string
-          type: string
-        }
-        Update: {
-          color?: string
-          has_robot?: boolean
-          id?: string
-          location?: string
-          name?: string
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mese_location_fkey"
-            columns: ["location"]
-            referencedRelation: "locations"
-            referencedColumns: ["name"]
-          }
-        ]
-      }
       profiles: {
         Row: {
           has_key: boolean
@@ -143,7 +109,7 @@ export interface Database {
         }
         Insert: {
           has_key?: boolean
-          id?: string
+          id: string
           name: string
           role?: string
         }
@@ -201,44 +167,44 @@ export interface Database {
           created_at: string
           duration: number
           id: string
+          location: string
           start_date: string
           start_hour: number
           status: string
-          table_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
           duration: number
           id?: string
+          location: string
           start_date: string
           start_hour: number
           status: string
-          table_id: string
           user_id: string
         }
         Update: {
           created_at?: string
           duration?: number
           id?: string
+          location?: string
           start_date?: string
           start_hour?: number
           status?: string
-          table_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "rezervari_location_fkey"
+            columns: ["location"]
+            referencedRelation: "locations"
+            referencedColumns: ["name"]
+          },
           {
             foreignKeyName: "rezervari_status_fkey"
             columns: ["status"]
             referencedRelation: "rezervari_status"
             referencedColumns: ["status"]
-          },
-          {
-            foreignKeyName: "rezervari_table_id_fkey"
-            columns: ["table_id"]
-            referencedRelation: "mese"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "rezervari_user_id_fkey"
@@ -274,7 +240,7 @@ export interface Database {
       }
       create_reservation: {
         Args: {
-          table_id_input: string
+          location_input: string
           start_date_input: string
           start_hour_input: number
         }

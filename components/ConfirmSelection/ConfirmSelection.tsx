@@ -1,9 +1,8 @@
-import React, {useEffect, useState} from "react";
+import React, {ReactElement, useEffect, useState} from "react";
 import {useScrollIntoView} from "@mantine/hooks";
-import {Reservation, ReservationStatus} from "../../types/wrapper";
+import {Location, Reservation, ReservationStatus} from "../../types/wrapper";
 import {Button, Card, Group, Paper, Space, Stack, Text, Title} from "@mantine/core";
 import ReservationComponent from "../Reservation";
-import {Room, SelectedTable} from "../../types/room";
 import Link from "next/link";
 import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
@@ -16,10 +15,10 @@ const enum ConfirmationStatus {
 }
 
 export function ConfirmSelection(
-    room: Room,
+    location: Location,
     selectedDateISO: string | null,
-    selectedTable: SelectedTable | null
-): JSX.Element {
+    selectedStartHour: number | null
+): ReactElement {
     const supabase = useSupabaseClient<Database>()
 
     const [status, setStatus] = useState(ConfirmationStatus.None)
@@ -27,29 +26,29 @@ export function ConfirmSelection(
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
     useEffect(() => {
-        if (selectedDateISO && selectedTable) {
+        if (selectedDateISO && selectedStartHour) {
             scrollIntoView({alignment: 'center'})
             setStatus(ConfirmationStatus.None)
             setErrorMessage("")
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedDateISO, selectedTable])
+    }, [selectedDateISO, selectedStartHour])
 
-    if (selectedDateISO == null || selectedTable == null) return <></>
+    if (selectedDateISO == null || selectedStartHour == null) return <></>
 
     // Fake Reservation to display to user
     const fakeReservation: Reservation = {
         id: '',
         created_at: '',
         user_id: '',
-        table_id: selectedTable.table.id,
+        location: location.name,
         start_date: selectedDateISO,
-        start_hour: selectedTable.startHour,
-        duration: room.duration,
+        start_hour: selectedStartHour,
+        duration: location.reservation_duration,
         status: ReservationStatus.Approved
     }
 
-    function DisplayConfirmationStatus(): JSX.Element {
+    function DisplayConfirmationStatus(): ReactElement {
         if (status == ConfirmationStatus.None || status == ConfirmationStatus.Loading) {
             return <Button
                 fullWidth style={{marginTop: 14}}
@@ -58,10 +57,11 @@ export function ConfirmSelection(
                 onClick={async () => {
                     setStatus(ConfirmationStatus.Loading)
                     const reservationParams = {
-                        table_id_input: selectedTable!.table.id,
+                        location_input: location.name,
                         start_date_input: selectedDateISO,
-                        start_hour_input: selectedTable!.startHour,
+                        start_hour_input: selectedStartHour,
                     }
+
                     const errorMessage = await publishReservation(supabase, reservationParams)
                     setStatus(errorMessage == null ? ConfirmationStatus.Success : ConfirmationStatus.Fail)
                     setErrorMessage(errorMessage ?? "")
@@ -88,7 +88,7 @@ export function ConfirmSelection(
 
                 <Space h={"lg"}/>
 
-                {ReservationComponent(fakeReservation, selectedTable.table, false, null)}
+                {ReservationComponent(fakeReservation, false, null)}
 
                 <Space h={"md"}/>
 

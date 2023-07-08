@@ -3,18 +3,13 @@ import React, {useEffect, useMemo, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
 import {useProfile} from "../components/ProfileProvider";
-import {GameTable, Profile, Reservation, ReservationStatus} from "../types/wrapper";
+import {Profile, Reservation, ReservationStatus} from "../types/wrapper";
 import {MdRefresh} from "react-icons/md";
 import {isReservationCancelable} from "../utils/date";
 import {Database} from "../types/database.types";
 import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useListState} from "@mantine/hooks";
-import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {UserProfileLayout} from "../components/UserProfileLayout";
-
-interface IParams {
-    gameTables: GameTable[]
-}
 
 async function signOut(supabase: SupabaseClient<Database>, router: NextRouter) {
     const {error} = await supabase.auth.signOut()
@@ -42,7 +37,7 @@ function fetchReservations(
         })
 }
 
-export default function ProfilePage(params: IParams) {
+export default function ProfilePage() {
     const supabase = useSupabaseClient<Database>()
     const router = useRouter()
     const profileData = useProfile()
@@ -124,7 +119,6 @@ export default function ProfilePage(params: IParams) {
                 <Card key={reservation.id}>
                     {ReservationComponent(
                         reservation,
-                        params.gameTables.find((element) => element.id == reservation.table_id)!,
                         true,
                         (isReservationCancelable(reservation)) ? (async () => {
                             const newData = {
@@ -147,17 +141,4 @@ export default function ProfilePage(params: IParams) {
             ))}
         </Stack>
     </>)
-}
-
-export async function getStaticProps({}) {
-    const supabase = createPagesBrowserClient<Database>()
-    const {data: gameTables} = await supabase.from('mese').select('*')
-
-    const props: IParams = {
-        gameTables: gameTables!
-    }
-
-    return {
-        props
-    }
 }

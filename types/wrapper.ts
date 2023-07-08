@@ -11,8 +11,6 @@ export type GuestInvite = Tables['guest_invites']['Row']
 
 export type Location = Tables['locations']['Row']
 
-export type GameTable = Tables['mese']['Row']
-
 export type Profile = Tables['profiles']['Row']
 
 export type Reservation = Tables['rezervari']['Row']
