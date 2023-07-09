@@ -9,8 +9,7 @@ import {
     LocationName,
     Profile,
     Reservation,
-    ReservationRestriction,
-    ReservationStatus
+    ReservationRestriction
 } from "../types/wrapper";
 import {useProfile} from "../components/ProfileProvider";
 import {useRouter} from "next/router";
@@ -129,7 +128,7 @@ function fetchReservations(
     supabase.from('rezervari')
         .select('*')
         .gte('start_date', dateToISOString(new Date))
-        .eq('status', ReservationStatus.Approved)
+        .eq('cancelled', false)
         .order('created_at', {ascending: true})
         .then(value => {
             if (value.data != null) {
@@ -188,7 +187,7 @@ function SelectGameTable(
                 {event: '*', schema: 'public', table: 'rezervari'},
                 (payload) => {
                     if (payload.eventType == "INSERT") {
-                        if (payload.new.status == ReservationStatus.Approved) {
+                        if (payload.new.cancelled === false) {
                             reservationsHandle.setState((prev) => {
                                     return [...prev, payload.new as Reservation]
                                         .sort((a, b) => {

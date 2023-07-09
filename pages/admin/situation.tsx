@@ -2,7 +2,7 @@ import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
 import {useProfile} from "../../components/ProfileProvider";
 import React, {useEffect, useMemo, useState} from "react";
-import {Profile, Reservation, ReservationStatus} from "../../types/wrapper";
+import {Profile, Reservation} from "../../types/wrapper";
 import {Card, Center, Grid, Group, Indicator, Loader, Select, Space, Stack, Text} from "@mantine/core";
 import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
@@ -99,7 +99,7 @@ export default function SituationPage() {
                         locale="ro"
                         renderDay={(date) => {
                             const disabled = !filteredReservations.some(it =>
-                                it.start_date === dateToISOString(date) && it.status == ReservationStatus.Approved);
+                                it.start_date === dateToISOString(date) && it.cancelled === false);
 
                             return (
                                 <Indicator
@@ -128,8 +128,8 @@ export default function SituationPage() {
 }
 
 function SelectedUserReservations(profile: Profile, reservations: Reservation[]) {
-    const approvedReservations = reservations.filter((it) => it.status === ReservationStatus.Approved)
-    const cancelledReservations = reservations.filter((it) => it.status === ReservationStatus.Cancelled)
+    const approvedReservations = reservations.filter((it) => !it.cancelled)
+    const cancelledReservations = reservations.filter((it) => it.cancelled)
 
     return <>
         <Text size={'xl'}>Total rezervări: {approvedReservations.length}</Text>

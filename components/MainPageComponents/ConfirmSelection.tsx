@@ -1,6 +1,6 @@
 import React, {ReactElement, useEffect, useState} from "react";
 import {useScrollIntoView} from "@mantine/hooks";
-import {Location, Reservation, ReservationStatus} from "../../types/wrapper";
+import {Location, Reservation} from "../../types/wrapper";
 import {Button, Card, Group, Paper, Space, Stack, Text, Title} from "@mantine/core";
 import ReservationComponent from "../Reservation";
 import Link from "next/link";
@@ -45,7 +45,7 @@ export function ConfirmSelection(
         start_date: selectedDateISO,
         start_hour: selectedStartHour,
         duration: location.reservation_duration,
-        status: ReservationStatus.Approved
+        cancelled: false
     }
 
     function DisplayConfirmationStatus(): ReactElement {

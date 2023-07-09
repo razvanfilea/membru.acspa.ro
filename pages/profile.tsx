@@ -3,7 +3,7 @@ import React, {useEffect, useMemo, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
 import {useProfile} from "../components/ProfileProvider";
-import {Profile, Reservation, ReservationStatus} from "../types/wrapper";
+import {Profile, Reservation} from "../types/wrapper";
 import {MdRefresh} from "react-icons/md";
 import {isReservationCancelable} from "../utils/date";
 import {Database} from "../types/database.types";
@@ -63,7 +63,7 @@ export default function ProfilePage() {
     }, [profileData, reservationsHandle.setState, supabase])
 
     const filteredReservations = useMemo(() => {
-        return reservations.filter((res) => showCancelled || res.status == ReservationStatus.Approved)
+        return reservations.filter((res) => showCancelled || !res.cancelled)
     }, [reservations, showCancelled])
 
     if (profileData.isLoading)
@@ -124,9 +124,9 @@ export default function ProfilePage() {
                         reservation,
                         true,
                         (isReservationCancelable(reservation)) ? (async () => {
-                            const newData = {
+                            const newData: Reservation = {
                                 ...reservation,
-                                status: ReservationStatus.Cancelled
+                                cancelled: true
                             }
 
                             const {data} = await supabase.from('rezervari')

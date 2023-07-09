@@ -164,33 +164,33 @@ export interface Database {
       }
       rezervari: {
         Row: {
+          cancelled: boolean
           created_at: string
           duration: number
           id: string
           location: string
           start_date: string
           start_hour: number
-          status: string
           user_id: string
         }
         Insert: {
+          cancelled?: boolean
           created_at?: string
           duration: number
           id?: string
           location: string
           start_date: string
           start_hour: number
-          status: string
           user_id: string
         }
         Update: {
+          cancelled?: boolean
           created_at?: string
           duration?: number
           id?: string
           location?: string
           start_date?: string
           start_hour?: number
-          status?: string
           user_id?: string
         }
         Relationships: [
@@ -201,30 +201,12 @@ export interface Database {
             referencedColumns: ["name"]
           },
           {
-            foreignKeyName: "rezervari_status_fkey"
-            columns: ["status"]
-            referencedRelation: "rezervari_status"
-            referencedColumns: ["status"]
-          },
-          {
             foreignKeyName: "rezervari_user_id_fkey"
             columns: ["user_id"]
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
         ]
-      }
-      rezervari_status: {
-        Row: {
-          status: string
-        }
-        Insert: {
-          status: string
-        }
-        Update: {
-          status?: string
-        }
-        Relationships: []
       }
     }
     Views: {

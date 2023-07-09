@@ -29,11 +29,6 @@ export function getEndTime(reservation: Reservation): Date {
     return getEndDateDuration(new Date(reservation.start_date), reservation.duration);
 }
 
-export const enum ReservationStatus {
-    Approved = "approved",
-    Cancelled = "cancelled",
-}
-
 export const enum MemberTypes {
     Membru = "Membru",
     Cotizant1 = "Cotizant 1s",

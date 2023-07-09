@@ -7,8 +7,7 @@ import {
     MemberTypes,
     Profile,
     Reservation,
-    ReservationRestriction,
-    ReservationStatus
+    ReservationRestriction
 } from "../../types/wrapper";
 import {useProfile} from "../ProfileProvider";
 import {Database} from "../../types/database.types";
@@ -94,9 +93,9 @@ export function RegistrationHours(
                                     {(userProfile.profile?.role === MemberTypes.Fondator || reservation.user_id === userProfile.profile?.id) &&
 
                                         <Button onClick={async () => {
-                                            const newData = {
+                                            const newData: Reservation = {
                                                 ...reservation,
-                                                status: ReservationStatus.Cancelled
+                                                cancelled: true
                                             }
 
                                             await supabase.from('rezervari')

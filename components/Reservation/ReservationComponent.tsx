@@ -1,25 +1,22 @@
 import {Button, Group, Space, Stack, Text} from "@mantine/core";
 import React from "react";
 import {MdCancel} from "react-icons/md";
-import {Reservation, ReservationStatus} from "../../types/wrapper";
+import {Reservation} from "../../types/wrapper";
 
 function ShowStatus(reservation: Reservation, onCancel: (() => Promise<void>) | null) {
-    const resStatus = reservation.status ?? ReservationStatus.Cancelled;
-
-    switch (resStatus) {
-        case ReservationStatus.Cancelled:
-            return <Stack align={"center"} spacing={'xs'}>
-                <MdCancel size={32}/>
-                <Text weight={700}>Anulată</Text></Stack>
-        case ReservationStatus.Approved:
-            return <>
-                {onCancel != null &&
-                    <Button
-                        gradient={{from: 'orange', to: 'red'}} variant={"outline"}
-                        onClick={onCancel}>Anulează</Button>
-                }
-            </>
+    if (reservation.cancelled) {
+        return <Stack align={"center"} spacing={'xs'}>
+            <MdCancel size={32}/>
+            <Text weight={700}>Anulată</Text></Stack>
     }
+
+    if (onCancel != null) {
+        return <Button
+            gradient={{from: 'orange', to: 'red'}} variant={"outline"}
+            onClick={onCancel}>Anulează</Button>
+    }
+
+    return <></>
 }
 
 export default function ReservationComponent(

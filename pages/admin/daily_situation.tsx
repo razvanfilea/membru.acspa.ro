@@ -2,7 +2,7 @@ import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
 import {useProfile} from "../../components/ProfileProvider";
 import React, {useEffect, useMemo, useState} from "react";
-import {Profile, Reservation, ReservationStatus} from "../../types/wrapper";
+import {Profile, Reservation} from "../../types/wrapper";
 import {Button, Center, Divider, Grid, Group, Loader, Space, Stack, Text} from "@mantine/core";
 import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
@@ -42,7 +42,7 @@ export default function DailySituationPage() {
     useEffect(() => {
         if (date) {
             supabase.from('rezervari').select('*')
-                .eq('status', ReservationStatus.Approved)
+                .eq('cancelled', false)
                 .eq('start_date', dateToISOString(date))
                 .then(value => {
                     if (value.data != null) {
