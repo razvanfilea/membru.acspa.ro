@@ -4,12 +4,13 @@ import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
 import {useProfile} from "../components/ProfileProvider";
 import {Profile, Reservation} from "../types/wrapper";
-import {MdRefresh} from "react-icons/md";
+import {MdLogout, MdPassword, MdRefresh} from "react-icons/md";
 import {isReservationCancelable} from "../utils/date";
 import {Database} from "../types/database.types";
 import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useListState} from "@mantine/hooks";
 import {UserProfileLayout} from "../components/UserProfileLayout";
+import Link from "next/link";
 
 async function signOut(supabase: SupabaseClient<Database>, router: NextRouter) {
     const {error} = await supabase.auth.signOut()
@@ -84,7 +85,14 @@ export default function ProfilePage() {
             <Group position={"apart"}>
                 <UserProfileLayout profile={profileData.profile}/>
 
-                <Button variant={"filled"} color={'red'} onClick={() => signOut(supabase, router)}>Sign out</Button>
+                <Group>
+                    <Link href={'password_recovery'}>
+                        <Button leftIcon={<MdPassword/>} variant={"outline"} color={'blue'}>Schimbă parola</Button>
+                    </Link>
+
+                    <Button leftIcon={<MdLogout/>} variant={"outline"} color={'red'}
+                            onClick={() => signOut(supabase, router)}>Sign out</Button>
+                </Group>
             </Group>
 
         </Paper>

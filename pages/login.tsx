@@ -33,6 +33,7 @@ export default function LoginForm() {
     });
 
     const [loginState, setLoginState] = useState(LoginState.None)
+    const [loginError, setLoginError] = useState('')
 
     useEffect(() => {
         if (session != null) {
@@ -46,61 +47,60 @@ export default function LoginForm() {
         }
     }, [loginState, router])
 
-    return <Box sx={{maxWidth: 480}} mx="auto">
-        <Stack>
-            <form style={{position: 'relative'}} onSubmit={
-                form.onSubmit(async (values) => {
-                    setLoginState(LoginState.Loading)
-                    const {error} = await supabase.auth.signInWithPassword({email: values.email, password: values.password})
+    return <Stack sx={{maxWidth: 480}} mx="auto">
+        <form style={{position: 'relative'}} onSubmit={
+            form.onSubmit(async (values) => {
+                setLoginState(LoginState.Loading)
+                const {error} = await supabase.auth.signInWithPassword({email: values.email, password: values.password})
 
-                    setLoginState(error == null ? LoginState.Success : LoginState.Failed)
-                })}>
+                setLoginError(error?.message || '')
 
-                <Title>Login</Title>
+                setLoginState(error == null ? LoginState.Success : LoginState.Failed)
+            })}>
 
-                <Space h={"lg"}/>
+            <Title>Login</Title>
 
-                <TextInput
-                    {...form.getInputProps('email')}
-                    type={"email"}
-                    label={"Email:"}
-                    placeholder={"mail@example.com"}
-                    required={true}
-                    icon={<MdAlternateEmail size={14}/>}
-                />
+            <Space h={"lg"}/>
 
-                <Space h={"lg"}/>
+            <TextInput
+                {...form.getInputProps('email')}
+                type={"email"}
+                label={"Email:"}
+                placeholder={"mail@example.com"}
+                required={true}
+                icon={<MdAlternateEmail size={14}/>}
+            />
 
-                <PasswordInput
-                    {...form.getInputProps('password')}
-                    label={"Parola:"}
-                    placeholder={"Parola"}
-                    required={true}
-                    icon={<MdPassword size={14}/>}
-                />
+            <Space h={"lg"}/>
 
-                <Space h="lg"/>
+            <PasswordInput
+                {...form.getInputProps('password')}
+                label={"Parola:"}
+                placeholder={"Parola"}
+                required={true}
+                icon={<MdPassword size={14}/>}
+            />
 
-                <Group position="apart" mt="md">
-                    <Button variant={'subtle'}><Link href={'/forgot_password'}>Am uitat parola</Link></Button>
+            <Space h="lg"/>
 
-                    <Button type={"submit"}
-                            loading={loginState == LoginState.Loading}>Logare</Button>
-                </Group>
-            </form>
+            <Group position="apart" mt="md">
+                <Button variant={'subtle'}><Link href={'/forgot_password'}>Am uitat parola</Link></Button>
 
-            {loginState == LoginState.Failed &&
-                <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-                    backgroundColor: theme.colors.orange,
-                })}>
-                    <Text>A fost întâmpinată o eroare!</Text>
-                </Paper>
-            }
+                <Button type={"submit"}
+                        loading={loginState == LoginState.Loading}>Logare</Button>
+            </Group>
+        </form>
 
-            {loginState == LoginState.Success &&
-                <Text>Te-ai logat cu succes!</Text>
-            }
-        </Stack>
+        {loginState == LoginState.Failed &&
+            <Paper shadow={"0"} p={"md"} sx={(theme) => ({
+                backgroundColor: theme.colors.orange,
+            })}>
+                <Text>Eroare: {loginError}</Text>
+            </Paper>
+        }
 
-    </Box>
+        {loginState == LoginState.Success &&
+            <Text>Te-ai logat cu succes!</Text>
+        }
+    </Stack>
 }

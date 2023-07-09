@@ -1,6 +1,6 @@
 import {useRouter} from "next/router";
 import {useState} from "react";
-import {Box, Button, Group, Loader, PasswordInput, Space, Stack, Text, Title} from "@mantine/core";
+import {Button, Group, Loader, PasswordInput, Space, Stack, Text, Title} from "@mantine/core";
 import {useForm} from "@mantine/form";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 
@@ -34,48 +34,44 @@ export default function PasswordRecoveryPage() {
         return <Text color={'red'}>A avut loc o eroare: {state}</Text>
     }
 
-    return (<Box sx={{maxWidth: 480}} mx="auto">
-            <Stack>
-                <form style={{position: 'relative'}}
-                      onSubmit={form.onSubmit(async (values) => {
-                          setState('resetting')
+    return <Stack sx={{maxWidth: 480}} mx="auto">
+        <form style={{position: 'relative'}}
+              onSubmit={form.onSubmit(async (values) => {
+                  setState('resetting')
 
-                          const {data, error} = await supabase.auth
-                              .updateUser({password: values.password});
+                  const {data, error} = await supabase.auth
+                      .updateUser({password: values.password});
 
-                          if (data != null)
-                              await router.push("/");
-                          if (error != null)
-                              setState(error.message)
-                      })}>
+                  if (data != null)
+                      await router.push("/");
+                  if (error != null)
+                      setState(error.message)
+              })}>
 
-                    <Title>Setare parolă nouă</Title>
+            <Title>Setare parolă nouă</Title>
 
-                    <Space h={'xl'}/>
+            <Space h={'xl'}/>
 
-                    <PasswordInput
-                        label={'Parola'}
-                        required={true}
-                        placeholder={"Noua parolă"}
-                        {...form.getInputProps('password')}
-                    />
+            <PasswordInput
+                label={'Parola'}
+                required={true}
+                placeholder={"Noua parolă"}
+                {...form.getInputProps('password')}
+            />
 
-                    <PasswordInput
-                        my={'lg'}
-                        required={true}
-                        label={'Repetă parola'}
-                        placeholder={"Repetă noua parolă"}
-                        {...form.getInputProps('confirmPassword')}
-                    />
+            <PasswordInput
+                my={'lg'}
+                required={true}
+                label={'Repetă parola'}
+                placeholder={"Repetă noua parolă"}
+                {...form.getInputProps('confirmPassword')}
+            />
 
-                    <Space h={'xl'}/>
+            <Space h={'xl'}/>
 
-                    <Group position={"center"}>
-                        <FormBottomSection/>
-                    </Group>
-                </form>
-            </Stack>
-
-        </Box>
-    );
+            <Group position={"center"}>
+                <FormBottomSection/>
+            </Group>
+        </form>
+    </Stack>
 }

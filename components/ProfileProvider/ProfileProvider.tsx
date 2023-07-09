@@ -12,20 +12,18 @@ const defaultValue: ProfileData = {
     isLoading: true,
     profile: null,
 }
+
 const AuthContext = React.createContext(defaultValue)
 
 export default function ProfileProvider({children}) {
     const supabase = useSupabaseClient<Database>()
     const session = useSession()
-    const [profileData, setProfileData] = useState<ProfileData>({
-        isLoading: true,
-        profile: null
-    })
+    const [profileData, setProfileData] = useState<ProfileData>(defaultValue)
 
     useEffect(() => {
         async function getProfile(user: User) {
             try {
-                setProfileData({isLoading: true, profile: null})
+                setProfileData(defaultValue)
 
                 let {data, error} = await supabase
                     .from('profiles')
@@ -53,25 +51,6 @@ export default function ProfileProvider({children}) {
             setProfileData({isLoading: false, profile: null})
         }
     }, [session, supabase]);
-
-    useEffect(() => {
-        supabase.auth.onAuthStateChange((event, session) => {
-            console.log(event)
-            if (event === "PASSWORD_RECOVERY") {
-
-                let newPassword: string | null = null;
-                while (!newPassword || newPassword.length < 8)
-                    newPassword = prompt("Scrie noua ta parolă:")
-
-                supabase.auth.updateUser({
-                    password: newPassword,
-                }).then(({data, error}) => {
-                    if (data) alert("Parola ta a fost schimbată")
-                    if (error) alert("A apărut o eroare la actualizarea parolei")
-                })
-            }
-        })
-    }, [supabase]);
 
     // Will be passed down to Signup, Login and Dashboard components
     const authDataCallback = useCallback((): ProfileData => {
