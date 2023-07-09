@@ -82,7 +82,7 @@ export default function LoginForm() {
                 <Space h="lg"/>
 
                 <Group position="apart" mt="md">
-                    <Button variant={'subtle'}><Link href={'/reset_password'}>Am uitat parola</Link></Button>
+                    <Button variant={'subtle'}><Link href={'/forgot_password'}>Am uitat parola</Link></Button>
 
                     <Button type={"submit"}
                             loading={loginState == LoginState.Loading}>Logare</Button>

@@ -1,7 +1,7 @@
 import React, {ReactElement, useEffect, useMemo, useState} from "react";
 import Head from "next/head";
 import {ActionIcon, Grid, Group, Paper, Space, Stack, Text, Title} from "@mantine/core";
-import {useListState, useLocalStorage, useScrollIntoView} from "@mantine/hooks";
+import {useListState, useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
 import {
     GuestInvite,
@@ -14,24 +14,18 @@ import {
 } from "../types/wrapper";
 import {useProfile} from "../components/ProfileProvider";
 import {useRouter} from "next/router";
-import {MdClose, MdRefresh} from "react-icons/md";
+import {MdRefresh} from "react-icons/md";
 import {addDaysToDate, dateToISOString, isDateWeekend} from "../utils/date";
-import ConfirmSelection from "../components/ConfirmSelection";
+import {ConfirmSelection, GeneralInfoPopup, RegistrationHours} from "../components/MainPageComponents";
 import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../types/database.types";
 import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
-import RegistrationHours from "../components/RegistrastationHours";
 import {DatePicker} from "@mantine/dates";
 
 interface IParams {
     gara: Location
     boromir: Location
     daysAhead: number
-}
-
-interface IShowInformationPopup {
-    readonly value: boolean
-    readonly expiry: number
 }
 
 export default function MakeReservationPage(params: IParams): ReactElement {
@@ -59,16 +53,6 @@ export default function MakeReservationPage(params: IParams): ReactElement {
         }
     }, [profileData, router])
 
-    const [showInformationPopup, setInformationPopup] = useLocalStorage<IShowInformationPopup>({
-        key: 'show-info-popup',
-        defaultValue: {
-            value: true,
-            expiry: new Date().getTime() - 1000
-        },
-        getInitialValueInEffect: true,
-    })
-
-
     const location = locationName == LocationName.Gara ? params.gara : params.boromir;
 
     return <>
@@ -81,33 +65,7 @@ export default function MakeReservationPage(params: IParams): ReactElement {
         <Space h="lg"/>
 
         <Paper>
-            {(showInformationPopup.value || showInformationPopup.expiry < new Date().getTime()) &&
-                <>
-                    <Paper shadow={"0"} p={"sm"} sx={(theme) => ({
-                        backgroundColor: theme.colors.cyan[9],
-                    })}>
-                        <Group noWrap={true}>
-                            <Text style={{width: '100%'}}>
-                                Rezervările se fac până la ora 17 respectiv 19 pentru ziua respectivă. Max 8 jucători
-                                pentru un
-                                interval orar. Când știți că nu ajungeți, retrageți-vă pentru a lăsa loc liber altor
-                                jucători. Spor la joc!</Text>
-                            <ActionIcon onClick={() => {
-                                const daysInMilliseconds = 3 * 24 * 60 * 60 * 10000 // 3 days in milliseconds
-                                const item: IShowInformationPopup = {
-                                    value: false,
-                                    expiry: new Date().getTime() + daysInMilliseconds
-                                }
-
-                                setInformationPopup(item)
-                            }} size={48}>
-                                <MdClose size={24}/>
-                            </ActionIcon>
-                        </Group>
-                    </Paper>
-                    <Space h="md"/>
-                </>
-            }
+            <GeneralInfoPopup />
 
             <Grid
                 grow={true}
@@ -115,25 +73,7 @@ export default function MakeReservationPage(params: IParams): ReactElement {
 
                 <Grid.Col span={'auto'}>
                     {!profileData.isLoading && profileData.profile != null &&
-                        <Stack key={"calendar"}>
-                            {/*<Radio.Group
-                            value={locationName}
-                            onChange={(value) => {
-                                switch (value) {
-                                    case LocationName.Gara.toString():
-                                        setLocationName(LocationName.Gara);
-                                        break;
-                                    case LocationName.Boromir.toString():
-                                        setLocationName(LocationName.Boromir);
-                                        break;
-                                }
-                            }}
-                            label={"Alege locația unde faci rezervarea:"}
-                            size="md">
-                            <Radio value={LocationName.Gara} label={"Gară"}/>
-                            <Radio value={LocationName.Boromir} label={"Boromir"}/>
-                        </Radio.Group>*/}
-
+                        <>
                             <Text>Alege ziua rezervării:</Text>
 
                             <DatePicker
@@ -163,7 +103,7 @@ export default function MakeReservationPage(params: IParams): ReactElement {
                                 }}
                                 withCellSpacing={true}
                             />
-                        </Stack>
+                        </>
                     }
                 </Grid.Col>
 

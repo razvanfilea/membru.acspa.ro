@@ -45,7 +45,9 @@ export default function LoginForm() {
             <form style={{position: 'relative'}} onSubmit={
                 form.onSubmit(async (values) => {
                     setResetStatus(Status.Loading)
-                    const {error} = await supabase.auth.resetPasswordForEmail(values.email)
+                    const {error} = await supabase.auth.resetPasswordForEmail(values.email, {
+                        redirectTo: `${window.location.origin}/password_recovery.html`
+                    })
 
                     setResetStatus(error == null ? Status.Success : Status.Failed)
                 })}>

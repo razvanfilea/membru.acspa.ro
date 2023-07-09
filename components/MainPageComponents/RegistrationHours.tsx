@@ -37,7 +37,7 @@ interface IRegistrationHoursProps {
     duration: number,
 }
 
-export default function RegistrationHours(
+export function RegistrationHours(
     locationName: LocationName,
     selectedDateReservations: Reservation[],
     selectedRestrictions: ReservationRestriction[],

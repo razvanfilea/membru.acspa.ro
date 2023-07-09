@@ -46,9 +46,13 @@ export default function ProfilePage() {
     const [showCancelled, setShowCancelled] = useState(false)
 
     useEffect(() => {
-        if (!profileData.isLoading && profileData.profile == null)
-            router.push('/login').then(() => {
-            })
+        if (!profileData.isLoading && profileData.profile == null) {
+            const timer = setTimeout(() => {
+                router.push('/login').then(null)
+            }, 400)
+
+            return () => clearTimeout(timer)
+        }
     }, [profileData, router])
 
     useEffect(() => {
@@ -56,12 +60,10 @@ export default function ProfilePage() {
             return;
 
         fetchReservations(supabase, profileData.profile, reservationsHandle.setState)
-        // We only want to run it once
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [profileData, reservationsHandle.setState, supabase])
 
     const filteredReservations = useMemo(() => {
-        return reservations.filter((res) => res.status == ReservationStatus.Approved || showCancelled)
+        return reservations.filter((res) => showCancelled || res.status == ReservationStatus.Approved)
     }, [reservations, showCancelled])
 
     if (profileData.isLoading)
@@ -80,7 +82,7 @@ export default function ProfilePage() {
         })}>
 
             <Group position={"apart"}>
-                <UserProfileLayout profile={profileData.profile} />
+                <UserProfileLayout profile={profileData.profile}/>
 
                 <Button variant={"filled"} color={'red'} onClick={() => signOut(supabase, router)}>Sign out</Button>
             </Group>
@@ -107,12 +109,13 @@ export default function ProfilePage() {
                 </ActionIcon>
             </Group>
 
-            <Checkbox label="Afișează anulate"
-                      checked={showCancelled}
-                      onChange={(event) => setShowCancelled(event.currentTarget.checked)}/>
+            <Checkbox
+                label="Afișează anulate"
+                checked={showCancelled}
+                onChange={(event) => setShowCancelled(event.currentTarget.checked)}/>
 
             {reservations.length == 0 &&
-                <Text size={"lg"}>Nu ați făcut nicio rezervare</Text>
+                <Text size={"lg"}>Nu ai nicio rezervare</Text>
             }
 
             {filteredReservations.map((reservation) => (
