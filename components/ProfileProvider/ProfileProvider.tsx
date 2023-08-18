@@ -1,6 +1,6 @@
 import React, {useCallback, useContext, useEffect, useState} from "react";
 import {Profile} from "../../types/wrapper";
-import {User, useSession, useSupabaseClient} from "@supabase/auth-helpers-react";
+import {User, useSessionContext, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
 
 export interface ProfileData {
@@ -17,7 +17,7 @@ const AuthContext = React.createContext(defaultValue)
 
 export default function ProfileProvider({children}) {
     const supabase = useSupabaseClient<Database>()
-    const session = useSession()
+    const sessionContext = useSessionContext()
     const [profileData, setProfileData] = useState<ProfileData>(defaultValue)
 
     useEffect(() => {
@@ -31,10 +31,10 @@ export default function ProfileProvider({children}) {
                     .eq('id', user.id)
                     .single()
 
-                if (error) {
-                    console.error(error)
-                } else {
+                if (data != null) {
                     setProfileData({isLoading: false, profile: data})
+                } else {
+                    console.error(error)
                 }
 
             } catch (error) {
@@ -44,13 +44,16 @@ export default function ProfileProvider({children}) {
             }
         }
 
-        if (session?.user) {
-            getProfile(session!.user).then(() => console.log("Profile loaded successfully"))
+        if (sessionContext.session != null) {
+            setProfileData({isLoading: true, profile: null})
+            getProfile(sessionContext.session!.user).then(() => console.log("Profile loaded successfully"))
+        } else if (sessionContext.isLoading) {
+            setProfileData({isLoading: true, profile: null})
         } else {
             console.log("Failed to get user session")
             setProfileData({isLoading: false, profile: null})
         }
-    }, [session, supabase]);
+    }, [sessionContext, supabase]);
 
     // Will be passed down to Signup, Login and Dashboard components
     const authDataCallback = useCallback((): ProfileData => {

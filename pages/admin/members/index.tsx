@@ -1,15 +1,15 @@
 import 'dayjs/locale/ro';
 import {Button, Card, Center, Loader, Modal, Stack, TextInput} from "@mantine/core";
 import React, {useEffect, useState} from "react";
-import {useProfile} from "../../components/ProfileProvider";
-import {Profile} from "../../types/wrapper";
+import {useProfile} from "../../../components/ProfileProvider";
+import {Profile} from "../../../types/wrapper";
 import {useForm} from "@mantine/form";
-import {dateToISOString} from "../../utils/date";
-import {AdminTopBar} from "../../components/AdminInput";
-import {Database} from "../../types/database.types";
+import {dateToISOString} from "../../../utils/date";
+import {AdminTopBar} from "../../../components/AdminInput";
+import {Database} from "../../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
-import {useExitIfNotFounder} from "../../utils/admin_tools";
-import {UserProfileLayout} from "../../components/UserProfileLayout";
+import {useExitIfNotFounder} from "../../../utils/admin_tools";
+import {UserProfileLayout} from "../../../components/UserProfileLayout";
 import {useRouter} from "next/router";
 
 export default function MembersList() {
@@ -103,7 +103,8 @@ export default function MembersList() {
                 paddingRight: 0,
             }
         })}>
-            <AdminTopBar title={allProfiles.length + ' de membrii'} onAdd={() => router.push('/admin/register_member')}/>
+            <AdminTopBar title={allProfiles.length + ' de membrii'}
+                         onAdd={() => router.push('/admin/members/register')}/>
 
             {allProfiles.map((profile) => (
                 <Card key={profile.id} shadow={"xs"}>

@@ -30,7 +30,7 @@ export default function AdminPage() {
                     <Button color={'pink'}>Situație zilnică</Button>
                 </Link>
 
-                <Link href={'/admin/members_list'}>
+                <Link href={'/admin/members'}>
                     <Button color={'cyan'}>Listă membrii</Button>
                 </Link>
             </Stack>

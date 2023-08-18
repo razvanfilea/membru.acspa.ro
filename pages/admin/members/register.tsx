@@ -1,12 +1,12 @@
 import 'dayjs/locale/ro';
-import {Button, Paper, Space, Stack, Text, TextInput, Title} from "@mantine/core";
+import {Button, Paper, Select, Stack, Text, TextInput, Title} from "@mantine/core";
 import React, {useEffect, useState} from "react";
 import {useForm} from "@mantine/form";
-import {Database} from "../../types/database.types";
+import {Database} from "../../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
-import {useExitIfNotFounder} from "../../utils/admin_tools";
-import {MdAlternateEmail, MdPassword, MdPerson} from "react-icons/md";
-import {REGEX_EMAIL_PATTERN} from "../../utils/regex";
+import {useExitIfNotFounder} from "../../../utils/admin_tools";
+import {MdAlternateEmail, MdGroups, MdPassword, MdPerson} from "react-icons/md";
+import {REGEX_EMAIL_PATTERN} from "../../../utils/regex";
 import {createClient} from "@supabase/supabase-js";
 
 const enum RegisterState {
@@ -21,17 +21,20 @@ export default function CreateMember() {
     const [serviceRole, setServiceRole] = useState<string | null>(null)
     const [registerState, setRegisterState] = useState(RegisterState.None)
     const [error, setError] = useState<string | null>(null)
+    const [memberRoles, setMemberRoles] = useState<string[]>(['Membru'])
 
     const form = useForm({
         initialValues: {
             email: '',
             name: '',
-            password: ''
+            role: 'Membru',
+            password: '',
         },
 
         validate: {
             email: (value) => REGEX_EMAIL_PATTERN.test(value.toLowerCase()) ? null : "Email invalid",
-            name: (value) => value.length <= 64 ? null : "Numele nu poate fi mai lung de 64 de litere",
+            name: (value) => (value.length <= 64) ? (value.length >= 3 ? null : "Numele este prea scurt") : "Numele nu poate fi mai lung de 64 de litere",
+            role: (value) => memberRoles.includes(value),
             password: (value) =>
                 (value.length >= 8) ? null : "Parola trebuie să aibă cel puțin 8 caractere",
         },
@@ -48,6 +51,11 @@ export default function CreateMember() {
                     setServiceRole(value.data[0].service_role)
                 }
             })
+
+        supabase.from('member_roles')
+            .select('role')
+            .then(value =>
+                setMemberRoles(value.data?.map(it => it.role) ?? []))
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -76,7 +84,7 @@ export default function CreateMember() {
 
                     setRegisterState(RegisterState.Loading)
 
-                    const { data, error } = await adminAuthClient.createUser({
+                    const {data, error} = await adminAuthClient.createUser({
                         email: values.email,
                         password: values.password,
                         email_confirm: true,
@@ -88,7 +96,13 @@ export default function CreateMember() {
                         return
                     }
 
-                    const result = await supabase.from('profiles').insert([{id: data.user?.id!, name: values.name}])
+                    const result = await supabase
+                        .from('profiles')
+                        .insert([{
+                            id: data.user?.id!,
+                            name: values.name
+                        }])
+
                     if (result.error != null) {
                         setError(`Eroare: ${result.error.message}`)
                         setRegisterState(RegisterState.Failed)
@@ -100,8 +114,6 @@ export default function CreateMember() {
 
                 <Title>Înregistrare utilizator nou</Title>
 
-                <Space h={"lg"}/>
-
                 <TextInput
                     {...form.getInputProps('email')}
                     type={"email"}
@@ -109,9 +121,9 @@ export default function CreateMember() {
                     placeholder={"Email"}
                     required={true}
                     icon={<MdAlternateEmail size={14}/>}
+                    pt={'lg'}
+                    pb={'md'}
                 />
-
-                <Space h="md"/>
 
                 <TextInput
                     {...form.getInputProps('name')}
@@ -120,9 +132,19 @@ export default function CreateMember() {
                     placeholder={"Nume"}
                     required={true}
                     icon={<MdPerson size={14}/>}
+                    pb={'md'}
                 />
 
-                <Space h="md"/>
+                <Select
+                    {...form.getInputProps('role')}
+                    type={"text"}
+                    label={"Rol:"}
+                    placeholder={"Role"}
+                    required={true}
+                    icon={<MdGroups size={14}/>}
+                    data={memberRoles}
+                    pb={'md'}
+                />
 
                 <TextInput
                     {...form.getInputProps('password')}
@@ -131,8 +153,8 @@ export default function CreateMember() {
                     placeholder={"Parola"}
                     required={true}
                     icon={<MdPassword size={14}/>}
+                    pb={'lg'}
                 />
-                <Space h="lg"/>
 
                 <Button type={"submit"}
                         loading={registerState == RegisterState.Loading}>Înregistrează</Button>
