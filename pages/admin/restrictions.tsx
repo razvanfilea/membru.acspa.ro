@@ -1,7 +1,7 @@
 import 'dayjs/locale/ro';
-import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, Switch, TextInput} from "@mantine/core";
+import {Button, Card, Modal, NumberInputHandlers, Stack, Switch, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {Location, LocationName, Profile, ReservationRestriction} from "../../types/wrapper";
+import {Location, LocationName, ReservationRestriction} from "../../types/wrapper";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
 import {DatePickerInput} from "@mantine/dates";
@@ -11,7 +11,7 @@ import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
-import useProfileData from "../../hooks/useProfileData";
+import useProfilesQuery from "../../hooks/useProfilesQuery";
 
 interface IParams {
     location: Location
@@ -21,9 +21,8 @@ export default function RestrictedReservationsList(params: IParams) {
     const supabase = useSupabaseClient<Database>()
     const game_location = params.location
 
-    const [allProfiles, setAllProfiles] = useState<Profile[]>([])
+    const {data: allProfiles} = useProfilesQuery()
     const [restrictions, setRestrictions] = useState<ReservationRestriction[]>([])
-    const [isLoading, setIsLoading] = useState(true)
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
     const hourInputHandlers = useRef<NumberInputHandlers>();
@@ -45,14 +44,7 @@ export default function RestrictedReservationsList(params: IParams) {
     useExitIfNotFounder();
 
     useEffect(() => {
-        supabase.from('profiles').select('*').then(value => {
-            if (value.data != null) {
-                setAllProfiles(value.data)
-            }
-        })
-
         fetchRestrictions().then(data => setRestrictions(data))
-        setIsLoading(false)
         // We only want to run it once
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -168,7 +160,7 @@ export default function RestrictedReservationsList(params: IParams) {
                 <Card key={restriction.date + restriction.start_hour} shadow={"xs"}>
                     {ReservationRestrictionComponent(
                         restriction,
-                        allProfiles.find(profile => profile.id === restriction.user_id)?.name || null,
+                        allProfiles?.find(profile => profile.id === restriction.user_id)?.name || null,
                         async () => {
                             await supabase.from('reservations_restrictions')
                                 .delete()

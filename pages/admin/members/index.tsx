@@ -1,7 +1,6 @@
 import 'dayjs/locale/ro';
 import {Button, Card, Loader, Modal, Stack, TextInput} from "@mantine/core";
-import React, {useEffect, useState} from "react";
-import {Profile} from "../../../types/wrapper";
+import React, {useState} from "react";
 import {useForm} from "@mantine/form";
 import {dateToISOString} from "../../../utils/date";
 import {AdminTopBar} from "../../../components/AdminInput";
@@ -10,13 +9,13 @@ import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useExitIfNotFounder} from "../../../utils/admin_tools";
 import {UserProfileLayout} from "../../../components/UserProfileLayout";
 import {useRouter} from "next/router";
+import useProfilesQuery from "../../../hooks/useProfilesQuery";
 
 export default function MembersList() {
     const supabase = useSupabaseClient<Database>()
     const router = useRouter()
 
-    const [allProfiles, setAllProfiles] = useState<Profile[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+    const {data: allProfiles, isLoading} = useProfilesQuery()
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
     const newInviteForm = useForm({
@@ -34,20 +33,6 @@ export default function MembersList() {
     });
 
     useExitIfNotFounder();
-
-    useEffect(() => {
-        supabase.from('profiles')
-            .select('*')
-            .order('name', {ascending: true})
-            .then(value => {
-                if (value.data != null) {
-                    setAllProfiles(value.data)
-                }
-            })
-
-        setIsLoading(false)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
 
     return (<>
         <Modal
@@ -95,13 +80,13 @@ export default function MembersList() {
                 paddingRight: 0,
             }
         })}>
-            <AdminTopBar title={allProfiles.length + ' de membrii'}
+            <AdminTopBar title={(allProfiles?.length || 0) + ' de membrii'}
                          onAdd={() => router.push('/admin/members/register')}/>
 
             {isLoading ?
                 <Loader/>
                 :
-                allProfiles.map((profile) => (
+                allProfiles!.map((profile) => (
                     <Card key={profile.id} shadow={"xs"}>
                         <UserProfileLayout profile={profile}/>
                     </Card>

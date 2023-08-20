@@ -7,6 +7,7 @@ import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
+import useProfilesQuery from "../../hooks/useProfilesQuery";
 
 const groupBy = <T, K extends keyof any>(arr: T[], key: (i: T) => K) =>
     arr.reduce((groups, item) => {
@@ -15,27 +16,13 @@ const groupBy = <T, K extends keyof any>(arr: T[], key: (i: T) => K) =>
     }, {} as Record<K, T[]>);
 
 export default function DailySituationPage() {
-    const supabase = useSupabaseClient<Database>()
-
-    const [allProfiles, setAllProfiles] = useState<Profile[]>([])
-    const [reservations, setReservations] = useState<Reservation[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [date, setDate] = useState<Date | undefined>(undefined);
-
     useExitIfNotFounder();
 
-    useEffect(() => {
-        supabase.from('profiles').select('*')
-            .order('name', {ascending: true})
-            .then(value => {
-                if (value.data != null) {
-                    setAllProfiles(value.data)
-                    setIsLoading(false)
-                }
-            })
-        // We only want to run it once
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    const supabase = useSupabaseClient<Database>()
+
+    const {data: allProfiles, isLoading} = useProfilesQuery()
+    const [reservations, setReservations] = useState<Reservation[]>([])
+    const [date, setDate] = useState<Date | undefined>(undefined);
 
     useEffect(() => {
         if (date) {
@@ -70,15 +57,17 @@ export default function DailySituationPage() {
             </Grid.Col>
 
             <Grid.Col span={2}>
-                <Stack p={'md'}>
-                    {date &&
-                        SelectedDateReservations(allProfiles, groupedReservations)
-                    }
-
-                    {!date &&
-                        <Text size={'xl'}>Selectează o dată pentru a vedea rezervările</Text>
-                    }
-                </Stack>
+                {isLoading ?
+                    <Center><Loader/></Center>
+                    :
+                    <Stack p={'md'}>
+                        {date ?
+                            SelectedDateReservations(allProfiles!, groupedReservations)
+                            :
+                            <Text size={'xl'}>Selectează o dată pentru a vedea rezervările</Text>
+                        }
+                    </Stack>
+                }
             </Grid.Col>
         </Grid>
 

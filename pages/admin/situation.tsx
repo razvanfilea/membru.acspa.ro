@@ -2,37 +2,23 @@ import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
 import React, {useEffect, useMemo, useState} from "react";
 import {Profile, Reservation} from "../../types/wrapper";
-import {Card, Center, Grid, Group, Indicator, Loader, Select, Space, Stack, Text} from "@mantine/core";
+import {Card, Grid, Group, Indicator, Select, Space, Stack, Text} from "@mantine/core";
 import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
-import useProfileData from "../../hooks/useProfileData";
+import useProfilesQuery from "../../hooks/useProfilesQuery";
 
 export default function SituationPage() {
     const supabase = useSupabaseClient<Database>()
 
-    const [allProfiles, setAllProfiles] = useState<Profile[]>([])
+    const {data: allProfiles} = useProfilesQuery()
     const [reservations, setReservations] = useState<Reservation[]>([])
-    const [isLoading, setIsLoading] = useState(true)
     const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
     const [startRange, endRange] = dateRange;
 
     useExitIfNotFounder();
-
-    useEffect(() => {
-        supabase.from('profiles').select('*')
-            .order('name', {ascending: true})
-            .then(value => {
-                if (value.data != null) {
-                    setAllProfiles(value.data)
-                    setIsLoading(false)
-                }
-            })
-        // We only want to run it once
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
 
     useEffect(() => {
         if (selectedProfileId != null) {
@@ -49,7 +35,7 @@ export default function SituationPage() {
     }, [selectedProfileId, supabase])
 
     const selectedProfile = useMemo(
-        () => allProfiles.find(it => it.id === selectedProfileId) || null,
+        () => allProfiles?.find(it => it.id === selectedProfileId) || null,
         [allProfiles, selectedProfileId]
     )
     const filteredReservations = useMemo(
@@ -79,7 +65,7 @@ export default function SituationPage() {
                             duration: 80,
                             timingFunction: "ease"
                         }}
-                        data={allProfiles.map(profile => ({value: profile.id, label: profile.name}))}
+                        data={allProfiles!.map(profile => ({value: profile.id, label: profile.name}))}
                         value={selectedProfileId}
                         onChange={setSelectedProfileId}
                     />

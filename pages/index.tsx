@@ -164,11 +164,6 @@ function SelectGameTable(
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
     useEffect(() => {
-        supabase.from('profiles').select('*').then(value => {
-            if (value.data != null) {
-                setAllProfiles(value.data)
-            }
-        })
 
         fetchReservations(supabase, reservationsHandle.setState, setRestrictions);
 

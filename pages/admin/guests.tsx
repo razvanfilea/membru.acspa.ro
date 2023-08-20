@@ -1,7 +1,7 @@
 import 'dayjs/locale/ro';
-import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Radio, Stack, TextInput} from "@mantine/core";
+import {Button, Card, Modal, NumberInputHandlers, Radio, Stack, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {GuestInvite, Location, LocationName, Profile} from "../../types/wrapper";
+import {GuestInvite, Location, LocationName} from "../../types/wrapper";
 import {useForm} from "@mantine/form";
 import {DatePickerInput} from "@mantine/dates";
 import {dateToISOString, isDateWeekend} from "../../utils/date";
@@ -12,7 +12,7 @@ import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
-import useProfileData from "../../hooks/useProfileData";
+import useProfilesQuery from "../../hooks/useProfilesQuery";
 
 interface IParams {
     location: Location
@@ -22,9 +22,8 @@ export default function GuestManager(params: IParams) {
     const supabase = useSupabaseClient<Database>()
     const game_location = params.location
 
-    const [allProfiles, setAllProfiles] = useState<Profile[]>([])
+    const { data: allProfiles } = useProfilesQuery()
     const [guests, guestHandler] = useListState<GuestInvite>([])
-    const [isLoading, setIsLoading] = useState(true)
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
     const hourInputHandlers = useRef<NumberInputHandlers>();
@@ -45,14 +44,7 @@ export default function GuestManager(params: IParams) {
     useExitIfNotFounder();
 
     useEffect(() => {
-        supabase.from('profiles').select('*').then(value => {
-            if (value.data != null) {
-                setAllProfiles(value.data)
-            }
-        })
-
         fetchGuests().then(data => guestHandler.setState(data))
-        setIsLoading(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -152,7 +144,7 @@ export default function GuestManager(params: IParams) {
                 <Card key={guest.start_date + guest.start_hour + guest.guest_name} shadow={"xs"}>
                     {GuestInviteComponent(
                         guest,
-                        allProfiles.find(profile => profile.id === guest.user_id)?.name || null,
+                        allProfiles?.find(profile => profile.id === guest.user_id)?.name || null,
                         async () => {
                             await supabase.from('guest_invites')
                                 .delete()
