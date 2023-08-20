@@ -1,7 +1,6 @@
 import 'dayjs/locale/ro';
 import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Radio, Stack, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {useProfile} from "../../components/ProfileProvider";
 import {GuestInvite, Location, LocationName, Profile} from "../../types/wrapper";
 import {useForm} from "@mantine/form";
 import {DatePickerInput} from "@mantine/dates";
@@ -13,6 +12,7 @@ import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
+import useProfileData from "../../hooks/useProfileData";
 
 interface IParams {
     location: Location
@@ -21,7 +21,6 @@ interface IParams {
 export default function GuestManager(params: IParams) {
     const supabase = useSupabaseClient<Database>()
     const game_location = params.location
-    const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
     const [guests, guestHandler] = useListState<GuestInvite>([])
@@ -69,12 +68,6 @@ export default function GuestManager(params: IParams) {
 
     const hasSelectedWeekend = useMemo(() => isDateWeekend(newInviteForm.values.date),
         [newInviteForm.values.date])
-
-    if (profileData.isLoading || isLoading)
-        return <Center> <Loader/> </Center>;
-
-    if (profileData.profile == null)
-        return (<></>)
 
     return (<>
         <Modal

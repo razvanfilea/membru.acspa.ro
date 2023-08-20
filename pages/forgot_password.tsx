@@ -3,9 +3,9 @@ import {MdAlternateEmail} from "react-icons/md";
 import {useForm} from "@mantine/form";
 import {useEffect, useState} from "react";
 import {useRouter} from "next/router";
-import {useProfile} from "../components/ProfileProvider";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../types/database.types";
+import useProfileData from "../hooks/useProfileData";
 
 const REGEX_EMAIL = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(([a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))$/
 
@@ -19,7 +19,7 @@ const enum Status {
 export default function LoginForm() {
     const supabase = useSupabaseClient<Database>()
     const router = useRouter()
-    const profileData = useProfile()
+    const profileData = useProfileData()
 
     const form = useForm({
         initialValues: {

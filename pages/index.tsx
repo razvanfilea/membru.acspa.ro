@@ -11,7 +11,6 @@ import {
     Reservation,
     ReservationRestriction
 } from "../types/wrapper";
-import {useProfile} from "../components/ProfileProvider";
 import {useRouter} from "next/router";
 import {MdRefresh} from "react-icons/md";
 import {addDaysToDate, dateToISOString, isDateWeekend} from "../utils/date";
@@ -20,6 +19,7 @@ import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../types/database.types";
 import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {DatePicker} from "@mantine/dates";
+import useProfileData from "../hooks/useProfileData";
 
 interface IParams {
     gara: Location
@@ -29,7 +29,7 @@ interface IParams {
 
 export default function MakeReservationPage(params: IParams): ReactElement {
     const router = useRouter()
-    const profileData = useProfile()
+    const profileData = useProfileData()
 
     const [locationName, /*setLocationName*/] = useState(LocationName.Gara)
     const [selectedDate, setSelectedDate] = useState<Date>(new Date)
@@ -256,7 +256,7 @@ function SelectGameTable(
             </ActionIcon>
         </Group>
 
-        {RegistrationHours(location.name as LocationName, selectedDateReservations, selectedDateRestrictions, selectedDateInvites, allProfiles, selectedStartHour, onSetStartHour, registrationHours)}
+        {RegistrationHours(selectedDateReservations, selectedDateRestrictions, selectedDateInvites, allProfiles, selectedStartHour, onSetStartHour, registrationHours)}
     </>
 }
 

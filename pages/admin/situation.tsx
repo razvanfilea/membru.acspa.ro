@@ -1,6 +1,5 @@
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
-import {useProfile} from "../../components/ProfileProvider";
 import React, {useEffect, useMemo, useState} from "react";
 import {Profile, Reservation} from "../../types/wrapper";
 import {Card, Center, Grid, Group, Indicator, Loader, Select, Space, Stack, Text} from "@mantine/core";
@@ -8,10 +7,10 @@ import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
+import useProfileData from "../../hooks/useProfileData";
 
 export default function SituationPage() {
     const supabase = useSupabaseClient<Database>()
-    const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
     const [reservations, setReservations] = useState<Reservation[]>([])
@@ -62,12 +61,6 @@ export default function SituationPage() {
         },
         [reservations, selectedProfileId, startRange, endRange]
     )
-
-    if (profileData.isLoading || isLoading)
-        return <Center> <Loader/> </Center>;
-
-    if (profileData.profile == null)
-        return (<></>)
 
     return <>
         <Grid

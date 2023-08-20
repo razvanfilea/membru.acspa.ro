@@ -1,20 +1,12 @@
 import {Button, Divider, Group, Popover, Stack, Text} from "@mantine/core";
 import React, {ReactElement} from "react";
 import {MdOutlineNoAccounts, MdVpnKey} from "react-icons/md";
-import {
-    GuestInvite,
-    LocationName,
-    MemberTypes,
-    Profile,
-    Reservation,
-    ReservationRestriction
-} from "../../types/wrapper";
-import {useProfile} from "../ProfileProvider";
+import {GuestInvite, MemberTypes, Profile, Reservation, ReservationRestriction} from "../../types/wrapper";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
+import useProfileData from "../../hooks/useProfileData";
 
 function TableButton(
-    locationName: LocationName,
     startHour: number,
     selectedStartHour: number | null,
     onSetStartHour: (s: number) => void
@@ -37,7 +29,6 @@ interface IRegistrationHoursProps {
 }
 
 export function RegistrationHours(
-    locationName: LocationName,
     selectedDateReservations: Reservation[],
     selectedRestrictions: ReservationRestriction[],
     selectedDateInvites: GuestInvite[],
@@ -47,7 +38,7 @@ export function RegistrationHours(
     {start, end, duration}: IRegistrationHoursProps
 ) {
     const supabase = useSupabaseClient<Database>()
-    const userProfile = useProfile()
+    const userProfile = useProfileData()
 
     let lastIndex = 0;
     let content: ReactElement[] = [];
@@ -60,7 +51,7 @@ export function RegistrationHours(
                 <Text>{`Ora ${hour} - ${hour + duration}`}:</Text>
 
                 {!restriction ? (
-                    TableButton(locationName, hour, selectedStartHour, onSetStartHour)
+                    TableButton(hour, selectedStartHour, onSetStartHour)
                 ) : (
                     <Text color={'red'} size={'lg'}>{restriction.message}</Text>
                 )}

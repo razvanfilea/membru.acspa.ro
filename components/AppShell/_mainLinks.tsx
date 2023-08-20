@@ -2,8 +2,8 @@ import React, {useMemo} from 'react';
 import {MdAdminPanelSettings, MdBookmarks, MdHome} from 'react-icons/md';
 import {Group, Stack, Text, ThemeIcon, UnstyledButton} from '@mantine/core';
 import Link from "next/link";
-import {ProfileData, useProfile} from "../ProfileProvider";
 import {MemberTypes} from "../../types/wrapper";
+import useProfileData, {ProfileData} from "../../hooks/useProfileData";
 
 interface MainLinkProps {
     icon: React.ReactNode;
@@ -62,7 +62,7 @@ const linkData: MainLinkData[] = [
 ];
 
 export default function MainLinks() {
-    const profileData = useProfile()
+    const profileData = useProfileData()
 
     const links = useMemo(() => {
         return linkData.map((link) => {

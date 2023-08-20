@@ -1,7 +1,6 @@
 import 'dayjs/locale/ro';
-import {Button, Card, Center, Loader, Modal, Stack, TextInput} from "@mantine/core";
+import {Button, Card, Loader, Modal, Stack, TextInput} from "@mantine/core";
 import React, {useEffect, useState} from "react";
-import {useProfile} from "../../../components/ProfileProvider";
 import {Profile} from "../../../types/wrapper";
 import {useForm} from "@mantine/form";
 import {dateToISOString} from "../../../utils/date";
@@ -14,7 +13,6 @@ import {useRouter} from "next/router";
 
 export default function MembersList() {
     const supabase = useSupabaseClient<Database>()
-    const profileData = useProfile()
     const router = useRouter()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
@@ -50,12 +48,6 @@ export default function MembersList() {
         setIsLoading(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-
-    if (profileData.isLoading || isLoading)
-        return <Center> <Loader/> </Center>;
-
-    if (profileData.profile == null)
-        return (<></>)
 
     return (<>
         <Modal
@@ -106,11 +98,17 @@ export default function MembersList() {
             <AdminTopBar title={allProfiles.length + ' de membrii'}
                          onAdd={() => router.push('/admin/members/register')}/>
 
-            {allProfiles.map((profile) => (
-                <Card key={profile.id} shadow={"xs"}>
-                    <UserProfileLayout profile={profile} />
-                </Card>
-            ))}
+            {isLoading ?
+                <Loader/>
+                :
+                allProfiles.map((profile) => (
+                    <Card key={profile.id} shadow={"xs"}>
+                        <UserProfileLayout profile={profile}/>
+                    </Card>
+                ))
+            }
+
+            {}
         </Stack>
     </>)
 }

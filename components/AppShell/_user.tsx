@@ -1,15 +1,14 @@
 import React from 'react';
 import {Avatar, Box, Group, Text, ThemeIcon, UnstyledButton, useMantineTheme} from '@mantine/core';
-import {useProfile} from "../ProfileProvider";
 import {MdAccountCircle, MdArrowRight} from "react-icons/md";
 import Link from "next/link";
 import {useUser} from "@supabase/auth-helpers-react";
-
+import useProfileData from "../../hooks/useProfileData";
 
 export default function UserProfile() {
     const theme = useMantineTheme()
     const user = useUser()
-    const profileData = useProfile()
+    const profileData = useProfileData()
 
     return <Link href='/profile' passHref={true}>
         <Box

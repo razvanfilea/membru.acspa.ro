@@ -1,7 +1,6 @@
 import 'dayjs/locale/ro';
 import {Button, Card, Center, Loader, Modal, NumberInputHandlers, Stack, Switch, TextInput} from "@mantine/core";
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {useProfile} from "../../components/ProfileProvider";
 import {Location, LocationName, Profile, ReservationRestriction} from "../../types/wrapper";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
@@ -12,6 +11,7 @@ import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {useExitIfNotFounder} from "../../utils/admin_tools";
+import useProfileData from "../../hooks/useProfileData";
 
 interface IParams {
     location: Location
@@ -20,7 +20,6 @@ interface IParams {
 export default function RestrictedReservationsList(params: IParams) {
     const supabase = useSupabaseClient<Database>()
     const game_location = params.location
-    const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
     const [restrictions, setRestrictions] = useState<ReservationRestriction[]>([])
@@ -70,12 +69,6 @@ export default function RestrictedReservationsList(params: IParams) {
     const hasSelectedWeekend = useMemo(() => {
         return isDateWeekend(newRestrictionForm.values.date)
     }, [newRestrictionForm.values.date])
-
-    if (profileData.isLoading || isLoading)
-        return <Center> <Loader/> </Center>;
-
-    if (profileData.profile == null)
-        return (<></>)
 
     return (<>
         <Modal

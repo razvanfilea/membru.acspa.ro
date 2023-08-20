@@ -1,4 +1,4 @@
-import {Box, Button, Group, Paper, PasswordInput, Space, Stack, Text, TextInput, Title} from "@mantine/core";
+import {Button, Group, Paper, PasswordInput, Space, Stack, Text, TextInput, Title} from "@mantine/core";
 import {MdAlternateEmail, MdPassword} from "react-icons/md";
 import {useForm} from "@mantine/form";
 import {useEffect, useState} from "react";

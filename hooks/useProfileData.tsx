@@ -1,7 +1,7 @@
 import React, {useCallback, useContext, useEffect, useState} from "react";
-import {Profile} from "../../types/wrapper";
+import {Profile} from "../types/wrapper";
 import {User, useSessionContext, useSupabaseClient} from "@supabase/auth-helpers-react";
-import {Database} from "../../types/database.types";
+import {Database} from "../types/database.types";
 
 export interface ProfileData {
     isLoading: boolean,
@@ -15,7 +15,7 @@ const defaultValue: ProfileData = {
 
 const AuthContext = React.createContext(defaultValue)
 
-export default function ProfileProvider({children}) {
+export function ProfileProvider({children}) {
     const supabase = useSupabaseClient<Database>()
     const sessionContext = useSessionContext()
     const [profileData, setProfileData] = useState<ProfileData>(defaultValue)
@@ -67,6 +67,6 @@ export default function ProfileProvider({children}) {
     )
 }
 
-export function useProfile() {
+export default function useProfileData() {
     return useContext(AuthContext)
 }

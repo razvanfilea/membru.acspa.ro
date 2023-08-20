@@ -1,6 +1,5 @@
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
-import {useProfile} from "../../components/ProfileProvider";
 import React, {useEffect, useMemo, useState} from "react";
 import {Profile, Reservation} from "../../types/wrapper";
 import {Button, Center, Divider, Grid, Group, Loader, Space, Stack, Text} from "@mantine/core";
@@ -17,7 +16,6 @@ const groupBy = <T, K extends keyof any>(arr: T[], key: (i: T) => K) =>
 
 export default function DailySituationPage() {
     const supabase = useSupabaseClient<Database>()
-    const profileData = useProfile()
 
     const [allProfiles, setAllProfiles] = useState<Profile[]>([])
     const [reservations, setReservations] = useState<Reservation[]>([])
@@ -55,12 +53,6 @@ export default function DailySituationPage() {
     const groupedReservations = useMemo(() => {
         return groupBy(reservations, reservation => reservation.start_hour)
     }, [reservations])
-
-    if (profileData.isLoading || isLoading)
-        return <Center> <Loader/> </Center>;
-
-    if (profileData.profile == null)
-        return (<></>)
 
     return <>
         <Grid

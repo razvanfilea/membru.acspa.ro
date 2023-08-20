@@ -2,7 +2,6 @@ import {ActionIcon, Button, Card, Center, Checkbox, Group, Loader, Paper, Stack,
 import React, {useEffect, useMemo, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
-import {useProfile} from "../components/ProfileProvider";
 import {Profile, Reservation} from "../types/wrapper";
 import {MdLogout, MdPassword, MdRefresh} from "react-icons/md";
 import {isReservationCancelable} from "../utils/date";
@@ -11,6 +10,7 @@ import {SupabaseClient, useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useListState} from "@mantine/hooks";
 import {UserProfileLayout} from "../components/UserProfileLayout";
 import Link from "next/link";
+import useProfileData from "../hooks/useProfileData";
 
 async function signOut(supabase: SupabaseClient<Database>, router: NextRouter) {
     const {error} = await supabase.auth.signOut()
@@ -41,7 +41,7 @@ function fetchReservations(
 export default function ProfilePage() {
     const supabase = useSupabaseClient<Database>()
     const router = useRouter()
-    const profileData = useProfile()
+    const profileData = useProfileData()
 
     const [reservations, reservationsHandle] = useListState<Reservation>([])
     const [showCancelled, setShowCancelled] = useState(false)

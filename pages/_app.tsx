@@ -2,12 +2,21 @@ import '../styles/globals.css'
 import Head from 'next/head';
 import MyAppShell from "../components/AppShell";
 import React, {ReactElement} from "react";
-import {ColorScheme, ColorSchemeProvider, MantineProvider, Paper} from '@mantine/core';
+import {ColorScheme, ColorSchemeProvider, MantineProvider} from '@mantine/core';
 import {useLocalStorage} from "@mantine/hooks";
-import ProfileProvider from "../components/ProfileProvider";
 import {AppProps} from "next/app";
 import {createPagesBrowserClient} from '@supabase/auth-helpers-nextjs'
 import {Session, SessionContextProvider} from '@supabase/auth-helpers-react'
+import {QueryClient, QueryClientProvider} from "react-query";
+import {ProfileProvider} from "../hooks/useProfileData";
+
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            retry: 1
+        }
+    }
+})
 
 export default function MyApp({
                                   Component,
@@ -35,27 +44,27 @@ export default function MyApp({
             <meta name="description" content="Site pentru membrii Asociației ACS Perpetuum Activ"/>
         </Head>
 
-        <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
-
-            <MantineProvider
-                withGlobalStyles
-                withNormalizeCSS
-                theme={{
-                    fontFamily: 'Open Sans',
-                    colorScheme: colorScheme,
-                    primaryColor: 'orange'
-                }}
-            >
-                <Paper>
-                    <SessionContextProvider supabaseClient={supabaseClient} initialSession={pageProps.initialSession}>
+        <QueryClientProvider client={queryClient}>
+            <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
+                <MantineProvider
+                    withGlobalStyles
+                    withNormalizeCSS
+                    theme={{
+                        fontFamily: 'Open Sans',
+                        colorScheme: colorScheme,
+                        primaryColor: 'orange'
+                    }}
+                >
+                    <SessionContextProvider supabaseClient={supabaseClient}
+                                            initialSession={pageProps.initialSession}>
                         <ProfileProvider>
                             <MyAppShell>
                                 <Component {...pageProps} />
                             </MyAppShell>
                         </ProfileProvider>
                     </SessionContextProvider>
-                </Paper>
-            </MantineProvider>
-        </ColorSchemeProvider>
+                </MantineProvider>
+            </ColorSchemeProvider>
+        </QueryClientProvider>
     </>;
 }
