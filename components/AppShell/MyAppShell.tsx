@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {ReactElement, useEffect, useState} from 'react';
 import {AppShell, Burger, Group, Header, Image, Navbar, Transition, useMantineTheme} from '@mantine/core';
 import LightAndDarkModeButton from "./_themeButton";
 import MainLinks from "./_mainLinks";
@@ -7,7 +7,7 @@ import {useRouter} from "next/router";
 import {useMediaQuery} from "@mantine/hooks";
 import HelpButton from "./_help";
 
-export default function MyAppShell({children}): JSX.Element {
+export default function MyAppShell({children}): ReactElement {
     const router = useRouter()
     const theme = useMantineTheme()
     const [opened, setOpened] = useState(false)

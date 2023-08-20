@@ -55,21 +55,18 @@ export function RegistrationHours(
     for (let hour = start; hour < end; hour += duration) {
         const restriction = selectedRestrictions.find(value => value.start_hour == hour)
 
-        if (restriction) {
-            content.push(<Stack key={hour}>
-                <Group noWrap={true} style={{marginLeft: "1em", marginRight: "1em"}} spacing={'lg'}>
-                    <Text>{`Ora ${hour} - ${hour + duration}`}:</Text>
+        content.push(<Stack key={hour}>
+            <Group noWrap={true} style={{marginLeft: "1em", marginRight: "1em"}} spacing={'lg'}>
+                <Text>{`Ora ${hour} - ${hour + duration}`}:</Text>
 
-                    {!restriction ? (
-                        TableButton(locationName, hour, selectedStartHour, onSetStartHour)
-                    ) : (
-                        <Text color={'red'} size={'lg'}>{restriction.message}</Text>
-                    )}
-                </Group>
-                <Divider variant={"dashed"}/>
-            </Stack>)
-        } else {
-            content.push(<Stack key={hour}>
+                {!restriction ? (
+                    TableButton(locationName, hour, selectedStartHour, onSetStartHour)
+                ) : (
+                    <Text color={'red'} size={'lg'}>{restriction.message}</Text>
+                )}
+            </Group>
+
+            {!restriction &&
                 <Group style={{marginLeft: "1em", marginRight: "1em"}} spacing={"xs"}>
                     <Text>Listă înscriși: </Text>
                     {selectedDateReservations.filter(value => value.start_hour == hour).map((reservation, index) => {
@@ -82,7 +79,7 @@ export function RegistrationHours(
                         const icon = profile.has_key ? <MdVpnKey/> : <></>;
                         const buttonColor = profile.role == MemberTypes.Antrenor ? 'orange' : (profile.has_key ? 'blue' : 'gray');
 
-                        return <Popover width={200} withArrow={true} shadow={"md"} key={reservation.id + profile.id + hour}>
+                        return <Popover width={200} withArrow={true} shadow={"md"} key={reservation.id + profile.id}>
                             <Popover.Target>
                                 <Button color={buttonColor} radius={'xl'}
                                         size={'xs'} rightIcon={icon}>{index + 1}. {profile.name}</Button>
@@ -116,16 +113,16 @@ export function RegistrationHours(
 
                     {selectedDateInvites.filter(value => value.start_hour == hour).map((invite, index) => {
                         return <Button
-                            key={invite.start_date + invite.start_hour + invite.guest_name}
-                            color={invite.special ? 'pink' : 'cyan'} radius={'xl'}
+                            key={invite.start_date + invite.start_hour + invite.guest_name} color={invite.special ? 'pink' : 'cyan'} radius={'xl'}
                             size={'xs'} rightIcon={<MdOutlineNoAccounts/>}>
                             {lastIndex + index + 2}. {invite.guest_name}
                         </Button>
                     })}
                 </Group>
-                <Divider variant={"dashed"}/>
-            </Stack>);
-        }
+            }
+
+            <Divider variant={"dashed"}/>
+        </Stack>);
     }
 
     return content;

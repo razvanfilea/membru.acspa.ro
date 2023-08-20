@@ -1,7 +1,7 @@
 import '../styles/globals.css'
 import Head from 'next/head';
 import MyAppShell from "../components/AppShell";
-import React from "react";
+import React, {ReactElement} from "react";
 import {ColorScheme, ColorSchemeProvider, MantineProvider, Paper} from '@mantine/core';
 import {useLocalStorage} from "@mantine/hooks";
 import ProfileProvider from "../components/ProfileProvider";
@@ -14,7 +14,7 @@ export default function MyApp({
                                   pageProps,
                               }: AppProps<{
     initialSession: Session,
-}>): JSX.Element {
+}>): ReactElement {
     const [supabaseClient] = React.useState(() => createPagesBrowserClient())
 
     const [colorScheme, setLocalColorScheme] = useLocalStorage<ColorScheme>({
