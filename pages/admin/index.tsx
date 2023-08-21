@@ -1,6 +1,6 @@
 import {Button, Card, Paper, Space, Stack, Text} from "@mantine/core";
 import Link from "next/link";
-import {useExitIfNotFounder} from "../../utils/admin_tools";
+import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 
 export default function AdminPage() {
     useExitIfNotFounder();

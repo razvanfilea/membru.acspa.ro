@@ -29,7 +29,7 @@ function fetchReservations(
     setReservations: (data: Reservation[]) => void,
 ) {
     supabase.from('rezervari')
-        .select('*')
+        .select()
         .eq("user_id", profile.id)
         .order('start_date', {ascending: false})
         .order('start_hour', {ascending: true})

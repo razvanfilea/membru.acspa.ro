@@ -11,7 +11,7 @@ import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
-import {useExitIfNotFounder} from "../../utils/admin_tools";
+import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 import useProfilesQuery from "../../hooks/useProfilesQuery";
 
 interface IParams {

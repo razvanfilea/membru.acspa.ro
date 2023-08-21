@@ -3,14 +3,7 @@ import Head from "next/head";
 import {ActionIcon, Grid, Group, Paper, Space, Stack, Text, Title} from "@mantine/core";
 import {useListState, useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
-import {
-    GuestInvite,
-    Location,
-    LocationName,
-    Profile,
-    Reservation,
-    ReservationRestriction
-} from "../types/wrapper";
+import {GuestInvite, Location, LocationName, Reservation} from "../types/wrapper";
 import {useRouter} from "next/router";
 import {MdRefresh} from "react-icons/md";
 import {addDaysToDate, dateToISOString, isDateWeekend} from "../utils/date";
@@ -20,6 +13,7 @@ import {Database} from "../types/database.types";
 import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {DatePicker} from "@mantine/dates";
 import useProfileData from "../hooks/useProfileData";
+import useRestrictionsQuery from "../hooks/useRestrictionsQuery";
 
 interface IParams {
     gara: Location
@@ -122,8 +116,7 @@ export default function MakeReservationPage(params: IParams): ReactElement {
 
 function fetchReservations(
     supabase: SupabaseClient<Database>,
-    setReservations: (data: Reservation[]) => void,
-    setRestrictions: (data: ReservationRestriction[]) => void
+    setReservations: (data: Reservation[]) => void
 ) {
     supabase.from('rezervari')
         .select('*')
@@ -134,16 +127,6 @@ function fetchReservations(
             if (value.data != null) {
                 setReservations(value.data)
                 console.log("Reservations updated")
-            }
-        })
-
-    supabase.from('reservations_restrictions')
-        .select('*')
-        .gte('date', dateToISOString(new Date))
-        .then(value => {
-            if (value.data != null) {
-                setRestrictions(value.data)
-                console.log("Restrictions updated")
             }
         })
 }
@@ -158,14 +141,13 @@ function SelectGameTable(
     const router = useRouter()
 
     const [reservations, reservationsHandle] = useListState<Reservation>([])
-    const [allProfiles, setAllProfiles] = useState<Profile[]>([])
-    const [restrictions, setRestrictions] = useState<ReservationRestriction[]>([])
+    const {data: restrictions} = useRestrictionsQuery(new Date)
     const [invites, setInvites] = useState<GuestInvite[]>([])
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
     useEffect(() => {
 
-        fetchReservations(supabase, reservationsHandle.setState, setRestrictions);
+        fetchReservations(supabase, reservationsHandle.setState);
 
         supabase.from('guest_invites')
             .select('*')
@@ -193,7 +175,7 @@ function SelectGameTable(
                             )
                         }
                     } else if (payload.eventType == "UPDATE") {
-                        fetchReservations(supabase, reservationsHandle.setState, setRestrictions) // TODO Could make this more efficient
+                        fetchReservations(supabase, reservationsHandle.setState) // TODO Could make this more efficient
                     } else {
                         reservationsHandle.filter(value => value.id != payload.old.id)
                     }
@@ -234,7 +216,7 @@ function SelectGameTable(
     const selectedDateInvites
         = useMemo(() => invites.filter(value => value.start_date == selectedDateISO), [invites, selectedDateISO])
     const selectedDateRestrictions
-        = useMemo(() => restrictions.filter(value => value.date == selectedDateISO), [restrictions, selectedDateISO])
+        = useMemo(() => restrictions?.filter(value => value.date == selectedDateISO) || [], [restrictions, selectedDateISO])
 
     return <>
         <Group position={'apart'} align={"center"}>
@@ -251,7 +233,7 @@ function SelectGameTable(
             </ActionIcon>
         </Group>
 
-        {RegistrationHours(selectedDateReservations, selectedDateRestrictions, selectedDateInvites, allProfiles, selectedStartHour, onSetStartHour, registrationHours)}
+        {RegistrationHours(selectedDateReservations, selectedDateRestrictions, selectedDateInvites, selectedStartHour, onSetStartHour, registrationHours)}
     </>
 }
 

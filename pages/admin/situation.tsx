@@ -1,12 +1,12 @@
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
 import React, {useEffect, useMemo, useState} from "react";
-import {Profile, Reservation} from "../../types/wrapper";
+import {Reservation} from "../../types/wrapper";
 import {Card, Grid, Group, Indicator, Select, Space, Stack, Text} from "@mantine/core";
 import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
-import {useExitIfNotFounder} from "../../utils/admin_tools";
+import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 import useProfilesQuery from "../../hooks/useProfilesQuery";
 
 export default function SituationPage() {
@@ -34,10 +34,6 @@ export default function SituationPage() {
         }
     }, [selectedProfileId, supabase])
 
-    const selectedProfile = useMemo(
-        () => allProfiles?.find(it => it.id === selectedProfileId) || null,
-        [allProfiles, selectedProfileId]
-    )
     const filteredReservations = useMemo(
         () => {
             if (startRange == null || endRange == null) {
@@ -65,7 +61,7 @@ export default function SituationPage() {
                             duration: 80,
                             timingFunction: "ease"
                         }}
-                        data={allProfiles!.map(profile => ({value: profile.id, label: profile.name}))}
+                        data={allProfiles?.map(profile => ({value: profile.id, label: profile.name})) || []}
                         value={selectedProfileId}
                         onChange={setSelectedProfileId}
                     />
@@ -95,8 +91,8 @@ export default function SituationPage() {
             <Grid.Col span={2}>
                 <Stack p={'md'} id={"report"}
                        sx={(theme) => ({backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[0]})}>
-                    {selectedProfile &&
-                        SelectedUserReservations(selectedProfile, filteredReservations)
+                    {selectedProfileId &&
+                        SelectedUserReservations(filteredReservations)
                     }
                 </Stack>
             </Grid.Col>
@@ -106,7 +102,7 @@ export default function SituationPage() {
     </>
 }
 
-function SelectedUserReservations(profile: Profile, reservations: Reservation[]) {
+function SelectedUserReservations(reservations: Reservation[]) {
     const approvedReservations = reservations.filter((it) => !it.cancelled)
     const cancelledReservations = reservations.filter((it) => it.cancelled)
 

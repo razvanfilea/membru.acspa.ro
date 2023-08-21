@@ -5,6 +5,7 @@ import {GuestInvite, MemberTypes, Profile, Reservation, ReservationRestriction} 
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import useProfileData from "../../hooks/useProfileData";
+import useProfilesQuery from "../../hooks/useProfilesQuery";
 
 function TableButton(
     startHour: number,
@@ -32,13 +33,14 @@ export function RegistrationHours(
     selectedDateReservations: Reservation[],
     selectedRestrictions: ReservationRestriction[],
     selectedDateInvites: GuestInvite[],
-    profiles: Profile[],
     selectedStartHour: number | null,
     onSetStartHour: (s: number) => void,
     {start, end, duration}: IRegistrationHoursProps
 ) {
     const supabase = useSupabaseClient<Database>()
     const userProfile = useProfileData()
+
+    const {data: profiles} = useProfilesQuery()
 
     let lastIndex = 0;
     let content: ReactElement[] = [];
@@ -62,7 +64,7 @@ export function RegistrationHours(
                     <Text>Listă înscriși: </Text>
                     {selectedDateReservations.filter(value => value.start_hour == hour).map((reservation, index) => {
                         lastIndex = index;
-                        const profile = profiles.find(value => value.id == reservation.user_id)
+                        const profile = profiles?.find(value => value.id == reservation.user_id)
 
                         if (!profile)
                             return <></>
@@ -70,7 +72,7 @@ export function RegistrationHours(
                         const icon = profile.has_key ? <MdVpnKey/> : <></>;
                         const buttonColor = profile.role == MemberTypes.Antrenor ? 'orange' : (profile.has_key ? 'blue' : 'gray');
 
-                        return <Popover width={200} withArrow={true} shadow={"md"} key={reservation.id + profile.id}>
+                        return <Popover width={200} withArrow={true} shadow={"md"} key={reservation.id}>
                             <Popover.Target>
                                 <Button color={buttonColor} radius={'xl'}
                                         size={'xs'} rightIcon={icon}>{index + 1}. {profile.name}</Button>
@@ -104,7 +106,7 @@ export function RegistrationHours(
 
                     {selectedDateInvites.filter(value => value.start_hour == hour).map((invite, index) => {
                         return <Button
-                            key={invite.start_date + invite.start_hour + invite.guest_name} color={invite.special ? 'pink' : 'cyan'} radius={'xl'}
+                            key={invite.created_at} color={invite.special ? 'pink' : 'cyan'} radius={'xl'}
                             size={'xs'} rightIcon={<MdOutlineNoAccounts/>}>
                             {lastIndex + index + 2}. {invite.guest_name}
                         </Button>

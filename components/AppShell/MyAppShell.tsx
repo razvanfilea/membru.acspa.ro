@@ -22,32 +22,29 @@ export default function MyAppShell({children}): ReactElement {
     return <AppShell
         navbarOffsetBreakpoint="sm"
         header={
-            <Header height={70} p="md">
-                <div style={{display: 'flex', alignItems: 'center', height: '100%'}}>
-                    {!navbarQuery &&
-                        <Burger
-                            opened={opened}
-                            onClick={() => setOpened((o) => !o)}
-                            size="sm"
-                            color={theme.colors.gray[6]}
-                            mr="xl"
-                            title="Open menu"
-                        />
-                    }
+            <Header height={70} p="md" style={{display: 'flex', alignItems: 'center', height: '100%'}}>
+                {!navbarQuery &&
+                    <Burger
+                        opened={opened}
+                        onClick={() => setOpened((o) => !o)}
+                        size="sm"
+                        color={theme.colors.gray[6]}
+                        mr="xl"
+                        title="Open menu"
+                    />
+                }
 
-                    <div>
-                        <Image src={"/logo.webp"}
-                               height={55}
-                               fit={'contain'}
-                               alt="Logo"/>
-                    </div>
-
-                    <Group style={{marginLeft: 'auto'}}>
-                        <HelpButton />
-                        <LightAndDarkModeButton/>
-                    </Group>
-
+                <div>
+                    <Image src={"/logo.webp"}
+                           height={55}
+                           fit={'contain'}
+                           alt="Logo"/>
                 </div>
+
+                <Group style={{marginLeft: 'auto'}}>
+                    <HelpButton/>
+                    <LightAndDarkModeButton/>
+                </Group>
             </Header>
         }
         navbar={

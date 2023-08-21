@@ -1,6 +1,6 @@
 import 'dayjs/locale/ro';
 import {Button, Card, Modal, NumberInputHandlers, Stack, Switch, TextInput} from "@mantine/core";
-import React, {useEffect, useMemo, useRef, useState} from "react";
+import React, {useMemo, useRef, useState} from "react";
 import {Location, LocationName, ReservationRestriction} from "../../types/wrapper";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
@@ -10,19 +10,22 @@ import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
-import {useExitIfNotFounder} from "../../utils/admin_tools";
+import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 import useProfilesQuery from "../../hooks/useProfilesQuery";
+import useRestrictionsQuery from "../../hooks/useRestrictionsQuery";
 
 interface IParams {
     location: Location
 }
 
 export default function RestrictedReservationsList(params: IParams) {
+    useExitIfNotFounder();
+
     const supabase = useSupabaseClient<Database>()
     const game_location = params.location
 
     const {data: allProfiles} = useProfilesQuery()
-    const [restrictions, setRestrictions] = useState<ReservationRestriction[]>([])
+    const {data: restrictions, isLoading, isError, refetch} = useRestrictionsQuery()
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
     const hourInputHandlers = useRef<NumberInputHandlers>();
@@ -40,23 +43,6 @@ export default function RestrictedReservationsList(params: IParams) {
         },
         validateInputOnBlur: true
     });
-
-    useExitIfNotFounder();
-
-    useEffect(() => {
-        fetchRestrictions().then(data => setRestrictions(data))
-        // We only want to run it once
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    async function fetchRestrictions() {
-        const {data} = await supabase.from('reservations_restrictions')
-            .select('*')
-            .order('date', {ascending: false})
-            .order('start_hour', {ascending: true})
-
-        return data || []
-    }
 
     const hasSelectedWeekend = useMemo(() => {
         return isDateWeekend(newRestrictionForm.values.date)
@@ -101,8 +87,8 @@ export default function RestrictedReservationsList(params: IParams) {
                         const {error} = await supabase.from('reservations_restrictions').insert([newRestriction])
                         console.log(error)
                     }
-                    setRestrictions(await fetchRestrictions())
                     newRestrictionForm.reset()
+                    await refetch()
                 })}>
 
                 <Stack>
@@ -156,7 +142,7 @@ export default function RestrictedReservationsList(params: IParams) {
                 title={'Rezervările blocate:'}
                 onAdd={() => setCreateModalOpened(true)}/>
 
-            {restrictions.map((restriction) => (
+            {restrictions?.map((restriction) => (
                 <Card key={restriction.date + restriction.start_hour} shadow={"xs"}>
                     {ReservationRestrictionComponent(
                         restriction,
@@ -167,7 +153,7 @@ export default function RestrictedReservationsList(params: IParams) {
                                 .eq('date', restriction.date)
                                 .eq('start_hour', restriction.start_hour)
 
-                            setRestrictions(await fetchRestrictions())
+                            await refetch()
                         }
                     )}
                 </Card>

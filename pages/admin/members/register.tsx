@@ -4,10 +4,11 @@ import React, {useEffect, useState} from "react";
 import {useForm} from "@mantine/form";
 import {Database} from "../../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
-import {useExitIfNotFounder} from "../../../utils/admin_tools";
+import useExitIfNotFounder from "../../../hooks/useExitIfNotFounder";
 import {MdAlternateEmail, MdGroups, MdPassword, MdPerson} from "react-icons/md";
 import {REGEX_EMAIL_PATTERN} from "../../../utils/regex";
 import {createClient} from "@supabase/supabase-js";
+import useMemberRolesQuery from "../../../hooks/useMemberRolesQuery";
 
 const enum RegisterState {
     None,
@@ -21,7 +22,7 @@ export default function CreateMember() {
     const [serviceRole, setServiceRole] = useState<string | null>(null)
     const [registerState, setRegisterState] = useState(RegisterState.None)
     const [error, setError] = useState<string | null>(null)
-    const [memberRoles, setMemberRoles] = useState<string[]>(['Membru'])
+    const {data: memberRoles} = useMemberRolesQuery()
 
     const form = useForm({
         initialValues: {
@@ -34,7 +35,7 @@ export default function CreateMember() {
         validate: {
             email: (value) => REGEX_EMAIL_PATTERN.test(value.toLowerCase()) ? null : "Email invalid",
             name: (value) => (value.length <= 64) ? (value.length >= 3 ? null : "Numele este prea scurt") : "Numele nu poate fi mai lung de 64 de litere",
-            role: (value) => memberRoles.includes(value),
+            role: (value) => memberRoles?.includes(value),
             password: (value) =>
                 (value.length >= 8) ? null : "Parola trebuie să aibă cel puțin 8 caractere",
         },
@@ -51,11 +52,6 @@ export default function CreateMember() {
                     setServiceRole(value.data[0].service_role)
                 }
             })
-
-        supabase.from('member_roles')
-            .select('role')
-            .then(value =>
-                setMemberRoles(value.data?.map(it => it.role) ?? []))
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -142,7 +138,7 @@ export default function CreateMember() {
                     placeholder={"Role"}
                     required={true}
                     icon={<MdGroups size={14}/>}
-                    data={memberRoles}
+                    data={memberRoles || []}
                     pb={'md'}
                 />
 

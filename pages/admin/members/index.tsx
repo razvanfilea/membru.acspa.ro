@@ -6,7 +6,7 @@ import {dateToISOString} from "../../../utils/date";
 import {AdminTopBar} from "../../../components/AdminInput";
 import {Database} from "../../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
-import {useExitIfNotFounder} from "../../../utils/admin_tools";
+import useExitIfNotFounder from "../../../hooks/useExitIfNotFounder";
 import {UserProfileLayout} from "../../../components/UserProfileLayout";
 import {useRouter} from "next/router";
 import useProfilesQuery from "../../../hooks/useProfilesQuery";

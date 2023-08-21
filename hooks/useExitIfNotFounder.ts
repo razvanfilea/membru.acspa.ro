@@ -1,9 +1,9 @@
 import {useEffect} from "react";
 import {MemberTypes} from "../types/wrapper";
 import {useRouter} from "next/router";
-import useProfileData from "../hooks/useProfileData";
+import useProfileData from "./useProfileData";
 
-export function useExitIfNotFounder() {
+export default function useExitIfNotFounder() {
     const profileData = useProfileData()
     const router = useRouter()
 

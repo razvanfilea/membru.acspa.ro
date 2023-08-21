@@ -34,5 +34,6 @@ export const enum MemberTypes {
     Cotizant1 = "Cotizant 1s",
     Cotizant2 = "Cotizant 2s",
     Antrenor = "Antrenor",
-    Fondator = "Fondator"
+    Fondator = "Fondator",
+    Invalid = "Invalid"
 }

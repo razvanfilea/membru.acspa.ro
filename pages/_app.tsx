@@ -9,12 +9,13 @@ import {createPagesBrowserClient} from '@supabase/auth-helpers-nextjs'
 import {Session, SessionContextProvider} from '@supabase/auth-helpers-react'
 import {QueryClient, QueryClientProvider} from "react-query";
 import {ProfileProvider} from "../hooks/useProfileData";
+import {Open_Sans} from 'next/font/google'
+
+const openSans = Open_Sans({subsets: ['latin']})
 
 const queryClient = new QueryClient({
     defaultOptions: {
-        queries: {
-            retry: 1
-        }
+        queries: {retry: 1}
     }
 })
 
@@ -41,7 +42,7 @@ export default function MyApp({
         <Head>
             <title>ACSPA</title>
             <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width"/>
-            <meta name="description" content="Site pentru membrii Asociației ACS Perpetuum Activ"/>
+            <meta name="description" content="Site pentru membrii Asociației CS Perpetuum Activ"/>
         </Head>
 
         <QueryClientProvider client={queryClient}>
@@ -58,6 +59,11 @@ export default function MyApp({
                     <SessionContextProvider supabaseClient={supabaseClient}
                                             initialSession={pageProps.initialSession}>
                         <ProfileProvider>
+                            <style jsx global>{`
+                              html {
+                                font-family: ${openSans.style.fontFamily};
+                              }
+                            `}</style>
                             <MyAppShell>
                                 <Component {...pageProps} />
                             </MyAppShell>

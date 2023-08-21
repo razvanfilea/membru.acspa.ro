@@ -6,7 +6,7 @@ import {Button, Center, Divider, Grid, Group, Loader, Space, Stack, Text} from "
 import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
-import {useExitIfNotFounder} from "../../utils/admin_tools";
+import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 import useProfilesQuery from "../../hooks/useProfilesQuery";
 
 const groupBy = <T, K extends keyof any>(arr: T[], key: (i: T) => K) =>
