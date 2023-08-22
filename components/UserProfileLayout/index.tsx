@@ -10,7 +10,7 @@ interface IParams {
 export function UserProfileLayout({profile}: IParams) {
     return <Group noWrap={true}>
         <Avatar
-            src={`https://ui-avatars.com/api/?name=${profile.name}&background=random&rounded=true`}
+            src={`https://ui-avatars.com/api/?name=${profile.name}&background=random&rounded=true&format=svg`}
             radius={"md"}/>
 
         <Stack spacing={1}>

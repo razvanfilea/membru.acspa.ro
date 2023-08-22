@@ -12,7 +12,7 @@ export default function useRestrictionsQuery(date: Date | null = null): UseQuery
             .select()
 
         if (date != null)
-            query = query.gte('date', dateToISOString(date))
+            query = query.gte('start_date', dateToISOString(date))
 
         return query.then(result => result.data)
     })

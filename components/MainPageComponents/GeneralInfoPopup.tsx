@@ -19,32 +19,29 @@ export function GeneralInfoPopup(): ReactElement {
     })
 
     if (showInformationPopup.value || showInformationPopup.expiry < new Date().getTime()) {
-        return <>
-            <Paper shadow={"0"} p={"sm"} sx={(theme) => ({
-                backgroundColor: theme.colors.cyan[9],
-            })}>
-                <Group noWrap={true}>
-                    <Text style={{width: '100%'}}>
-                        Rezervările se fac până la ora 17 respectiv 19 pentru ziua respectivă. Max 8 jucători
-                        pentru un
-                        interval orar. Când știți că nu ajungeți, retrageți-vă pentru a lăsa loc liber altor
-                        jucători. Spor la joc!</Text>
+        return <Paper shadow={"0"} p={"md"} sx={(theme) => ({
+            backgroundColor: theme.colors.cyan[9],
+        })}>
+            <Group noWrap={true}>
+                <Text style={{width: '100%'}}>
+                    Rezervările se fac până la ora 17 respectiv 19 pentru ziua respectivă. Max 8 jucători
+                    pentru un
+                    interval orar. Când știți că nu ajungeți, retrageți-vă pentru a lăsa loc liber altor
+                    jucători. Spor la joc!</Text>
 
-                    <ActionIcon onClick={() => {
-                        const daysInMilliseconds = 3 * 24 * 60 * 60 * 10000 // 3 days in milliseconds
-                        const item: IShowInfoPopup = {
-                            value: false,
-                            expiry: new Date().getTime() + daysInMilliseconds
-                        }
+                <ActionIcon onClick={() => {
+                    const daysInMilliseconds = 3 * 24 * 60 * 60 * 10000 // 3 days in milliseconds
+                    const item: IShowInfoPopup = {
+                        value: false,
+                        expiry: new Date().getTime() + daysInMilliseconds
+                    }
 
-                        setInformationPopup(item)
-                    }} size={48}>
-                        <MdClose size={24}/>
-                    </ActionIcon>
-                </Group>
-            </Paper>
-
-        </>
+                    setInformationPopup(item)
+                }} size={48}>
+                    <MdClose size={24}/>
+                </ActionIcon>
+            </Group>
+        </Paper>
     }
 
     return <></>

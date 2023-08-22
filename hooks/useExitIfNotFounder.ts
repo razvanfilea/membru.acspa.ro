@@ -8,8 +8,8 @@ export default function useExitIfNotFounder() {
     const router = useRouter()
 
     useEffect(() => {
-        console.log(profileData)
-        if (!profileData.isLoading && (profileData.profile == null || profileData.profile.role !== MemberTypes.Fondator))
+        if (!profileData.isLoading &&
+            (profileData.profile == null || profileData.profile.role !== MemberTypes.Fondator))
             router.back()
     }, [profileData, router])
 }

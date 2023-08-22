@@ -3,7 +3,7 @@ import Head from "next/head";
 import {ActionIcon, Grid, Group, Paper, Space, Stack, Text, Title} from "@mantine/core";
 import {useListState, useScrollIntoView} from "@mantine/hooks";
 import 'dayjs/locale/ro'
-import {GuestInvite, Location, LocationName, Reservation} from "../types/wrapper";
+import {Location, LocationName, Reservation} from "../types/wrapper";
 import {useRouter} from "next/router";
 import {MdRefresh} from "react-icons/md";
 import {addDaysToDate, dateToISOString, isDateWeekend} from "../utils/date";
@@ -14,6 +14,7 @@ import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import {DatePicker} from "@mantine/dates";
 import useProfileData from "../hooks/useProfileData";
 import useRestrictionsQuery from "../hooks/useRestrictionsQuery";
+import useGuestsQuery from "../hooks/useGuestsQuery";
 
 interface IParams {
     gara: Location
@@ -50,7 +51,7 @@ export default function MakeReservationPage(params: IParams): ReactElement {
 
     return <>
         <Head>
-            <title>Rezervări</title>
+            <title>Rezervări - ACSPA</title>
         </Head>
 
         <Title>Rezervări</Title>
@@ -58,45 +59,43 @@ export default function MakeReservationPage(params: IParams): ReactElement {
         <Space h="lg"/>
 
         <Paper>
-            <GeneralInfoPopup />
+            <GeneralInfoPopup/>
 
             <Grid
                 grow={true}
                 columns={4}>
 
                 <Grid.Col span={'auto'}>
-                    {!profileData.isLoading && profileData.profile != null &&
-                        <>
-                            <Text>Alege ziua rezervării:</Text>
+                    <Text>Alege ziua rezervării:</Text>
 
-                            <DatePicker
-                                minDate={new Date}
-                                maxDate={addDaysToDate(new Date, params.daysAhead)}
-                                hideOutsideDates={true}
-                                maxLevel={'month'}
-                                size={"lg"}
-                                locale={"ro"}
-                                value={selectedDate}
-                                onChange={(date) => {
-                                    if (profileData.profile != null && date != null)
-                                        onSelectedDateChange(date)
-                                }}
-                                getDayProps={(date) => {
-                                    if (date.getDate() === (new Date).getDate()
-                                        && date.getMonth() === (new Date).getMonth()
-                                        && date.getDate() !== selectedDate?.getDate()) {
-                                        return {
-                                            sx: (theme) => ({
-                                                backgroundColor: theme.colors.blue[7],
-                                                color: theme.white
-                                            })
-                                        };
-                                    }
-                                    return {};
-                                }}
-                                withCellSpacing={true}
-                            />
-                        </>
+                    {!profileData.isLoading && profileData.profile != null &&
+                        <DatePicker
+                            minDate={new Date}
+                            maxDate={addDaysToDate(new Date, params.daysAhead)}
+                            hideOutsideDates={true}
+                            maxLevel={'month'}
+                            size={"lg"}
+                            locale={"ro"}
+                            value={selectedDate}
+                            onChange={(date) => {
+                                if (profileData.profile != null && date != null)
+                                    onSelectedDateChange(date)
+                            }}
+                            getDayProps={(date) => {
+                                if (date.getDate() === (new Date).getDate()
+                                    && date.getMonth() === (new Date).getMonth()
+                                    && date.getDate() !== selectedDate?.getDate()) {
+                                    return {
+                                        sx: (theme) => ({
+                                            backgroundColor: theme.colors.blue[7],
+                                            color: theme.white
+                                        })
+                                    };
+                                }
+                                return {};
+                            }}
+                            withCellSpacing={true}
+                        />
                     }
                 </Grid.Col>
 
@@ -142,21 +141,11 @@ function SelectGameTable(
 
     const [reservations, reservationsHandle] = useListState<Reservation>([])
     const {data: restrictions} = useRestrictionsQuery(new Date)
-    const [invites, setInvites] = useState<GuestInvite[]>([])
+    const {data: guests} = useGuestsQuery(new Date)
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
     useEffect(() => {
-
         fetchReservations(supabase, reservationsHandle.setState);
-
-        supabase.from('guest_invites')
-            .select('*')
-            .gte('start_date', dateToISOString(new Date))
-            .order('special', {ascending: false})
-            .then(value => {
-                if (value.data !== null)
-                    setInvites(value.data)
-            })
 
         const reservationListener = supabase.channel('rezervari')
             .on(
@@ -167,10 +156,6 @@ function SelectGameTable(
                         if (payload.new.cancelled === false) {
                             reservationsHandle.setState((prev) => {
                                     return [...prev, payload.new as Reservation]
-                                        .sort((a, b) => {
-                                            // @ts-ignore
-                                            return new Date(a.created_at) - new Date(b.created_at)
-                                        })
                                 }
                             )
                         }
@@ -189,34 +174,37 @@ function SelectGameTable(
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => scrollIntoView({alignment: 'center'}), [selectedDateISO])
+    useEffect(() => scrollIntoView({alignment: 'center'}), [scrollIntoView, selectedDateISO])
 
     const registrationHours = useMemo(() => {
         if (selectedDateISO == null) {
             return {start: 0, end: 0, duration: 0}
         }
+
         if (isDateWeekend(new Date(selectedDateISO))) {
             return {
                 start: location.weekend_start_hour,
                 end: location.weekend_end_hour,
                 duration: location.weekend_reservation_duration,
             }
-        } else {
-            return {
-                start: location.start_hour,
-                end: location.end_hour,
-                duration: location.reservation_duration,
-            }
+        }
+
+        return {
+            start: location.start_hour,
+            end: location.end_hour,
+            duration: location.reservation_duration,
         }
     }, [location, selectedDateISO])
 
-    const selectedDateReservations
-        = useMemo(() => reservations.filter(value => value.start_date == selectedDateISO), [reservations, selectedDateISO])
-    const selectedDateInvites
-        = useMemo(() => invites.filter(value => value.start_date == selectedDateISO), [invites, selectedDateISO])
-    const selectedDateRestrictions
-        = useMemo(() => restrictions?.filter(value => value.date == selectedDateISO) || [], [restrictions, selectedDateISO])
+    const selectedDateReservations = useMemo(
+        () => reservations.filter(value => value.start_date == selectedDateISO),
+        [reservations, selectedDateISO])
+    const selectedDateInvites = useMemo(
+        () => guests?.filter(value => value.start_date == selectedDateISO) || [],
+        [guests, selectedDateISO])
+    const selectedDateRestrictions = useMemo(
+        () => restrictions?.filter(value => value.date == selectedDateISO) || [],
+        [restrictions, selectedDateISO])
 
     return <>
         <Group position={'apart'} align={"center"}>
@@ -225,10 +213,9 @@ function SelectGameTable(
                 <Text color={"blue"}>{new Date(selectedDateISO).toLocaleDateString('ro-RO')}</Text>
             </Group>
 
-            <ActionIcon variant={'light'} radius={'xl'} size={36}
-                        onClick={() => {
-                            router.reload()
-                        }}>
+            <ActionIcon
+                variant={'light'} radius={'xl'} size={36}
+                onClick={() => router.reload()}>
                 <MdRefresh size={28}/>
             </ActionIcon>
         </Group>
@@ -237,11 +224,10 @@ function SelectGameTable(
     </>
 }
 
-
 export async function getStaticProps({}) {
     const supabase = createPagesBrowserClient<Database>()
 
-    const {data: locations} = await supabase.from('locations').select('*')
+    const {data: locations} = await supabase.from('locations').select()
     const garaLocation = locations!.find(value => value.name == LocationName.Gara)
     const boromirLocation = locations!.find(value => value.name == LocationName.Boromir)
 

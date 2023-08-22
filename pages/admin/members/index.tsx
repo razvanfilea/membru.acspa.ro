@@ -1,5 +1,5 @@
 import 'dayjs/locale/ro';
-import {Button, Card, Loader, Modal, Stack, TextInput} from "@mantine/core";
+import {ActionIcon, Button, Card, Group, Loader, Modal, Stack, TextInput} from "@mantine/core";
 import React, {useState} from "react";
 import {useForm} from "@mantine/form";
 import {dateToISOString} from "../../../utils/date";
@@ -10,6 +10,8 @@ import useExitIfNotFounder from "../../../hooks/useExitIfNotFounder";
 import {UserProfileLayout} from "../../../components/UserProfileLayout";
 import {useRouter} from "next/router";
 import useProfilesQuery from "../../../hooks/useProfilesQuery";
+import Link from "next/link";
+import {MdEdit, MdLogout, MdPassword} from "react-icons/md";
 
 export default function MembersList() {
     const supabase = useSupabaseClient<Database>()
@@ -88,7 +90,13 @@ export default function MembersList() {
                 :
                 allProfiles!.map((profile) => (
                     <Card key={profile.id} shadow={"xs"}>
-                        <UserProfileLayout profile={profile}/>
+                        <Group spacing={'xl'}>
+                            <UserProfileLayout profile={profile}/>
+
+                            <ActionIcon variant={'filled'} radius={'xl'} size={36}>
+                                <MdEdit />
+                            </ActionIcon>
+                        </Group>
                     </Card>
                 ))
             }

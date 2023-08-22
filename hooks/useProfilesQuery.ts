@@ -8,7 +8,7 @@ export default function useProfilesQuery(): UseQueryResult<Profile[]> {
 
     return useQuery('profiles', async () => {
         return supabase.from('profiles')
-            .select('*')
+            .select()
             .order('name', {ascending: true})
             .then(result => result.data)
     })
