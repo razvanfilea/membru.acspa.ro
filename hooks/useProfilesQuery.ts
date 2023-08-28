@@ -6,7 +6,7 @@ import {Profile} from "../types/wrapper";
 export default function useProfilesQuery(): UseQueryResult<Profile[]> {
     const supabase = useSupabaseClient<Database>()
 
-    return useQuery('profiles', async () => {
+    return useQuery(['profiles'], async () => {
         return supabase.from('profiles')
             .select()
             .order('name', {ascending: true})

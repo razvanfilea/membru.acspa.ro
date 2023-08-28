@@ -21,7 +21,7 @@ export interface Database {
         }
         Relationships: []
       }
-      guest_invites: {
+      guests: {
         Row: {
           created_at: string
           guest_name: string
@@ -48,7 +48,7 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "guest_invites_user_id_fkey"
+            foreignKeyName: "guests_user_id_fkey"
             columns: ["user_id"]
             referencedRelation: "users"
             referencedColumns: ["id"]

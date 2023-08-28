@@ -64,7 +64,7 @@ export default function GuestManager(params: IParams) {
                     }
                     newInviteForm.reset()
 
-                    const {error} = await supabase.from('guest_invites').insert([newGuest])
+                    const {error} = await supabase.from('guests').insert([newGuest])
                     console.log(error)
                     await refetchGuests()
                 })}>
@@ -131,7 +131,7 @@ export default function GuestManager(params: IParams) {
                         guest,
                         allProfiles?.find(profile => profile.id === guest.user_id)?.name || null,
                         async () => {
-                            await supabase.from('guest_invites')
+                            await supabase.from('guests')
                                 .delete()
                                 .eq('start_date', guest.start_date)
                                 .eq('start_hour', guest.start_hour)

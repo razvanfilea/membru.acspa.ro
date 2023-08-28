@@ -35,7 +35,7 @@ export default function CreateMember() {
         validate: {
             email: (value) => REGEX_EMAIL_PATTERN.test(value.toLowerCase()) ? null : "Email invalid",
             name: (value) => (value.length <= 64) ? (value.length >= 3 ? null : "Numele este prea scurt") : "Numele nu poate fi mai lung de 64 de litere",
-            role: (value) => memberRoles?.includes(value),
+            role: (value) => memberRoles?.includes(value) ? null : "Rol invalid",
             password: (value) =>
                 (value.length >= 8) ? null : "Parola trebuie să aibă cel puțin 8 caractere",
         },
@@ -96,7 +96,8 @@ export default function CreateMember() {
                         .from('profiles')
                         .insert([{
                             id: data.user?.id!,
-                            name: values.name
+                            name: values.name,
+                            role: values.role
                         }])
 
                     if (result.error != null) {

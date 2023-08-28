@@ -2,16 +2,17 @@ import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../types/database.types";
 import {useQuery, UseQueryResult} from "react-query";
 import {GuestInvite, MemberTypes} from "../types/wrapper";
+import {dateToISOString} from "../utils/date";
 
 export default function useGuestsQuery(since: Date | null = null): UseQueryResult<GuestInvite[]> {
     const supabase = useSupabaseClient<Database>()
 
-    return useQuery(['guests', since], async () => {
-        let query = supabase.from('guest_invites')
+    return useQuery(['guests', since ? dateToISOString(since) : null], async () => {
+        let query = supabase.from('guests')
             .select()
 
         if (since != null)
-            query = query.gte('start_date', since)
+            query = query.gte('start_date', dateToISOString(since))
 
         return query.order('start_date', {ascending: false})
             .order('start_hour', {ascending: true})

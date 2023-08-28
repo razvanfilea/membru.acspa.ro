@@ -7,7 +7,7 @@ export const enum LocationName {
 
 type Tables = Database['public']['Tables']
 
-export type GuestInvite = Tables['guest_invites']['Row']
+export type GuestInvite = Tables['guests']['Row']
 
 export type Location = Tables['locations']['Row']
 

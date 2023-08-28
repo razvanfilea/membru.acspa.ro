@@ -7,7 +7,7 @@ export default function useMemberRolesQuery(): UseQueryResult<string[]> {
     const supabase = useSupabaseClient<Database>()
 
     return useQuery({
-        queryKey: 'member_roles',
+        queryKey: ['member_roles'],
         queryFn: async () => {
             return supabase.from('member_roles')
                 .select('role')

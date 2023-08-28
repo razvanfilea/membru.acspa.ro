@@ -54,7 +54,7 @@ export default function MembersList() {
                     }
                     newInviteForm.reset()
 
-                    const {error} = await supabase.from('guest_invites').insert([newGuest])
+                    const {error} = await supabase.from('guests').insert([newGuest])
                     console.log(error)
                 })}>
 
