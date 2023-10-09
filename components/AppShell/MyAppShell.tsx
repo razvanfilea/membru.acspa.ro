@@ -1,11 +1,12 @@
 import React, {ReactElement, useEffect, useState} from 'react';
-import {AppShell, Burger, Group, Header, Image, Navbar, Transition, useMantineTheme} from '@mantine/core';
+import {ActionIcon, AppShell, Burger, Group, Header, Image, Navbar, Transition, useMantineTheme} from '@mantine/core';
 import LightAndDarkModeButton from "./_themeButton";
 import MainLinks from "./_mainLinks";
 import UserProfile from "./_user";
 import {useRouter} from "next/router";
 import {useMediaQuery} from "@mantine/hooks";
 import HelpButton from "./_help";
+import {MdGavel} from "react-icons/md";
 
 export default function MyAppShell({children}): ReactElement {
     const router = useRouter()
@@ -42,7 +43,19 @@ export default function MyAppShell({children}): ReactElement {
                 </div>
 
                 <Group style={{marginLeft: 'auto'}}>
+                    <ActionIcon
+                        variant="filled"
+                        radius={'md'}
+                        size={'lg'}
+                        onClick={() => window.open('regulament_intern.pdf', '_blank')}
+                        color={'grape'}
+                        title="Regulament Intern"
+                    >
+                        <MdGavel size={18}/>
+                    </ActionIcon>
+
                     <HelpButton/>
+
                     <LightAndDarkModeButton/>
                 </Group>
             </Header>

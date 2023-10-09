@@ -4,7 +4,7 @@ import {MdOutlineNoAccounts, MdVpnKey} from "react-icons/md";
 import {GuestInvite, MemberTypes, Profile, Reservation, ReservationRestriction} from "../../types/wrapper";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
-import useProfileData from "../../hooks/useProfileData";
+import useProfileData, {ProfileData} from "../../hooks/useProfileData";
 import useProfilesQuery from "../../hooks/useProfilesQuery";
 
 function TableButton(
@@ -29,20 +29,104 @@ interface IRegistrationHoursProps {
     duration: number,
 }
 
+function MembersAndGuests(
+    userProfile: ProfileData,
+    profiles: Profile[],
+    reservations: Reservation[],
+    guests: GuestInvite[]
+): ReactElement {
+    const supabase = useSupabaseClient<Database>()
+
+    return <Group style={{marginLeft: "1em", marginRight: "1em"}} spacing={"xs"}>
+        <Text>Listă înscriși: </Text>
+        {reservations.map((reservation, index) => {
+            const profile = profiles?.find(value => value.id == reservation.user_id)
+
+            if (!profile) {
+                return <Button
+                    key={reservation.id} color={'red'} radius={'xl'}
+                    size={'xs'}>{index + 1}. Utilizator invalid</Button>
+            }
+
+            const icon = profile.has_key ? <MdVpnKey/> : <></>;
+            const buttonColor = profile.role == MemberTypes.Antrenor ? 'orange' : (profile.has_key ? 'blue' : 'gray');
+
+            return <Popover width={200} withArrow={true} shadow={"md"} key={reservation.id}>
+                <Popover.Target>
+                    <Button color={buttonColor} radius={'xl'}
+                            size={'xs'} rightIcon={icon}>{index + 1}. {profile.name}</Button>
+                </Popover.Target>
+
+                <Popover.Dropdown>
+                    <Stack align={'center'}>
+                        <Text size="sm">Creat
+                            pe {new Date(reservation.created_at).toLocaleString("ro-RO")}</Text>
+
+                        {(userProfile.profile?.role === MemberTypes.Fondator || reservation.user_id === userProfile.profile?.id) &&
+
+                            <Button onClick={async () => {
+                                const newData: Reservation = {
+                                    ...reservation,
+                                    cancelled: true
+                                }
+
+                                await supabase.from('rezervari')
+                                    .update(newData)
+                                    .eq('id', reservation.id)
+                            }
+                            }>Anulează</Button>
+
+                        }
+                    </Stack>
+                </Popover.Dropdown>
+            </Popover>
+
+        })}
+
+        {guests.map((guest, index) => {
+            return <Popover width={200} withArrow={true} shadow={"md"} key={guest.created_at}>
+                <Popover.Target>
+                    <Button
+                        color={guest.special ? 'pink' : 'cyan'} radius={'xl'}
+                        size={'xs'} rightIcon={<MdOutlineNoAccounts/>}>
+                        {reservations.length + index + 1}. {guest.guest_name}
+                    </Button>
+                </Popover.Target>
+
+                <Popover.Dropdown>
+                    <Stack align={'center'}>
+                        <Text size="sm">Creat
+                            pe {new Date(guest.created_at).toLocaleString("ro-RO")}</Text>
+
+                        {userProfile.profile?.role === MemberTypes.Fondator &&
+                            <Button onClick={async () => {
+                                await supabase.from('rezervari')
+                                    .delete()
+                                    .eq('guest_name', guest.guest_name)
+                                    .eq('start_date', guest.start_date)
+                                    .eq('start_hour', guest.start_hour)
+                            }
+                            }>Șterge invitatul</Button>
+                        }
+                    </Stack>
+                </Popover.Dropdown>
+            </Popover>
+        })}
+    </Group>
+}
+
 export function RegistrationHours(
     selectedDateReservations: Reservation[],
     selectedRestrictions: ReservationRestriction[],
-    selectedDateInvites: GuestInvite[],
+    selectedDateGuests: GuestInvite[],
     selectedStartHour: number | null,
     onSetStartHour: (s: number) => void,
     {start, end, duration}: IRegistrationHoursProps
 ) {
-    const supabase = useSupabaseClient<Database>()
     const userProfile = useProfileData()
 
     const {data: profiles} = useProfilesQuery()
 
-    let lastIndex = 0;
     let content: ReactElement[] = [];
 
     for (let hour = start; hour < end; hour += duration) {
@@ -60,58 +144,12 @@ export function RegistrationHours(
             </Group>
 
             {!restriction &&
-                <Group style={{marginLeft: "1em", marginRight: "1em"}} spacing={"xs"}>
-                    <Text>Listă înscriși: </Text>
-                    {selectedDateReservations.filter(value => value.start_hour == hour).map((reservation, index) => {
-                        lastIndex = index;
-                        const profile = profiles?.find(value => value.id == reservation.user_id)
-
-                        if (!profile)
-                            return <></>
-
-                        const icon = profile.has_key ? <MdVpnKey/> : <></>;
-                        const buttonColor = profile.role == MemberTypes.Antrenor ? 'orange' : (profile.has_key ? 'blue' : 'gray');
-
-                        return <Popover width={200} withArrow={true} shadow={"md"} key={reservation.id}>
-                            <Popover.Target>
-                                <Button color={buttonColor} radius={'xl'}
-                                        size={'xs'} rightIcon={icon}>{index + 1}. {profile.name}</Button>
-                            </Popover.Target>
-
-                            <Popover.Dropdown>
-                                <Stack align={'center'}>
-                                    <Text size="sm">Creat
-                                        pe {new Date(reservation.created_at).toLocaleDateString("ro-RO")}</Text>
-
-                                    {(userProfile.profile?.role === MemberTypes.Fondator || reservation.user_id === userProfile.profile?.id) &&
-
-                                        <Button onClick={async () => {
-                                            const newData: Reservation = {
-                                                ...reservation,
-                                                cancelled: true
-                                            }
-
-                                            await supabase.from('rezervari')
-                                                .update(newData)
-                                                .eq('id', reservation.id)
-                                        }
-                                        }>Anulează</Button>
-
-                                    }
-                                </Stack>
-                            </Popover.Dropdown>
-                        </Popover>
-
-                    })}
-
-                    {selectedDateInvites.filter(value => value.start_hour == hour).map((invite, index) => {
-                        return <Button
-                            key={invite.created_at} color={invite.special ? 'pink' : 'cyan'} radius={'xl'}
-                            size={'xs'} rightIcon={<MdOutlineNoAccounts/>}>
-                            {lastIndex + index + 2}. {invite.guest_name}
-                        </Button>
-                    })}
-                </Group>
+                MembersAndGuests(
+                    userProfile,
+                    profiles || [],
+                    selectedDateReservations.filter(value => value.start_hour == hour),
+                    selectedDateGuests.filter(value => value.start_hour == hour)
+                )
             }
 
             <Divider variant={"dashed"}/>

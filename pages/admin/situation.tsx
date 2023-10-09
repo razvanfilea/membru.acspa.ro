@@ -2,7 +2,7 @@ import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
 import React, {useEffect, useMemo, useState} from "react";
 import {Reservation} from "../../types/wrapper";
-import {Card, Grid, Group, Indicator, Select, Space, Stack, Text} from "@mantine/core";
+import {Button, Card, Grid, Group, Indicator, Select, Space, Stack, Text} from "@mantine/core";
 import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
@@ -44,62 +44,64 @@ export default function SituationPage() {
         [reservations, selectedProfileId, startRange, endRange]
     )
 
-    return <>
-        <Grid
-            grow={true}
-            columns={4}
-        >
+    return <Grid
+        grow={true}
+        columns={4}
+        sx={(theme) => ({
+            marginBottom: theme.spacing.xl
+        })}
+    >
+        <Grid.Col span={"auto"}>
+            <Stack p={'md'}>
+                <Select
+                    label="Alege un utilizator"
+                    placeholder="Utilizator"
+                    searchable
+                    transitionProps={{
+                        transition: "pop-top-left",
+                        duration: 80,
+                        timingFunction: "ease"
+                    }}
+                    data={allProfiles?.map(profile => ({value: profile.id, label: profile.name})) || []}
+                    value={selectedProfileId}
+                    onChange={setSelectedProfileId}
+                />
 
-            <Grid.Col span={"auto"}>
-                <Stack p={'md'}>
-                    <Select
-                        label="Alege un utilizator"
-                        placeholder="Utilizator"
-                        searchable
-                        transitionProps={{
-                            transition: "pop-top-left",
-                            duration: 80,
-                            timingFunction: "ease"
-                        }}
-                        data={allProfiles?.map(profile => ({value: profile.id, label: profile.name})) || []}
-                        value={selectedProfileId}
-                        onChange={setSelectedProfileId}
-                    />
+                <DatePicker
+                    type='range'
+                    value={dateRange}
+                    onChange={setDateRange}
+                    size={"lg"}
+                    locale="ro"
+                    renderDay={(date) => {
+                        const disabled = !filteredReservations.some(it =>
+                            it.start_date === dateToISOString(date) && it.cancelled === false);
 
-                    <DatePicker
-                        type='range'
-                        value={dateRange}
-                        onChange={setDateRange}
-                        size={"lg"}
-                        locale="ro"
-                        renderDay={(date) => {
-                            const disabled = !filteredReservations.some(it =>
-                                it.start_date === dateToISOString(date) && it.cancelled === false);
+                        return (
+                            <Indicator
+                                size={8} color="green" offset={-5}
+                                disabled={disabled}>
+                                {date.getDate()}
+                            </Indicator>
+                        );
+                    }}
+                />
 
-                            return (
-                                <Indicator
-                                    size={8} color="green" offset={-5}
-                                    disabled={disabled}>
-                                    {date.getDate()}
-                                </Indicator>
-                            );
-                        }}
-                    />
-                </Stack>
-            </Grid.Col>
+                <Button onClick={() => setDateRange([new Date('2023-01-01'), new Date('2023-12-31')])}>
+                    Selectează tot anul 2023
+                </Button>
+            </Stack>
+        </Grid.Col>
 
-            <Grid.Col span={2}>
-                <Stack p={'md'} id={"report"}
-                       sx={(theme) => ({backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[0]})}>
-                    {selectedProfileId &&
-                        SelectedUserReservations(filteredReservations)
-                    }
-                </Stack>
-            </Grid.Col>
-        </Grid>
-
-        <Space h="xl"/>
-    </>
+        <Grid.Col span={2}>
+            <Stack p={'md'} id={"report"}
+                   sx={(theme) => ({backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[0]})}>
+                {selectedProfileId &&
+                    SelectedUserReservations(filteredReservations)
+                }
+            </Stack>
+        </Grid.Col>
+    </Grid>
 }
 
 function SelectedUserReservations(reservations: Reservation[]) {
