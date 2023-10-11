@@ -1,7 +1,7 @@
 import {Button, Group, Space, Stack, Text} from "@mantine/core";
-import React from "react";
+import React, {ReactElement} from "react";
 import {MdCancel} from "react-icons/md";
-import {Reservation} from "../../types/wrapper";
+import {getEndHour, Location, Reservation} from "../../types/wrapper";
 
 function ShowStatus(reservation: Reservation, onCancel: (() => Promise<void>) | null) {
     if (reservation.cancelled) {
@@ -21,13 +21,14 @@ function ShowStatus(reservation: Reservation, onCancel: (() => Promise<void>) | 
 
 export default function ReservationComponent(
     reservation: Reservation,
+    location: Location,
     showStatus: boolean,
     onCancel: (() => Promise<void>) | null
-) {
+): ReactElement {
     return <Group position={"apart"}>
         <Stack spacing={0}>
             <Text>Pe data de <b>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</b> de la
-                ora <b>{reservation.start_hour}:{'00'}</b> la <b>{reservation.start_hour + reservation.duration}:{'00'}</b></Text>
+                ora <b>{reservation.start_hour}:{'00'}</b> la <b>{getEndHour(reservation, location)}:{'00'}</b></Text>
 
             <Space h={"xs"}/>
 

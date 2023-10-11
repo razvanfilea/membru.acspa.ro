@@ -21,6 +21,21 @@ export interface Database {
         }
         Relationships: []
       }
+      global_vars: {
+        Row: {
+          entrance_code: number
+          maintenance: boolean
+        }
+        Insert: {
+          entrance_code: number
+          maintenance: boolean
+        }
+        Update: {
+          entrance_code?: number
+          maintenance?: boolean
+        }
+        Relationships: []
+      }
       guests: {
         Row: {
           created_at: string
@@ -166,7 +181,6 @@ export interface Database {
         Row: {
           cancelled: boolean
           created_at: string
-          duration: number
           id: string
           location: string
           start_date: string
@@ -176,7 +190,6 @@ export interface Database {
         Insert: {
           cancelled?: boolean
           created_at?: string
-          duration: number
           id?: string
           location: string
           start_date: string
@@ -186,7 +199,6 @@ export interface Database {
         Update: {
           cancelled?: boolean
           created_at?: string
-          duration?: number
           id?: string
           location?: string
           start_date?: string
@@ -213,13 +225,6 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      create_guest_from_current_user: {
-        Args: {
-          start_date_input: string
-          start_hour_input: number
-        }
-        Returns: undefined
-      }
       create_reservation: {
         Args: {
           location_input: string

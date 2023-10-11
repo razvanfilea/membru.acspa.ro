@@ -44,7 +44,6 @@ export function ConfirmSelection(
         location: location.name,
         start_date: selectedDateISO,
         start_hour: selectedStartHour,
-        duration: location.reservation_duration,
         cancelled: false
     }
 
@@ -88,7 +87,7 @@ export function ConfirmSelection(
 
                 <Space h={"lg"}/>
 
-                {ReservationComponent(fakeReservation, false, null)}
+                {ReservationComponent(fakeReservation, location, false, null)}
 
                 <Space h={"md"}/>
 
@@ -104,7 +103,7 @@ export function ConfirmSelection(
                     marginBottom: theme.spacing.xs
                 })}>
                     <Text align={"center"} color="#FFF">Ai rezervare pe <b>{(new Date(fakeReservation.start_date)).toLocaleDateString('ro-RO')}</b> de la
-                        ora <b>{fakeReservation.start_hour}:{'00'}</b> la <b>{fakeReservation.start_hour + fakeReservation.duration}:{'00'}</b></Text>
+                        ora <b>{fakeReservation.start_hour}:{'00'}</b> la <b>{fakeReservation.start_hour + location.reservation_duration}:{'00'}</b></Text>
                 </Paper>
 
                 <Group align={"center"}>

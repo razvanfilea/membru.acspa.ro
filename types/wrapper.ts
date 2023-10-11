@@ -1,4 +1,5 @@
 import {Database} from "./database.types";
+import {isDateWeekend} from "../utils/date";
 
 export const enum LocationName {
     Gara = "gara",
@@ -6,6 +7,8 @@ export const enum LocationName {
 }
 
 type Tables = Database['public']['Tables']
+
+export type GlobalVars = Tables['global_vars']['Row']
 
 export type GuestInvite = Tables['guests']['Row']
 
@@ -17,16 +20,9 @@ export type Reservation = Tables['rezervari']['Row']
 
 export type ReservationRestriction = Tables['reservations_restrictions']['Row']
 
-export function getStartTime(reservation: Reservation): Date {
-    return new Date(reservation.start_date);
-}
-
-export function getEndDateDuration(date: Date, hours: number): Date {
-    return new Date(date.getTime() + hours * 1000 * 60 * 60);
-}
-
-export function getEndTime(reservation: Reservation): Date {
-    return getEndDateDuration(new Date(reservation.start_date), reservation.duration);
+export function getEndHour(reservation: Reservation, location: Location): number {
+    const duration = isDateWeekend(new Date(reservation.start_date)) ? location.weekend_reservation_duration : location.reservation_duration;
+    return reservation.start_hour + duration;
 }
 
 export const enum MemberTypes {

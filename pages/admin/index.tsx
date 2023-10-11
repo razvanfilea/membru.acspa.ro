@@ -1,21 +1,26 @@
-import {Button, Card, Paper, Space, Stack, Text} from "@mantine/core";
+import {Button, Card, Paper, Space, Stack, Text, Title} from "@mantine/core";
 import Link from "next/link";
 import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
+import {ReactElement} from "react";
 
-export default function AdminPage() {
+export default function AdminPage(): ReactElement {
     useExitIfNotFounder();
 
     return <Paper>
         <Card sx={(theme) => ({margin: theme.spacing.md})}>
-            <Text size={'xl'}>Panou fondatori</Text>
+            <Title>Panou fondatori</Title>
             <Text size={'sm'} sx={(theme) => ({margin: theme.spacing.xs})}>
                 Este necesară discreția utilizatorului: datele de intrare nu sunt validate.</Text>
 
             <Space h={'md'}/>
 
             <Stack spacing={'lg'}>
+                <Link href={'/admin/settings'}>
+                    <Button color={'red'}>Setări website</Button>
+                </Link>
+
                 <Link href={'/admin/restrictions'}>
-                    <Button color={'red'}>Restricționare rezervări</Button>
+                    <Button color={'orange'}>Restricționare rezervări</Button>
                 </Link>
 
                 <Link href={'/admin/guests'}>

@@ -1,6 +1,6 @@
 import React, {ReactElement} from "react";
 import {useLocalStorage} from "@mantine/hooks";
-import {ActionIcon, Group, Paper, Text} from "@mantine/core";
+import {ActionIcon, Group, Paper, Space, Text} from "@mantine/core";
 import {MdClose} from "react-icons/md";
 
 interface IShowInfoPopup {
@@ -21,6 +21,8 @@ export function GeneralInfoPopup(): ReactElement {
     if (showInformationPopup.value || showInformationPopup.expiry < new Date().getTime()) {
         return <Paper shadow={"0"} p={"md"} sx={(theme) => ({
             backgroundColor: theme.colors.cyan[9],
+            marginTop: theme.spacing.lg,
+            marginBottom: theme.spacing.lg,
         })}>
             <Group noWrap={true}>
                 <Text style={{width: '100%'}}>
@@ -44,5 +46,5 @@ export function GeneralInfoPopup(): ReactElement {
         </Paper>
     }
 
-    return <></>
+    return <Space h={'lg'} />
 }

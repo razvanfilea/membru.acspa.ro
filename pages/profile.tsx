@@ -2,7 +2,7 @@ import {ActionIcon, Button, Card, Center, Checkbox, Group, Loader, Paper, Stack,
 import React, {useEffect, useMemo, useState} from "react";
 import {NextRouter, useRouter} from "next/router";
 import ReservationComponent from "../components/Reservation";
-import {Profile, Reservation} from "../types/wrapper";
+import {Location, Profile, Reservation} from "../types/wrapper";
 import {MdLogout, MdPassword, MdRefresh} from "react-icons/md";
 import {isReservationCancelable} from "../utils/date";
 import {Database} from "../types/database.types";
@@ -11,6 +11,7 @@ import {useListState} from "@mantine/hooks";
 import {UserProfileLayout} from "../components/UserProfileLayout";
 import Link from "next/link";
 import useProfileData from "../hooks/useProfileData";
+import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 
 async function signOut(supabase: SupabaseClient<Database>, router: NextRouter) {
     const {error} = await supabase.auth.signOut()
@@ -38,7 +39,11 @@ function fetchReservations(
         })
 }
 
-export default function ProfilePage() {
+interface IParams {
+    locations: Location[]
+}
+
+export default function ProfilePage({locations}: IParams) {
     const supabase = useSupabaseClient<Database>()
     const router = useRouter()
     const profileData = useProfileData()
@@ -130,6 +135,7 @@ export default function ProfilePage() {
                 <Card key={reservation.id}>
                     {ReservationComponent(
                         reservation,
+                        locations.find(value => value.name == reservation.location)!,
                         true,
                         (isReservationCancelable(reservation)) ? (async () => {
                             const newData: Reservation = {
@@ -152,4 +158,15 @@ export default function ProfilePage() {
             ))}
         </Stack>
     </>)
+}
+
+export async function getStaticProps({}) {
+    const supabase = createPagesBrowserClient<Database>()
+
+    const {data: locations} = await supabase.from('locations').select()
+    const props: IParams = {
+        locations: locations!
+    }
+
+    return {props}
 }

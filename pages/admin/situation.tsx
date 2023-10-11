@@ -120,7 +120,7 @@ function SelectedUserReservations(reservations: Reservation[]) {
                         <Text weight={900}>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</Text>
 
                         <Text>De
-                            la <b>{reservation.start_hour}:{'00'}</b> la <b>{reservation.start_hour + reservation.duration}:{'00'}</b></Text>
+                            la <b>{reservation.start_hour}:{'00'}</b></Text>
                     </Group>
                 </Card>
             })
@@ -137,8 +137,7 @@ function SelectedUserReservations(reservations: Reservation[]) {
 
                         <Text weight={900}>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</Text>
 
-                        <Text>De
-                            la <b>{reservation.start_hour}:{'00'}</b> la <b>{reservation.start_hour + reservation.duration}:{'00'}</b></Text>
+                        <Text>De la <b>{reservation.start_hour}:{'00'}</b></Text>
                     </Group>
                 </Card>
             })

@@ -104,7 +104,7 @@ function SelectGameTable(
 
     const selectedDateReservations =
         reservations.filter(value => value.start_date == selectedDateISO)
-    const selectedDateInvites =
+    const selectedDateGuests =
         guests?.filter(value => value.start_date == selectedDateISO) || []
     const selectedDateRestrictions =
         restrictions?.filter(value => value.date == selectedDateISO) || []
@@ -123,7 +123,7 @@ function SelectGameTable(
             </ActionIcon>
         </Group>
 
-        {RegistrationHours(selectedDateReservations, selectedDateRestrictions, selectedDateInvites, selectedStartHour, onSetStartHour, registrationHours)}
+        {RegistrationHours(selectedDateReservations, selectedDateRestrictions, selectedDateGuests, selectedStartHour, onSetStartHour, registrationHours)}
     </>
 }
 

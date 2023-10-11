@@ -100,7 +100,7 @@ function MembersAndGuests(
 
                         {userProfile.profile?.role === MemberTypes.Fondator &&
                             <Button onClick={async () => {
-                                await supabase.from('rezervari')
+                                await supabase.from('guests')
                                     .delete()
                                     .eq('guest_name', guest.guest_name)
                                     .eq('start_date', guest.start_date)
