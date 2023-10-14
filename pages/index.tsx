@@ -1,6 +1,6 @@
 import React, {ReactElement, useEffect, useMemo, useState} from "react";
 import Head from "next/head";
-import {Button, Grid, Group, Overlay, Space, Stack, Text, Title} from "@mantine/core";
+import {ActionIcon, Button, Grid, Group, Overlay, Space, Stack, Text, Title} from "@mantine/core";
 import 'dayjs/locale/ro'
 import {Location, LocationName, MemberTypes} from "../types/wrapper";
 import {useRouter} from "next/router";
@@ -13,6 +13,7 @@ import useProfileData from "../hooks/useProfileData";
 import SelectGameTable from "../components/MainPageComponents/SelectGameTable";
 import useGlobalVars from "../hooks/useGlobalVars";
 import Link from "next/link";
+import {MdRefresh} from "react-icons/md";
 
 interface IParams {
     gara: Location
@@ -113,22 +114,27 @@ export default function MakeReservationPage(params: IParams): ReactElement {
         <Space h="xl"/>
 
         {globalVars?.maintenance == true &&
-            <Overlay center={true} opacity={0.85}>
+            <Overlay center={true} fixed={true} opacity={0.85}>
                 <Stack p={'md'}>
                     <Title>Site-ul este în mentenanță.</Title>
-                    <Space h={'lg'}/>
-                    <Text>Vă rugăm reveniți mai târziu</Text>
+                    <Group position={'apart'} m={'lg'}>
+                        <Text>Vă rugăm reveniți mai târziu</Text>
+
+                        <ActionIcon variant={'filled'} radius={'xl'} size={48} onClick={() => router.reload()}>
+                            <MdRefresh size={28}/>
+                        </ActionIcon>
+                    </Group>
 
                     {profileData.profile?.role === MemberTypes.Fondator &&
                         <Link href={"/admin"} passHref={true}>
-                            <Button color={'red'}>Panou Fondator</Button>
+                            <Button color={'red'}>Panou Administrare</Button>
                         </Link>
                     }
 
                 </Stack>
             </Overlay>
         }
-    </>;
+    </>
 }
 
 export async function getStaticProps({}) {

@@ -10,7 +10,7 @@ type Tables = Database['public']['Tables']
 
 export type GlobalVars = Tables['global_vars']['Row']
 
-export type GuestInvite = Tables['guests']['Row']
+export type Guest = Tables['guests']['Row']
 
 export type Location = Tables['locations']['Row']
 

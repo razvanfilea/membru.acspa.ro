@@ -1,7 +1,7 @@
 import {Button, Divider, Group, Popover, Stack, Text} from "@mantine/core";
 import React, {ReactElement} from "react";
 import {MdOutlineNoAccounts, MdVpnKey} from "react-icons/md";
-import {GuestInvite, MemberTypes, Profile, Reservation, ReservationRestriction} from "../../types/wrapper";
+import {Guest, MemberTypes, Profile, Reservation, ReservationRestriction} from "../../types/wrapper";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import useProfileData, {ProfileData} from "../../hooks/useProfileData";
@@ -33,7 +33,7 @@ function MembersAndGuests(
     userProfile: ProfileData,
     profiles: Profile[],
     reservations: Reservation[],
-    guests: GuestInvite[]
+    guests: Guest[]
 ): ReactElement {
     const supabase = useSupabaseClient<Database>()
 
@@ -118,7 +118,7 @@ function MembersAndGuests(
 export function RegistrationHours(
     selectedDateReservations: Reservation[],
     selectedRestrictions: ReservationRestriction[],
-    selectedDateGuests: GuestInvite[],
+    selectedDateGuests: Guest[],
     selectedStartHour: number | null,
     onSetStartHour: (s: number) => void,
     {start, end, duration}: IRegistrationHoursProps

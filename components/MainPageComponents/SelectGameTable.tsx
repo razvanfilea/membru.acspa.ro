@@ -45,6 +45,7 @@ function SelectGameTable(
 ): ReactElement {
     const supabase = useSupabaseClient<Database>()
     const router = useRouter()
+
     const [reservations, reservationsHandle] = useListState<Reservation>([])
     const {data: restrictions} = useRestrictionsQuery(new Date)
     const {data: guests} = useGuestsQuery(new Date)
@@ -58,17 +59,21 @@ function SelectGameTable(
                 'postgres_changes',
                 {event: '*', schema: 'public', table: 'rezervari'},
                 (payload) => {
+                    console.log(payload)
                     if (payload.eventType == "INSERT") {
                         if (payload.new.cancelled === false) {
-                            reservationsHandle.setState((prev) => {
-                                    return [...prev, payload.new as Reservation]
-                                }
+                            reservationsHandle.setState((prev) =>
+                                [...prev, payload.new as Reservation]
+                                    .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
                             )
                         }
-                    } else if (payload.eventType == "UPDATE") {
-                        fetchReservations(supabase, reservationsHandle.setState) // TODO Could make this more efficient
-                    } else {
+                    } else if (payload.eventType == "DELETE" || payload.new.cancelled) {
                         reservationsHandle.filter(value => value.id != payload.old.id)
+                    } else if (payload.eventType == "UPDATE") {
+                        reservationsHandle.setState((prev) =>
+                            [...prev.filter(value => value.id != payload.old.id), payload.new as Reservation]
+                                .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
+                        )
                     }
                 }
             )

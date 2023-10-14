@@ -21,8 +21,8 @@ export default function DailySituationPage() {
     const supabase = useSupabaseClient<Database>()
 
     const {data: allProfiles, isLoading} = useProfilesQuery()
-    const [reservations, setReservations] = useState<Reservation[]>([])
     const [date, setDate] = useState<Date | undefined>(undefined);
+    const [reservations, setReservations] = useState<Reservation[]>([])
 
     useEffect(() => {
         if (date) {
@@ -62,7 +62,7 @@ export default function DailySituationPage() {
                     :
                     <Stack p={'md'}>
                         {date ?
-                            SelectedDateReservations(allProfiles!, groupedReservations)
+                            SelectedDateReservations(allProfiles || [], groupedReservations)
                             :
                             <Text size={'xl'}>Selectează o dată pentru a vedea rezervările</Text>
                         }
@@ -89,8 +89,7 @@ function SelectedDateReservations(allProfiles: Profile[], reservations: Record<n
                                 name: 'Necunoscut',
                                 has_key: false
                             }
-                            return <Button key={user.user_id} color={profile.has_key ? 'blue' : 'gray'} radius={'xl'}
-                                           size={'xs'}>{index + 1}. {profile.name}</Button>
+                            return <Button key={user.user_id} radius={'xl'} color={'gray'} size={'xs'}>{index + 1}. {profile.name}</Button>
                         })
                     }
                 </Group>

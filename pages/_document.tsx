@@ -16,6 +16,10 @@ export default class _Document extends Document {
                     <link rel="icon" type="image/png" sizes="32x32" href="/fav/favicon-32x32.png"/>
                     <link rel="icon" type="image/ico" sizes="16x16" href="/fav/favicon-16x16.ico"/>
                     <link rel="manifest" href="/fav/site.webmanifest"/>
+
+                    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+                    <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin={'anonymous'}/>
+                    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet"/>
                 </Head>
                 <body>
                 <Main/>

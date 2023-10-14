@@ -39,7 +39,9 @@ export default function SituationPage() {
             if (startRange == null || endRange == null) {
                 return []
             }
-            return reservations.filter(it => it.user_id === selectedProfileId && new Date(it.start_date) >= startRange && new Date(it.start_date) <= endRange)
+            return reservations.filter(it =>
+                it.user_id === selectedProfileId &&
+                new Date(it.start_date) >= startRange && new Date(it.start_date) <= endRange)
         },
         [reservations, selectedProfileId, startRange, endRange]
     )
@@ -54,8 +56,7 @@ export default function SituationPage() {
         <Grid.Col span={"auto"}>
             <Stack p={'md'}>
                 <Select
-                    label="Alege un utilizator"
-                    placeholder="Utilizator"
+                    label="Alege un member"
                     searchable
                     transitionProps={{
                         transition: "pop-top-left",
@@ -64,6 +65,8 @@ export default function SituationPage() {
                     }}
                     data={allProfiles?.map(profile => ({value: profile.id, label: profile.name})) || []}
                     value={selectedProfileId}
+                    required={true}
+                    error={selectedProfileId == null ? 'Trebuie sa alegi un membru!' : null}
                     onChange={setSelectedProfileId}
                 />
 

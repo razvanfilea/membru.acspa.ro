@@ -1,10 +1,10 @@
 import {ActionIcon, Group, Space, Stack, Text} from "@mantine/core";
 import React from "react";
-import {GuestInvite} from "../../types/wrapper";
+import {Guest} from "../../types/wrapper";
 import {MdDelete} from "react-icons/md";
 
 export default function GuestInviteComponent(
-    guestInvite: GuestInvite,
+    guestInvite: Guest,
     userName: string | null,
     onDelete: () => Promise<void>,
 ) {

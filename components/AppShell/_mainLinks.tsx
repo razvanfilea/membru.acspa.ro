@@ -55,7 +55,7 @@ const linkData: MainLinkData[] = [
     {
         icon: <MdAdminPanelSettings size={22}/>,
         color: 'red',
-        label: 'Panou Fondator',
+        label: 'Panou Administrare',
         link: '/admin',
         cond: (profileData: ProfileData) => profileData.profile?.role === MemberTypes.Fondator
     },

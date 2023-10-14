@@ -11,8 +11,6 @@ import {QueryClient, QueryClientProvider} from "react-query";
 import {ProfileProvider} from "../hooks/useProfileData";
 import {Open_Sans} from 'next/font/google'
 
-const openSans = Open_Sans({subsets: ['latin']})
-
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {retry: 1}
@@ -51,7 +49,6 @@ export default function MyApp({
                     withGlobalStyles
                     withNormalizeCSS
                     theme={{
-                        fontFamily: 'Open Sans',
                         colorScheme: colorScheme,
                         primaryColor: 'orange'
                     }}
@@ -61,7 +58,7 @@ export default function MyApp({
                         <ProfileProvider>
                             <style jsx global>{`
                               html {
-                                font-family: ${openSans.style.fontFamily};
+                                font-family: 'Open Sans', sans-serif;
                               }
                             `}</style>
                             <MyAppShell>
