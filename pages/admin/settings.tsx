@@ -4,10 +4,12 @@ import {Button, Card, NumberInput, Space, Stack, Switch, Title} from "@mantine/c
 import useGlobalVars from "../../hooks/useGlobalVars";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
+import {useRouter} from "next/router";
 
 export default function WebsiteSettingsPage(): ReactElement {
     useExitIfNotFounder();
 
+    const router = useRouter()
     const supabase = useSupabaseClient<Database>()
 
     const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -37,6 +39,7 @@ export default function WebsiteSettingsPage(): ReactElement {
                         entrance_code: entranceCode === "" ? undefined : entranceCode
                     })
                     .gte('maintenance', 0) // Workaround for supabase not allowing update without a where clause
+                router.back()
             }}>Aplică setările</Button>
 
         </Stack>

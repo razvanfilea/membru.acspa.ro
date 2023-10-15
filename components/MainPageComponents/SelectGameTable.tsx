@@ -59,7 +59,6 @@ function SelectGameTable(
                 'postgres_changes',
                 {event: '*', schema: 'public', table: 'rezervari'},
                 (payload) => {
-                    console.log(payload)
                     if (payload.eventType == "INSERT") {
                         if (payload.new.cancelled === false) {
                             reservationsHandle.setState((prev) =>
