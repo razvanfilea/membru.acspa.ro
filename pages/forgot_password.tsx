@@ -40,7 +40,7 @@ export default function LoginForm() {
         }
     }, [profileData, router])
 
-    return <Box sx={{maxWidth: 480}} mx="auto">
+    return <Box style={{maxWidth: 480}} mx="auto">
         <Stack>
             <form style={{position: 'relative'}} onSubmit={
                 form.onSubmit(async (values) => {
@@ -62,21 +62,21 @@ export default function LoginForm() {
                     label={"Email:"}
                     placeholder={"mail@example.com"}
                     required={true}
-                    icon={<MdAlternateEmail size={14}/>}
+                    leftSection={<MdAlternateEmail size={14}/>}
                 />
 
                 <Space h="lg"/>
 
-                <Group position="right" mt="md">
+                <Group justify="flex-end" mt="md">
                     <Button type={"submit"} disabled={resetStatus == Status.Success}
                             loading={resetStatus == Status.Loading}>Resetează parola</Button>
                 </Group>
             </form>
 
             {resetStatus == Status.Failed &&
-                <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-                    backgroundColor: theme.colors.orange,
-                })}>
+                <Paper shadow={"0"} p={"md"} style={{
+                    backgroundColor: `var(--mantine-color-orange)`,
+                }}>
                     <Text>A fost întâmpinată o eroare!</Text>
                 </Paper>
             }

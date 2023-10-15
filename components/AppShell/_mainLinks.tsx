@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 import {MdAdminPanelSettings, MdBookmarks, MdHome} from 'react-icons/md';
-import {Group, Stack, Text, ThemeIcon, UnstyledButton} from '@mantine/core';
+import {Button, Stack, Text, ThemeIcon} from '@mantine/core';
 import Link from "next/link";
 import {MemberTypes} from "../../types/wrapper";
 import useProfileData, {ProfileData} from "../../hooks/useProfileData";
@@ -13,32 +13,24 @@ interface MainLinkProps {
 }
 
 function MainLink({icon, color, label, link}: MainLinkProps) {
-    return (
-        <Link href={link} passHref={true} prefetch={false}>
-            <UnstyledButton
-                sx={(theme) => ({
-                    display: 'block',
-                    width: '100%',
-                    padding: theme.spacing.xs,
-                    borderRadius: theme.radius.sm,
-                    color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
-
-                    '&:hover': {
-                        backgroundColor:
-                            theme.colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
-                    },
-                })}
-            >
-                <Group noWrap={true}>
-                    <ThemeIcon radius={"md"} variant={'light'} color={color} size="lg">
-                        {icon}
-                    </ThemeIcon>
-
-                    <Text size="md">{label}</Text>
-                </Group>
-            </UnstyledButton>
-        </Link>
-    );
+    return <Link href={link} passHref={true} prefetch={false}>
+        <Button
+            leftSection={
+                <ThemeIcon radius={"md"} variant={'light'} color={color} size="lg">
+                    {icon}
+                </ThemeIcon>
+            }
+            fullWidth={true}
+            p={'xs'}
+            radius={'sm'}
+            size={'xl'}
+            variant={'subtle'}
+            color={'gray'}
+            justify={'start'}
+        >
+            <Text size="md" c="#FFF">{label}</Text>
+        </Button>
+    </Link>
 }
 
 interface MainLinkData {
@@ -73,5 +65,5 @@ export default function MainLinks() {
         })
     }, [profileData])
 
-    return <Stack>{links}</Stack>
+    return <Stack py={'sm'} gap={'xs'}>{links}</Stack>
 }

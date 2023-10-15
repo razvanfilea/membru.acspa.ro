@@ -25,7 +25,7 @@ export default function RestrictedReservationsList(params: IParams) {
     const game_location = params.location
 
     const {data: allProfiles} = useProfilesQuery()
-    const {data: restrictions, isLoading, isError, refetch} = useRestrictionsQuery()
+    const {data: restrictions, refetch} = useRestrictionsQuery()
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
     const hourInputHandlers = useRef<NumberInputHandlers>();
@@ -127,17 +127,17 @@ export default function RestrictedReservationsList(params: IParams) {
             </form>
         </Modal>
 
-        <Stack sx={(theme) => ({
-            padding: theme.spacing.lg,
-            '@media (max-width: 900px)': {
-                paddingLeft: theme.spacing.md,
-                paddingRight: theme.spacing.md,
+        <Stack style={{
+            padding: `var(--mantine-spacing-lg)`,
+            '@media (maxWidth: 900px)': {
+                paddingLeft: `var(--mantine-spacing-md)`,
+                paddingRight: `var(--mantine-spacing-md)`,
             },
-            '@media (max-width: 600px)': {
+            '@media (maxWidth: 600px)': {
                 paddingLeft: 0,
                 paddingRight: 0,
             }
-        })}>
+        }}>
             <AdminTopBar
                 title={'Rezervările blocate:'}
                 onAdd={() => setCreateModalOpened(true)}/>

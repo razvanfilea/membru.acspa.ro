@@ -57,17 +57,17 @@ export default function CreateMember() {
     }, [])
 
     return (<>
-        <Stack sx={(theme) => ({
-            padding: theme.spacing.lg,
-            '@media (max-width: 900px)': {
-                paddingLeft: theme.spacing.md,
-                paddingRight: theme.spacing.md,
+        <Stack style={{
+            padding: `var(--mantine-spacing-lg)`,
+            '@media (maxWidth: 900px)': {
+                paddingLeft: `var(--mantine-spacing-md)`,
+                paddingRight: `var(--mantine-spacing-md)`,
             },
-            '@media (max-width: 600px)': {
+            '@media (maxWidth: 600px)': {
                 paddingLeft: 0,
                 paddingRight: 0,
             }
-        })}>
+        }}>
             <form style={{position: 'relative'}} onSubmit={
                 form.onSubmit(async (values) => {
                     const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRole!, {
@@ -117,7 +117,7 @@ export default function CreateMember() {
                     label={"Email:"}
                     placeholder={"Email"}
                     required={true}
-                    icon={<MdAlternateEmail size={14}/>}
+                    leftSection={<MdAlternateEmail size={14}/>}
                     pt={'lg'}
                     pb={'md'}
                 />
@@ -128,7 +128,7 @@ export default function CreateMember() {
                     label={"Nume:"}
                     placeholder={"Nume"}
                     required={true}
-                    icon={<MdPerson size={14}/>}
+                    leftSection={<MdPerson size={14}/>}
                     pb={'md'}
                 />
 
@@ -138,7 +138,7 @@ export default function CreateMember() {
                     label={"Rol:"}
                     placeholder={"Role"}
                     required={true}
-                    icon={<MdGroups size={14}/>}
+                    leftSection={<MdGroups size={14}/>}
                     data={memberRoles || []}
                     pb={'md'}
                 />
@@ -149,7 +149,7 @@ export default function CreateMember() {
                     type={"text"}
                     placeholder={"Parola"}
                     required={true}
-                    icon={<MdPassword size={14}/>}
+                    leftSection={<MdPassword size={14}/>}
                     pb={'lg'}
                 />
 
@@ -158,9 +158,7 @@ export default function CreateMember() {
             </form>
 
             {registerState == RegisterState.Failed &&
-                <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-                    backgroundColor: theme.colors.orange,
-                })}>
+                <Paper shadow={"0"} p={"md"} style={{backgroundColor: `var(--mantine-color-orange)`}}>
                     <Text>A fost întâmpinată o eroare la înregistrare:</Text>
                     <Text>{error}</Text>
                 </Paper>

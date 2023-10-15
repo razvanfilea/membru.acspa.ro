@@ -2,7 +2,7 @@ import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
 import React, {useEffect, useMemo, useState} from "react";
 import {Profile, Reservation} from "../../types/wrapper";
-import {Button, Center, Divider, Grid, Group, Loader, Space, Stack, Text} from "@mantine/core";
+import {Button, Divider, Grid, Group, Space, Stack, Text} from "@mantine/core";
 import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
@@ -20,7 +20,7 @@ export default function DailySituationPage() {
 
     const supabase = useSupabaseClient<Database>()
 
-    const {data: allProfiles, isLoading} = useProfilesQuery()
+    const {data: allProfiles} = useProfilesQuery()
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [reservations, setReservations] = useState<Reservation[]>([])
 
@@ -57,17 +57,13 @@ export default function DailySituationPage() {
             </Grid.Col>
 
             <Grid.Col span={2}>
-                {isLoading ?
-                    <Center><Loader/></Center>
-                    :
-                    <Stack p={'md'}>
-                        {date ?
-                            SelectedDateReservations(allProfiles || [], groupedReservations)
-                            :
-                            <Text size={'xl'}>Selectează o dată pentru a vedea rezervările</Text>
-                        }
-                    </Stack>
-                }
+                <Stack p={'md'}>
+                    {date ?
+                        SelectedDateReservations(allProfiles || [], groupedReservations)
+                        :
+                        <Text size={'xl'}>Selectează o dată pentru a vedea rezervările</Text>
+                    }
+                </Stack>
             </Grid.Col>
         </Grid>
 
@@ -89,7 +85,8 @@ function SelectedDateReservations(allProfiles: Profile[], reservations: Record<n
                                 name: 'Necunoscut',
                                 has_key: false
                             }
-                            return <Button key={user.user_id} radius={'xl'} color={'gray'} size={'xs'}>{index + 1}. {profile.name}</Button>
+                            return <Button key={user.user_id} radius={'xl'} color={'gray'}
+                                           size={'xs'}>{index + 1}. {profile.name}</Button>
                         })
                     }
                 </Group>

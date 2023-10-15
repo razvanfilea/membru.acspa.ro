@@ -1,6 +1,5 @@
 import React, {ReactElement, useEffect, useState} from 'react';
-import {ActionIcon, AppShell, Burger, Group, Header, Image, Navbar, Transition, useMantineTheme} from '@mantine/core';
-import LightAndDarkModeButton from "./_themeButton";
+import {ActionIcon, AppShell, Burger, Group, Image, Transition, useMantineTheme} from '@mantine/core';
 import MainLinks from "./_mainLinks";
 import UserProfile from "./_user";
 import {useRouter} from "next/router";
@@ -20,61 +19,55 @@ export default function MyAppShell({children}): ReactElement {
         });
     }, [router.events]);
 
-    return <AppShell
-        navbarOffsetBreakpoint="sm"
-        header={
-            <Header height={70} p="md" style={{display: 'flex', alignItems: 'center', height: '100%'}}>
-                {!navbarQuery &&
-                    <Burger
-                        opened={opened}
-                        onClick={() => setOpened((o) => !o)}
-                        size="sm"
-                        color={theme.colors.gray[6]}
-                        mr="xl"
-                        title="Open menu"
-                    />
-                }
+    return <AppShell header={{height: 70}} navbar={{breakpoint: "sm", width: 300}}>
+        <AppShell.Header p="sm" style={{display: 'flex', alignItems: 'center'}}>
+            {!navbarQuery &&
+                <Burger
+                    opened={opened}
+                    onClick={() => setOpened((o) => !o)}
+                    size="sm"
+                    color={theme.colors.gray[6]}
+                    mr="xl"
+                    title="Open menu"
+                />
+            }
 
-                <div>
-                    <Image src={"/logo.webp"}
-                           height={55}
-                           fit={'contain'}
-                           alt="Logo"/>
-                </div>
+            <div>
+                <Image src={"/logo.webp"}
+                       height={55}
+                       fit={'contain'}
+                       alt="Logo"/>
+            </div>
 
-                <Group style={{marginLeft: 'auto'}}>
-                    <ActionIcon
-                        variant="filled"
-                        radius={'md'}
-                        size={'lg'}
-                        onClick={() => window.open('regulament_intern.pdf', '_blank')}
-                        color={'grape'}
-                        title="Regulament Intern"
-                    >
-                        <MdGavel size={18}/>
-                    </ActionIcon>
+            <Group style={{marginLeft: 'auto'}}>
+                <ActionIcon
+                    variant="filled"
+                    radius={'md'}
+                    size={'lg'}
+                    onClick={() => window.open('regulament_intern.pdf', '_blank')}
+                    color={'grape'}
+                    title="Regulament Intern"
+                >
+                    <MdGavel size={18}/>
+                </ActionIcon>
 
-                    <HelpButton/>
+                <HelpButton/>
+            </Group>
+        </AppShell.Header>
 
-                    <LightAndDarkModeButton/>
-                </Group>
-            </Header>
-        }
-        navbar={
-            <Transition transition='slide-right' duration={300} timingFunction='ease' mounted={opened || navbarQuery}>
-                {(styles) =>
-                    <Navbar style={styles} p="xs" width={{base: 300}}>
-                        <Navbar.Section mt="md">
-                            <MainLinks/>
-                        </Navbar.Section>
-                        <Navbar.Section mt="md">
-                            <UserProfile/>
-                        </Navbar.Section>
-                    </Navbar>
-                }
-            </Transition>
-        }
-    >
-        {children}
+        <Transition
+            transition='slide-right' duration={300} timingFunction='ease'
+            mounted={opened || navbarQuery || false}>
+            {(styles) =>
+                <AppShell.Navbar p="xs" style={styles}>
+                    <MainLinks/>
+                    <UserProfile/>
+                </AppShell.Navbar>
+            }
+        </Transition>
+
+        <AppShell.Main>
+            {children}
+        </AppShell.Main>
     </AppShell>
 }

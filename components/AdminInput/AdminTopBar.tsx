@@ -11,10 +11,10 @@ interface IParams {
 export default function AdminTopBar({title, onAdd}: IParams) {
     const router = useRouter()
 
-    return <Group position={'apart'}>
+    return <Group justify="space-between">
         <Title order={2}>{title}</Title>
 
-        <Group spacing={'lg'}>
+        <Group gap={'lg'}>
             {onAdd &&
                 <ActionIcon
                     variant={'filled'}

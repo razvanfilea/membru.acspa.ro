@@ -47,7 +47,7 @@ export default function LoginForm() {
         }
     }, [loginState, router])
 
-    return <Stack sx={{maxWidth: 480}} mx="auto">
+    return <Stack style={{maxWidth: 480}} mx="auto">
         <form style={{position: 'relative'}} onSubmit={
             form.onSubmit(async (values) => {
                 setLoginState(LoginState.Loading)
@@ -68,7 +68,7 @@ export default function LoginForm() {
                 label={"Email:"}
                 placeholder={"mail@example.com"}
                 required={true}
-                icon={<MdAlternateEmail size={14}/>}
+                leftSection={<MdAlternateEmail size={14}/>}
             />
 
             <Space h={"lg"}/>
@@ -78,12 +78,12 @@ export default function LoginForm() {
                 label={"Parola:"}
                 placeholder={"Parola"}
                 required={true}
-                icon={<MdPassword size={14}/>}
+                leftSection={<MdPassword size={14}/>}
             />
 
             <Space h="lg"/>
 
-            <Group position="apart" mt="md">
+            <Group justify="space-between" mt="md">
                 <Button variant={'subtle'}><Link href={'/forgot_password'}>Am uitat parola</Link></Button>
 
                 <Button type={"submit"}
@@ -92,9 +92,9 @@ export default function LoginForm() {
         </form>
 
         {loginState == LoginState.Failed &&
-            <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-                backgroundColor: theme.colors.orange,
-            })}>
+            <Paper shadow={"0"} p={"md"} style={{
+                backgroundColor: `var(--mantine-color-orange)`,
+            }}>
                 <Text>Eroare: {loginError}</Text>
             </Paper>
         }

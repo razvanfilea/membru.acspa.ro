@@ -79,41 +79,41 @@ export default function ProfilePage({locations}: IParams) {
         return (<></>)
 
     return (<>
-        <Paper shadow={"md"} p={'lg'} sx={(theme) => ({
-            backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[1],
-            margin: theme.spacing.lg,
-            '@media (max-width: 900px)': {
-                margin: theme.spacing.xs,
+        <Paper shadow={"md"} p={'lg'} style={{
+            backgroundColor: `var(--mantine-color-dark-4)`,
+            margin: `var(--mantine-spacing-lg)`,
+            '@media (maxWidth: 900px)': {
+                margin: `var(--mantine-spacing-xs)`,
             },
-        })}>
+        }}>
 
-            <Group position={"apart"}>
+            <Group justify="space-between">
                 <UserProfileLayout profile={profileData.profile}/>
 
                 <Group>
                     <Link href={'password_recovery'}>
-                        <Button leftIcon={<MdPassword/>} variant={"outline"} color={'blue'}>Schimbă parola</Button>
+                        <Button leftSection={<MdPassword/>} variant={"outline"} color={'blue'}>Schimbă parola</Button>
                     </Link>
 
-                    <Button leftIcon={<MdLogout/>} variant={"outline"} color={'red'}
+                    <Button leftSection={<MdLogout/>} variant={"outline"} color={'red'}
                             onClick={() => signOut(supabase, router)}>Sign out</Button>
                 </Group>
             </Group>
 
         </Paper>
 
-        <Stack sx={(theme) => ({
-            padding: theme.spacing.lg,
-            '@media (max-width: 900px)': {
-                paddingLeft: theme.spacing.md,
-                paddingRight: theme.spacing.md,
+        <Stack style={{
+            padding: `var(--mantine-spacing-lg)`,
+            '@media (maxWidth: 900px)': {
+                paddingLeft: `var(--mantine-spacing-md)`,
+                paddingRight: `var(--mantine-spacing-md)`,
             },
-            '@media (max-width: 600px)': {
+            '@media (maxWidth: 600px)': {
                 paddingLeft: 0,
                 paddingRight: 0,
             }
-        })}>
-            <Group position={'apart'}>
+        }}>
+            <Group justify="space-between">
                 <Title order={2}>Rezervările tale:</Title>
 
                 <ActionIcon variant={'light'} radius={'xl'} size={36}

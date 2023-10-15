@@ -69,12 +69,12 @@ export function ConfirmSelection(
         } else if (status == ConfirmationStatus.Success) {
             return <></>
         } else {
-            return <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-                backgroundColor: theme.colors.orange,
-                marginTop: theme.spacing.sm,
-                marginBottom: theme.spacing.xs
-            })}>
-                <Text align={"center"} color="#FFF">Rezervarea nu a putut fi realizată: {responseMessage}</Text>
+            return <Paper shadow={"0"} p={"md"} style={{
+                backgroundColor: `var(--mantine-color-orange)`,
+                marginTop: `var(--mantine-spacing-sm)`,
+                marginBottom: `var(--mantine-spacing-xs)`
+            }}>
+                <Text ta={"center"} c="#FFF">Rezervarea nu a putut fi realizată: {responseMessage}</Text>
             </Paper>
         }
     }
@@ -98,12 +98,12 @@ export function ConfirmSelection(
 
         {status === ConfirmationStatus.Success &&
             <Stack>
-                <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-                    backgroundColor: responseMessage == null ? theme.colors.green : theme.colors.blue,
-                    marginTop: theme.spacing.sm,
-                    marginBottom: theme.spacing.xs
-                })}>
-                    <Text align={"center"} color="#FFF">
+                <Paper shadow={"0"} p={"md"} style={{
+                    backgroundColor: responseMessage == null ? `var(--mantine-color-green)` : `var(--mantine-color-blue)`,
+                    marginTop: `var(--mantine-spacing-sm)`,
+                    marginBottom: `var(--mantine-spacing.xs)`
+                }}>
+                    <Text ta={"center"} c="#FFF">
                         {responseMessage == null ?
                             <>Ai rezervare
                                 pe <b>{(new Date(fakeReservation.start_date)).toLocaleDateString('ro-RO')}</b> de la
@@ -116,7 +116,7 @@ export function ConfirmSelection(
 
                 {responseMessage == null &&
                     <Group align={"center"}>
-                        <Text weight={600}>Rezervarea poate fi anulată de pe pagina ta de profil:</Text>
+                        <Text fw={600}>Rezervarea poate fi anulată de pe pagina ta de profil:</Text>
                         <Link href={"/profile"}>
                             <Button variant={'light'}>Vezi profilul</Button>
                         </Link>

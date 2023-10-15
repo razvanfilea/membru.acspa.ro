@@ -1,6 +1,6 @@
 import React, {ReactElement, useEffect, useMemo, useState} from "react";
 import Head from "next/head";
-import {ActionIcon, Button, Grid, Group, Overlay, Space, Stack, Text, Title} from "@mantine/core";
+import {ActionIcon, Box, Button, Grid, Group, Overlay, Space, Stack, Text, Title} from "@mantine/core";
 import 'dayjs/locale/ro'
 import {Location, LocationName, MemberTypes} from "../types/wrapper";
 import {useRouter} from "next/router";
@@ -49,12 +49,12 @@ export default function MakeReservationPage(params: IParams): ReactElement {
 
     const location = locationName == LocationName.Gara ? params.gara : params.boromir;
 
-    return <>
+    return <Box p={'md'}>
         <Head>
             <title>Rezervări - ACSPA</title>
         </Head>
 
-        <Group position={'apart'} align={'center'}>
+        <Group justify="space-between" align={'center'}>
             <Title>Rezervări</Title>
             {globalVars?.entrance_code &&
                 <Text size={'lg'}>Cod intrare: <b>{globalVars?.entrance_code}</b></Text>
@@ -88,10 +88,10 @@ export default function MakeReservationPage(params: IParams): ReactElement {
                                 && date.getMonth() === (new Date).getMonth()
                                 && date.getDate() !== selectedDate?.getDate()) {
                                 return {
-                                    sx: (theme) => ({
-                                        backgroundColor: theme.colors.blue[7],
-                                        color: theme.white
-                                    })
+                                    style: {
+                                        backgroundColor: `var(-mantine-color-blue-7)`,
+                                        color: `var(-mantine-color-white)`
+                                    }
                                 };
                             }
                             return {};
@@ -117,7 +117,7 @@ export default function MakeReservationPage(params: IParams): ReactElement {
             <Overlay center={true} fixed={true} opacity={0.85}>
                 <Stack p={'md'}>
                     <Title>Site-ul este în mentenanță.</Title>
-                    <Group position={'apart'} m={'lg'}>
+                    <Group justify="space-between" m={'lg'}>
                         <Text>Vă rugăm reveniți mai târziu</Text>
 
                         <ActionIcon variant={'filled'} radius={'xl'} size={48} onClick={() => router.reload()}>
@@ -134,7 +134,7 @@ export default function MakeReservationPage(params: IParams): ReactElement {
                 </Stack>
             </Overlay>
         }
-    </>
+    </Box>
 }
 
 export async function getStaticProps({}) {

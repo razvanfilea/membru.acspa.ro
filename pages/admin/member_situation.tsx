@@ -49,20 +49,15 @@ export default function SituationPage() {
     return <Grid
         grow={true}
         columns={4}
-        sx={(theme) => ({
-            marginBottom: theme.spacing.xl
-        })}
+        style={{
+            marginBottom: `var(--mantine-spacing-xl)`
+        }}
     >
         <Grid.Col span={"auto"}>
             <Stack p={'md'}>
                 <Select
                     label="Alege un member"
                     searchable
-                    transitionProps={{
-                        transition: "pop-top-left",
-                        duration: 80,
-                        timingFunction: "ease"
-                    }}
                     data={allProfiles?.map(profile => ({value: profile.id, label: profile.name})) || []}
                     value={selectedProfileId}
                     required={true}
@@ -97,8 +92,7 @@ export default function SituationPage() {
         </Grid.Col>
 
         <Grid.Col span={2}>
-            <Stack p={'md'} id={"report"}
-                   sx={(theme) => ({backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[0]})}>
+            <Stack p={'md'} id={"report"} style={{backgroundColor: `var(--mantine-color-dark-7)`}}>
                 {selectedProfileId &&
                     SelectedUserReservations(filteredReservations)
                 }
@@ -117,10 +111,10 @@ function SelectedUserReservations(reservations: Reservation[]) {
         {
             approvedReservations.map((reservation, index) => {
                 return <Card key={reservation.id}>
-                    <Group position={'apart'}>
+                    <Group justify="space-between">
                         <Text>{index + 1}</Text>
 
-                        <Text weight={900}>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</Text>
+                        <Text fw={900}>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</Text>
 
                         <Text>De
                             la <b>{reservation.start_hour}:{'00'}</b></Text>
@@ -135,10 +129,10 @@ function SelectedUserReservations(reservations: Reservation[]) {
         {
             cancelledReservations.map((reservation, index) => {
                 return <Card key={reservation.id}>
-                    <Group position={'apart'}>
+                    <Group justify="space-between">
                         <Text>{index + 1}</Text>
 
-                        <Text weight={900}>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</Text>
+                        <Text fw={900}>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</Text>
 
                         <Text>De la <b>{reservation.start_hour}:{'00'}</b></Text>
                     </Group>

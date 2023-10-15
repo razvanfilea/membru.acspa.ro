@@ -1,21 +1,25 @@
 import '../styles/globals.css'
+import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
 import Head from 'next/head';
 import MyAppShell from "../components/AppShell";
 import React, {ReactElement} from "react";
-import {ColorScheme, ColorSchemeProvider, MantineProvider} from '@mantine/core';
-import {useLocalStorage} from "@mantine/hooks";
+import {createTheme, MantineProvider} from '@mantine/core';
 import {AppProps} from "next/app";
 import {createPagesBrowserClient} from '@supabase/auth-helpers-nextjs'
 import {Session, SessionContextProvider} from '@supabase/auth-helpers-react'
 import {QueryClient, QueryClientProvider} from "react-query";
 import {ProfileProvider} from "../hooks/useProfileData";
-import {Open_Sans} from 'next/font/google'
 
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {retry: 1}
     }
 })
+
+const theme = createTheme({
+    primaryColor: 'orange',
+});
 
 export default function MyApp({
                                   Component,
@@ -25,17 +29,6 @@ export default function MyApp({
 }>): ReactElement {
     const [supabaseClient] = React.useState(() => createPagesBrowserClient())
 
-    const [colorScheme, setLocalColorScheme] = useLocalStorage<ColorScheme>({
-        key: 'color-scheme',
-        defaultValue: 'dark',
-        getInitialValueInEffect: true,
-    });
-
-    const toggleColorScheme = (value?: ColorScheme) => {
-        const newValue = value || (colorScheme === 'dark' ? 'light' : 'dark')
-        setLocalColorScheme(newValue)
-    }
-
     return <>
         <Head>
             <title>ACSPA</title>
@@ -44,30 +37,23 @@ export default function MyApp({
         </Head>
 
         <QueryClientProvider client={queryClient}>
-            <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
-                <MantineProvider
-                    withGlobalStyles
-                    withNormalizeCSS
-                    theme={{
-                        colorScheme: colorScheme,
-                        primaryColor: 'orange'
-                    }}
-                >
-                    <SessionContextProvider supabaseClient={supabaseClient}
-                                            initialSession={pageProps.initialSession}>
-                        <ProfileProvider>
-                            <style jsx global>{`
-                              html {
-                                font-family: 'Open Sans', sans-serif;
-                              }
-                            `}</style>
-                            <MyAppShell>
-                                <Component {...pageProps} />
-                            </MyAppShell>
-                        </ProfileProvider>
-                    </SessionContextProvider>
-                </MantineProvider>
-            </ColorSchemeProvider>
+            <MantineProvider
+                defaultColorScheme={'dark'}
+                theme={theme}>
+                <SessionContextProvider supabaseClient={supabaseClient}
+                                        initialSession={pageProps.initialSession}>
+                    <ProfileProvider>
+                        <style jsx global>{`
+                          html {
+                            font-family: 'Open Sans', sans-serif;
+                          }
+                        `}</style>
+                        <MyAppShell>
+                            <Component {...pageProps} />
+                        </MyAppShell>
+                    </ProfileProvider>
+                </SessionContextProvider>
+            </MantineProvider>
         </QueryClientProvider>
     </>;
 }

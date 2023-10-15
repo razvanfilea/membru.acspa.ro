@@ -31,10 +31,10 @@ export default function PasswordRecoveryPage() {
         if (state == 'resetting')
             return <Loader/>
 
-        return <Text color={'red'}>A avut loc o eroare: {state}</Text>
+        return <Text c={'red'}>A avut loc o eroare: {state}</Text>
     }
 
-    return <Stack sx={{maxWidth: 480}} mx="auto">
+    return <Stack style={{maxWidth: 480}} mx="auto">
         <form style={{position: 'relative'}}
               onSubmit={form.onSubmit(async (values) => {
                   setState('resetting')
@@ -69,7 +69,7 @@ export default function PasswordRecoveryPage() {
 
             <Space h={'xl'}/>
 
-            <Group position={"center"}>
+            <Group justify={"center"}>
                 <FormBottomSection/>
             </Group>
         </form>

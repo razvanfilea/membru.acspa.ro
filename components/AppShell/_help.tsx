@@ -22,7 +22,7 @@ export default function HelpButton({}) {
                 <Stack align={'flex-start'}>
                     <Text size={'lg'}><b>Cod culori rezervări:</b></Text>
                     <Button color={'orange'} radius={'xl'} size={'xs'}>Antrenor</Button>
-                    <Button color={'blue'} radius={'xl'} size={'xs'} rightIcon={<MdVpnKey />}>Deține cheie la sală</Button>
+                    <Button color={'blue'} radius={'xl'} size={'xs'} rightSection={<MdVpnKey />}>Deține cheie la sală</Button>
                     <Button color={'gray'} radius={'xl'} size={'xs'}>Membru ACS</Button>
                     <Button color={'pink'} radius={'xl'} size={'xs'}>Invitat special</Button>
                     <Button color={'cyan'} radius={'xl'} size={'xs'}>Invitat antrenamente</Button>

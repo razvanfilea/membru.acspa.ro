@@ -7,14 +7,14 @@ export default function AdminPage(): ReactElement {
     useExitIfNotFounder();
 
     return <Paper>
-        <Card sx={(theme) => ({margin: theme.spacing.md})}>
+        <Card style={{margin: `var(--mantine-spacing-md)`}}>
             <Title>Panou administrare</Title>
-            <Text size={'sm'} sx={(theme) => ({margin: theme.spacing.xs})}>
+            <Text size={'sm'} style={{margin: `var(--mantine-spacing-xs)`}}>
                 Este necesară discreția utilizatorului: datele de intrare nu sunt validate.</Text>
 
             <Space h={'md'}/>
 
-            <Stack spacing={'lg'}>
+            <Stack gap={'lg'}>
                 <Link href={'/admin/settings'}>
                     <Button color={'red'}>Setări website</Button>
                 </Link>
@@ -35,7 +35,7 @@ export default function AdminPage(): ReactElement {
 
                 <Text>Situații</Text>
 
-                <Group spacing={'lg'}>
+                <Group gap={'lg'}>
                     <Link href={'/admin/daily_situation'}>
                         <Button color={'lime'}>Situație zilnică</Button>
                     </Link>

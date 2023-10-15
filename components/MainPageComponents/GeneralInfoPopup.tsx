@@ -1,6 +1,6 @@
 import React, {ReactElement} from "react";
 import {useLocalStorage} from "@mantine/hooks";
-import {ActionIcon, Group, Paper, Space, Text} from "@mantine/core";
+import {ActionIcon, Box, Group, Space, Text} from "@mantine/core";
 import {MdClose} from "react-icons/md";
 
 interface IShowInfoPopup {
@@ -18,14 +18,10 @@ export function GeneralInfoPopup(): ReactElement {
         getInitialValueInEffect: true,
     })
 
-    if (showInformationPopup.value || showInformationPopup.expiry < new Date().getTime()) {
-        return <Paper shadow={"0"} p={"md"} sx={(theme) => ({
-            backgroundColor: theme.colors.cyan[9],
-            marginTop: theme.spacing.lg,
-            marginBottom: theme.spacing.lg,
-        })}>
-            <Group noWrap={true}>
-                <Text style={{width: '100%'}}>
+    if (showInformationPopup?.value || showInformationPopup?.expiry! < new Date().getTime()) {
+        return <Box bg={"cyan"} my={'lg'} p={"md"}>
+            <Group wrap={'nowrap'}>
+                <Text style={{width: '100%'}} c={"#FFF"}>
                     Rezervările se fac până la ora 17 respectiv 19 pentru ziua respectivă. Max 8 jucători
                     pentru un
                     interval orar. Când știți că nu ajungeți, retrageți-vă pentru a lăsa loc liber altor
@@ -43,7 +39,7 @@ export function GeneralInfoPopup(): ReactElement {
                     <MdClose size={24}/>
                 </ActionIcon>
             </Group>
-        </Paper>
+        </Box>
     }
 
     return <Space h={'lg'} />

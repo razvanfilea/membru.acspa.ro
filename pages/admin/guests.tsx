@@ -110,17 +110,17 @@ export default function GuestManager(params: IParams) {
             </form>
         </Modal>
 
-        <Stack sx={(theme) => ({
-            padding: theme.spacing.lg,
-            '@media (max-width: 900px)': {
-                paddingLeft: theme.spacing.md,
-                paddingRight: theme.spacing.md,
+        <Stack style={{
+            padding: `var(--mantine-spacing-lg)`,
+            '@media (maxWidth: 900px)': {
+                paddingLeft: `var(--mantine-spacing-md)`,
+                paddingRight: `var(--mantine-spacing-md)`,
             },
-            '@media (max-width: 600px)': {
+            '@media (maxWidth: 600px)': {
                 paddingLeft: 0,
                 paddingRight: 0,
             }
-        })}>
+        }}>
             <AdminTopBar
                 title={'Invitați:'}
                 onAdd={() => setCreateModalOpened(true)}/>

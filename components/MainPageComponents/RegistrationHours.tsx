@@ -37,7 +37,7 @@ function MembersAndGuests(
 ): ReactElement {
     const supabase = useSupabaseClient<Database>()
 
-    return <Group style={{marginLeft: "1em", marginRight: "1em"}} spacing={"xs"}>
+    return <Group style={{marginLeft: "1em", marginRight: "1em"}} gap={"xs"}>
         <Text>Listă înscriși: </Text>
         {reservations.map((reservation, index) => {
             const profile = profiles?.find(value => value.id == reservation.user_id)
@@ -54,7 +54,7 @@ function MembersAndGuests(
             return <Popover width={200} withArrow={true} shadow={"md"} key={reservation.id}>
                 <Popover.Target>
                     <Button color={buttonColor} radius={'xl'}
-                            size={'xs'} rightIcon={icon}>{index + 1}. {profile.name}</Button>
+                            size={'xs'} rightSection={icon}>{index + 1}. {profile.name}</Button>
                 </Popover.Target>
 
                 <Popover.Dropdown>
@@ -88,7 +88,7 @@ function MembersAndGuests(
                 <Popover.Target>
                     <Button
                         color={guest.special ? 'pink' : 'cyan'} radius={'xl'}
-                        size={'xs'} rightIcon={<MdOutlineNoAccounts/>}>
+                        size={'xs'} rightSection={<MdOutlineNoAccounts/>}>
                         {reservations.length + index + 1}. {guest.guest_name}
                     </Button>
                 </Popover.Target>
@@ -133,13 +133,13 @@ export function RegistrationHours(
         const restriction = selectedRestrictions.find(value => value.start_hour == hour)
 
         content.push(<Stack key={hour}>
-            <Group noWrap={true} style={{marginLeft: "1em", marginRight: "1em"}} spacing={'lg'}>
+            <Group wrap={'nowrap'} style={{marginLeft: "1em", marginRight: "1em"}} gap={'lg'}>
                 <Text>{`Ora ${hour} - ${hour + duration}`}:</Text>
 
                 {!restriction ? (
                     TableButton(hour, selectedStartHour, onSetStartHour)
                 ) : (
-                    <Text color={'red'} size={'lg'}>{restriction.message}</Text>
+                    <Text c={'red'} size={'lg'}>{restriction.message}</Text>
                 )}
             </Group>
 

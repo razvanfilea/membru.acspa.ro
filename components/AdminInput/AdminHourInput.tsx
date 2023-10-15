@@ -11,7 +11,7 @@ interface IParams {
 
 export default function AdminHourInput({inputHandler, isWeekend, gameLocation, formProps}: IParams) {
 
-    return <Group spacing={8} noWrap={true} align={'end'}>
+    return <Group gap={8} wrap={'nowrap'} align={'end'}>
         <NumberInput
             {...formProps}
             handlersRef={inputHandler}

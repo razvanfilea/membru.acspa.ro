@@ -8,8 +8,8 @@ export default function ReservationRestrictionComponent(
     userName: string | null,
     onDelete: () => Promise<void>,
 ) {
-    return (<Group position={'apart'}>
-        <Stack spacing={0}>
+    return (<Group justify="space-between">
+        <Stack gap={0}>
             <Text>Data: <b>{(new Date(reservationRestriction.date)).toLocaleDateString('ro-RO')}</b></Text>
             <Text>De la ora {reservationRestriction.start_hour}:{'00'}</Text>
             <Text size={"sm"}>Creat de {userName || reservationRestriction.user_id}</Text>

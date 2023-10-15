@@ -8,13 +8,13 @@ interface IParams {
 }
 
 export function UserProfileLayout({profile}: IParams) {
-    return <Group noWrap={true}>
+    return <Group wrap={'nowrap'}>
         <Avatar
             src={`https://ui-avatars.com/api/?name=${profile.name}&background=random&rounded=true&format=svg`}
             radius={"md"}/>
 
-        <Stack spacing={1}>
-            <Text size="md" weight={500}>{profile.name}</Text>
+        <Stack gap={1}>
+            <Text size="md" fw={500}>{profile.name}</Text>
             <Text size="sm">{profile.role}</Text>
         </Stack>
 

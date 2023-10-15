@@ -5,9 +5,9 @@ import {getEndHour, Location, Reservation} from "../../types/wrapper";
 
 function ShowStatus(reservation: Reservation, onCancel: (() => Promise<void>) | null) {
     if (reservation.cancelled) {
-        return <Stack align={"center"} spacing={'xs'}>
+        return <Stack align={"center"} gap={'xs'}>
             <MdCancel size={32}/>
-            <Text weight={700}>Anulată</Text></Stack>
+            <Text fw={700}>Anulată</Text></Stack>
     }
 
     if (onCancel != null) {
@@ -25,8 +25,8 @@ export default function ReservationComponent(
     showStatus: boolean,
     onCancel: (() => Promise<void>) | null
 ): ReactElement {
-    return <Group position={"apart"}>
-        <Stack spacing={0}>
+    return <Group justify="space-between">
+        <Stack gap={0}>
             <Text>Pe data de <b>{(new Date(reservation.start_date)).toLocaleDateString('ro-RO')}</b> de la
                 ora <b>{reservation.start_hour}:{'00'}</b> la <b>{getEndHour(reservation, location)}:{'00'}</b></Text>
 

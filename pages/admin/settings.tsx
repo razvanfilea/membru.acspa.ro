@@ -13,14 +13,14 @@ export default function WebsiteSettingsPage(): ReactElement {
     const supabase = useSupabaseClient<Database>()
 
     const [maintenanceMode, setMaintenanceMode] = useState(false);
-    const [entranceCode, setEntranceCode] = useState<number | "">("");
+    const [entranceCode, setEntranceCode] = useState<number | string>("");
     useGlobalVars((vars) => {
         setMaintenanceMode(vars.maintenance)
         setEntranceCode(vars.entrance_code)
     });
 
-    return <Card sx={(theme) => ({margin: theme.spacing.md})}>
-        <Stack spacing={'xl'}>
+    return <Card style={{margin: `var(--mantine-spacing-md)`}}>
+        <Stack gap={'xl'}>
             <Title>Setări website</Title>
 
             <Switch
@@ -30,13 +30,13 @@ export default function WebsiteSettingsPage(): ReactElement {
 
             <NumberInput size={'lg'} label={"Cod intrare:"} hideControls={true} value={entranceCode} onChange={setEntranceCode}/>
 
-            <Space h={'xl'} />
+            <Space h={'lg'} />
 
             <Button size={'lg'} onClick={async () => {
                 await supabase.from('global_vars')
                     .update({
                         maintenance: maintenanceMode,
-                        entrance_code: entranceCode === "" ? undefined : entranceCode
+                        entrance_code: typeof entranceCode === 'string' ? undefined : entranceCode
                     })
                     .gte('maintenance', 0) // Workaround for supabase not allowing update without a where clause
                 router.back()

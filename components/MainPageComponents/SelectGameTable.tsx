@@ -114,10 +114,10 @@ function SelectGameTable(
         restrictions?.filter(value => value.date == selectedDateISO) || []
 
     return <>
-        <Group position={'apart'} align={"center"}>
-            <Group align={"center"} spacing={'xs'}>
-                <Text weight={600} ref={targetRef}>Data selectată:</Text>
-                <Text color={"blue"}>{new Date(selectedDateISO).toLocaleDateString('ro-RO')}</Text>
+        <Group justify="space-between" align={"center"}>
+            <Group align={"center"} gap={'xs'}>
+                <Text fw={600} ref={targetRef}>Data selectată:</Text>
+                <Text c={"blue"}>{new Date(selectedDateISO).toLocaleDateString('ro-RO')}</Text>
             </Group>
 
             <ActionIcon
