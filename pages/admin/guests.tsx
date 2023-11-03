@@ -1,6 +1,6 @@
 import 'dayjs/locale/ro';
-import {Button, Card, Modal, NumberInputHandlers, Radio, Stack, TextInput} from "@mantine/core";
-import React, {useMemo, useRef, useState} from "react";
+import {Button, Card, Modal, Radio, Stack, TextInput} from "@mantine/core";
+import React, {useMemo, useState} from "react";
 import {Location, LocationName} from "../../types/wrapper";
 import {useForm} from "@mantine/form";
 import {DatePickerInput} from "@mantine/dates";
@@ -28,7 +28,6 @@ export default function GuestManager(params: IParams) {
     const {data: guests, refetch: refetchGuests} = useGuestsQuery()
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
-    const hourInputHandlers = useRef<NumberInputHandlers>();
     const newInviteForm = useForm({
         initialValues: {
             date: new Date(),
@@ -65,7 +64,8 @@ export default function GuestManager(params: IParams) {
                     newInviteForm.reset()
 
                     const {error} = await supabase.from('guests').insert([newGuest])
-                    console.log(error)
+                    if (error != null)
+                        console.log(error)
                     await refetchGuests()
                 })}>
 
@@ -101,7 +101,6 @@ export default function GuestManager(params: IParams) {
 
                     <AdminHourInput
                         formProps={newInviteForm.getInputProps('startHour')}
-                        inputHandler={hourInputHandlers}
                         gameLocation={game_location}
                         isWeekend={hasSelectedWeekend}/>
 

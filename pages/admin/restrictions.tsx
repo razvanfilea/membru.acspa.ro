@@ -1,6 +1,6 @@
 import 'dayjs/locale/ro';
-import {Button, Card, Modal, NumberInputHandlers, Stack, Switch, TextInput} from "@mantine/core";
-import React, {useMemo, useRef, useState} from "react";
+import {Button, Card, Modal, Stack, Switch, TextInput} from "@mantine/core";
+import React, {useMemo, useState} from "react";
 import {Location, LocationName, ReservationRestriction} from "../../types/wrapper";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
@@ -28,7 +28,6 @@ export default function RestrictedReservationsList(params: IParams) {
     const {data: restrictions, refetch} = useRestrictionsQuery()
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
-    const hourInputHandlers = useRef<NumberInputHandlers>();
     const newRestrictionForm = useForm({
         initialValues: {
             date: new Date(),
@@ -109,7 +108,6 @@ export default function RestrictedReservationsList(params: IParams) {
                     {!newRestrictionForm.getInputProps('allDay').value &&
                         <AdminHourInput
                             formProps={newRestrictionForm.getInputProps('startHour')}
-                            inputHandler={hourInputHandlers}
                             gameLocation={game_location}
                             isWeekend={hasSelectedWeekend}
                         />
