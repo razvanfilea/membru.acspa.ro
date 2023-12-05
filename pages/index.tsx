@@ -89,8 +89,8 @@ export default function MakeReservationPage(params: IParams): ReactElement {
                                 && date.getDate() !== selectedDate?.getDate()) {
                                 return {
                                     style: {
-                                        backgroundColor: `var(-mantine-color-blue-7)`,
-                                        color: `var(-mantine-color-white)`
+                                        backgroundColor: `var(--mantine-color-blue-7)`,
+                                        color: `var(--mantine-color-white)`
                                     }
                                 };
                             }

@@ -98,10 +98,10 @@ export function ConfirmSelection(
 
         {status === ConfirmationStatus.Success &&
             <Stack>
-                <Paper shadow={"0"} p={"md"} style={{
-                    backgroundColor: responseMessage == null ? `var(--mantine-color-green)` : `var(--mantine-color-blue)`,
+                <Paper shadow={"0"} px={';g'} py={"md"} withBorder={true} radius={'xl'} style={{
+                    color: responseMessage == null ? `var(--mantine-color-green)` : `var(--mantine-color-blue)`,
                     marginTop: `var(--mantine-spacing-sm)`,
-                    marginBottom: `var(--mantine-spacing.xs)`
+                    marginBottom: `var(--mantine-spacing-xs)`
                 }}>
                     <Text ta={"center"} c="#FFF">
                         {responseMessage == null ?
