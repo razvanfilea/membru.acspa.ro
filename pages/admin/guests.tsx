@@ -1,6 +1,6 @@
 import 'dayjs/locale/ro';
 import {Button, Card, Modal, Radio, Stack, TextInput} from "@mantine/core";
-import React, {useMemo, useState} from "react";
+import {useMemo, useState} from "react";
 import {Location, LocationName} from "../../types/wrapper";
 import {useForm} from "@mantine/form";
 import {DatePickerInput} from "@mantine/dates";
@@ -90,7 +90,6 @@ export default function GuestManager(params: IParams) {
 
                     <DatePickerInput
                         {...newInviteForm.getInputProps('date')}
-                        placeholder="Alege data"
                         label="Data"
                         withAsterisk locale="ro"
                         minDate={new Date()}

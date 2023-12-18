@@ -1,5 +1,5 @@
 import {Button, Divider, Group, Popover, Stack, Text} from "@mantine/core";
-import React, {ReactElement} from "react";
+import {ReactElement} from "react";
 import {MdOutlineNoAccounts, MdVpnKey} from "react-icons/md";
 import {Guest, MemberTypes, Profile, Reservation, ReservationRestriction} from "../../types/wrapper";
 import {Database} from "../../types/database.types";
@@ -38,7 +38,7 @@ function MembersAndGuests(
     const supabase = useSupabaseClient<Database>()
 
     return <Group style={{marginLeft: "1em", marginRight: "1em"}} gap={"xs"}>
-        <Text>Listă înscriși: </Text>
+        <Text>Înscriși: </Text>
         {reservations.map((reservation, index) => {
             const profile = profiles?.find(value => value.id == reservation.user_id)
 

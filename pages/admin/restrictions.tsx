@@ -1,6 +1,6 @@
 import 'dayjs/locale/ro';
 import {Button, Card, Modal, Stack, Switch, TextInput} from "@mantine/core";
-import React, {useMemo, useState} from "react";
+import {useMemo, useState} from "react";
 import {Location, LocationName, ReservationRestriction} from "../../types/wrapper";
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
@@ -94,7 +94,6 @@ export default function RestrictedReservationsList(params: IParams) {
 
                     <DatePickerInput
                         {...newRestrictionForm.getInputProps('date')}
-                        placeholder="Alege data"
                         label="Data"
                         withAsterisk locale="ro"
                         minDate={new Date()}
