@@ -26,7 +26,6 @@ export default function MakeReservationPage(params: IParams): ReactElement {
     const profileData = useProfileData()
     const {data: globalVars} = useGlobalVars()
 
-    const [minDate] = useState(new Date);
     const [locationName, /*setLocationName*/] = useState(LocationName.Gara)
     const [selectedDate, setSelectedDate] = useState<Date>(new Date)
     const [selectedStartHour, setSelectedStartHour] = useState<number | null>(null)
@@ -71,33 +70,35 @@ export default function MakeReservationPage(params: IParams): ReactElement {
             <Grid.Col span={'auto'}>
                 <Text>Alege ziua rezervării:</Text>
 
-                <DatePicker
-                    minDate={minDate}
-                    maxDate={addDaysToDate(minDate, params.daysAhead)}
-                    hideOutsideDates={true}
-                    maxLevel={'month'}
-                    size={"lg"}
-                    locale={"ro"}
-                    value={selectedDate}
-                    onChange={(date) => {
-                        if (profileData.profile != null && date != null)
-                            onSelectedDateChange(date)
-                    }}
-                    getDayProps={(date) => {
-                        if (date.getDate() === (new Date).getDate()
-                            && date.getMonth() === (new Date).getMonth()
-                            && date.getDate() !== selectedDate?.getDate()) {
-                            return {
-                                style: {
-                                    backgroundColor: `var(--mantine-color-blue-7)`,
-                                    color: `var(--mantine-color-white)`
-                                }
-                            };
-                        }
-                        return {};
-                    }}
-                    withCellSpacing={true}
-                />
+                {!profileData.isLoading && profileData.profile != null &&
+                    <DatePicker
+                        minDate={new Date}
+                        maxDate={addDaysToDate(new Date, params.daysAhead)}
+                        hideOutsideDates={true}
+                        maxLevel={'month'}
+                        size={"lg"}
+                        locale={"ro"}
+                        value={selectedDate}
+                        onChange={(date) => {
+                            if (profileData.profile != null && date != null)
+                                onSelectedDateChange(date)
+                        }}
+                        getDayProps={(date) => {
+                            if (date.getDate() === (new Date).getDate()
+                                && date.getMonth() === (new Date).getMonth()
+                                && date.getDate() !== selectedDate?.getDate()) {
+                                return {
+                                    style: {
+                                        backgroundColor: `var(--mantine-color-blue-7)`,
+                                        color: `var(--mantine-color-white)`
+                                    }
+                                };
+                            }
+                            return {};
+                        }}
+                        withCellSpacing={true}
+                    />
+                }
             </Grid.Col>
 
             <Grid.Col span={2}>
