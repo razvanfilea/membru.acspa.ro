@@ -1,5 +1,5 @@
 import {ActionIcon, Group, Space, Stack, Text} from "@mantine/core";
-import React from "react";
+import {ReactElement} from "react";
 import {ReservationRestriction} from "../../types/wrapper";
 import {MdDelete} from "react-icons/md";
 
@@ -7,8 +7,8 @@ export default function ReservationRestrictionComponent(
     reservationRestriction: ReservationRestriction,
     userName: string | null,
     onDelete: () => Promise<void>,
-) {
-    return (<Group justify="space-between">
+): ReactElement{
+    return <Group justify="space-between">
         <Stack gap={0}>
             <Text>Data: <b>{(new Date(reservationRestriction.date)).toLocaleDateString('ro-RO')}</b></Text>
             <Text>De la ora {reservationRestriction.start_hour}:{'00'}</Text>
@@ -22,5 +22,5 @@ export default function ReservationRestrictionComponent(
         <ActionIcon size={'lg'} color={'red'} variant={'filled'} onClick={async () => onDelete()}>
             <MdDelete size={26}/>
         </ActionIcon>
-    </Group>)
+    </Group>
 }

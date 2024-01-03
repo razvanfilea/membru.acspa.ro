@@ -4,7 +4,7 @@ import {useMemo, useState} from "react";
 import {Location, LocationName} from "../../types/wrapper";
 import {useForm} from "@mantine/form";
 import {DatePickerInput} from "@mantine/dates";
-import {dateToISOString, isDateWeekend} from "../../utils/date";
+import {dateToISOString, isFreeDay} from "../../utils/date";
 import GuestInviteComponent from "../../components/GuestInvite";
 import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
@@ -13,6 +13,7 @@ import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 import useProfilesQuery from "../../hooks/useProfilesQuery";
 import useGuestsQuery from "../../hooks/useGuestsQuery";
+import useFreeDaysQuery from "../../hooks/useFreeDaysQuery";
 
 interface IParams {
     location: Location
@@ -26,11 +27,12 @@ export default function GuestManager(params: IParams) {
 
     const {data: allProfiles} = useProfilesQuery()
     const {data: guests, refetch: refetchGuests} = useGuestsQuery()
+    const {data: freeDays} = useFreeDaysQuery(new Date)
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
     const newInviteForm = useForm({
         initialValues: {
-            date: new Date(),
+            date: new Date,
             startHour: 0,
             guestName: '',
             guestType: 'antrenament',
@@ -42,10 +44,11 @@ export default function GuestManager(params: IParams) {
         validateInputOnBlur: true
     });
 
-    const hasSelectedWeekend = useMemo(() => isDateWeekend(newInviteForm.values.date),
-        [newInviteForm.values.date])
+    const hasSelectedWeekend = useMemo(
+        () => isFreeDay(newInviteForm.values.date, freeDays || []),
+        [newInviteForm.values.date, freeDays])
 
-    return (<>
+    return <>
         <Modal
             opened={createModalOpened}
             onClose={() => setCreateModalOpened(false)}
@@ -141,7 +144,7 @@ export default function GuestManager(params: IParams) {
                 </Card>
             ))}
         </Stack>
-    </>)
+    </>
 }
 
 export async function getStaticProps({}) {

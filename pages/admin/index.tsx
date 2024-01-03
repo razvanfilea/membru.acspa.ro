@@ -21,6 +21,10 @@ export default function AdminPage(): ReactElement {
 
                 <Divider />
 
+                <Link href={'/admin/free_days'}>
+                    <Button color={'green'}>Zile libere</Button>
+                </Link>
+
                 <Link href={'/admin/restrictions'}>
                     <Button color={'cyan'}>Restricționare rezervări</Button>
                 </Link>
@@ -33,7 +37,7 @@ export default function AdminPage(): ReactElement {
                     <Button color={'indigo'}>Listă membrii</Button>
                 </Link>
 
-                <Text>Situații</Text>
+                <Divider />
 
                 <Group gap={'lg'}>
                     <Link href={'/admin/daily_situation'}>

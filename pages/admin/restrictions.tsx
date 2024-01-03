@@ -5,7 +5,7 @@ import {Location, LocationName, ReservationRestriction} from "../../types/wrappe
 import ReservationRestrictionComponent from "../../components/ReservationRestriction";
 import {useForm} from "@mantine/form";
 import {DatePickerInput} from "@mantine/dates";
-import {dateToISOString, isDateWeekend} from "../../utils/date";
+import {dateToISOString, isFreeDay} from "../../utils/date";
 import {AdminHourInput, AdminTopBar} from "../../components/AdminInput";
 import {Database} from "../../types/database.types";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
@@ -13,6 +13,7 @@ import {createPagesBrowserClient} from "@supabase/auth-helpers-nextjs";
 import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 import useProfilesQuery from "../../hooks/useProfilesQuery";
 import useRestrictionsQuery from "../../hooks/useRestrictionsQuery";
+import useFreeDaysQuery from "../../hooks/useFreeDaysQuery";
 
 interface IParams {
     location: Location
@@ -26,6 +27,7 @@ export default function RestrictedReservationsList(params: IParams) {
 
     const {data: allProfiles} = useProfilesQuery()
     const {data: restrictions, refetch} = useRestrictionsQuery()
+    const {data: freeDays} = useFreeDaysQuery(new Date)
     const [createModalOpened, setCreateModalOpened] = useState(false)
 
     const newRestrictionForm = useForm({
@@ -43,11 +45,11 @@ export default function RestrictedReservationsList(params: IParams) {
         validateInputOnBlur: true
     });
 
-    const hasSelectedWeekend = useMemo(() => {
-        return isDateWeekend(newRestrictionForm.values.date)
-    }, [newRestrictionForm.values.date])
+    const hasSelectedWeekend = useMemo(
+        () => isFreeDay(newRestrictionForm.values.date, freeDays || []),
+        [newRestrictionForm.values.date, freeDays])
 
-    return (<>
+    return <>
         <Modal
             opened={createModalOpened}
             onClose={() => setCreateModalOpened(false)}
@@ -156,7 +158,7 @@ export default function RestrictedReservationsList(params: IParams) {
                 </Card>
             ))}
         </Stack>
-    </>)
+    </>
 }
 
 export async function getStaticProps({}) {

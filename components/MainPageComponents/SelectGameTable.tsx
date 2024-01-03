@@ -6,10 +6,11 @@ import {useRouter} from "next/router";
 import {useListState, useScrollIntoView} from "@mantine/hooks";
 import useRestrictionsQuery from "../../hooks/useRestrictionsQuery";
 import useGuestsQuery from "../../hooks/useGuestsQuery";
-import {dateToISOString, isDateWeekend} from "../../utils/date";
+import {dateToISOString, isFreeDay} from "../../utils/date";
 import {ActionIcon, Group, Text} from "@mantine/core";
 import {MdRefresh} from "react-icons/md";
 import {RegistrationHours} from "./RegistrationHours";
+import useFreeDaysQuery from "../../hooks/useFreeDaysQuery";
 
 function fetchReservations(
     supabase: SupabaseClient<Database>,
@@ -49,6 +50,7 @@ function SelectGameTable(
     const [reservations, reservationsHandle] = useListState<Reservation>([])
     const {data: restrictions} = useRestrictionsQuery(new Date)
     const {data: guests} = useGuestsQuery(new Date)
+    const {data: freeDays} = useFreeDaysQuery(new Date)
     const {scrollIntoView, targetRef} = useScrollIntoView<HTMLDivElement>({});
 
     useEffect(() => {
@@ -91,7 +93,7 @@ function SelectGameTable(
             return {start: 0, end: 0, duration: 0}
         }
 
-        if (isDateWeekend(new Date(selectedDateISO))) {
+        if (isFreeDay(new Date(selectedDateISO), freeDays || [])) {
             return {
                 start: location.weekend_start_hour,
                 end: location.weekend_end_hour,
@@ -104,7 +106,7 @@ function SelectGameTable(
             end: location.end_hour,
             duration: location.reservation_duration,
         }
-    }, [location, selectedDateISO])
+    }, [location, selectedDateISO, freeDays])
 
     const selectedDateReservations =
         reservations.filter(value => value.start_date == selectedDateISO)

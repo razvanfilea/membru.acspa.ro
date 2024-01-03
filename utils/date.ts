@@ -1,4 +1,4 @@
-import {Reservation} from "../types/wrapper";
+import {FreeDay, Reservation} from "../types/wrapper";
 
 export function addDaysToDate(date: Date, days: number): Date {
     const result = new Date(date);
@@ -16,6 +16,14 @@ export function dateToISOString(date: Date): string {
 
 export function isDateWeekend(date: Date): boolean {
     return date.getDay() === 6 || date.getDay() === 0
+}
+
+export function isFreeDay(date: Date, freeDays: FreeDay[]): boolean {
+    const isoDate = dateToISOString(date)
+
+    return isDateWeekend(date) ||
+        freeDays?.some((element) => element.date === isoDate) ||
+        false
 }
 
 export function isReservationCancelable(reservation: Reservation): boolean {
