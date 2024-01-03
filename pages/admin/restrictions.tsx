@@ -32,7 +32,7 @@ export default function RestrictedReservationsList(params: IParams) {
 
     const newRestrictionForm = useForm({
         initialValues: {
-            date: new Date(),
+            date: new Date,
             allDay: false,
             startHour: 0,
             message: '',

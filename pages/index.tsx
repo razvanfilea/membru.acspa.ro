@@ -145,7 +145,7 @@ export async function getStaticProps({}) {
     const boromirLocation = locations!.find(value => value.name == LocationName.Boromir)
 
     const props: IParams = {
-        daysAhead: 34,
+        daysAhead: 14,
         gara: garaLocation!,
         boromir: boromirLocation!
     }
