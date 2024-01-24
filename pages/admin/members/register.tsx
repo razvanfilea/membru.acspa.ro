@@ -9,6 +9,7 @@ import {MdAlternateEmail, MdGroups, MdPassword, MdPerson} from "react-icons/md";
 import {REGEX_EMAIL_PATTERN} from "../../../utils/regex";
 import {createClient} from "@supabase/supabase-js";
 import useMemberRolesQuery from "../../../hooks/useMemberRolesQuery";
+import AdminScaffold from "../../../components/AdminInput/AdminScaffold";
 
 const enum RegisterState {
     None,
@@ -57,17 +58,7 @@ export default function CreateMember() {
     }, [])
 
     return (<>
-        <Stack style={{
-            padding: `var(--mantine-spacing-lg)`,
-            '@media (maxWidth: 900px)': {
-                paddingLeft: `var(--mantine-spacing-md)`,
-                paddingRight: `var(--mantine-spacing-md)`,
-            },
-            '@media (maxWidth: 600px)': {
-                paddingLeft: 0,
-                paddingRight: 0,
-            }
-        }}>
+        <AdminScaffold>
             <form style={{position: 'relative'}} onSubmit={
                 form.onSubmit(async (values) => {
                     const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRole!, {
@@ -167,6 +158,6 @@ export default function CreateMember() {
             {registerState == RegisterState.Success &&
                 <Text>Utilizatorul a fost înregistrat cu succes!</Text>
             }
-        </Stack>
+        </AdminScaffold>
     </>)
 }

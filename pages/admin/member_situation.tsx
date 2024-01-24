@@ -1,8 +1,8 @@
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {Database} from "../../types/database.types";
-import React, {useEffect, useMemo, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {Reservation} from "../../types/wrapper";
-import {Button, Card, Grid, Group, Indicator, Select, Space, Stack, Text} from "@mantine/core";
+import {Button, Card, Divider, Grid, Group, Indicator, Select, Space, Stack, Text} from "@mantine/core";
 import {DatePicker} from "@mantine/dates";
 import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
@@ -73,7 +73,7 @@ export default function SituationPage() {
                     locale="ro"
                     renderDay={(date) => {
                         const disabled = !filteredReservations.some(it =>
-                            it.start_date === dateToISOString(date) && it.cancelled === false);
+                            it.start_date === dateToISOString(date) && !it.cancelled);
 
                         return (
                             <Indicator
@@ -84,6 +84,12 @@ export default function SituationPage() {
                         );
                     }}
                 />
+
+                <Divider />
+
+                <Button onClick={() => setDateRange([new Date('2024-01-01'), new Date('2024-12-31')])}>
+                    Selectează tot anul 2024
+                </Button>
 
                 <Button onClick={() => setDateRange([new Date('2023-01-01'), new Date('2023-12-31')])}>
                     Selectează tot anul 2023

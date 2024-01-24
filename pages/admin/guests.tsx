@@ -14,6 +14,7 @@ import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 import useProfilesQuery from "../../hooks/useProfilesQuery";
 import useGuestsQuery from "../../hooks/useGuestsQuery";
 import useFreeDaysQuery from "../../hooks/useFreeDaysQuery";
+import AdminScaffold from "../../components/AdminInput/AdminScaffold";
 
 interface IParams {
     location: Location
@@ -111,17 +112,7 @@ export default function GuestManager(params: IParams) {
             </form>
         </Modal>
 
-        <Stack style={{
-            padding: `var(--mantine-spacing-lg)`,
-            '@media (maxWidth: 900px)': {
-                paddingLeft: `var(--mantine-spacing-md)`,
-                paddingRight: `var(--mantine-spacing-md)`,
-            },
-            '@media (maxWidth: 600px)': {
-                paddingLeft: 0,
-                paddingRight: 0,
-            }
-        }}>
+        <AdminScaffold>
             <AdminTopBar
                 title={'Invitați:'}
                 onAdd={() => setCreateModalOpened(true)}/>
@@ -143,7 +134,7 @@ export default function GuestManager(params: IParams) {
                     )}
                 </Card>
             ))}
-        </Stack>
+        </AdminScaffold>
     </>
 }
 

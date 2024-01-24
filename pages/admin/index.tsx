@@ -34,7 +34,7 @@ export default function AdminPage(): ReactElement {
                 </Link>
 
                 <Link href={'/admin/members'}>
-                    <Button color={'indigo'}>Listă membrii</Button>
+                    <Button color={'indigo'}>Listă membri</Button>
                 </Link>
 
                 <Divider />

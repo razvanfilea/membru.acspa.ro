@@ -10,6 +10,7 @@ import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 import useFreeDaysQuery from "../../hooks/useFreeDaysQuery";
 import {Database} from "../../types/database.types";
 import {MdDelete} from "react-icons/md";
+import AdminScaffold from "../../components/AdminInput/AdminScaffold";
 
 export default function FreeDaysList() {
     useExitIfNotFounder();
@@ -71,17 +72,7 @@ export default function FreeDaysList() {
             </form>
         </Modal>
 
-        <Stack style={{
-            padding: `var(--mantine-spacing-lg)`,
-            '@media (maxWidth: 900px)': {
-                paddingLeft: `var(--mantine-spacing-md)`,
-                paddingRight: `var(--mantine-spacing-md)`,
-            },
-            '@media (maxWidth: 600px)': {
-                paddingLeft: 0,
-                paddingRight: 0,
-            }
-        }}>
+        <AdminScaffold>
             <AdminTopBar
                 title={'Zile libere'}
                 onAdd={() => setCreateModalOpened(true)}/>
@@ -111,6 +102,6 @@ export default function FreeDaysList() {
                     </Group>
                 </Card>
             ))}
-        </Stack>
+        </AdminScaffold>
     </>
 }

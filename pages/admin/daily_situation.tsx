@@ -8,6 +8,7 @@ import 'dayjs/locale/ro';
 import {dateToISOString} from "../../utils/date";
 import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 import useProfilesQuery from "../../hooks/useProfilesQuery";
+import AdminScaffold from "../../components/AdminInput/AdminScaffold";
 
 const groupBy = <T, K extends keyof any>(arr: T[], key: (i: T) => K) =>
     arr.reduce((groups, item) => {
@@ -41,7 +42,7 @@ export default function DailySituationPage() {
         return groupBy(reservations, reservation => reservation.start_hour)
     }, [reservations])
 
-    return <>
+    return <AdminScaffold>
         <Grid
             grow={true}
             columns={4}
@@ -66,9 +67,7 @@ export default function DailySituationPage() {
                 </Stack>
             </Grid.Col>
         </Grid>
-
-        <Space h="xl"/>
-    </>
+    </AdminScaffold>
 }
 
 function SelectedDateReservations(allProfiles: Profile[], reservations: Record<number, Reservation[]>) {

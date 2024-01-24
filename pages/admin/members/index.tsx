@@ -10,6 +10,7 @@ import useExitIfNotFounder from "../../../hooks/useExitIfNotFounder";
 import {UserProfileLayout} from "../../../components/UserProfileLayout";
 import {useRouter} from "next/router";
 import useProfilesQuery from "../../../hooks/useProfilesQuery";
+import AdminScaffold from "../../../components/AdminInput/AdminScaffold";
 
 export default function MembersList() {
     const supabase = useSupabaseClient<Database>()
@@ -69,18 +70,8 @@ export default function MembersList() {
             </form>
         </Modal>
 
-        <Stack style={{
-            padding: `var(--mantine-spacing-lg)`,
-            '@media (maxWidth: 900px)': {
-                paddingLeft: `var(--mantine-spacing-md)`,
-                paddingRight: `var(--mantine-spacing-md)`,
-            },
-            '@media (maxWidth: 600px)': {
-                paddingLeft: 0,
-                paddingRight: 0,
-            }
-        }}>
-            <AdminTopBar title={(allProfiles?.length || 0) + ' de membrii'}
+        <AdminScaffold>
+            <AdminTopBar title={(allProfiles?.length || 0) + ' de membri'}
                          onAdd={() => router.push('/admin/members/register')}/>
 
             {isLoading ?
@@ -94,6 +85,6 @@ export default function MembersList() {
             }
 
             {}
-        </Stack>
+        </AdminScaffold>
     </>)
 }
