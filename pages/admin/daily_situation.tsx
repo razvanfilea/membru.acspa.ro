@@ -9,12 +9,20 @@ import {dateToISOString} from "../../utils/date";
 import useExitIfNotFounder from "../../hooks/useExitIfNotFounder";
 import useProfilesQuery from "../../hooks/useProfilesQuery";
 import AdminScaffold from "../../components/AdminInput/AdminScaffold";
+import useGuestsQuery from "../../hooks/useGuestsQuery";
 
 const groupBy = <T, K extends keyof any>(arr: T[], key: (i: T) => K) =>
     arr.reduce((groups, item) => {
         (groups[key(item)] ||= []).push(item);
         return groups;
     }, {} as Record<K, T[]>);
+
+interface ReservationAndGuest {
+    id: string,
+    name: string,
+    start_hour: number,
+    is_guest: boolean,
+}
 
 export default function DailySituationPage() {
     useExitIfNotFounder();
@@ -24,6 +32,7 @@ export default function DailySituationPage() {
     const {data: allProfiles} = useProfilesQuery()
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [reservations, setReservations] = useState<Reservation[]>([])
+    const {data: guests} = useGuestsQuery(date || null)
 
     useEffect(() => {
         if (date) {
@@ -39,8 +48,19 @@ export default function DailySituationPage() {
     }, [date, supabase])
 
     const groupedReservations = useMemo(() => {
-        return groupBy(reservations, reservation => reservation.start_hour)
-    }, [reservations])
+        const mapped_reservations: ReservationAndGuest[] = reservations.map(res => {
+            return {
+                id: res.id,
+                name: allProfiles?.find(profile => profile.id == res.user_id)?.name || "Necunoscut",
+                start_hour: res.start_hour,
+                is_guest: false
+            }
+        })
+        const mapped_guests: ReservationAndGuest[] = guests?.map(guest => {
+            return {id: guest.created_at, name: guest.guest_name, start_hour: guest.start_hour, is_guest: true}
+        }) || []
+        return groupBy(mapped_reservations.concat(mapped_guests), reservation => reservation.start_hour)
+    }, [reservations, guests, allProfiles])
 
     return <AdminScaffold>
         <Grid
@@ -60,7 +80,7 @@ export default function DailySituationPage() {
             <Grid.Col span={2}>
                 <Stack p={'md'}>
                     {date ?
-                        SelectedDateReservations(allProfiles || [], groupedReservations)
+                        SelectedDateReservations(groupedReservations)
                         :
                         <Text size={'xl'}>Selectează o dată pentru a vedea rezervările</Text>
                     }
@@ -70,8 +90,7 @@ export default function DailySituationPage() {
     </AdminScaffold>
 }
 
-function SelectedDateReservations(allProfiles: Profile[], reservations: Record<number, Reservation[]>) {
-
+function SelectedDateReservations(reservations: Record<number, ReservationAndGuest[]>) {
     return <>
         {Object.entries(reservations).map(([key, reservation]) => {
             return <React.Fragment key={key}>
@@ -80,12 +99,8 @@ function SelectedDateReservations(allProfiles: Profile[], reservations: Record<n
 
                     {
                         reservation.map((user, index) => {
-                            const profile = allProfiles.find(profile => profile.id == user.user_id) || {
-                                name: 'Necunoscut',
-                                has_key: false
-                            }
-                            return <Button key={user.user_id} radius={'xl'} color={'gray'}
-                                           size={'xs'}>{index + 1}. {profile.name}</Button>
+                            return <Button key={user.id} radius={'xl'} color={user.is_guest ? 'cyan' : 'gray'}
+                                           size={'xs'}>{index + 1}. {user.name}</Button>
                         })
                     }
                 </Group>
