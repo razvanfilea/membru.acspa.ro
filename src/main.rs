@@ -31,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
         .expect("Failed to run schema migration for authentication");
     session_store.delete_expired().await?;
 
-    let app_state = AppState { pool };
+    let app_state = AppState::new(pool).await;
 
     http_server(app_state, session_store)
         .await

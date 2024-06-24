@@ -18,7 +18,8 @@ CREATE TABLE users
 
 CREATE TABLE locations
 (
-    name                      TEXT    NOT NULL PRIMARY KEY,
+    id                        INTEGER NOT NULL PRIMARY KEY,
+    name                      TEXT    NOT NULL,
     max_reservations_per_slot TINYINT NOT NULL CHECK ( max_reservations_per_slot > 0 ),
 
     slots_start_hour          TINYINT NOT NULL CHECK ( slots_start_hour > 0 AND slots_start_hour < 24 ),
@@ -36,16 +37,16 @@ CREATE TABLE locations
 
 CREATE TABLE reservations
 (
-    id         INTEGER  NOT NULL PRIMARY KEY,
     user_id    INTEGER  NOT NULL,
     date       DATE     NOT NULL,
     hour       TINYINT  NOT NULL,
-    location   TEXT     NOT NULL,
+    location   INTEGER  NOT NULL,
     cancelled  BOOLEAN  NOT NULL DEFAULT FALSE CHECK (cancelled IN (FALSE, TRUE)),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
+    PRIMARY KEY (user_id, date, hour, location),
     FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (location) REFERENCES locations (name)
+    FOREIGN KEY (location) REFERENCES locations (id)
 );
 
 CREATE TABLE reservations_restrictions
@@ -73,7 +74,7 @@ CREATE TABLE free_days
 CREATE TABLE special_guests
 (
     guest_name TEXT     NOT NULL,
-    location   TEXT     NOT NULL,
+    location   INTEGER  NOT NULL,
     date       DATE     NOT NULL,
     hour       TINYINT  NOT NULL,
 
@@ -82,5 +83,5 @@ CREATE TABLE special_guests
 
     PRIMARY KEY (guest_name, location, date, hour),
     FOREIGN KEY (created_by) REFERENCES users (id),
-    FOREIGN KEY (location) REFERENCES locations (name)
+    FOREIGN KEY (location) REFERENCES locations (id)
 );

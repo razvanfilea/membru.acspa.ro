@@ -1,6 +1,6 @@
-
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
 pub struct Location {
+    pub id: i64,
     pub name: String,
     pub max_reservations_per_slot: i64,
     pub slots_start_hour: i64,

@@ -1,22 +1,80 @@
-use crate::http::pages::AuthSession;
-use crate::http::AppState;
-use crate::model::user::BasicUser;
 use askama::Template;
 use askama_axum::IntoResponse;
-use axum::extract::State;
+use axum::extract::{Query, State};
+use axum::Form;
+use serde::Deserialize;
+use sqlx::query_as;
+use tracing::error;
 
-#[derive(Template)]
-#[template(path = "pages/profile.html")]
-struct ProfileTemplate {
-    user: BasicUser,
+use crate::http::pages::AuthSession;
+use crate::http::AppState;
+use crate::model::reservation::Reservation;
+use crate::model::user::BasicUser;
+
+pub async fn profile_page(
+    auth_session: AuthSession,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    #[derive(Template)]
+    #[template(path = "pages/profile.html")]
+    struct ProfileTemplate {
+        user: BasicUser,
+        location_name: String,
+        duration: i64,
+        reservations: Vec<Reservation>,
+        cancelled: bool,
+    }
+
+    let user = auth_session.user.unwrap();
+    let reservations = query_as!(Reservation, "select r.* from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = false", user.email)
+        .fetch_all(&state.pool).await.unwrap_or_else(|e| {
+        error!("Failed querying reservations for user: {e}");
+        Vec::default()
+    });
+
+    ProfileTemplate {
+        user: user.into(),
+        location_name: state.location.name.clone(),
+        duration: state.location.slot_duration,
+        reservations,
+        cancelled: false,
+    }
 }
 
-pub async fn get_profile(
-    State(state): State<AppState>,
-    auth_session: AuthSession,
-) -> impl IntoResponse {
-    let user = auth_session.user.unwrap();
-    // query_as!("select * reservations");
+#[derive(Deserialize)]
+pub struct ReservationsQuery {
+    cancelled: bool,
+}
 
-    ProfileTemplate { user: user.into() }
+pub async fn profile_reservations(
+    auth_session: AuthSession,
+    State(state): State<AppState>,
+    Query(query): Query<ReservationsQuery>,
+) -> impl IntoResponse {
+    #[derive(Template)]
+    #[template(path = "components/profile_content.html")]
+    struct ProfileTemplate {
+        location_name: String,
+        duration: i64,
+        reservations: Vec<Reservation>,
+        cancelled: bool,
+    }
+
+    let user = auth_session.user.unwrap();
+    let reservations = query_as!(
+        Reservation,
+        "select r.* from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = $2", 
+        user.email,
+        query.cancelled
+    ).fetch_all(&state.pool)
+        .await
+        .inspect_err(|e| error!("Failed querying reservations for user: {e}"))
+        .unwrap_or_default();
+
+    ProfileTemplate {
+        location_name: state.location.name.clone(),
+        duration: state.location.slot_duration,
+        reservations,
+        cancelled: query.cancelled,
+    }
 }

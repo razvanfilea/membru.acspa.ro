@@ -1,9 +1,10 @@
 use crate::http::auth::UserAuthenticator;
+use crate::model::location::Location;
 use axum::Router;
 use axum_login::tower_sessions::cookie::time::Duration;
 use axum_login::tower_sessions::{Expiry, SessionManagerLayer};
 use axum_login::AuthManagerLayerBuilder;
-use sqlx::SqlitePool;
+use sqlx::{query_as, SqlitePool};
 use std::net::SocketAddr;
 use tower_http::trace;
 use tower_http::trace::TraceLayer;
@@ -16,7 +17,20 @@ mod pages;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub pool: SqlitePool,
+    pool: SqlitePool,
+    location: Location,
+}
+
+impl AppState {
+    pub async fn new(pool: SqlitePool) -> Self {
+        Self {
+            location: query_as!(Location, "select * from locations")
+                .fetch_one(&pool)
+                .await
+                .expect("No locations found"),
+            pool,
+        }
+    }
 }
 
 pub async fn http_server(app_state: AppState, session_store: SqliteStore) -> std::io::Result<()> {
