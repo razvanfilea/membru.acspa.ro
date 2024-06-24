@@ -1,0 +1,36 @@
+<main class="flex flex-row flex-wrap md:flex-nowrap gap-4">
+    <div class="flex flex-col" hx-target="main">
+        <span class="mb-4">
+            <b>Data selectată: </b>
+            <span class="text-blue-400">{{ selected_date.format("%Y.%m.%d") }}</span>
+        </span>
+        {% include "components/calendar_date_picker.html" %}
+    </div>
+
+    <div class="flex flex-col w-full" hx-vals='{"selected_date": "{{ selected_date.format("%Y.%m.%d") }}" }'>
+        <span>Alege Ora</span>
+
+        {% for possible_hour in reservation_hours %}
+        <div hx-vals='{"hour": {{ possible_hour.hour }} }'>
+            <div class="flex flex-row flex-wrap gap-2 mb-4">
+                Ora {{ possible_hour.hour }}:
+                {% for user in possible_hour.reservations %}
+                    <button class="btn btn-sm bg-slate-600 rounded-full">
+                        {{ loop.index }}. {{ user }}
+                    </button>
+                {% endfor %}
+            </div>
+            <input name="reservation" type="radio" aria-label="Rezervare" autocomplete="off"
+                   hx-post="/choose_hour" hx-target="#confirmation" hx-swap="outerHTML"
+                   class="btn btn-md btn-outline btn-primary w-min"/>
+
+            {% if !loop.last %}
+                <div class="divider"></div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div id="confirmation"></div>
+
+    </div>
+</main>
