@@ -56,35 +56,13 @@ impl AuthnBackend for UserAuthenticator {
 
 #[async_trait]
 impl AuthzBackend for UserAuthenticator {
-    type Permission = ();
-
-    async fn get_user_permissions(
-        &self,
-        _user: &Self::User,
-    ) -> Result<HashSet<Self::Permission>, Self::Error> {
-        todo!()
-    }
-
-    async fn get_group_permissions(
-        &self,
-        _user: &Self::User,
-    ) -> Result<HashSet<Self::Permission>, Self::Error> {
-        todo!()
-    }
+    type Permission = String;
 
     async fn get_all_permissions(
         &self,
         user: &Self::User,
     ) -> Result<HashSet<Self::Permission>, Self::Error> {
-        todo!()
-    }
-
-    async fn has_perm(
-        &self,
-        user: &Self::User,
-        perm: Self::Permission,
-    ) -> Result<bool, Self::Error> {
-        todo!()
+        Ok(HashSet::from([user.role.clone()]))
     }
 }
 

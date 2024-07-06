@@ -12,7 +12,7 @@
 
         {% for possible_hour in reservation_hours %}
         <div hx-vals='{"hour": {{ possible_hour.start_hour }} }'>
-            <div class="flex flex-row flex-wrap gap-2 mb-4">
+            <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
                 Ora {{ possible_hour.start_hour }} - {{ possible_hour.end_hour }}:
                 {% for user in possible_hour.reservations %}
                 <button class="btn btn-sm bg-slate-600 rounded-full">

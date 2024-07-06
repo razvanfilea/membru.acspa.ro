@@ -18,20 +18,20 @@ CREATE TABLE users
 
 CREATE TABLE locations
 (
-    id                        INTEGER NOT NULL PRIMARY KEY,
-    name                      TEXT    NOT NULL,
-    max_reservations_per_slot TINYINT NOT NULL CHECK ( max_reservations_per_slot > 0 ),
+    id                   INTEGER NOT NULL PRIMARY KEY,
+    name                 TEXT    NOT NULL,
+    slot_capacity        TINYINT NOT NULL CHECK ( slot_capacity > 0 ),
 
-    slots_start_hour          TINYINT NOT NULL CHECK ( slots_start_hour > 0 AND slots_start_hour < 24 ),
-    slot_duration             TINYINT NOT NULL CHECK ( slot_duration > 0 AND slot_duration < 12 ),
-    slots_per_day             TINYINT NOT NULL
+    slots_start_hour     TINYINT NOT NULL CHECK ( slots_start_hour > 0 AND slots_start_hour < 24 ),
+    slot_duration        TINYINT NOT NULL CHECK ( slot_duration > 0 AND slot_duration < 12 ),
+    slots_per_day        TINYINT NOT NULL
         CHECK ( slots_per_day > 0 AND slots_start_hour + slots_per_day * slot_duration < 24 ),
 
-    alt_slots_start_hour      TINYINT
+    alt_slots_start_hour TINYINT
         CHECK ( alt_slots_start_hour > 0 AND alt_slots_start_hour < 24 ),
-    alt_slot_duration         TINYINT
+    alt_slot_duration    TINYINT
         CHECK ( alt_slot_duration > 0 AND alt_slot_duration < 12 ),
-    alt_slots_per_day         TINYINT
+    alt_slots_per_day    TINYINT
         CHECK ( alt_slots_per_day > 0 AND alt_slots_per_day < 12 )
 );
 
