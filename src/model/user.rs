@@ -25,6 +25,7 @@ impl AuthUser for UserDb {
 }
 
 pub struct BasicUser {
+    pub id: i64,
     pub email: String,
     pub name: String,
     pub role: String,
@@ -34,6 +35,7 @@ pub struct BasicUser {
 impl From<UserDb> for BasicUser {
     fn from(value: UserDb) -> Self {
         BasicUser {
+            id: value.id,
             email: value.email,
             name: value.name,
             role: value.role,

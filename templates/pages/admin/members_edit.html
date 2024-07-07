@@ -1,0 +1,41 @@
+{% extends "../base.html" %}
+
+{% block page_title %}Modifică un utilizator{% endblock %}
+
+{% block content %}
+
+<form class="form-control p-8 w-full">
+    <div class="label">
+        <label for="email" class="label-text">Email:</label>
+    </div>
+    <input id="email" type="email" value="{{ existing_user.email }}" disabled
+           class="input input-bordered"/>
+
+    <div class="label">
+        <label for="name" class="label-text">Nume:</label>
+    </div>
+    <input id="name" name="name" type="text" placeholder="Nume" autocomplete="off"
+           value="{{ existing_user.name }}" required
+           class="input input-bordered"/>
+
+    <div class="label">
+        <label for="role" class="label-text">Rol:</label>
+    </div>
+    <select id="role" name="role" class="select select-bordered" autocomplete="off">
+        {% for role in roles %}
+        <option {% if role == existing_user.role.as_str() %}selected="selected"{% endif %}>{{ role }}</option>
+        {% endfor %}
+    </select>
+
+    <label class="label cursor-pointer py-6">
+        <span class="label-text">Are cheie:</span>
+        <input name="has_key" type="checkbox" class="toggle toggle-primary" autocomplete="off"
+            {% if existing_user.has_key %}checked{% endif %}/>
+    </label>
+
+    <button class="btn btn-primary mt-6" hx-post="/admin/members/edit/{{ existing_user.id }}">
+        Actualizează utilizatorul
+    </button>
+</form>
+
+{% endblock %}
