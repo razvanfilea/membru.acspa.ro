@@ -1,7 +1,6 @@
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
-use axum::Form;
 use serde::Deserialize;
 use sqlx::query_as;
 use tracing::error;

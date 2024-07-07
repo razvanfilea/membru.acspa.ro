@@ -85,3 +85,14 @@ CREATE TABLE special_guests
     FOREIGN KEY (created_by) REFERENCES users (id),
     FOREIGN KEY (location) REFERENCES locations (id)
 );
+
+CREATE TABLE global_vars
+(
+    id               INTEGER NOT NULL PRIMARY KEY CHECK (id = 0),
+    in_maintenance   BOOLEAN NOT NULL CHECK (in_maintenance IN (FALSE, TRUE)),
+    entrance_code    TEXT    NOT NULL,
+    reminder_message TEXT    NOT NULL
+);
+
+INSERT INTO global_vars (id, in_maintenance, entrance_code, reminder_message)
+VALUES (0, FALSE, '123456', '')

@@ -1,10 +1,16 @@
-use crate::model::user::{UserCredentials, UserDb};
-use argon2::password_hash;
+use std::collections::HashSet;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use argon2::password_hash::rand_core::SeedableRng;
+use argon2::password_hash::SaltString;
+use argon2::{password_hash, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::async_trait;
 use axum_login::{AuthnBackend, AuthzBackend, UserId};
+use rand_hc::Hc128Rng;
 use sqlx::{query_as, SqlitePool};
-use std::collections::HashSet;
 use tokio::task;
+
+use crate::model::user::{UserCredentials, UserDb};
 
 #[derive(Clone)]
 pub struct UserAuthenticator {
@@ -66,14 +72,27 @@ impl AuthzBackend for UserAuthenticator {
     }
 }
 
+pub fn generate_hash_from_password<T: AsRef<str>>(password: T) -> String {
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    let rng = Hc128Rng::seed_from_u64(since_the_epoch.as_millis() as u64);
+    let salt = SaltString::generate(rng);
+
+    return Argon2::default()
+        .hash_password(password.as_ref().as_bytes(), &salt)
+        .expect("Failed to hash password")
+        .to_string();
+}
+
 pub fn validate_credentials<T: AsRef<str>, E: AsRef<str>>(
     password: T,
     expected_password_hash: E,
 ) -> Result<bool, password_hash::Error> {
-    Ok(password.as_ref() == expected_password_hash.as_ref())
-    // let expected_password_hash = PasswordHash::new(expected_password_hash.as_ref())?;
+    let expected_password_hash = PasswordHash::new(expected_password_hash.as_ref())?;
 
-    // return Ok(Argon2::default()
-    //     .verify_password(password.as_ref().as_bytes(), &expected_password_hash)
-    //     .is_ok());
+    return Ok(Argon2::default()
+        .verify_password(password.as_ref().as_bytes(), &expected_password_hash)
+        .is_ok());
 }

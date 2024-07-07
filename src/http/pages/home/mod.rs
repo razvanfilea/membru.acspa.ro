@@ -10,8 +10,9 @@ use axum::{Form, Router};
 use chrono::Datelike;
 use chrono::Utc;
 use serde::Deserialize;
-use sqlx::query;
+use sqlx::{query, query_as};
 use tracing::warn;
+use crate::model::global_vars::GlobalVars;
 
 mod calendar;
 
@@ -21,6 +22,13 @@ pub fn router() -> Router<AppState> {
         .route("/choose_date/", post(date_picker))
         .route("/choose_hour", post(hour_picker))
         .route("/confirm_reservation", post(confirm_reservation))
+}
+
+async fn get_global_vars(state: &AppState) -> GlobalVars {
+    query_as!(GlobalVars, "select * from global_vars")
+        .fetch_one(&state.pool)
+        .await
+        .expect("Database error")
 }
 
 async fn get_reservation_hours(
@@ -63,6 +71,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         weeks: MonthDates,
         user: BasicUser,
         reservation_hours: Vec<PossibleReservationHour>,
+        global_vars: GlobalVars,
     }
 
     let current_date = Utc::now().naive_local().date();
@@ -73,6 +82,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         weeks: get_weeks_of_month(current_date),
         user: auth_session.user.unwrap().into(),
         reservation_hours: get_reservation_hours(&state, current_date).await,
+        global_vars: get_global_vars(&state).await,
     }
 }
 

@@ -1,0 +1,59 @@
+{% extends "../base.html" %}
+
+{% block page_title %}Panou Administrare{% endblock %}
+
+{% block content %}
+
+<main class="p-8 w-full">
+    <p>Este necesară discreția utilizatorului: nu toate datele de intrare sunt validate și multe operații pot fi
+        destructive</p>
+
+    <div class="divider">
+        Setări generale
+    </div>
+
+    <form class="form-control">
+        <label class="label cursor-pointer">
+            <span class="label-text">Mod mentenanță</span>
+            <input name="in_maintenance" type="checkbox" class="toggle toggle-error" autocomplete="off"
+                   {% if global_vars.in_maintenance %} checked="checked" {% endif %}/>
+        </label>
+
+        <div class="label">
+            <label for="entrance_code" class="label-text">Cod intrare:</label>
+        </div>
+        <input id="entrance_code" name="entrance_code" type="text" class="input input-bordered w-full max-w-xs"
+               value="{{ global_vars.entrance_code }}"/>
+
+        <div class="label">
+            <label for="reminder_message" class="label-text">Mesaj pe pagina principală:</label>
+        </div>
+        <textarea id="reminder_message" name="reminder_message" type="text" class="textarea textarea-bordered w-full max-w-md">
+            {{- global_vars.reminder_message -}}
+        </textarea>
+
+        <button class="btn btn-error mt-8" hx-post="/admin/apply_settings">Aplică setările</button>
+    </form>
+
+    <div class="divider mt-12">
+        Situații
+    </div>
+
+    <div class="grid grid-cols-2 gap-8">
+        <button disabled class="btn w-full">Situație zilnică</button>
+        <button disabled class="btn w-full">Situație membru</button>
+    </div>
+
+    <div class="divider mt-12">
+        Altele
+    </div>
+
+    <div class="grid grid-cols-2 gap-8">
+        <button disabled class="btn w-full">Zile libere</button>
+        <button disabled class="btn w-full">Restricționare rezervări</button>
+        <button disabled class="btn w-full">Adăugare invitați</button>
+        <a href="/admin/members"><button class="btn w-full">Listă membri</button></a>
+    </div>
+</main>
+
+{% endblock %}
