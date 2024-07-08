@@ -8,17 +8,18 @@ use sqlx::{query, query_as};
 
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
-use crate::http::pages::admin::members::{create_new_user, edit_member_page, members_page, new_member_page};
 use crate::model::global_vars::GlobalVars;
-use crate::model::user::BasicUser;
+use crate::model::user::UserUi;
 
 mod members;
+mod roles;
 
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(admin_page))
         .route("/apply_settings", post(apply_settings))
         .nest("/members", members::router())
+        .nest("/roles", roles::router())
 }
 
 async fn get_global_vars(state: &AppState) -> GlobalVars {
@@ -32,7 +33,7 @@ async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) ->
     #[derive(Template)]
     #[template(path = "pages/admin/index.html")]
     struct HomeTemplate {
-        user: BasicUser,
+        user: UserUi,
         global_vars: GlobalVars,
     }
 

@@ -1,7 +1,11 @@
 CREATE TABLE user_roles
 (
-    role TEXT NOT NULL PRIMARY KEY
-) STRICT;
+    id                 INTEGER NOT NULL PRIMARY KEY,
+    name               TEXT    NOT NULL UNIQUE,
+    reservations       TINYINT NOT NULL CHECK (reservations > 0),
+    as_guest           TINYINT NOT NULL CHECK (as_guest > 0),
+    admin_panel_access BOOLEAN NOT NULL CHECK (admin_panel_access IN (FALSE, TRUE))
+);
 
 CREATE TABLE users
 (
@@ -10,10 +14,10 @@ CREATE TABLE users
     name          TEXT    NOT NULL,
     password_hash TEXT    NOT NULL,
 
-    role          TEXT    NOT NULL,
+    role_id       INTEGER NOT NULL,
     has_key       BOOLEAN NOT NULL CHECK (has_key IN (FALSE, TRUE)),
 
-    FOREIGN KEY (role) REFERENCES user_roles (role)
+    FOREIGN KEY (role_id) REFERENCES user_roles (id)
 );
 
 CREATE TABLE locations
@@ -95,4 +99,15 @@ CREATE TABLE global_vars
 );
 
 INSERT INTO global_vars (id, in_maintenance, entrance_code, reminder_message)
-VALUES (0, FALSE, '123456', '')
+VALUES (0, FALSE, '', '');
+
+CREATE VIEW users_with_role AS
+SELECT u.id,
+       u.email,
+       u.name,
+       u.password_hash,
+       u.has_key,
+       r.name AS role,
+       r.admin_panel_access
+FROM users u
+         INNER JOIN user_roles r ON u.role_id = r.id;

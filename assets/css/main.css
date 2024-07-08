@@ -2519,12 +2519,12 @@ html:has(.drawer-toggle:checked) {
   margin-top: 1rem;
 }
 
-.mt-8 {
-  margin-top: 2rem;
-}
-
 .mt-6 {
   margin-top: 1.5rem;
+}
+
+.mt-8 {
+  margin-top: 2rem;
 }
 
 .block {
@@ -2547,10 +2547,6 @@ html:has(.drawer-toggle:checked) {
   display: grid;
 }
 
-.hidden {
-  display: none;
-}
-
 .size-12 {
   width: 3rem;
   height: 3rem;
@@ -2559,11 +2555,6 @@ html:has(.drawer-toggle:checked) {
 .size-6 {
   width: 1.5rem;
   height: 1.5rem;
-}
-
-.size-4 {
-  width: 1rem;
-  height: 1rem;
 }
 
 .h-10 {
@@ -2753,10 +2744,6 @@ html:has(.drawer-toggle:checked) {
   padding: 2rem;
 }
 
-.p-2 {
-  padding: 0.5rem;
-}
-
 .px-2 {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
@@ -2793,6 +2780,11 @@ html:has(.drawer-toggle:checked) {
 
 .text-xl {
   font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
   line-height: 1.75rem;
 }
 
@@ -2883,10 +2875,6 @@ html:has(.drawer-toggle:checked) {
 }
 
 @media (min-width: 768px) {
-  .md\:visible {
-    visibility: visible;
-  }
-
   .md\:flex-nowrap {
     flex-wrap: nowrap;
   }

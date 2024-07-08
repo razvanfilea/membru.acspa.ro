@@ -17,7 +17,7 @@ pub fn router() -> Router<AppState> {
         .route_layer(permission_required!(
             UserAuthenticator,
             login_url = "/",
-            "Fondator"
+            "admin_panel"
         ));
 
     let authenticated_router = Router::<AppState>::new()

@@ -35,7 +35,7 @@
             <div class="flex-none">
                 <ul class="menu menu-horizontal">
                     <li>
-                        <button>
+                        <button onmousedown="window.open('/assets/regulament_intern.pdf', '_blank')">
                             <span class="material-symbols-outlined">gavel</span>
                         </button>
                     </li>
@@ -70,13 +70,14 @@
             </a></li>
 
             {% block side_bar_content %}
-            {% if user.role == "Fondator" %}
+            {% if user.admin_panel_access %}
             <li><a href="/admin">
                 <span class="material-symbols-outlined">admin_panel_settings</span>
                 Panou Administrare
             </a></li>
 
             {% endif %}
+
             {% include "components/side_bar_profile.html" %}
             {% endblock %}
         </ul>

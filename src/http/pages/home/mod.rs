@@ -1,20 +1,22 @@
 use crate::http::pages::home::calendar::{get_weeks_of_month, MonthDates};
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
-use crate::model::user::BasicUser;
+use crate::model::user::{UserUi, UserDb};
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
 use axum::routing::{get, post};
 use axum::{Form, Router};
-use chrono::Datelike;
+use chrono::{Datelike, NaiveDate};
 use chrono::Utc;
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use tracing::warn;
+use crate::http::pages::home::reservation::create_reservation;
 use crate::model::global_vars::GlobalVars;
 
 mod calendar;
+mod reservation;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -69,7 +71,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         current_date: chrono::NaiveDate,
         selected_date: chrono::NaiveDate,
         weeks: MonthDates,
-        user: BasicUser,
+        user: UserUi,
         reservation_hours: Vec<PossibleReservationHour>,
         global_vars: GlobalVars,
     }
@@ -175,17 +177,19 @@ async fn confirm_reservation(
 
     let selected_date =
         chrono::NaiveDate::parse_from_str(&query.selected_date, "%d.%m.%Y").expect("Invalid date");
+    
+    create_reservation(&state, user.into(), selected_date, query.hour).await.unwrap();
 
-    query!(
-        "insert into reservations (user_id, date, hour, location) VALUES ($1, $2, $3, $4)",
-        user.id,
-        selected_date,
-        query.hour,
-        state.location.id
-    )
-    .execute(&state.pool)
-    .await
-    .expect("Failed to create reservation");
+    // query!(
+    //     "insert into reservations (user_id, date, hour, location) VALUES ($1, $2, $3, $4)",
+    //     user.id,
+    //     selected_date,
+    //     query.hour,
+    //     state.location.id
+    // )
+    // .execute(&state.pool)
+    // .await
+    // .expect("Failed to create reservation");
 
     ConfirmationTemplate {
         selected_date,
@@ -193,3 +197,4 @@ async fn confirm_reservation(
         end_hour: query.hour + state.location.slot_duration as u8,
     }
 }
+

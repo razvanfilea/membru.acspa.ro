@@ -8,7 +8,7 @@ use tracing::error;
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::reservation::Reservation;
-use crate::model::user::BasicUser;
+use crate::model::user::UserUi;
 
 pub async fn profile_page(
     auth_session: AuthSession,
@@ -17,7 +17,7 @@ pub async fn profile_page(
     #[derive(Template)]
     #[template(path = "pages/profile.html")]
     struct ProfileTemplate {
-        user: BasicUser,
+        user: UserUi,
         location_name: String,
         duration: i64,
         reservations: Vec<Reservation>,

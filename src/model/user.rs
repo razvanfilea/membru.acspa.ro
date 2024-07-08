@@ -2,17 +2,28 @@ use axum_login::AuthUser;
 use serde::Deserialize;
 use validator::Validate;
 
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct UserDb {
+    pub id: i64,
+    pub email: String,
+    pub name: String,
+    pub password_hash: String,
+    pub role_id: i64,
+    pub has_key: bool,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct UserUi {
     pub id: i64,
     pub email: String,
     pub name: String,
     pub password_hash: String,
     pub role: String,
     pub has_key: bool,
+    pub admin_panel_access: bool,
 }
 
-impl AuthUser for UserDb {
+impl AuthUser for UserUi {
     type Id = String;
 
     fn id(&self) -> Self::Id {
@@ -21,26 +32,6 @@ impl AuthUser for UserDb {
 
     fn session_auth_hash(&self) -> &[u8] {
         self.password_hash.as_bytes()
-    }
-}
-
-pub struct BasicUser {
-    pub id: i64,
-    pub email: String,
-    pub name: String,
-    pub role: String,
-    pub has_key: bool,
-}
-
-impl From<UserDb> for BasicUser {
-    fn from(value: UserDb) -> Self {
-        BasicUser {
-            id: value.id,
-            email: value.email,
-            name: value.name,
-            role: value.role,
-            has_key: value.has_key,
-        }
     }
 }
 
