@@ -14,9 +14,20 @@
         <div hx-vals='{"hour": {{ possible_hour.start_hour }} }'>
             <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
                 Ora {{ possible_hour.start_hour }} - {{ possible_hour.end_hour }}:
-                {% for user in possible_hour.reservations %}
-                <button class="btn btn-sm bg-slate-600 rounded-full">
-                    {{ loop.index }}. {{ user }}
+                {% for res in possible_hour.reservations %}
+                <button class="btn btn-sm rounded-full text-white items-center
+                    {% match res.res_type %}
+                    {% when ReservationType::Normal %}
+                    bg-slate-600
+                    {% when ReservationType::SpecialGuest %}
+                    bg-fuchsia-600
+                    {% when ReservationType::Guest %}
+                    bg-cyan-500
+                    {% endmatch %}">
+                    {{ loop.index }}. {{ res.name }}
+                    {% if res.has_key %}
+                    <span class="material-symbols-outlined">vpn_key</span>
+                    {% endif %}
                 </button>
                 {% endfor %}
             </div>

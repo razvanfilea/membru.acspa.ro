@@ -2,7 +2,7 @@ use crate::http::AppState;
 use crate::model::location::Location;
 use crate::model::role::UserRole;
 use crate::model::user::UserUi;
-use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike, Utc, Weekday};
+use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike, Weekday};
 use sqlx::{query, query_as, Sqlite, SqlitePool, Transaction};
 use std::fmt::{Display, Formatter};
 use std::ops::DerefMut;
@@ -207,7 +207,7 @@ pub async fn create_reservation(
             return Err(ReservationError::NoMoreReservation);
         }
 
-        query!("insert into guests (guest_name, location, date, hour, created_by) values ($1, $2, $3, $4, $5)",
+        query!("insert into guests (name, location, date, hour, created_by) values ($1, $2, $3, $4, $5)",
                 user.name, state.location.id, selected_date, selected_hour, user.id)
             .execute(&mut *tx)
             .await

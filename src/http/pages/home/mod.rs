@@ -3,8 +3,8 @@ use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
 use axum::routing::{get, post};
 use axum::{Form, Router};
-use chrono::{Datelike, NaiveDate, NaiveDateTime};
-use chrono::{Utc, Weekday};
+use chrono::Utc;
+use chrono::{Datelike, NaiveDate};
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use tracing::warn;
@@ -34,53 +34,88 @@ async fn get_global_vars(state: &AppState) -> GlobalVars {
         .expect("Database error")
 }
 
-async fn get_reservation_hours(
-    state: &AppState,
-    date: chrono::NaiveDate,
-) -> Vec<PossibleReservationHour> {
+async fn get_reservation_hours(state: &AppState, date: NaiveDate) -> Vec<PossibleReservationSlot> {
     let structure = if is_free_day(&state.pool, &date).await {
         state.location.get_alt_hour_structure()
     } else {
         state.location.get_hour_structure()
     };
 
-    let date_reservations = query!("select users.name, hour from reservations inner join users on user_id = users.id where date = $1", date)
+    let date_reservations = query!("select users.name, hour, has_key from reservations inner join users on user_id = users.id where date = $1 order by created_at", date)
         .fetch_all(&state.pool)
         .await
         .expect("Database error");
 
+    let date_guests = query!(
+        "select name, hour, special from guests where date = $1 order by created_at",
+        date
+    )
+    .fetch_all(&state.pool)
+    .await
+    .expect("Database error");
+
     (0..structure.slots_per_day)
         .map(|i| {
             let hour = structure.slots_start_hour + structure.slot_duration * i;
+            let reservations = date_reservations
+                .iter()
+                .filter(|record| record.hour == hour)
+                .map(|record| Reservation {
+                    name: record.name.clone(),
+                    has_key: record.has_key,
+                    res_type: ReservationType::Normal,
+                });
 
-            PossibleReservationHour {
+            let guests = date_guests
+                .iter()
+                .filter(|record| record.hour == hour)
+                .map(|record| Reservation {
+                    name: record.name.clone(),
+                    has_key: false,
+                    res_type: if record.special {
+                        ReservationType::SpecialGuest
+                    } else {
+                        ReservationType::Guest
+                    },
+                });
+
+            PossibleReservationSlot {
                 start_hour: hour as u8,
                 end_hour: (hour + structure.slot_duration) as u8,
-                reservations: date_reservations
-                    .iter()
-                    .filter(|record| record.hour == hour)
-                    .map(|record| record.name.clone())
-                    .collect(),
+                reservations: reservations.chain(guests).collect(),
             }
         })
         .collect()
 }
 
-struct PossibleReservationHour {
+enum ReservationType {
+    Normal,
+    // Trainer, // TODO Remove
+    SpecialGuest,
+    Guest,
+}
+
+struct Reservation {
+    name: String,
+    has_key: bool,
+    res_type: ReservationType,
+}
+
+struct PossibleReservationSlot {
     start_hour: u8,
     end_hour: u8,
-    reservations: Vec<String>,
+    reservations: Vec<Reservation>,
 }
 
 async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
     #[derive(Template)]
     #[template(path = "pages/home.html")]
     struct HomeTemplate {
-        current_date: chrono::NaiveDate,
-        selected_date: chrono::NaiveDate,
+        current_date: NaiveDate,
+        selected_date: NaiveDate,
         weeks: MonthDates,
         user: UserUi,
-        reservation_hours: Vec<PossibleReservationHour>,
+        reservation_hours: Vec<PossibleReservationSlot>,
         global_vars: GlobalVars,
     }
 
@@ -108,17 +143,17 @@ async fn date_picker(
     #[derive(Template)]
     #[template(path = "components/home/content.html")]
     struct HomeContentTemplate {
-        current_date: chrono::NaiveDate,
-        selected_date: chrono::NaiveDate,
+        current_date: NaiveDate,
+        selected_date: NaiveDate,
         weeks: MonthDates,
-        reservation_hours: Vec<PossibleReservationHour>,
+        reservation_hours: Vec<PossibleReservationSlot>,
     }
 
     let current_date = Utc::now().naive_local().date();
     let selected_date = query
         .selected_date
         .and_then(|date| {
-            chrono::NaiveDate::parse_from_str(&date, "%d.%m.%Y")
+            NaiveDate::parse_from_str(&date, "%d.%m.%Y")
                 .inspect_err(|e| warn!("Failed to parse date {date} with error: {e}"))
                 .ok()
         })
@@ -145,14 +180,14 @@ async fn hour_picker(
     #[derive(Template)]
     #[template(path = "components/home/reservation_confirm_card.html")]
     struct ConfirmationTemplate {
-        selected_date: chrono::NaiveDate,
+        selected_date: NaiveDate,
         start_hour: u8,
         end_hour: u8,
         location_name: String,
     }
 
-    let selected_date = chrono::NaiveDate::parse_from_str(&query.selected_date, "%d.%m.%Y")
-        .unwrap_or_else(|e| {
+    let selected_date =
+        NaiveDate::parse_from_str(&query.selected_date, "%d.%m.%Y").unwrap_or_else(|e| {
             warn!(
                 "Failed to pase date {} with error: {}",
                 query.selected_date, e
@@ -183,21 +218,10 @@ async fn confirm_reservation(
     let user = auth_session.user.unwrap();
 
     let selected_date =
-        chrono::NaiveDate::parse_from_str(&query.selected_date, "%d.%m.%Y").expect("Invalid date");
+        NaiveDate::parse_from_str(&query.selected_date, "%d.%m.%Y").expect("Invalid date");
 
     let now = Utc::now().naive_local();
     let result = create_reservation(&state, now, &user, selected_date, query.hour).await;
-
-    // query!(
-    //     "insert into reservations (user_id, date, hour, location) VALUES ($1, $2, $3, $4)",
-    //     user.id,
-    //     selected_date,
-    //     query.hour,
-    //     state.location.id
-    // )
-    // .execute(&state.pool)
-    // .await
-    // .expect("Failed to create reservation");
 
     ConfirmationTemplate {
         successful: result.is_ok(),

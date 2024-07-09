@@ -77,7 +77,7 @@ CREATE TABLE free_days
 
 CREATE TABLE guests
 (
-    guest_name TEXT     NOT NULL,
+    name       TEXT     NOT NULL,
     location   INTEGER  NOT NULL,
     date       DATE     NOT NULL,
     hour       TINYINT  NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE guests
     created_by INTEGER  NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (guest_name, location, date, hour),
+    PRIMARY KEY (name, location, date, hour),
     FOREIGN KEY (created_by) REFERENCES users (id),
     FOREIGN KEY (location) REFERENCES locations (id)
 );
