@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<main class="p-4">
+<main class="p-4 md:p-8">
     <div class="flex flex-row flex-wrap gap-8 items-center justify-between p-6 bg-gray-600 rounded shadow">
         <div class="flex flex-row gap-4 items-center">
             <div class="avatar w-12 h-12">
@@ -12,7 +12,7 @@
             </div>
             <div class="flex flex-col">
                 {{ user.name }}
-                <span class="text-sm text-gray-300">{{ user.role }} - {{ user.email }}</span>
+                <span class="text-sm text-gray-300">{{ user.role }} • {{ user.email }}</span>
             </div>
         </div>
         <div class="flex flex-row gap-4">

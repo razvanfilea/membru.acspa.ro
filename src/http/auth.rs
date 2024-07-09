@@ -1,8 +1,6 @@
 use std::collections::HashSet;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::model::role::UserRole;
-use crate::model::user::{UserCredentials, UserDb, UserUi};
 use argon2::password_hash::rand_core::SeedableRng;
 use argon2::password_hash::SaltString;
 use argon2::{password_hash, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
@@ -11,6 +9,8 @@ use axum_login::{AuthnBackend, AuthzBackend, UserId};
 use rand_hc::Hc128Rng;
 use sqlx::{query_as, SqlitePool};
 use tokio::task;
+
+use crate::model::user::{UserCredentials, UserUi};
 
 #[derive(Clone)]
 pub struct UserAuthenticator {
@@ -53,10 +53,14 @@ impl AuthnBackend for UserAuthenticator {
     }
 
     async fn get_user(&self, user_id: &UserId<Self>) -> Result<Option<Self::User>, Self::Error> {
-        query_as!(UserUi, r#"select * from users_with_role where email = $1"#, user_id)
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(std::io::Error::other)
+        query_as!(
+            UserUi,
+            r#"select * from users_with_role where email = $1"#,
+            user_id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(std::io::Error::other)
     }
 }
 

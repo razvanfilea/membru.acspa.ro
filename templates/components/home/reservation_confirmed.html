@@ -1,13 +1,14 @@
 <div id="confirmation" class="bg-gray-600 p-6 mt-8 m-4 rounded-2xl">
 
     <div class="p-5 my-2 rounded-full bg-gray-800 shadow">
-        <p class="my-1 text-center">Pe data de <b>{{ selected_date.format("%d.%m.%Y") }}</b> de la ora <b>{{ start_hour }}:00</b> la
-            <b>{{ end_hour }}:00</b></p>
+        <p class="my-1 text-center">{{ message|safe }}</p>
     </div>
 
+    {% if successful %}
     <div class="flex flex-row items-center mt-4 gap-3 justify-center w-full">
         <p>Rezervarea poate fi anulată pe pagina ta de profil: </p>
         <a href="/profile" class="btn btn-sm btn-accent">Vezi profilul</a>
     </div>
+    {% endif %}
 
 </div>

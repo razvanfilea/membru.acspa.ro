@@ -2,8 +2,8 @@ CREATE TABLE user_roles
 (
     id                 INTEGER NOT NULL PRIMARY KEY,
     name               TEXT    NOT NULL UNIQUE,
-    reservations       TINYINT NOT NULL CHECK (reservations > 0),
-    as_guest           TINYINT NOT NULL CHECK (as_guest > 0),
+    reservations       TINYINT NOT NULL CHECK (reservations >= 0),
+    as_guest           TINYINT NOT NULL CHECK (as_guest >= 0),
     admin_panel_access BOOLEAN NOT NULL CHECK (admin_panel_access IN (FALSE, TRUE))
 );
 
@@ -75,12 +75,13 @@ CREATE TABLE free_days
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE special_guests
+CREATE TABLE guests
 (
     guest_name TEXT     NOT NULL,
     location   INTEGER  NOT NULL,
     date       DATE     NOT NULL,
     hour       TINYINT  NOT NULL,
+    special    BOOLEAN  NOT NULL DEFAULT FALSE CHECK (special IN (FALSE, TRUE)),
 
     created_by INTEGER  NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

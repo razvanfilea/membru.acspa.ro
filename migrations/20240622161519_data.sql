@@ -13,5 +13,5 @@ VALUES (1, 'Admin', 100, 100, TRUE);
 insert into users (email, name, password_hash, role_id, has_key)
 VALUES ('razvan.filea@gmail.com', 'Razvan Filea', '$argon2id$v=19$m=19456,t=2,p=1$r7gp/pJoX038RwBEe8IzzQ$9L3znCPi4Va1ENFjxU4mIUkqsJdDHW2BiO81aPpfjiM', 1, TRUE);
 
-insert into locations (name, slot_capacity, slots_start_hour, slot_duration, slots_per_day)
-VALUES ('Gara', 8, 18, 2, 2);
+insert into locations (name, slot_capacity, slots_start_hour, slot_duration, slots_per_day, alt_slots_start_hour, alt_slot_duration, alt_slots_per_day)
+VALUES ('Gara', 8, 18, 2, 2, 10, 3, 4);

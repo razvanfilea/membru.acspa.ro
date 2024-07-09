@@ -12,13 +12,14 @@ mod profile;
 pub type AuthSession = axum_login::AuthSession<UserAuthenticator>;
 
 pub fn router() -> Router<AppState> {
-    let admin_router = Router::new()
-        .nest("/admin", admin::router())
-        .route_layer(permission_required!(
-            UserAuthenticator,
-            login_url = "/",
-            "admin_panel"
-        ));
+    let admin_router =
+        Router::new()
+            .nest("/admin", admin::router())
+            .route_layer(permission_required!(
+                UserAuthenticator,
+                login_url = "/",
+                "admin_panel"
+            ));
 
     let authenticated_router = Router::<AppState>::new()
         .merge(home::router())

@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<main class="p-8 w-full">
+<main class="p-4 md:p-8 w-full">
     <div class="flex flex-row justify-between items-center mb-8">
         <h1 class="text-2xl">{{ members.len() }} membri</h1>
 
@@ -23,13 +23,18 @@
                     <img src="https://ui-avatars.com/api/?name={{user.name}}&rounded=true"/>
                 </div>
                 <div class="flex flex-col">
-                    {{ user.name }}
-                    <span class="text-sm text-gray-300">{{ user.role }}</span>
+                    <div class="flex flex-row items-center gap-4">
+                        {{ user.name }}
+                        {% if user.has_key %}
+                        <span class="material-symbols-outlined">vpn_key</span>
+                        {% endif %}
+                    </div>
+                    <span class="text-sm text-gray-300">{{ user.role }} • {{ user.email }}</span>
                 </div>
             </div>
 
             <a href="/admin/members/edit/{{ user.id }}">
-                <button class="btn btn-circle btn-sm btn-outline">
+                <button class="btn btn-square btn-sm btn-outline">
                     <span class="material-symbols-outlined">edit</span>
                 </button>
             </a>

@@ -44,7 +44,6 @@ struct NewRole {
     name: String,
     reservations: i64,
     as_guest: i64,
-    admin_panel_access: Option<String>,
 }
 
 #[derive(Template)]
@@ -65,17 +64,15 @@ async fn create_new_role(
     State(state): State<AppState>,
     Form(role): Form<NewRole>,
 ) -> impl IntoResponse {
-    let admin_panel_access = role.admin_panel_access.is_some();
     query!(
-        "insert into user_roles (name, reservations, as_guest, admin_panel_access) VALUES ($1, $2, $3, $4)",
+        "insert into user_roles (name, reservations, as_guest) VALUES ($1, $2, $3)",
         role.name,
         role.reservations,
-        role.as_guest,
-        admin_panel_access
+        role.as_guest
     )
-        .execute(&state.pool)
-        .await
-        .expect("Database error");
+    .execute(&state.pool)
+    .await
+    .expect("Database error");
 
     Response::builder()
         .header("HX-Redirect", "/admin/roles")
@@ -93,19 +90,19 @@ async fn edit_role_page(
         .await
         .expect("Database error");
 
-
     if role.is_none() {
         return Response::builder()
             .header("HX-Redirect", "/admin/roles")
             .body("Rolul nu există".to_string())
             .expect("Failed to create headers")
-            .into_response()
+            .into_response();
     }
 
     NewRoleTemplate {
         user: auth_session.user.unwrap(),
         value: role,
-    }.into_response()
+    }
+    .into_response()
 }
 
 async fn update_role(
@@ -113,18 +110,16 @@ async fn update_role(
     Path(role_id): Path<i64>,
     Form(role): Form<NewRole>,
 ) -> impl IntoResponse {
-    let admin_panel_access = role.admin_panel_access.is_some();
     query!(
-        "update user_roles set name = $2, reservations = $3, as_guest = $4, admin_panel_access = $5 where id = $1",
+        "update user_roles set name = $2, reservations = $3, as_guest = $4 where id = $1",
         role_id,
         role.name,
         role.reservations,
-        role.as_guest,
-        admin_panel_access
+        role.as_guest
     )
-        .execute(&state.pool)
-        .await
-        .expect("Database error");
+    .execute(&state.pool)
+    .await
+    .expect("Database error");
 
     Response::builder()
         .header("HX-Redirect", "/admin/roles")

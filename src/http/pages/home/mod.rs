@@ -1,19 +1,20 @@
-use crate::http::pages::home::calendar::{get_weeks_of_month, MonthDates};
-use crate::http::pages::AuthSession;
-use crate::http::AppState;
-use crate::model::user::{UserUi, UserDb};
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
 use axum::routing::{get, post};
 use axum::{Form, Router};
 use chrono::{Datelike, NaiveDate};
-use chrono::Utc;
+use chrono::{Utc, Weekday};
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use tracing::warn;
-use crate::http::pages::home::reservation::create_reservation;
+
+use crate::http::pages::home::calendar::{get_weeks_of_month, MonthDates};
+use crate::http::pages::home::reservation::{create_reservation, is_free_day};
+use crate::http::pages::AuthSession;
+use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
+use crate::model::user::UserUi;
 
 mod calendar;
 mod reservation;
@@ -37,25 +38,32 @@ async fn get_reservation_hours(
     state: &AppState,
     date: chrono::NaiveDate,
 ) -> Vec<PossibleReservationHour> {
-    let mut hours = vec![];
-    let location = &state.location;
+    let structure = if is_free_day(&state.pool, &date).await {
+        state.location.get_alt_hour_structure()
+    } else {
+        state.location.get_hour_structure()
+    };
 
-    for i in 0..location.slots_per_day {
-        let hour = location.slots_start_hour + location.slot_duration * i;
-        let reservations = query!("select users.name from reservations inner join users on user_id = users.id where date = $1 and hour = $2", date, hour)
-            .fetch_all(&state.pool).await.unwrap()
-            .into_iter()
-            .map(|record| record.name)
-            .collect();
+    let date_reservations = query!("select users.name, hour from reservations inner join users on user_id = users.id where date = $1", date)
+        .fetch_all(&state.pool)
+        .await
+        .expect("Database error");
 
-        hours.push(PossibleReservationHour {
-            start_hour: hour as u8,
-            end_hour: (hour + location.slot_duration) as u8,
-            reservations,
+    (0..structure.slots_per_day)
+        .map(|i| {
+            let hour = structure.slots_start_hour + structure.slot_duration * i;
+
+            PossibleReservationHour {
+                start_hour: hour as u8,
+                end_hour: (hour + structure.slot_duration) as u8,
+                reservations: date_reservations
+                    .iter()
+                    .filter(|record| record.hour == hour)
+                    .map(|record| record.name.clone())
+                    .collect(),
+            }
         })
-    }
-
-    hours
+        .collect()
 }
 
 struct PossibleReservationHour {
@@ -82,7 +90,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         current_date,
         selected_date: current_date,
         weeks: get_weeks_of_month(current_date),
-        user: auth_session.user.unwrap().into(),
+        user: auth_session.user.unwrap(),
         reservation_hours: get_reservation_hours(&state, current_date).await,
         global_vars: get_global_vars(&state).await,
     }
@@ -169,17 +177,18 @@ async fn confirm_reservation(
     #[template(path = "components/home/reservation_confirmed.html")]
     struct ConfirmationTemplate {
         selected_date: chrono::NaiveDate,
-        start_hour: u8,
-        end_hour: u8,
+        successful: bool,
+        message: String
     }
 
     let user = auth_session.user.unwrap();
 
     let selected_date =
         chrono::NaiveDate::parse_from_str(&query.selected_date, "%d.%m.%Y").expect("Invalid date");
-    
-    create_reservation(&state, user.into(), selected_date, query.hour).await.unwrap();
 
+    let result = create_reservation(&state, user, selected_date, query.hour)
+        .await;
+    
     // query!(
     //     "insert into reservations (user_id, date, hour, location) VALUES ($1, $2, $3, $4)",
     //     user.id,
@@ -193,8 +202,7 @@ async fn confirm_reservation(
 
     ConfirmationTemplate {
         selected_date,
-        start_hour: query.hour,
-        end_hour: query.hour + state.location.slot_duration as u8,
+        successful: result.is_ok(),
+        message: result.unwrap_or_else(|m| m)
     }
 }
-
