@@ -15,7 +15,7 @@ CREATE TABLE users
     password_hash TEXT    NOT NULL,
 
     role_id       INTEGER NOT NULL,
-    has_key       BOOLEAN NOT NULL CHECK (has_key IN (FALSE, TRUE)),
+    has_key       BOOLEAN NOT NULL DEFAULT FALSE CHECK (has_key IN (FALSE, TRUE)),
 
     FOREIGN KEY (role_id) REFERENCES user_roles (id)
 );
@@ -57,7 +57,7 @@ CREATE TABLE reservations_restrictions
 (
     date       DATE     NOT NULL PRIMARY KEY,
     hour       TINYINT  NOT NULL,
-    message    TEXT,
+    message    TEXT     NOT NULL,
     location   TEXT     NOT NULL,
 
     created_by INTEGER  NOT NULL,
@@ -98,9 +98,6 @@ CREATE TABLE global_vars
     entrance_code    TEXT    NOT NULL,
     reminder_message TEXT    NOT NULL
 );
-
-INSERT INTO global_vars (id, in_maintenance, entrance_code, reminder_message)
-VALUES (0, FALSE, '', '');
 
 CREATE VIEW users_with_role AS
 SELECT u.id,

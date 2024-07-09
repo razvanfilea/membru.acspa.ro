@@ -3,7 +3,7 @@ use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
 use axum::routing::{get, post};
 use axum::{Form, Router};
-use chrono::{Datelike, NaiveDate};
+use chrono::{Datelike, NaiveDate, NaiveDateTime};
 use chrono::{Utc, Weekday};
 use serde::Deserialize;
 use sqlx::{query, query_as};
@@ -176,9 +176,8 @@ async fn confirm_reservation(
     #[derive(Template)]
     #[template(path = "components/home/reservation_confirmed.html")]
     struct ConfirmationTemplate {
-        selected_date: chrono::NaiveDate,
         successful: bool,
-        message: String
+        message: String,
     }
 
     let user = auth_session.user.unwrap();
@@ -186,9 +185,9 @@ async fn confirm_reservation(
     let selected_date =
         chrono::NaiveDate::parse_from_str(&query.selected_date, "%d.%m.%Y").expect("Invalid date");
 
-    let result = create_reservation(&state, user, selected_date, query.hour)
-        .await;
-    
+    let now = Utc::now().naive_local();
+    let result = create_reservation(&state, now, &user, selected_date, query.hour).await;
+
     // query!(
     //     "insert into reservations (user_id, date, hour, location) VALUES ($1, $2, $3, $4)",
     //     user.id,
@@ -201,8 +200,7 @@ async fn confirm_reservation(
     // .expect("Failed to create reservation");
 
     ConfirmationTemplate {
-        selected_date,
         successful: result.is_ok(),
-        message: result.unwrap_or_else(|m| m)
+        message: result.unwrap_or_else(|m| m.to_string()),
     }
 }
