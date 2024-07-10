@@ -1,10 +1,10 @@
 CREATE TABLE user_roles
 (
-    id                 INTEGER NOT NULL PRIMARY KEY,
-    name               TEXT    NOT NULL UNIQUE,
-    reservations       TINYINT NOT NULL CHECK (reservations >= 0),
-    as_guest           TINYINT NOT NULL CHECK (as_guest >= 0),
-    admin_panel_access BOOLEAN NOT NULL CHECK (admin_panel_access IN (FALSE, TRUE))
+    id                     INTEGER NOT NULL PRIMARY KEY,
+    name                   TEXT    NOT NULL UNIQUE,
+    max_reservations       TINYINT NOT NULL CHECK (max_reservations >= 0),
+    max_guest_reservations TINYINT NOT NULL CHECK (max_guest_reservations >= 0),
+    admin_panel_access     BOOLEAN NOT NULL CHECK (admin_panel_access IN (FALSE, TRUE))
 );
 
 CREATE TABLE users
@@ -75,13 +75,12 @@ CREATE TABLE free_days
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE guests
+CREATE TABLE special_guests
 (
     name       TEXT     NOT NULL,
     location   INTEGER  NOT NULL,
     date       DATE     NOT NULL,
     hour       TINYINT  NOT NULL,
-    special    BOOLEAN  NOT NULL DEFAULT FALSE CHECK (special IN (FALSE, TRUE)),
 
     created_by INTEGER  NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -90,6 +89,24 @@ CREATE TABLE guests
     FOREIGN KEY (created_by) REFERENCES users (id),
     FOREIGN KEY (location) REFERENCES locations (id)
 );
+
+CREATE INDEX special_guests_created_by ON special_guests (created_by);
+
+CREATE TABLE guests
+(
+    location   INTEGER  NOT NULL,
+    date       DATE     NOT NULL,
+    hour       TINYINT  NOT NULL,
+
+    created_by INTEGER  NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (location, date, hour, created_by),
+    FOREIGN KEY (created_by) REFERENCES users (id),
+    FOREIGN KEY (location) REFERENCES locations (id)
+);
+
+CREATE INDEX guests_created_by ON guests (created_by);
 
 CREATE TABLE global_vars
 (

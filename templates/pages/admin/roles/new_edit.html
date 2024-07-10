@@ -17,14 +17,14 @@
     </div>
     <input id="reservations" name="reservations" type="number" required class="input input-bordered"
            min="0" max="255" autocomplete="off"
-           {% if let Some(val) = value %}value="{{ val.reservations }}" {% else %}value="0" {% endif %}/>
+           {% if let Some(val) = value %}value="{{ val.max_reservations }}" {% else %}value="0" {% endif %}/>
 
     <div class="label">
         <label for="as_guest" class="label-text">Rezervări ca invitat pe săptămână:</label>
     </div>
     <input id="as_guest" name="as_guest" type="number" required class="input input-bordered"
            min="0" max="255" autocomplete="off"
-           {% if let Some(val) = value %}value="{{ val.as_guest }}" {% else %}value="0" {% endif %}/>
+           {% if let Some(val) = value %}value="{{ val.max_guest_reservations }}" {% else %}value="0" {% endif %}/>
 
     <label class="label cursor-pointer py-6">
         <span class="label-text">Access panou administrare:</span>

@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<form class="form-control p-4 md:p-8 w-full">
+<form class="form-control p-4 md:p-8 w-full" hx-post="/admin/members/new">
     <div class="label">
         <label for="email" class="label-text">Email:</label>
     </div>
@@ -37,7 +37,7 @@
     <input id="password" name="password" type="text" placeholder="Parola" required autocomplete="off"
            class="input input-bordered"/>
 
-    <button class="btn btn-primary mt-6" hx-post="/admin/members/new">
+    <button class="btn btn-primary mt-6" type="submit">
         Înregistrează utilizatorul nou
     </button>
 </form>

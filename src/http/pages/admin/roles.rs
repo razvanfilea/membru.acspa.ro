@@ -65,7 +65,7 @@ async fn create_new_role(
     Form(role): Form<NewRole>,
 ) -> impl IntoResponse {
     query!(
-        "insert into user_roles (name, reservations, as_guest) VALUES ($1, $2, $3)",
+        "insert into user_roles (name, max_reservations, max_guest_reservations) VALUES ($1, $2, $3)",
         role.name,
         role.reservations,
         role.as_guest
@@ -111,7 +111,7 @@ async fn update_role(
     Form(role): Form<NewRole>,
 ) -> impl IntoResponse {
     query!(
-        "update user_roles set name = $2, reservations = $3, as_guest = $4 where id = $1",
+        "update user_roles set name = $2, max_reservations = $3, max_guest_reservations = $4 where id = $1",
         role_id,
         role.name,
         role.reservations,

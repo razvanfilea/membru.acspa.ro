@@ -34,3 +34,16 @@ pub struct HourStructure {
     pub slot_duration: i64,
     pub slots_per_day: i64,
 }
+
+impl HourStructure {
+    pub fn is_hour_valid(&self, hour: u8) -> bool {
+        for step in 0..self.slots_per_day {
+            let valid_hour = self.slots_start_hour + self.slot_duration * step;
+            if valid_hour as u8 == hour {
+                return true;
+            }
+        }
+
+        false
+    }
+}

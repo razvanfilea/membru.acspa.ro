@@ -10,7 +10,7 @@ use sqlx::{query, query_as};
 use tracing::warn;
 
 use crate::http::pages::home::calendar::{get_weeks_of_month, MonthDates};
-use crate::http::pages::home::reservation::{create_reservation, is_free_day};
+use crate::http::pages::home::reservation::{create_reservation, is_free_day, ReservationSuccess};
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
@@ -46,8 +46,16 @@ async fn get_reservation_hours(state: &AppState, date: NaiveDate) -> Vec<Possibl
         .await
         .expect("Database error");
 
+    let date_special_guests = query!(
+        "select name, hour from special_guests where date = $1 order by created_at",
+        date
+    )
+    .fetch_all(&state.pool)
+    .await
+    .expect("Database error");
+
     let date_guests = query!(
-        "select name, hour, special from guests where date = $1 order by created_at",
+        "select u.name, g.hour from guests g inner join users u on g.created_by = u.id where g.date = $1 order by g.created_at",
         date
     )
     .fetch_all(&state.pool)
@@ -66,23 +74,28 @@ async fn get_reservation_hours(state: &AppState, date: NaiveDate) -> Vec<Possibl
                     res_type: ReservationType::Normal,
                 });
 
+            let special_guests = date_special_guests
+                .iter()
+                .filter(|record| record.hour == hour)
+                .map(|record| Reservation {
+                    name: record.name.clone(),
+                    has_key: false,
+                    res_type: ReservationType::SpecialGuest,
+                });
+
             let guests = date_guests
                 .iter()
                 .filter(|record| record.hour == hour)
                 .map(|record| Reservation {
                     name: record.name.clone(),
                     has_key: false,
-                    res_type: if record.special {
-                        ReservationType::SpecialGuest
-                    } else {
-                        ReservationType::Guest
-                    },
+                    res_type: ReservationType::Guest,
                 });
 
             PossibleReservationSlot {
                 start_hour: hour as u8,
                 end_hour: (hour + structure.slot_duration) as u8,
-                reservations: reservations.chain(guests).collect(),
+                reservations: reservations.chain(special_guests).chain(guests).collect(),
             }
         })
         .collect()
@@ -221,10 +234,23 @@ async fn confirm_reservation(
         NaiveDate::parse_from_str(&query.selected_date, "%d.%m.%Y").expect("Invalid date");
 
     let now = Utc::now().naive_local();
-    let result = create_reservation(&state, now, &user, selected_date, query.hour).await;
+    let selected_hour = query.hour;
+
+    let result = create_reservation(&state, now, &user, selected_date, selected_hour).await;
+    let successful = result.is_ok();
+    let message = match result {
+        Ok(success) => match success {
+            ReservationSuccess::Reservation => format!("Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>", query.selected_date),
+            ReservationSuccess::Guest => format!(
+                "Ai rezervare pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
+                query.selected_date
+            ),
+        },
+        Err(e) => e.to_string(),
+    };
 
     ConfirmationTemplate {
-        successful: result.is_ok(),
-        message: result.unwrap_or_else(|m| m.to_string()),
+        successful,
+        message,
     }
 }

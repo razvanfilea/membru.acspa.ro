@@ -20,8 +20,8 @@
         <div class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
             <div class="flex flex-col">
                 <span class="text-xl text-gray-300">{{ role.name }}</span>
-                <p>Rezervări pe săptămână: <b>{{ role.reservations }}</b></p>
-                <p>Rezervări ca invitat pe săptămână: <b>{{ role.as_guest }}</b></p>
+                <p>Rezervări pe săptămână: <b>{{ role.max_reservations }}</b></p>
+                <p>Rezervări ca invitat pe săptămână: <b>{{ role.max_guest_reservations }}</b></p>
                 <p>Access la panou de administrare: <b>{{ role.admin_panel_access }}</b></p>
             </div>
 
