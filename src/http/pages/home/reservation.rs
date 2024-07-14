@@ -306,7 +306,13 @@ mod test {
         "#, user_max_reservations, user_max_guest_reservations
         ).execute(&pool).await.unwrap();
 
-        let state = AppState::new(pool).await;
+        let state = AppState {
+            location: query_as!(Location, "select * from locations where name = 'test_location'")
+                .fetch_one(&pool)
+                .await
+                .expect("No locations found"),
+            pool,
+        };
 
         let user1 = query_as!(UserUi, "select * from users_with_role where id = 1000")
             .fetch_one(&state.pool)

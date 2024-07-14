@@ -13,6 +13,7 @@ use crate::model::user::UserUi;
 
 mod members;
 mod roles;
+mod free_days;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -20,6 +21,7 @@ pub fn router() -> Router<AppState> {
         .route("/apply_settings", post(apply_settings))
         .nest("/members", members::router())
         .nest("/roles", roles::router())
+        .nest("/free_days", free_days::router())
 }
 
 async fn get_global_vars(state: &AppState) -> GlobalVars {

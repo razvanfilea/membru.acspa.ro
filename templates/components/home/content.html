@@ -1,5 +1,5 @@
-<main class="flex flex-row flex-wrap md:flex-nowrap gap-4">
-    <div class="flex flex-col max-w-full" hx-target="main" hx-swap="outerHTML">
+<main class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="flex flex-col max-w-96 grow" hx-target="main" hx-swap="outerHTML">
         <span class="mb-4">
             <b>Data selectată: </b>
             <span class="text-blue-400">{{ selected_date.format("%d.%m.%Y") }}</span>
@@ -7,7 +7,7 @@
         {% include "components/calendar_date_picker.html" %}
     </div>
 
-    <div class="flex flex-col w-full" hx-vals='{"selected_date": "{{ selected_date.format("%d.%m.%Y") }}" }'>
+    <div class="flex flex-col max-w-full grow" hx-vals='{"selected_date": "{{ selected_date.format("%d.%m.%Y") }}" }'>
         <span>Alege ora:</span>
 
         {% for possible_hour in reservation_hours %}

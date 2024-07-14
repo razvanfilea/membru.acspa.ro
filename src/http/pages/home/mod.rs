@@ -208,10 +208,16 @@ async fn hour_picker(
             Utc::now().naive_local().date()
         });
 
+    let structure = if is_free_day(&state.pool, &selected_date).await {
+        state.location.get_alt_hour_structure()
+    } else {
+        state.location.get_hour_structure()
+    };
+
     ConfirmationTemplate {
         selected_date,
         start_hour: query.hour,
-        end_hour: query.hour + state.location.slot_duration as u8,
+        end_hour: query.hour + structure.slot_duration as u8,
         location_name: state.location.name,
     }
 }

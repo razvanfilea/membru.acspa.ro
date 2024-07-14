@@ -16,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
     tracing_subscriber::registry()
         .with(EnvFilter::new(std::env::var("RUST_LOG").unwrap_or_else(
-            |_| "axum_login=off,tower_sessions=off,sqlx=warn,tower_http=info".into(),
+            |_| "info,axum_login=off,tower_sessions=off,sqlx=warn,tower_http=info".into(),
         )))
         .with(tracing_subscriber::fmt::layer().compact())
         .init();

@@ -17,8 +17,8 @@ mod pages;
 
 #[derive(Clone)]
 pub struct AppState {
-    pool: SqlitePool,
-    location: Location,
+    pub pool: SqlitePool,
+    pub location: Location,
 }
 
 impl AppState {

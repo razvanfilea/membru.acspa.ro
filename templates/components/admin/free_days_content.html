@@ -1,0 +1,22 @@
+<div id="list" class="flex flex-col w-full gap-4">
+    {% for day in free_days %}
+    {% let id_date = day.date.format("%Y%m%d") %}
+    <div id="day_{{ id_date }}" class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
+        <div class="flex flex-col">
+            <p>Data: <b>{{ day.date.format("%d.%m.%Y") }}</b></p>
+            {% if let Some(description) = day.description %}
+            <p>Nume: <b>{{ description }}</b></p>
+            {% endif %}
+            <p class="text-sm">Creat pe: {{ day.created_at.format("%d.%m.%Y %H:%M") }}</p>
+        </div>
+
+        <button class="btn btn-square btn-sm btn-error btn-outline"
+                hx-delete='/admin/free_days/{{ day.date.format("%Y-%m-%d") }}'
+                hx-target="#day_{{ id_date }}"
+                hx-swap="outerHTML">
+            <span class="material-symbols-outlined">delete</span>
+        </button>
+
+    </div>
+    {% endfor %}
+</div>

@@ -46,6 +46,7 @@ CREATE TABLE reservations
     hour       TINYINT  NOT NULL,
     location   INTEGER  NOT NULL,
     cancelled  BOOLEAN  NOT NULL DEFAULT FALSE CHECK (cancelled IN (FALSE, TRUE)),
+    in_waiting BOOLEAN  NOT NULL DEFAULT FALSE CHECK (in_waiting IN (FALSE, TRUE)),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (user_id, date, hour, location),
@@ -70,7 +71,7 @@ CREATE TABLE reservations_restrictions
 CREATE TABLE free_days
 (
     date        DATE     NOT NULL PRIMARY KEY,
-    description TEXT     NOT NULL,
+    description TEXT,
 
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
