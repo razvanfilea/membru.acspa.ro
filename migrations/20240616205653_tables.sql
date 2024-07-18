@@ -56,14 +56,15 @@ CREATE TABLE reservations
 
 CREATE TABLE reservations_restrictions
 (
-    date       DATE     NOT NULL PRIMARY KEY,
+    date       DATE     NOT NULL,
     hour       TINYINT  NOT NULL,
-    message    TEXT     NOT NULL,
     location   TEXT     NOT NULL,
+    message    TEXT     NOT NULL,
 
     created_by INTEGER  NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
+    PRIMARY KEY (date, hour, location),
     FOREIGN KEY (created_by) REFERENCES users (id),
     FOREIGN KEY (location) REFERENCES locations (name)
 );

@@ -14,6 +14,7 @@ use crate::model::user::UserUi;
 mod members;
 mod roles;
 mod free_days;
+mod restrictions;
 
 pub fn router() -> Router<AppState> {
     Router::new()

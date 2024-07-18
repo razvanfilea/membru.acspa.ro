@@ -1,6 +1,8 @@
 use anyhow::Context;
 use axum_login::tower_sessions::ExpiredDeletion;
-use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous};
+use std::str::FromStr;
+use std::time::Duration;
 use tower_sessions_sqlx_store::SqliteStore;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -21,9 +23,18 @@ async fn main() -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer().compact())
         .init();
 
+    let database_url = std::env::var("DATABASE_URL").context("Failed to get database URL")?;
+    let connection_options = SqliteConnectOptions::from_str(&database_url)?
+        .journal_mode(SqliteJournalMode::Wal)
+        .foreign_keys(true)
+        .synchronous(SqliteSynchronous::Full)
+        .busy_timeout(Duration::from_secs(5))
+        .pragma("temp_store", "memory")
+        .pragma("cache_size", "-20000");
+
     let pool = SqlitePoolOptions::new()
-        .max_connections(8)
-        .connect(&std::env::var("DATABASE_URL").context("Failed to get database URL")?)
+        .max_connections(4)
+        .connect_with(connection_options)
         .await?;
 
     let session_store = SqliteStore::new(pool.clone());

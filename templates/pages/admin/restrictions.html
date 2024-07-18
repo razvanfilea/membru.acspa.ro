@@ -1,0 +1,55 @@
+{% extends "../base.html" %}
+
+{% block page_title %}Rezervări blocate{% endblock %}
+
+{% block content %}
+
+<main class="p-4 md:p-8 w-full">
+  <div class="flex flex-row justify-end items-center mb-8">
+    <button class="btn btn-circle btn-success" onclick="add_modal.showModal()">
+      <span class="material-symbols-outlined">add</span>
+    </button>
+  </div>
+
+  {% include "components/admin/restrictions_content.html" %}
+</main>
+
+<dialog id="add_modal" class="modal">
+  <div class="modal-box">
+    <form class="form-control">
+      <h3 class="text-lg font-bold mb-4">Adaugă zi liberă</h3>
+
+      <div class="label">
+        <label for="date" class="label-text">Data:</label>
+      </div>
+      <input id="date" name="date" type="date" class="input input-bordered w-full" required
+             min='{{ current_date.format("%Y-%m-%d") }}'/>
+
+      <div class="label">
+        <label for="description" class="label-text">Descriere:</label>
+      </div>
+      <input id="description" name="description" type="text" class="input input-bordered w-full"
+             placeholder="Poate lipsi"/>
+
+      <div class="modal-action grid grid-cols-2">
+        <button class="btn"
+                onclick="add_modal.close()">
+          Anulează
+        </button>
+
+        <button class="btn btn-success"
+                onclick="add_modal.close()"
+                hx-put="/admin/free_days"
+                hx-target="#list"
+                hx-swap="outerHTML">
+          Adaugă
+        </button>
+      </div>
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
+{% endblock %}
