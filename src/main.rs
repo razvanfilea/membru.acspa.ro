@@ -12,6 +12,7 @@ use crate::http::{http_server, AppState};
 
 mod http;
 mod model;
+mod utils;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

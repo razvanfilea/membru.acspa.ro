@@ -4,3 +4,4 @@ pub mod reservation;
 pub mod role;
 pub mod user;
 pub mod free_day;
+pub mod restriction;

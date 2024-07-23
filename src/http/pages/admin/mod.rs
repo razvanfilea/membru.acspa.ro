@@ -23,6 +23,7 @@ pub fn router() -> Router<AppState> {
         .nest("/members", members::router())
         .nest("/roles", roles::router())
         .nest("/free_days", free_days::router())
+        .nest("/restrictions", restrictions::router())
 }
 
 async fn get_global_vars(state: &AppState) -> GlobalVars {
@@ -41,7 +42,7 @@ async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) ->
     }
 
     HomeTemplate {
-        user: auth_session.user.unwrap().into(),
+        user: auth_session.user.unwrap(),
         global_vars: get_global_vars(&state).await,
     }
 }

@@ -10,11 +10,12 @@ use sqlx::{query, query_as};
 use tracing::warn;
 
 use crate::http::pages::home::calendar::{get_weeks_of_month, MonthDates};
-use crate::http::pages::home::reservation::{create_reservation, is_free_day, ReservationSuccess};
+use crate::http::pages::home::reservation::{create_reservation, ReservationSuccess};
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::UserUi;
+use crate::utils::get_hour_structure_for_day;
 
 mod calendar;
 mod reservation;
@@ -35,11 +36,7 @@ async fn get_global_vars(state: &AppState) -> GlobalVars {
 }
 
 async fn get_reservation_hours(state: &AppState, date: NaiveDate) -> Vec<PossibleReservationSlot> {
-    let structure = if is_free_day(&state.pool, &date).await {
-        state.location.get_alt_hour_structure()
-    } else {
-        state.location.get_hour_structure()
-    };
+    let structure = get_hour_structure_for_day(&state, &date).await;
 
     let date_reservations = query!("select users.name, hour, has_key from reservations inner join users on user_id = users.id where date = $1 order by created_at", date)
         .fetch_all(&state.pool)
@@ -208,11 +205,7 @@ async fn hour_picker(
             Utc::now().naive_local().date()
         });
 
-    let structure = if is_free_day(&state.pool, &selected_date).await {
-        state.location.get_alt_hour_structure()
-    } else {
-        state.location.get_hour_structure()
-    };
+    let structure = get_hour_structure_for_day(&state, &selected_date).await;
 
     ConfirmationTemplate {
         selected_date,

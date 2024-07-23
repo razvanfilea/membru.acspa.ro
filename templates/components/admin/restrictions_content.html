@@ -1,18 +1,19 @@
 <div id="list" class="flex flex-col w-full gap-4">
-    {% for day in free_days %}
-    {% let id_date = day.date.format("%Y%m%d") %}
-    <div id="day_{{ id_date }}" class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
+    {% for res in restrictions %}
+    {% let id_date = res.date.format("%Y%m%d") %}
+    <div id="restriction_{{ id_date }}" class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
         <div class="flex flex-col">
-            <p>Data: <b>{{ day.date.format("%d.%m.%Y") }}</b></p>
-            {% if let Some(description) = day.description %}
-            <p>Nume: <b>{{ description }}</b></p>
+            <p>Motiv: <b>{{ res.message }}</b></p>
+            <p>Data: <b>{{ res.date.format("%d.%m.%Y") }}</b></p>
+            {% if let Some(hour) = res.hour %}
+            <p>Ora: <b>{{ hour }}</b></p>
             {% endif %}
-            <p class="text-sm">Creat pe: {{ day.created_at.format("%d.%m.%Y %H:%M") }}</p>
+            <p class="text-sm">Creat pe {{ res.created_at.format("%d.%m.%Y %H:%M") }}</p>
         </div>
 
         <button class="btn btn-square btn-sm btn-error btn-outline"
-                hx-delete='/admin/free_days/{{ day.date.format("%Y-%m-%d") }}'
-                hx-target="#day_{{ id_date }}"
+                hx-delete='/admin/restrictions/{{ res.date.format("%Y-%m-%d") }}{% if let Some(hour) = res.hour %}?hour={{ hour }}{% endif %}'
+                hx-target="#restriction_{{ id_date }}"
                 hx-swap="outerHTML">
             <span class="material-symbols-outlined">delete</span>
         </button>

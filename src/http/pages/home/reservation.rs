@@ -6,22 +6,7 @@ use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike, Weekday};
 use sqlx::{query, query_as, Sqlite, SqlitePool, Transaction};
 use std::fmt::{Display, Formatter};
 use std::ops::DerefMut;
-
-pub async fn is_free_day(pool: &SqlitePool, date: &NaiveDate) -> bool {
-    let exists_in_table = async {
-        query!(
-            "select exists(select true from free_days where date = $1) as 'exists!'",
-            date
-        )
-        .fetch_one(pool)
-        .await
-        .expect("Database error")
-        .exists
-            != 0
-    };
-
-    date.weekday() == Weekday::Sat || date.weekday() == Weekday::Sun || exists_in_table.await
-}
+use crate::utils::is_free_day;
 
 #[derive(Debug, PartialEq)]
 pub enum ReservationSuccess {
@@ -109,7 +94,7 @@ async fn check_other_errors<'a>(
 ) -> Result<(), ReservationError> {
     // Check if it already exists
     let reservation_already_exists = query!(
-        "select exists(select true from reservations where location = $1 and date = $2 and hour = $3 and user_id = $4 and cancelled = false) as 'exists!'",
+        "select exists(select true from reservations where location = $1 and date = $2 and hour = $3 and user_id = $4) as 'exists!'",
         location.id,
         selected_date,
         selected_hour,
