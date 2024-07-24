@@ -1,9 +1,9 @@
 mod reservation;
 
-use chrono::{Datelike, NaiveDate, Weekday};
-use sqlx::{query, SqlitePool};
 use crate::http::AppState;
 use crate::model::location::HourStructure;
+use chrono::{Datelike, NaiveDate, Weekday};
+use sqlx::{query, SqlitePool};
 
 pub async fn get_hour_structure_for_day(state: &AppState, date: &NaiveDate) -> HourStructure {
     if is_free_day(&state.pool, &date).await {
@@ -19,10 +19,10 @@ pub async fn is_free_day(pool: &SqlitePool, date: &NaiveDate) -> bool {
             "select exists(select true from free_days where date = $1) as 'exists!'",
             date
         )
-            .fetch_one(pool)
-            .await
-            .expect("Database error")
-            .exists
+        .fetch_one(pool)
+        .await
+        .expect("Database error")
+        .exists
             != 0
     };
 

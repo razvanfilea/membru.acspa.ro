@@ -36,8 +36,9 @@ pub struct HourStructure {
 }
 
 impl HourStructure {
-    pub fn iter(&self) -> impl Iterator<Item=u8> + '_ {
-        (0..self.slots_per_day).map(|step| (self.slots_start_hour + self.slot_duration * step) as u8)
+    pub fn iter(&self) -> impl Iterator<Item = u8> + '_ {
+        (0..self.slots_per_day)
+            .map(|step| (self.slots_start_hour + self.slot_duration * step) as u8)
     }
 
     pub fn is_hour_valid(&self, hour: u8) -> bool {

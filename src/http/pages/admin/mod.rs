@@ -11,10 +11,10 @@ use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::UserUi;
 
-mod members;
-mod roles;
 mod free_days;
+mod members;
 mod restrictions;
+mod roles;
 
 pub fn router() -> Router<AppState> {
     Router::new()

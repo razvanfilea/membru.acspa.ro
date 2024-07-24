@@ -14,6 +14,7 @@ use crate::http::pages::home::reservation::{create_reservation, ReservationSucce
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
+use crate::model::restriction::Restriction;
 use crate::model::user::UserUi;
 use crate::utils::get_hour_structure_for_day;
 
@@ -36,7 +37,27 @@ async fn get_global_vars(state: &AppState) -> GlobalVars {
 }
 
 async fn get_reservation_hours(state: &AppState, date: NaiveDate) -> Vec<PossibleReservationSlot> {
-    let structure = get_hour_structure_for_day(&state, &date).await;
+    let hour_structure = get_hour_structure_for_day(state, &date).await;
+    let restrictions = query_as!(
+        Restriction,
+        "select * from reservations_restrictions where date = $1 order by hour",
+        date
+    )
+    .fetch_all(&state.pool)
+    .await
+    .expect("Database error");
+
+    // Check if the whole day is restricted
+    if let Some(restriction) = restrictions.first().filter(|r| r.hour.is_none()) {
+        return hour_structure
+            .iter()
+            .map(|hour| PossibleReservationSlot {
+                start_hour: hour,
+                end_hour: hour + hour_structure.slot_duration as u8,
+                reservations: Err(restriction.message.clone()),
+            })
+            .collect();
+    }
 
     let date_reservations = query!("select users.name, hour, has_key from reservations inner join users on user_id = users.id where date = $1 order by created_at", date)
         .fetch_all(&state.pool)
@@ -59,12 +80,25 @@ async fn get_reservation_hours(state: &AppState, date: NaiveDate) -> Vec<Possibl
     .await
     .expect("Database error");
 
-    (0..structure.slots_per_day)
-        .map(|i| {
-            let hour = structure.slots_start_hour + structure.slot_duration * i;
+    hour_structure
+        .iter()
+        .map(|hour| {
+            let end_hour = hour + hour_structure.slot_duration as u8;
+
+            if let Some(restriction) = restrictions
+                .iter()
+                .find(|restriction| restriction.hour == Some(hour as i64))
+            {
+                return PossibleReservationSlot {
+                    start_hour: hour,
+                    end_hour,
+                    reservations: Err(restriction.message.clone()),
+                };
+            }
+
             let reservations = date_reservations
                 .iter()
-                .filter(|record| record.hour == hour)
+                .filter(|record| record.hour as u8 == hour)
                 .map(|record| Reservation {
                     name: record.name.clone(),
                     has_key: record.has_key,
@@ -73,7 +107,7 @@ async fn get_reservation_hours(state: &AppState, date: NaiveDate) -> Vec<Possibl
 
             let special_guests = date_special_guests
                 .iter()
-                .filter(|record| record.hour == hour)
+                .filter(|record| record.hour as u8 == hour)
                 .map(|record| Reservation {
                     name: record.name.clone(),
                     has_key: false,
@@ -82,7 +116,7 @@ async fn get_reservation_hours(state: &AppState, date: NaiveDate) -> Vec<Possibl
 
             let guests = date_guests
                 .iter()
-                .filter(|record| record.hour == hour)
+                .filter(|record| record.hour as u8 == hour)
                 .map(|record| Reservation {
                     name: record.name.clone(),
                     has_key: false,
@@ -90,9 +124,9 @@ async fn get_reservation_hours(state: &AppState, date: NaiveDate) -> Vec<Possibl
                 });
 
             PossibleReservationSlot {
-                start_hour: hour as u8,
-                end_hour: (hour + structure.slot_duration) as u8,
-                reservations: reservations.chain(special_guests).chain(guests).collect(),
+                start_hour: hour,
+                end_hour,
+                reservations: Ok(reservations.chain(special_guests).chain(guests).collect()),
             }
         })
         .collect()
@@ -114,7 +148,7 @@ struct Reservation {
 struct PossibleReservationSlot {
     start_hour: u8,
     end_hour: u8,
-    reservations: Vec<Reservation>,
+    reservations: Result<Vec<Reservation>, String>,
 }
 
 async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {

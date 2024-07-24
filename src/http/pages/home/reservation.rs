@@ -1,11 +1,13 @@
+use std::fmt::{Display, Formatter};
+use std::ops::DerefMut;
+
+use chrono::{NaiveDate, NaiveDateTime, Timelike};
+use sqlx::{query, query_as, Sqlite, Transaction};
+
 use crate::http::AppState;
 use crate::model::location::Location;
 use crate::model::role::UserRole;
 use crate::model::user::UserUi;
-use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike, Weekday};
-use sqlx::{query, query_as, Sqlite, SqlitePool, Transaction};
-use std::fmt::{Display, Formatter};
-use std::ops::DerefMut;
 use crate::utils::is_free_day;
 
 #[derive(Debug, PartialEq)]
@@ -126,7 +128,7 @@ async fn check_other_errors<'a>(
     }
 
     let restriction = query!(
-        "select message from reservations_restrictions where location = $1 and date = $2 and hour = $3",
+        "select message from reservations_restrictions where location = $1 and date = $2 and (hour = $3 or hour is null)",
         location.id,
         selected_date,
         selected_hour
@@ -272,6 +274,8 @@ pub async fn create_reservation(
 
 #[cfg(test)]
 mod test {
+    use chrono::Datelike;
+    use sqlx::SqlitePool;
     use super::*;
 
     async fn setup(
@@ -292,10 +296,13 @@ mod test {
         ).execute(&pool).await.unwrap();
 
         let state = AppState {
-            location: query_as!(Location, "select * from locations where name = 'test_location'")
-                .fetch_one(&pool)
-                .await
-                .expect("No locations found"),
+            location: query_as!(
+                Location,
+                "select * from locations where name = 'test_location'"
+            )
+            .fetch_one(&pool)
+            .await
+            .expect("No locations found"),
             pool,
         };
 
@@ -493,6 +500,40 @@ mod test {
 
         assert_eq!(
             create_reservation(&state, now, &user, weekend, 13).await,
+            Ok(ReservationSuccess::Reservation)
+        );
+    }
+
+    #[sqlx::test]
+    async fn restrictions(pool: SqlitePool) {
+        let (state, user, _) = setup(pool, 1, 1).await;
+
+        query!("insert into reservations_restrictions (message, location, date, hour) values ('res1', $1, '2024-07-11', NULL), ('res2', $1, '2024-07-12', 18)", state.location.id)
+            .execute(&state.pool)
+            .await
+            .unwrap();
+
+        let now = NaiveDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
+        let date_1 = NaiveDate::parse_from_str("11.07.2024", "%d.%m.%Y").unwrap();
+        let date_2 = NaiveDate::parse_from_str("12.07.2024", "%d.%m.%Y").unwrap();
+
+        assert_eq!(
+            create_reservation(&state, now, &user, date_1, 18).await,
+            Err(ReservationError::Restriction("res1".to_string()))
+        );
+
+        assert_eq!(
+            create_reservation(&state, now, &user, date_1, 20).await,
+            Err(ReservationError::Restriction("res1".to_string()))
+        );
+
+        assert_eq!(
+            create_reservation(&state, now, &user, date_2, 18).await,
+            Err(ReservationError::Restriction("res2".to_string()))
+        );
+
+        assert_eq!(
+            create_reservation(&state, now, &user, date_2, 20).await,
             Ok(ReservationSuccess::Reservation)
         );
     }

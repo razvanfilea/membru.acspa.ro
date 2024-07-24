@@ -1,15 +1,15 @@
 use askama::Template;
 use askama_axum::IntoResponse;
-use axum::{Form, Router};
 use axum::extract::{Path, Query, State};
 use axum::routing::{delete, get, post, put};
+use axum::{Form, Router};
 use chrono::{NaiveDate, Utc};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
 use tracing::{error, info};
 
-use crate::http::AppState;
 use crate::http::pages::AuthSession;
+use crate::http::AppState;
 use crate::model::restriction::Restriction;
 use crate::model::user::UserUi;
 use crate::utils::get_hour_structure_for_day;
@@ -23,10 +23,13 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn get_restrictions(pool: &SqlitePool) -> Vec<Restriction> {
-    query_as!(Restriction, "select * from reservations_restrictions order by date, hour")
-        .fetch_all(pool)
-        .await
-        .expect("Database error")
+    query_as!(
+        Restriction,
+        "select * from reservations_restrictions order by date, hour"
+    )
+    .fetch_all(pool)
+    .await
+    .expect("Database error")
 }
 
 async fn restrictions_page(
@@ -56,25 +59,26 @@ struct SelectDateForm {
 
 async fn select_hour(
     State(state): State<AppState>,
-    Form(form): Form<SelectDateForm>
+    Form(form): Form<SelectDateForm>,
 ) -> impl IntoResponse {
     #[derive(Template)]
     #[template(path = "components/admin/restrictions_select_hour.html")]
     struct SelectHourTemplate {
-        hours: Vec<u8>
+        hours: Vec<u8>,
     }
-    
+
     if form.all_day == Some("on".to_string()) {
         return ().into_response();
     }
-    
+
     let date = NaiveDate::parse_from_str(&form.date, "%Y-%m-%d").unwrap();
-    
-    let hour_structure= get_hour_structure_for_day(&state, &date).await;
-    
+
+    let hour_structure = get_hour_structure_for_day(&state, &date).await;
+
     SelectHourTemplate {
-        hours: hour_structure.iter().collect()
-    }.into_response()
+        hours: hour_structure.iter().collect(),
+    }
+    .into_response()
 }
 
 #[derive(Deserialize)]
@@ -131,25 +135,32 @@ async fn create_restriction(
 
 #[derive(Deserialize)]
 struct HourQuery {
-    hour: Option<u8>
+    hour: Option<u8>,
 }
 
 async fn delete_restriction(
     State(state): State<AppState>,
     Path(date): Path<String>,
-    Query(query): Query<HourQuery>
+    Query(query): Query<HourQuery>,
 ) -> impl IntoResponse {
     let date = NaiveDate::parse_from_str(&date, "%Y-%m-%d").unwrap();
 
     if let Some(hour) = query.hour {
-        query!("delete from reservations_restrictions where date = $1 and hour = $2", date, hour)
-            .execute(&state.pool)
-            .await
-            .expect("Database error");
+        query!(
+            "delete from reservations_restrictions where date = $1 and hour = $2",
+            date,
+            hour
+        )
+        .execute(&state.pool)
+        .await
+        .expect("Database error");
     } else {
-        query!("delete from reservations_restrictions where date = $1", date)
-            .execute(&state.pool)
-            .await
-            .expect("Database error");
+        query!(
+            "delete from reservations_restrictions where date = $1",
+            date
+        )
+        .execute(&state.pool)
+        .await
+        .expect("Database error");
     }
 }
