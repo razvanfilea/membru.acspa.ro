@@ -8,9 +8,7 @@
     <p>Este necesară discreția utilizatorului: nu toate datele de intrare sunt validate și multe operații pot fi
         destructive</p>
 
-    <div class="divider">
-        Setări generale
-    </div>
+    <div class="divider">Setări generale</div>
 
     <form class="form-control">
         <label class="label cursor-pointer">
@@ -38,25 +36,30 @@
 
     <div class="grid grid-cols-2 gap-2 sm:gap-4 md:gap-8">
         <div class="divider mt-8 md:mt-12 col-span-2">Situații</div>
+<!--        <a href="/admin/members">-->
+<!--            <button class="btn bg-indigo-700 w-full">Descarcă rezervările</button>-->
+<!--        </a>-->
         <button disabled class="btn w-full">Situație zilnică</button>
         <button disabled class="btn w-full">Situație membru</button>
 
         <div class="divider mt-8 md:mt-12 col-span-2">Membri</div>
         <a href="/admin/members">
-            <button class="btn bg-indigo-700 w-full">Listă membri</button>
+            <button class="btn bg-indigo-700 text-white w-full">Listă membri</button>
         </a>
         <a href="/admin/roles">
-            <button class="btn bg-orange-700 w-full">Roluri membri</button>
+            <button class="btn bg-orange-700 text-white w-full">Roluri membri</button>
         </a>
 
         <div class="divider mt-8 md:mt-12 col-span-2">Altele</div>
         <a href="/admin/free_days">
-            <button class="btn bg-green-600 w-full">Zile libere</button>
+            <button class="btn bg-green-600 text-white w-full">Zile libere</button>
         </a>
         <a href="/admin/restrictions">
-            <button class="btn bg-fuchsia-700 w-full">Restricționare rezervări</button>
+            <button class="btn bg-fuchsia-700 text-white w-full">Restricționare rezervări</button>
         </a>
-        <button disabled class="btn bg-amber-600 w-full">Adăugare invitați</button>
+        <a href="/admin/guests">
+            <button class="btn bg-cyan-600 text-white w-full">Adăugare invitați</button>
+        </a>
     </div>
 </main>
 

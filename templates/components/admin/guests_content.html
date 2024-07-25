@@ -1,0 +1,22 @@
+<div id="list" class="flex flex-col w-full gap-4">
+    {% for guest in guests %}
+    <div id="guest_{{ guest.rowid }}"
+         class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
+        <div class="flex flex-col">
+            <p class="font-bold mb-2">{{ guest.name }}</p>
+            <p>Data: <b>{{ guest.date.format("%d.%m.%Y") }}</b></p>
+            <p>Ora: <b>{{ guest.hour }}</b></p>
+            <p class="text-sm">Creat de {{ guest.created_by }} pe {{ guest.created_at.format("%d.%m.%Y %H:%M") }}</p>
+        </div>
+
+        <button
+                class="btn btn-square btn-sm btn-error btn-outline"
+                hx-delete='/admin/guests/{{ guest.rowid }}'
+                hx-target="#guest_{{ guest.rowid }}"
+                hx-swap="outerHTML">
+            <span class="material-symbols-outlined">delete</span>
+        </button>
+
+    </div>
+    {% endfor %}
+</div>

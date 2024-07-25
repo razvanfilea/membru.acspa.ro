@@ -15,6 +15,7 @@ mod free_days;
 mod members;
 mod restrictions;
 mod roles;
+mod guests;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -24,6 +25,7 @@ pub fn router() -> Router<AppState> {
         .nest("/roles", roles::router())
         .nest("/free_days", free_days::router())
         .nest("/restrictions", restrictions::router())
+        .nest("/guests", guests::router())
 }
 
 async fn get_global_vars(state: &AppState) -> GlobalVars {

@@ -1,0 +1,62 @@
+{% extends "../base.html" %}
+
+{% block page_title %}Invitați speciali{% endblock %}
+
+{% block content %}
+
+<main class="p-4 md:p-8 w-full">
+    <div class="flex flex-row justify-end items-center mb-8">
+        <button class="btn btn-circle btn-success" onclick="add_modal.showModal()">
+            <span class="material-symbols-outlined">add</span>
+        </button>
+    </div>
+
+    {% include "components/admin/guests_content.html" %}
+</main>
+
+<dialog id="add_modal" class="modal">
+    <div class="modal-box">
+        <form class="form-control" hx-target="#hour_selector" hx-trigger="change">
+            <h3 class="text-lg font-bold mb-4">Adaugă invitat special</h3>
+
+            <div class="label">
+                <label for="name" class="label-text">Nume:</label>
+            </div>
+            <input id="name" name="name" type="text" class="input input-bordered w-full" required
+                   placeholder="Nume invitat"/>
+
+            <div class="label">
+                <label for="date" class="label-text">Data:</label>
+            </div>
+            <input id="date" name="date" type="date" class="input input-bordered w-full" required
+                   autocomplete="off" hx-post="/admin/guests/select_hour"
+                   min='{{ current_date.format("%Y-%m-%d") }}'/>
+
+            <div class="label">
+                <label class="label-text">Ora:</label>
+            </div>
+            <div id="hour_selector" class="flex flex-row flex-wrap gap-4"></div>
+
+            <div class="modal-action grid grid-cols-2" hx-disinherit="*">
+                <button class="btn"
+                        onclick="add_modal.close()">
+                    Anulează
+                </button>
+
+                <button class="btn btn-success"
+                        onclick="add_modal.close()"
+                        hx-put="/admin/guests"
+                        hx-target="#list"
+                        hx-swap="outerHTML">
+                    Adaugă
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+
+{% endblock %}

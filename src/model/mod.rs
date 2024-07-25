@@ -5,3 +5,4 @@ pub mod reservation;
 pub mod restriction;
 pub mod role;
 pub mod user;
+pub mod guest;
