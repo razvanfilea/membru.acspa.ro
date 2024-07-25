@@ -26,11 +26,11 @@
                value="{{ global_vars.entrance_code }}"/>
 
         <div class="label">
-            <label for="reminder_message" class="label-text">Mesaj pe pagina principală:</label>
+            <label for="homepage_message" class="label-text">Mesaj pe pagina principală:</label>
         </div>
-        <textarea id="reminder_message" name="reminder_message" type="text"
-                  class="textarea textarea-bordered w-full max-w-md">
-            {{- global_vars.reminder_message -}}
+        <textarea id="homepage_message" name="homepage_message" type="text"
+                  class="textarea textarea-bordered w-full">
+            {{- global_vars.homepage_message -}}
         </textarea>
 
         <button class="btn btn-error mt-8" hx-post="/admin/apply_settings">Aplică setările</button>

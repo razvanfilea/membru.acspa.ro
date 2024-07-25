@@ -5,9 +5,9 @@
 {% block content %}
 
 <div class="p-4 md:p-8">
-    <div class="flex flex-row items-center justify-between">
-        <div></div>
-        <span>Cod intrare: <b>{{ global_vars.entrance_code }}</b></span>
+    <div class="flex flex-row items-center justify-between gap-6 mb-2">
+        <p class="bg-cyan-600 text-white text-sm m-2 p-3 rounded-md">{{ global_vars.homepage_message }}</p>
+        <p class="text-nowrap">Cod intrare: <b>{{ global_vars.entrance_code }}</b></p>
     </div>
 
     {% include "components/home/content.html" %}

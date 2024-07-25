@@ -35,7 +35,7 @@ async fn get_global_vars(state: &AppState) -> GlobalVars {
 
 async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/admin/index.html")]
+    #[template(path = "pages/admin/admin.html")]
     struct HomeTemplate {
         user: UserUi,
         global_vars: GlobalVars,
@@ -51,7 +51,7 @@ async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) ->
 struct NewSettings {
     in_maintenance: Option<String>,
     entrance_code: String,
-    reminder_message: String,
+    homepage_message: String,
 }
 
 async fn apply_settings(
@@ -60,10 +60,10 @@ async fn apply_settings(
 ) -> impl IntoResponse {
     let in_maintenance = settings.in_maintenance.is_some();
     query!(
-        "update global_vars set in_maintenance = $1, entrance_code = $2, reminder_message = $3",
+        "update global_vars set in_maintenance = $1, entrance_code = $2, homepage_message = $3",
         in_maintenance,
         settings.entrance_code,
-        settings.reminder_message
+        settings.homepage_message
     )
     .execute(&state.pool)
     .await

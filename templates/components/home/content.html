@@ -8,8 +8,6 @@
     </div>
 
     <div class="flex flex-col max-w-full grow" hx-vals='{"selected_date": "{{ selected_date.format("%d.%m.%Y") }}" }'>
-        <span>Alege ora:</span>
-
         {% for possible_hour in reservation_hours %}
         <div hx-vals='{"hour": {{ possible_hour.start_hour }} }'>
             <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">

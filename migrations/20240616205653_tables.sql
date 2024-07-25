@@ -113,7 +113,7 @@ CREATE TABLE global_vars
     id               INTEGER NOT NULL PRIMARY KEY CHECK (id = 0),
     in_maintenance   BOOLEAN NOT NULL CHECK (in_maintenance IN (FALSE, TRUE)),
     entrance_code    TEXT    NOT NULL,
-    reminder_message TEXT    NOT NULL
+    homepage_message TEXT    NOT NULL
 );
 
 CREATE VIEW users_with_role AS

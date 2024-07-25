@@ -1,5 +1,4 @@
-INSERT INTO global_vars (id, in_maintenance, entrance_code, reminder_message)
-VALUES (0, FALSE, '', '');
+INSERT INTO global_vars VALUES (0, FALSE, '', '');
 
 INSERT INTO user_roles
 VALUES (1, 'Admin', 100, 100, TRUE),
