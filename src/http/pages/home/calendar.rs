@@ -2,7 +2,6 @@ use time::{Date, Duration, Month, Weekday};
 
 pub type MonthDates = Vec<[Date; 7]>;
 
-#[allow(deprecated)]
 pub fn get_weeks_of_month(date: Date) -> MonthDates {
     let current_year = date.year();
     let current_month = date.month();

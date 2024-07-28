@@ -1,7 +1,7 @@
 <div id="confirmation" class="bg-gray-600 p-6 mt-8 m-2 md:m-4 rounded-2xl">
     <h3 class="text-xl mb-4">Confirmă rezervarea:</h3>
 
-    <p class="my-1">Pe data de <b>{{ selected_date.format("%d.%m.%Y") }}</b> de la ora <b>{{ start_hour }}:00</b> la <b>{{
+    <p class="my-1">Pe data de <b>{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}</b> de la ora <b>{{ start_hour }}:00</b> la <b>{{
         end_hour }}:00</b></p>
     <p>Locația: {{ location_name }}</p>
 

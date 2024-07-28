@@ -1,20 +1,20 @@
 <div id="list" class="flex flex-col w-full gap-4">
     {% for res in restrictions %}
-    {% let id_date = res.date.format("%Y%m%d") %}
+    {% let id_date = res.date.format(date_formats::ISO_DATE_UNDERLINE).unwrap() %}
     <div id="restriction_{{ id_date }}"
          class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
         <div class="flex flex-col">
             <p>Motiv: <b>{{ res.message }}</b></p>
-            <p>Data: <b>{{ res.date.format(date_formats::READABLE_DATE) }}</b></p>
+            <p>Data: <b>{{ res.date.format(date_formats::READABLE_DATE).unwrap() }}</b></p>
             {% if let Some(hour) = res.hour %}
             <p>Ora: <b>{{ hour }}</b></p>
             {% endif %}
-            <p class="text-sm">Creat pe {{ res.created_at.format(date_formats::READABLE_DATE_TIME) }}</p>
+            <p class="text-sm">Creat pe {{ res.created_at.format(date_formats::READABLE_DATE_TIME).unwrap() }}</p>
         </div>
 
         <button
                 class="btn btn-square btn-sm btn-error btn-outline"
-                hx-delete='/admin/restrictions/{{ res.date.format(date_formats::ISO_DATE) }}{% if let Some(hour) = res.hour %}?hour={{ hour }}{% endif %}'
+                hx-delete='/admin/restrictions/{{ res.date.format(date_formats::ISO_DATE).unwrap() }}{% if let Some(hour) = res.hour %}?hour={{ hour }}{% endif %}'
                 hx-target="#restriction_{{ id_date }}"
                 hx-swap="outerHTML">
             <span class="material-symbols-outlined">delete</span>

@@ -2,12 +2,12 @@
     <div class="flex flex-col max-w-96 grow" hx-target="main" hx-swap="outerHTML">
         <span class="mb-4">
             <b>Data selectată: </b>
-            <span class="text-blue-400">{{ selected_date.format("%d.%m.%Y") }}</span>
+            <span class="text-blue-400">{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}</span>
         </span>
         {% include "components/calendar_date_picker.html" %}
     </div>
 
-    <div class="flex flex-col max-w-full grow" hx-vals='{"selected_date": "{{ selected_date.format("%d.%m.%Y") }}" }'>
+    <div class="flex flex-col max-w-full grow" hx-vals='{"selected_date": "{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}" }'>
         {% for possible_hour in reservation_hours %}
         <div hx-vals='{"hour": {{ possible_hour.start_hour }} }'>
             <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">

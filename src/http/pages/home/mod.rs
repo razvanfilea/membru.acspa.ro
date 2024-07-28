@@ -196,7 +196,7 @@ async fn date_picker(
     let selected_date = query
         .selected_date
         .and_then(|date| {
-            Date::parse(&date, date_formats::READABLE_DATE)
+            Date::parse(&date, date_formats::ISO_DATE)
                 .inspect_err(|e| warn!("Failed to parse date {date} with error: {e}"))
                 .ok()
         })
@@ -229,8 +229,8 @@ async fn hour_picker(
         location_name: String,
     }
 
-    let selected_date =
-        Date::parse_from_str(&query.selected_date, "%d.%m.%Y").unwrap_or_else(|e| {
+    let selected_date = Date::parse(&query.selected_date, date_formats::READABLE_DATE)
+        .unwrap_or_else(|e| {
             warn!(
                 "Failed to pase date {} with error: {}",
                 query.selected_date, e
@@ -263,12 +263,18 @@ async fn confirm_reservation(
     let user = auth_session.user.unwrap();
 
     let selected_date =
-        Date::parse_from_str(&query.selected_date, "%d.%m.%Y").expect("Invalid date");
+        Date::parse(&query.selected_date, date_formats::READABLE_DATE).expect("Invalid date");
 
-    let now = Utc::now().naive_local();
     let selected_hour = query.hour;
 
-    let result = create_reservation(&state, now, &user, selected_date, selected_hour).await;
+    let result = create_reservation(
+        &state,
+        OffsetDateTime::now_utc(),
+        &user,
+        selected_date,
+        selected_hour,
+    )
+    .await;
     let successful = result.is_ok();
     let message = match result {
         Ok(success) => match success {

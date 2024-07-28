@@ -4,9 +4,9 @@
          class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
         <div class="flex flex-col">
             <p class="font-bold mb-2">{{ guest.name }}</p>
-            <p>Data: <b>{{ guest.date.format("%d.%m.%Y") }}</b></p>
+            <p>Data: <b>{{ guest.date.format(date_formats::READABLE_DATE).unwrap() }}</b></p>
             <p>Ora: <b>{{ guest.hour }}</b></p>
-            <p class="text-sm">Creat de {{ guest.created_by }} pe {{ guest.created_at.format("%d.%m.%Y %H:%M") }}</p>
+            <p class="text-sm">Creat de {{ guest.created_by }} pe {{ guest.created_at.format(date_formats::READABLE_DATE_TIME).unwrap() }}</p>
         </div>
 
         <button

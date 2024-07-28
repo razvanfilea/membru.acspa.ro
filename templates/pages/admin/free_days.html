@@ -23,7 +23,7 @@
                 <label for="date" class="label-text">Data:</label>
             </div>
             <input id="date" name="date" type="date" class="input input-bordered w-full" required
-                   min='{{ current_date.format("%Y-%m-%d") }}'/>
+                   min='{{ current_date.format(date_formats::ISO_DATE).unwrap() }}'/>
 
             <div class="label">
                 <label for="description" class="label-text">Descriere:</label>

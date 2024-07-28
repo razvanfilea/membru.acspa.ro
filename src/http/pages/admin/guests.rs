@@ -102,7 +102,7 @@ async fn create_guest(
         guests: Vec<SpecialGuestDto>,
     }
 
-    let date = NaiveDate::parse_from_str(&guest.date, "%Y-%m-%d").unwrap();
+    let date = Date::parse(&guest.date, date_formats::ISO_DATE).unwrap();
         let hour_structure = get_hour_structure_for_day(&state, &date).await;
         if !hour_structure.is_hour_valid(guest.hour) {
             error!("Invalid hour: {} for date: {}", guest.hour, guest.date);

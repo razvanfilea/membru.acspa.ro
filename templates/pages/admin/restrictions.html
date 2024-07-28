@@ -14,6 +14,7 @@
     {% include "components/admin/restrictions_content.html" %}
 </main>
 
+{% let current_date_iso = current_date.format(date_formats::ISO_DATE).unwrap() %}
 <dialog id="add_modal" class="modal">
     <div class="modal-box">
         <form class="form-control" hx-target="#hour_selector" hx-trigger="change">
@@ -24,7 +25,7 @@
             </div>
             <input id="date" name="date" type="date" class="input input-bordered w-full" required
                    autocomplete="off" hx-post="/admin/restrictions/select_hour"
-                   min='{{ current_date.format("%Y-%m-%d") }}' value='{{ current_date.format("%Y-%m-%d") }}'/>
+                   min='{{ current_date_iso }}' value='{{ current_date_iso }}'/>
 
             <div class="label">
                 <label for="message" class="label-text">Motiv:</label>

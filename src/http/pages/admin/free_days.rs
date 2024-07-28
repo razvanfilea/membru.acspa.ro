@@ -12,6 +12,7 @@ use sqlx::{query, query_as, SqlitePool};
 use time::{Date, OffsetDateTime};
 use time::macros::format_description;
 use tracing::info;
+use crate::utils::date_formats;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -62,7 +63,7 @@ async fn create_free_day(
         free_days: Vec<FreeDay>,
     }
 
-    let date = Date::parse(&day.date, format_description!("[year]-[month]-[day]")).ok();
+    let date = Date::parse(&day.date, date_formats::ISO_DATE).ok();
     let description = day
         .description
         .map(|date| date.trim().to_string())

@@ -16,7 +16,7 @@
     <div id="reservations" class="mt-4 flex flex-col gap-4">
         {% for reservation in reservations %}
         <div class="p-4 bg-gray-600 rounded">
-            <p class="my-1">Pe data de <b>{{ reservation.date.format("%d.%m.%Y") }}</b>
+            <p class="my-1">Pe data de <b>{{ reservation.date.format(date_formats::READABLE_DATE).unwrap() }}</b>
                 de la ora <b>{{ reservation.hour }}:00</b> la <b>{{ reservation.hour + duration }}:00</b>
             </p>
             <p>Locația: {{ location_name }}</p>

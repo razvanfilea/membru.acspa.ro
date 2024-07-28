@@ -1,17 +1,17 @@
 <div id="list" class="flex flex-col w-full gap-4">
     {% for day in free_days %}
-    {% let id_date = day.date.format("%Y%m%d") %}
+    {% let id_date = day.date.format(date_formats::ISO_DATE_UNDERLINE).unwrap() %}
     <div id="day_{{ id_date }}" class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
         <div class="flex flex-col">
-            <p>Data: <b>{{ day.date.format("%d.%m.%Y") }}</b></p>
+            <p>Data: <b>{{ day.date.format(date_formats::READABLE_DATE).unwrap() }}</b></p>
             {% if let Some(description) = day.description %}
             <p>Nume: <b>{{ description }}</b></p>
             {% endif %}
-            <p class="text-sm">Creat pe: {{ day.created_at.format(format_description!("[year]-[month]-[day] [hour]:[minute]")) }}</p>
+            <p class="text-sm">Creat pe: {{ day.created_at.format(date_formats::READABLE_DATE_TIME).unwrap() }}</p>
         </div>
 
         <button class="btn btn-square btn-sm btn-error btn-outline"
-                hx-delete='/admin/free_days/{{ day.date.format("%Y-%m-%d") }}'
+                hx-delete='/admin/free_days/{{ day.date.format(date_formats::ISO_DATE).unwrap() }}'
                 hx-target="#day_{{ id_date }}"
                 hx-swap="outerHTML">
             <span class="material-symbols-outlined">delete</span>
