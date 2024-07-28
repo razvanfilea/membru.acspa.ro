@@ -31,16 +31,23 @@
             {{- global_vars.homepage_message -}}
         </textarea>
 
-        <button class="btn btn-error mt-8" hx-post="/admin/apply_settings">Aplică setările</button>
+        <button class="btn btn-error mt-8 btn-wide" hx-post="/admin/apply_settings">Aplică setările</button>
     </form>
 
     <div class="grid grid-cols-2 gap-2 sm:gap-4 md:gap-8">
-        <div class="divider mt-8 md:mt-12 col-span-2">Situații</div>
-<!--        <a href="/admin/members">-->
-<!--            <button class="btn bg-indigo-700 w-full">Descarcă rezervările</button>-->
-<!--        </a>-->
-        <button disabled class="btn w-full">Situație zilnică</button>
-        <button disabled class="btn w-full">Situație membru</button>
+        <div class="divider mt-8 md:mt-12 col-span-2">Altele</div>
+        <a href="/admin/guests">
+            <button class="btn bg-cyan-600 text-white w-full">Invitați</button>
+        </a>
+        <a href="/admin/restrictions">
+            <button class="btn bg-fuchsia-700 text-white w-full">Restricționare rezervări</button>
+        </a>
+        <a href="/admin/free_days">
+            <button class="btn bg-green-600 text-white w-full">Zile libere</button>
+        </a>
+        <a href="/admin/situations">
+            <button class="btn text-white w-full">Descarcă situații</button>
+        </a>
 
         <div class="divider mt-8 md:mt-12 col-span-2">Membri</div>
         <a href="/admin/members">
@@ -50,16 +57,6 @@
             <button class="btn bg-orange-700 text-white w-full">Roluri membri</button>
         </a>
 
-        <div class="divider mt-8 md:mt-12 col-span-2">Altele</div>
-        <a href="/admin/free_days">
-            <button class="btn bg-green-600 text-white w-full">Zile libere</button>
-        </a>
-        <a href="/admin/restrictions">
-            <button class="btn bg-fuchsia-700 text-white w-full">Restricționare rezervări</button>
-        </a>
-        <a href="/admin/guests">
-            <button class="btn bg-cyan-600 text-white w-full">Adăugare invitați</button>
-        </a>
     </div>
 </main>
 

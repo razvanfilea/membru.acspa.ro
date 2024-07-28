@@ -1,24 +1,23 @@
 <div class="grid grid-cols-7" hx-trigger="mousedown">
-    <p class="text-md text-center text-neutral-500">Lu</p>
-    <p class="text-md text-center text-neutral-500">Ma</p>
-    <p class="text-md text-center text-neutral-500">Mi</p>
-    <p class="text-md text-center text-neutral-500">Jo</p>
-    <p class="text-md text-center text-neutral-500">Vi</p>
-    <p class="text-md text-center text-neutral-500">Sa</p>
-    <p class="text-md text-center text-neutral-500">Du</p>
+    <p class="text-center text-yellow-200">Lu</p>
+    <p class="text-center text-yellow-200">Ma</p>
+    <p class="text-center text-yellow-200">Mi</p>
+    <p class="text-center text-yellow-200">Jo</p>
+    <p class="text-center text-yellow-200">Vi</p>
+    <p class="text-center text-red-300">Sâ</p>
+    <p class="text-center text-red-300">Du</p>
     {% for week in weeks %}
     {% for date in week %}
     <button
             class="rounded-full border border-transparent aspect-square
                 disabled:text-neutral-500 disabled:pointer-events-none
-                hover:border-neutral-500"
+                hover:border-neutral-500 text-white"
             hx-post='/choose_date/?selected_date={{ date.format(date_formats::ISO_DATE).unwrap() }}'
             style="
                 {% if date == selected_date|as_ref %}background-color: oklch(var(--p)); color: black; font-weight: bold;{% endif %}
-                {% if date.month() != selected_date.month() %}opacity: 0.7;{% endif %}
                 "
             {% if date
-    < current_date|as_ref || date > (current_date + time::Duration::days(14))|as_ref %}disabled{% endif %}
+    < current_date|as_ref || date > (current_date + DAYS_AHEAD_ALLOWED)|as_ref %}disabled{% endif %}
     >
     {{ date.day() }}
     </button>

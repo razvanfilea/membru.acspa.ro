@@ -8,7 +8,7 @@ use sqlx::{query, query_as};
 use time::{Date, OffsetDateTime};
 use tracing::warn;
 
-use crate::http::pages::home::calendar::{get_weeks_of_month, MonthDates};
+use crate::http::pages::home::calendar::{get_weeks_in_range, Weeks};
 use crate::http::pages::home::reservation::{create_reservation, ReservationSuccess};
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
@@ -19,6 +19,8 @@ use crate::utils::{date_formats, get_hour_structure_for_day};
 
 mod calendar;
 mod reservation;
+
+const DAYS_AHEAD_ALLOWED: time::Duration = time::Duration::days(14);
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -156,7 +158,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
     struct HomeTemplate {
         current_date: Date,
         selected_date: Date,
-        weeks: MonthDates,
+        weeks: Weeks,
         user: UserUi,
         reservation_hours: Vec<PossibleReservationSlot>,
         global_vars: GlobalVars,
@@ -167,7 +169,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
     HomeTemplate {
         current_date,
         selected_date: current_date,
-        weeks: get_weeks_of_month(current_date),
+        weeks: get_weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
         user: auth_session.user.unwrap(),
         reservation_hours: get_reservation_hours(&state, current_date).await,
         global_vars: get_global_vars(&state).await,
@@ -188,7 +190,7 @@ async fn date_picker(
     struct HomeContentTemplate {
         current_date: Date,
         selected_date: Date,
-        weeks: MonthDates,
+        weeks: Weeks,
         reservation_hours: Vec<PossibleReservationSlot>,
     }
 
@@ -205,7 +207,7 @@ async fn date_picker(
     HomeContentTemplate {
         current_date,
         selected_date,
-        weeks: get_weeks_of_month(selected_date),
+        weeks: get_weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
         reservation_hours: get_reservation_hours(&state, selected_date).await,
     }
 }
