@@ -1,10 +1,10 @@
 ARG TARGET_ARCH=x86_64-unknown-linux-musl
 
-FROM rust:1.79-bookworm AS builder
+FROM rust:1.80-bookworm AS builder
 
 RUN apt-get update && \
     apt-get install -y \
-    musl-tools
+    musl-tools npm
 
 ARG TARGET_ARCH
 
@@ -25,6 +25,8 @@ RUN rm src/*.rs
 # copy everything else
 COPY . .
 
+RUN npm i && npm run prod
+
 RUN rm ./target/${TARGET_ARCH}/release/deps/acspa*
 RUN cargo build --release --target ${TARGET_ARCH}
 
@@ -32,6 +34,6 @@ FROM scratch
 
 ARG TARGET_ARCH
 
-COPY --from=builder /acspa/target/${TARGET_ARCH}/release/acspa .
+COPY --from=builder /acspa/target/${TARGET_ARCH}/release/acspa /acspa/assets ./
 
-ENTRYPOINT ["./acspa_server"]
+ENTRYPOINT ["./acspa"]
