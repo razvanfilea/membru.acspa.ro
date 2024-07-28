@@ -1,7 +1,7 @@
-use chrono::{NaiveDate, NaiveDateTime};
+use time::{Date, OffsetDateTime};
 
 pub struct FreeDay {
-    pub date: NaiveDate,
+    pub date: Date,
     pub description: Option<String>,
-    pub created_at: NaiveDateTime,
+    pub created_at: OffsetDateTime,
 }

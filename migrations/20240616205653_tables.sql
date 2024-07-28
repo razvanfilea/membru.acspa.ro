@@ -20,6 +20,15 @@ CREATE TABLE users
     FOREIGN KEY (role_id) REFERENCES user_roles (id)
 );
 
+CREATE TABLE password_reset_tokens
+(
+    user_id      INTEGER  NOT NULL,
+    token        TEXT     NOT NULL UNIQUE,
+    token_expiry DATETIME NOT NULL,
+
+    PRIMARY KEY (user_id, token)
+);
+
 CREATE TABLE locations
 (
     id                   INTEGER NOT NULL PRIMARY KEY,

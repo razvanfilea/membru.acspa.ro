@@ -3,16 +3,16 @@ use askama_axum::IntoResponse;
 use axum::extract::{Path, Query, State};
 use axum::routing::{delete, get, post, put};
 use axum::{Form, Router};
-use chrono::{NaiveDate, Utc};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
+use time::{Date, OffsetDateTime};
 use tracing::{error, info};
 
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::restriction::Restriction;
 use crate::model::user::UserUi;
-use crate::utils::get_hour_structure_for_day;
+use crate::utils::{date_formats, get_hour_structure_for_day};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -40,14 +40,14 @@ async fn restrictions_page(
     #[template(path = "pages/admin/restrictions.html")]
     struct RestrictionsTemplate {
         user: UserUi,
-        current_date: NaiveDate,
+        current_date: Date,
         restrictions: Vec<Restriction>,
     }
 
     RestrictionsTemplate {
         user: auth_session.user.unwrap(),
         restrictions: get_restrictions(&state.pool).await,
-        current_date: Utc::now().date_naive(),
+        current_date: OffsetDateTime::now_utc().date()
     }
 }
 
@@ -71,7 +71,7 @@ async fn select_hour(
         return ().into_response();
     }
 
-    let date = NaiveDate::parse_from_str(&form.date, "%Y-%m-%d").unwrap();
+    let date = Date::parse(&form.date, date_formats::ISO_DATE).unwrap();
 
     let hour_structure = get_hour_structure_for_day(&state, &date).await;
 
@@ -98,7 +98,7 @@ async fn create_restriction(
         restrictions: Vec<Restriction>,
     }
 
-    let date = NaiveDate::parse_from_str(&restriction.date, "%Y-%m-%d").unwrap();
+    let date = Date::parse(&restriction.date, date_formats::ISO_DATE).unwrap();
     if let Some(hour) = restriction.hour {
         let hour_structure = get_hour_structure_for_day(&state, &date).await;
         if !hour_structure.is_hour_valid(hour) {
@@ -143,7 +143,7 @@ async fn delete_restriction(
     Path(date): Path<String>,
     Query(query): Query<HourQuery>,
 ) -> impl IntoResponse {
-    let date = NaiveDate::parse_from_str(&date, "%Y-%m-%d").unwrap();
+    let date = Date::parse(&date, date_formats::ISO_DATE).unwrap();
 
     if let Some(hour) = query.hour {
         query!(

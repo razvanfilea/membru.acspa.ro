@@ -7,9 +7,10 @@ use askama_axum::IntoResponse;
 use axum::extract::{Path, State};
 use axum::routing::{delete, get, put};
 use axum::{Form, Router};
-use chrono::{NaiveDate, Utc};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
+use time::{Date, OffsetDateTime};
+use time::macros::format_description;
 use tracing::info;
 
 pub fn router() -> Router<AppState> {
@@ -34,14 +35,14 @@ async fn free_days_page(
     #[template(path = "pages/admin/free_days.html")]
     struct FreeDaysTemplate {
         user: UserUi,
-        current_date: NaiveDate,
+        current_date: Date,
         free_days: Vec<FreeDay>,
     }
 
     FreeDaysTemplate {
         user: auth_session.user.unwrap(),
         free_days: get_free_days(&state.pool).await,
-        current_date: Utc::now().date_naive(),
+        current_date: OffsetDateTime::now_utc().date(),
     }
 }
 
@@ -61,7 +62,7 @@ async fn create_free_day(
         free_days: Vec<FreeDay>,
     }
 
-    let date = NaiveDate::parse_from_str(&day.date, "%Y-%m-%d").ok();
+    let date = Date::parse(&day.date, format_description!("[year]-[month]-[day]")).ok();
     let description = day
         .description
         .map(|date| date.trim().to_string())
@@ -92,7 +93,7 @@ async fn delete_free_day(
     State(state): State<AppState>,
     Path(date): Path<String>,
 ) -> impl IntoResponse {
-    let date = NaiveDate::parse_from_str(&date, "%Y-%m-%d").unwrap();
+    let date = Date::parse(&date, format_description!("[year]-[month]-[day]")).unwrap();
 
     query!("delete from free_days where date = $1", date)
         .execute(&state.pool)

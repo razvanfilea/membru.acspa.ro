@@ -1,16 +1,16 @@
 use askama_axum::{IntoResponse, Template};
 use axum::{Form, Router};
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, State};
 use axum::routing::{delete, get, post, put};
-use chrono::{NaiveDate, NaiveDateTime, Utc};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
+use time::{Date, OffsetDateTime};
 use tracing::{error, info};
 
 use crate::http::AppState;
 use crate::http::pages::AuthSession;
 use crate::model::user::UserUi;
-use crate::utils::get_hour_structure_for_day;
+use crate::utils::{date_formats, get_hour_structure_for_day};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -24,10 +24,10 @@ pub fn router() -> Router<AppState> {
 pub struct SpecialGuestDto {
     rowid: i64,
     name: String,
-    date: NaiveDate,
+    date: Date,
     hour: i64,
     created_by: String,
-    created_at: NaiveDateTime,
+    created_at: OffsetDateTime,
 }
 async fn get_special_guests(pool: &SqlitePool) -> Vec<SpecialGuestDto> {
     query_as!(
@@ -49,14 +49,14 @@ async fn guests_page(
     #[template(path = "pages/admin/guests.html")]
     struct RestrictionsTemplate {
         user: UserUi,
-        current_date: NaiveDate,
+        current_date: Date,
         guests: Vec<SpecialGuestDto>,
     }
 
     RestrictionsTemplate {
         user: auth_session.user.unwrap(),
         guests: get_special_guests(&state.pool).await,
-        current_date: Utc::now().date_naive(),
+        current_date: OffsetDateTime::now_utc().date()
     }
 }
 
@@ -75,7 +75,7 @@ async fn select_hour(
         hours: Vec<u8>,
     }
 
-    let date = NaiveDate::parse_from_str(&form.date, "%Y-%m-%d").unwrap();
+    let date = Date::parse(&form.date, date_formats::ISO_DATE).unwrap();
 
     let hour_structure = get_hour_structure_for_day(&state, &date).await;
 

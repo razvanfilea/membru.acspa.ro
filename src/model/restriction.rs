@@ -1,9 +1,9 @@
-use chrono::{NaiveDate, NaiveDateTime};
+use time::{Date, OffsetDateTime};
 
 pub struct Restriction {
-    pub date: NaiveDate,
+    pub date: Date,
     pub hour: Option<i64>,
     pub location: i64,
     pub message: String,
-    pub created_at: NaiveDateTime,
+    pub created_at: OffsetDateTime,
 }

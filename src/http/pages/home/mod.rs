@@ -3,10 +3,9 @@ use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
 use axum::routing::{get, post};
 use axum::{Form, Router};
-use chrono::Utc;
-use chrono::{Datelike, NaiveDate};
 use serde::Deserialize;
 use sqlx::{query, query_as};
+use time::{Date, OffsetDateTime};
 use tracing::warn;
 
 use crate::http::pages::home::calendar::{get_weeks_of_month, MonthDates};
@@ -16,7 +15,7 @@ use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::restriction::Restriction;
 use crate::model::user::UserUi;
-use crate::utils::get_hour_structure_for_day;
+use crate::utils::{date_formats, get_hour_structure_for_day};
 
 mod calendar;
 mod reservation;
@@ -36,7 +35,7 @@ async fn get_global_vars(state: &AppState) -> GlobalVars {
         .expect("Database error")
 }
 
-async fn get_reservation_hours(state: &AppState, date: NaiveDate) -> Vec<PossibleReservationSlot> {
+async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<PossibleReservationSlot> {
     let hour_structure = get_hour_structure_for_day(state, &date).await;
     let restrictions = query_as!(
         Restriction,
@@ -155,15 +154,15 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
     #[derive(Template)]
     #[template(path = "pages/home.html")]
     struct HomeTemplate {
-        current_date: NaiveDate,
-        selected_date: NaiveDate,
+        current_date: Date,
+        selected_date: Date,
         weeks: MonthDates,
         user: UserUi,
         reservation_hours: Vec<PossibleReservationSlot>,
         global_vars: GlobalVars,
     }
 
-    let current_date = Utc::now().naive_local().date();
+    let current_date = OffsetDateTime::now_utc().date();
 
     HomeTemplate {
         current_date,
@@ -187,17 +186,17 @@ async fn date_picker(
     #[derive(Template)]
     #[template(path = "components/home/content.html")]
     struct HomeContentTemplate {
-        current_date: NaiveDate,
-        selected_date: NaiveDate,
+        current_date: Date,
+        selected_date: Date,
         weeks: MonthDates,
         reservation_hours: Vec<PossibleReservationSlot>,
     }
 
-    let current_date = Utc::now().naive_local().date();
+    let current_date = OffsetDateTime::now_utc().date();
     let selected_date = query
         .selected_date
         .and_then(|date| {
-            NaiveDate::parse_from_str(&date, "%d.%m.%Y")
+            Date::parse(&date, date_formats::READABLE_DATE)
                 .inspect_err(|e| warn!("Failed to parse date {date} with error: {e}"))
                 .ok()
         })
@@ -224,19 +223,19 @@ async fn hour_picker(
     #[derive(Template)]
     #[template(path = "components/home/reservation_confirm_card.html")]
     struct ConfirmationTemplate {
-        selected_date: NaiveDate,
+        selected_date: Date,
         start_hour: u8,
         end_hour: u8,
         location_name: String,
     }
 
     let selected_date =
-        NaiveDate::parse_from_str(&query.selected_date, "%d.%m.%Y").unwrap_or_else(|e| {
+        Date::parse_from_str(&query.selected_date, "%d.%m.%Y").unwrap_or_else(|e| {
             warn!(
                 "Failed to pase date {} with error: {}",
                 query.selected_date, e
             );
-            Utc::now().naive_local().date()
+            OffsetDateTime::now_utc().date()
         });
 
     let structure = get_hour_structure_for_day(&state, &selected_date).await;
@@ -264,7 +263,7 @@ async fn confirm_reservation(
     let user = auth_session.user.unwrap();
 
     let selected_date =
-        NaiveDate::parse_from_str(&query.selected_date, "%d.%m.%Y").expect("Invalid date");
+        Date::parse_from_str(&query.selected_date, "%d.%m.%Y").expect("Invalid date");
 
     let now = Utc::now().naive_local();
     let selected_hour = query.hour;

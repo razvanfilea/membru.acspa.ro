@@ -1,10 +1,10 @@
-use chrono::{NaiveDate, NaiveDateTime};
+use time::{Date, OffsetDateTime};
 
 pub struct SpecialGuest {
     name: String,
     location: i64,
-    date: NaiveDate,
+    date: Date,
     hour: i64,
     created_by: i64,
-    created_at: NaiveDateTime,
+    created_at: OffsetDateTime
 }

@@ -1,9 +1,8 @@
 use std::fmt::{Display, Formatter};
 use std::ops::DerefMut;
 
-use chrono::{NaiveDate, NaiveDateTime, Timelike};
 use sqlx::{query, query_as, Sqlite, Transaction};
-
+use time::{Date, OffsetDateTime};
 use crate::http::AppState;
 use crate::model::location::Location;
 use crate::model::role::UserRole;
@@ -52,9 +51,9 @@ impl Display for ReservationError {
 
 fn check_parameters_validity(
     location: &Location,
-    now: NaiveDateTime,
+    now: OffsetDateTime,
     is_free_day: bool,
-    selected_date: NaiveDate,
+    selected_date: Date,
     selected_hour: u8,
 ) -> Result<(), ReservationError> {
     let now_date = now.date();
@@ -91,7 +90,7 @@ async fn check_other_errors<'a>(
     tx: &mut Transaction<'a, Sqlite>,
     location: &Location,
     user: &UserUi,
-    selected_date: NaiveDate,
+    selected_date: Date,
     selected_hour: u8,
 ) -> Result<(), ReservationError> {
     // Check if it already exists
@@ -147,9 +146,9 @@ async fn check_other_errors<'a>(
 
 pub async fn create_reservation(
     state: &AppState,
-    now: NaiveDateTime,
+    now: OffsetDateTime,
     user: &UserUi,
-    selected_date: NaiveDate,
+    selected_date: Date,
     selected_hour: u8,
 ) -> Result<ReservationSuccess, ReservationError> {
     let is_free_day = is_free_day(&state.pool, &selected_date).await;
@@ -274,7 +273,6 @@ pub async fn create_reservation(
 
 #[cfg(test)]
 mod test {
-    use chrono::Datelike;
     use sqlx::SqlitePool;
     use super::*;
 
@@ -324,8 +322,8 @@ mod test {
         let (state, user_1, user_2) = setup(pool, 2, 0).await;
 
         let date_str = "11.07.2024";
-        let now = NaiveDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
-        let first_date = NaiveDate::parse_from_str(date_str, "%d.%m.%Y").unwrap();
+        let now = OffsetDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
+        let first_date = Date::parse_from_str(date_str, "%d.%m.%Y").unwrap();
         let second_date = first_date.with_day(12).unwrap();
 
         assert_eq!(
@@ -363,8 +361,8 @@ mod test {
         let (state, user, _) = setup(pool, 1, 2).await;
 
         let date_str = "11.07.2024";
-        let now = NaiveDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
-        let first_date = NaiveDate::parse_from_str(date_str, "%d.%m.%Y").unwrap();
+        let now = OffsetDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
+        let first_date = Date::parse_from_str(date_str, "%d.%m.%Y").unwrap();
         let second_date = first_date.with_day(12).unwrap();
 
         assert_eq!(
@@ -398,8 +396,8 @@ mod test {
         let (state, user_1, user_2) = setup(pool, 0, 2).await;
 
         let date_str = "11.07.2024";
-        let now = NaiveDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
-        let first_date = NaiveDate::parse_from_str(date_str, "%d.%m.%Y").unwrap();
+        let now = OffsetDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
+        let first_date = Date::parse_from_str(date_str, "%d.%m.%Y").unwrap();
         let second_date = first_date.with_day(12).unwrap();
 
         assert_eq!(
@@ -433,10 +431,10 @@ mod test {
         let (state, user, _) = setup(pool, 1, 0).await;
 
         let date_str = "11.07.2024";
-        let now_good = NaiveDateTime::parse_from_str("11.07.2024 16:59", "%d.%m.%Y %H:%M").unwrap();
+        let now_good = OffsetDateTime::parse_from_str("11.07.2024 16:59", "%d.%m.%Y %H:%M").unwrap();
         let now_too_late =
-            NaiveDateTime::parse_from_str("11.07.2024 17:00", "%d.%m.%Y %H:%M").unwrap();
-        let date = NaiveDate::parse_from_str(date_str, "%d.%m.%Y").unwrap();
+            OffsetDateTime::parse_from_str("11.07.2024 17:00", "%d.%m.%Y %H:%M").unwrap();
+        let date = Date::parse_from_str(date_str, "%d.%m.%Y").unwrap();
 
         assert_eq!(
             create_reservation(&state, now_good, &user, date, 18).await,
@@ -455,8 +453,8 @@ mod test {
     async fn replace_guest(pool: SqlitePool) {
         let (state, user_1, user_2) = setup(pool, 1, 1).await;
 
-        let now = NaiveDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
-        let date = NaiveDate::parse_from_str("11.07.2024", "%d.%m.%Y").unwrap();
+        let now = OffsetDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
+        let date = Date::parse_from_str("11.07.2024", "%d.%m.%Y").unwrap();
 
         assert_eq!(
             create_reservation(&state, now, &user_1, date, 18).await,
@@ -479,9 +477,9 @@ mod test {
     async fn free_days(pool: SqlitePool) {
         let (state, user, _) = setup(pool, 1, 1).await;
 
-        let now = NaiveDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
-        let date = NaiveDate::parse_from_str("11.07.2024", "%d.%m.%Y").unwrap();
-        let weekend = NaiveDate::parse_from_str("13.07.2024", "%d.%m.%Y").unwrap();
+        let now = OffsetDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
+        let date = Date::parse_from_str("11.07.2024", "%d.%m.%Y").unwrap();
+        let weekend = Date::parse_from_str("13.07.2024", "%d.%m.%Y").unwrap();
 
         assert_eq!(
             create_reservation(&state, now, &user, date, 18).await,
@@ -513,9 +511,9 @@ mod test {
             .await
             .unwrap();
 
-        let now = NaiveDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
-        let date_1 = NaiveDate::parse_from_str("11.07.2024", "%d.%m.%Y").unwrap();
-        let date_2 = NaiveDate::parse_from_str("12.07.2024", "%d.%m.%Y").unwrap();
+        let now = OffsetDateTime::parse_from_str("11.07.2024 10:00", "%d.%m.%Y %H:%M").unwrap();
+        let date_1 = Date::parse_from_str("11.07.2024", "%d.%m.%Y").unwrap();
+        let date_2 = Date::parse_from_str("12.07.2024", "%d.%m.%Y").unwrap();
 
         assert_eq!(
             create_reservation(&state, now, &user, date_1, 18).await,
