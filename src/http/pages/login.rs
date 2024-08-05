@@ -22,30 +22,29 @@ pub async fn login_page(auth_session: AuthSession) -> impl IntoResponse {
     LoginTemplate { error: None }.into_response()
 }
 
-#[derive(Template)]
-#[template(path = "components/login_form.html")]
-pub struct LoginTemplate {
-    error: Option<String>,
-}
-
-impl LoginTemplate {
-    fn new(message: impl Into<String>) -> Self {
-        Self {
-            error: Some(message.into()),
-        }
+fn login_error(message: impl Into<String>) -> Response {
+    #[derive(Template)]
+    #[template(path = "components/login_error.html")]
+    struct ErrorTemplate {
+        error_message: String,
     }
+
+    ErrorTemplate {
+        error_message: message.into(),
+    }
+    .into_response()
 }
 
 pub async fn login(
     mut auth: AuthSession,
     Form(login_user): Form<UserCredentials>,
-) -> Result<impl IntoResponse, LoginTemplate> {
-    let generic_error_template = LoginTemplate::new(
-        "Serverul are probleme, dacă eroare persistă te rog contactează un membru fondator",
+) -> impl IntoResponse {
+    let generic_error_template = login_error(
+        "Serverul a întâmpinat o problemă, dacă eroare persistă te rog contactează un membru fondator",
     );
 
     if let Err(e) = login_user.validate() {
-        return Err(LoginTemplate::new(e.to_string()));
+        return login_error(e.to_string());
     }
 
     let user = match auth.authenticate(login_user.clone()).await {
@@ -53,7 +52,7 @@ pub async fn login(
             if let Some(user) = user {
                 user
             } else {
-                return Err(LoginTemplate::new("Email sau parolă invalidă"));
+                return login_error("Email sau parolă invalidă");
             }
         }
         Err(e) => {
@@ -61,7 +60,7 @@ pub async fn login(
                 "Failed to authenticate user {} with error: {}",
                 login_user.email, e
             );
-            return Err(generic_error_template);
+            return generic_error_template;
         }
     };
 
@@ -71,14 +70,12 @@ pub async fn login(
             Response::builder()
                 .header("HX-Redirect", "/")
                 .body("Ai fost logat cu succes".to_string())
-                .map_err(|e| {
-                    error!("Failed to return headers: {e}");
-                    generic_error_template
-                })
+                .unwrap()
+                .into_response()
         }
         Err(e) => {
             error!("Failed to login user {} with error: {}", user.email, e);
-            Err(generic_error_template)
+            generic_error_template
         }
     }
 }

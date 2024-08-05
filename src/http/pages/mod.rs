@@ -27,7 +27,7 @@ pub fn router() -> Router<AppState> {
         .route("/profile", get(profile::profile_page))
         .route("/profile/reservations", post(profile::profile_reservations))
         .route("/logout", post(login::logout))
-        .route("/change_password", get(change_password::change_password_page))
+        .nest("/change_password", change_password::router())
         .route_layer(login_required!(UserAuthenticator, login_url = "/login"));
 
     let unauthenticated_router = Router::<AppState>::new()
