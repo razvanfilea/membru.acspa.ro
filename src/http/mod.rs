@@ -7,6 +7,7 @@ use axum_login::AuthManagerLayerBuilder;
 use sqlx::{query_as, SqlitePool};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use anyhow::Context;
 use tokio::sync::watch;
 use tower_http::trace;
 use tower_http::trace::TraceLayer;
@@ -39,7 +40,7 @@ impl AppState {
     }
 }
 
-pub async fn http_server(app_state: AppState, session_store: SqliteStore) -> std::io::Result<()> {
+pub async fn http_server(app_state: AppState, session_store: SqliteStore) -> anyhow::Result<()> {
     let session_layer = SessionManagerLayer::new(session_store)
         .with_expiry(Expiry::OnInactivity(Duration::days(90)))
         .with_secure(false);
@@ -61,13 +62,14 @@ pub async fn http_server(app_state: AppState, session_store: SqliteStore) -> std
         )
         .layer(auth_layer);
 
-    const PORT: u16 = 8080;
+    let port_str = std::env::var("SERVER_PORT").context("Failed to get server port")?;
+    let port: u16 = port_str.parse().context("Invalid port")?;
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], PORT));
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let http_service = app.into_make_service();
 
-    println!("Server started on port {PORT}");
+    println!("Server started on port {port}");
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, http_service).await
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    axum::serve(listener, http_service).await.context("Failed to start server")
 }
