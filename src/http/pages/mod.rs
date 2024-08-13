@@ -3,12 +3,11 @@ use crate::http::AppState;
 use axum::routing::{get, post};
 use axum::Router;
 use axum_login::{login_required, permission_required};
+use user::{change_password, login, profile};
 
 mod admin;
 mod home;
-mod login;
-mod profile;
-mod change_password;
+mod user;
 
 pub type AuthSession = axum_login::AuthSession<UserAuthenticator>;
 

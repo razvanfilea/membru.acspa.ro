@@ -22,12 +22,10 @@ async fn change_password_page(auth_session: AuthSession) -> impl IntoResponse {
     #[template(path = "pages/change_password.html")]
     struct ChangePasswordTemplate {
         user: UserUi,
-        error: Option<&'static str>,
     }
 
     ChangePasswordTemplate {
         user: auth_session.user.unwrap(),
-        error: None,
     }
 }
 
@@ -38,15 +36,15 @@ struct ChangePasswordForm {
     new_duplicate: String,
 }
 
-fn change_password_error(message: impl Into<String>) -> Response {
+fn change_password_error(message: impl AsRef<str>) -> Response {
     #[derive(Template)]
     #[template(path = "components/login_error.html")]
-    struct ErrorTemplate {
-        error_message: String,
+    struct ErrorTemplate<'a> {
+        error_message: &'a str,
     }
 
     ErrorTemplate {
-        error_message: message.into(),
+        error_message: message.as_ref(),
     }
     .into_response()
 }

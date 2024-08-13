@@ -3045,6 +3045,10 @@ html:has(.drawer-toggle:checked) {
     margin: 1rem;
   }
 
+  .md\:mb-6 {
+    margin-bottom: 1.5rem;
+  }
+
   .md\:mt-12 {
     margin-top: 3rem;
   }

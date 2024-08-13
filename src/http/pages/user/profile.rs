@@ -17,9 +17,9 @@ pub async fn profile_page(
 ) -> impl IntoResponse {
     #[derive(Template)]
     #[template(path = "pages/profile.html")]
-    struct ProfileTemplate {
+    struct ProfileTemplate<'a> {
         user: UserUi,
-        location_name: String,
+        location_name: &'a str,
         duration: i64,
         reservations: Vec<Reservation>,
         cancelled: bool,
@@ -34,11 +34,11 @@ pub async fn profile_page(
 
     ProfileTemplate {
         user: user.into(),
-        location_name: state.location.name.clone(),
+        location_name: state.location.name.as_ref(),
         duration: state.location.slot_duration,
         reservations,
         cancelled: false,
-    }
+    }.into_response()
 }
 
 #[derive(Deserialize)]
@@ -53,8 +53,8 @@ pub async fn profile_reservations(
 ) -> impl IntoResponse {
     #[derive(Template)]
     #[template(path = "components/profile_content.html")]
-    struct ProfileTemplate {
-        location_name: String,
+    struct ProfileTemplate<'a> {
+        location_name: &'a str,
         duration: i64,
         reservations: Vec<Reservation>,
         cancelled: bool,
@@ -72,9 +72,9 @@ pub async fn profile_reservations(
         .unwrap_or_default();
 
     ProfileTemplate {
-        location_name: state.location.name.clone(),
+        location_name: state.location.name.as_ref(),
         duration: state.location.slot_duration,
         reservations,
         cancelled: query.cancelled,
-    }
+    }.into_response()
 }

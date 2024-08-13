@@ -1,7 +1,9 @@
+use std::borrow::Cow;
+
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Location {
     pub id: i64,
-    pub name: String,
+    pub name: Cow<'static, str>,
     pub slot_capacity: i64,
     pub slots_start_hour: i64,
     pub slot_duration: i64,

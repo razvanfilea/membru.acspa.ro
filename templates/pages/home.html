@@ -4,8 +4,8 @@
 
 {% block content %}
 
-<div class="p-4 md:p-8">
-    <div class="flex flex-row w-full items-center justify-end gap-2 mb-2 flex-wrap md:flex-nowrap">
+<div class="p-4 md:p-8" hx-ext="ws" ws-connect="/ws">
+    <div class="flex flex-row w-full items-center justify-end gap-2 mb-2 md:mb-6 flex-wrap md:flex-nowrap">
         <p class="bg-cyan-600 text-white text-sm mx-2 p-3 rounded-md grow">{{ global_vars.homepage_message }}</p>
         <p class="text-nowrap text-lg">Cod intrare: <b>{{ global_vars.entrance_code }}</b></p>
     </div>

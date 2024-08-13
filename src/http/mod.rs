@@ -6,6 +6,8 @@ use axum_login::tower_sessions::{Expiry, SessionManagerLayer};
 use axum_login::AuthManagerLayerBuilder;
 use sqlx::{query_as, SqlitePool};
 use std::net::SocketAddr;
+use std::sync::Arc;
+use tokio::sync::watch;
 use tower_http::trace;
 use tower_http::trace::TraceLayer;
 use tower_sessions_sqlx_store::SqliteStore;
@@ -19,16 +21,20 @@ mod pages;
 pub struct AppState {
     pub pool: SqlitePool,
     pub location: Location,
+    pub reservation_notifier: Arc<watch::Sender<()>>,
 }
 
 impl AppState {
     pub async fn new(pool: SqlitePool) -> Self {
+        let (tx, _) = watch::channel(());
+
         Self {
             location: query_as!(Location, "select * from locations")
                 .fetch_one(&pool)
                 .await
                 .expect("No locations found"),
             pool,
+            reservation_notifier: Arc::new(tx)
         }
     }
 }

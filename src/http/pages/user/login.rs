@@ -15,22 +15,20 @@ pub async fn login_page(auth_session: AuthSession) -> impl IntoResponse {
 
     #[derive(Template)]
     #[template(path = "pages/login.html")]
-    struct LoginTemplate {
-        error: Option<&'static str>,
-    }
+    struct LoginTemplate;
 
-    LoginTemplate { error: None }.into_response()
+    LoginTemplate.into_response()
 }
 
-fn login_error(message: impl Into<String>) -> Response {
+fn login_error(message: impl AsRef<str>) -> Response {
     #[derive(Template)]
     #[template(path = "components/login_error.html")]
-    struct ErrorTemplate {
-        error_message: String,
+    struct ErrorTemplate<'a> {
+        error_message: &'a str,
     }
 
     ErrorTemplate {
-        error_message: message.into(),
+        error_message: message.as_ref(),
     }
     .into_response()
 }

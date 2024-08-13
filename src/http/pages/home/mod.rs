@@ -1,13 +1,3 @@
-use askama::Template;
-use askama_axum::IntoResponse;
-use axum::extract::{Query, State};
-use axum::routing::{get, post};
-use axum::{Form, Router};
-use serde::Deserialize;
-use sqlx::{query, query_as};
-use time::{Date, OffsetDateTime};
-use tracing::warn;
-
 use crate::http::pages::home::calendar::{get_weeks_in_range, Weeks};
 use crate::http::pages::home::reservation::{create_reservation, ReservationSuccess};
 use crate::http::pages::AuthSession;
@@ -16,6 +6,18 @@ use crate::model::global_vars::GlobalVars;
 use crate::model::restriction::Restriction;
 use crate::model::user::UserUi;
 use crate::utils::{date_formats, get_hour_structure_for_day};
+use askama::Template;
+use askama_axum::IntoResponse;
+use axum::extract::ws::{Message, WebSocket};
+use axum::extract::{State, WebSocketUpgrade};
+use axum::routing::{get, post};
+use axum::{Form, Router};
+use serde::de::IgnoredAny;
+use serde::Deserialize;
+use sqlx::{query, query_as};
+use time::{Date, OffsetDateTime};
+use tokio::select;
+use tracing::warn;
 
 mod calendar;
 mod reservation;
@@ -25,7 +27,7 @@ const DAYS_AHEAD_ALLOWED: time::Duration = time::Duration::days(14);
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(index))
-        .route("/choose_date/", post(date_picker))
+        .route("/ws", get(ws))
         .route("/choose_hour", post(hour_picker))
         .route("/confirm_reservation", post(confirm_reservation))
 }
@@ -135,7 +137,6 @@ async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<PossibleRese
 
 enum ReservationType {
     Normal,
-    // Trainer, // TODO Remove
     SpecialGuest,
     Guest,
 }
@@ -176,15 +177,20 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
     }
 }
 
-#[derive(Deserialize)]
-struct DateQuery {
-    selected_date: Option<String>,
+async fn ws(State(state): State<AppState>, ws: WebSocketUpgrade) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| handle_socket(socket, state))
 }
 
-async fn date_picker(
-    State(state): State<AppState>,
-    Query(query): Query<DateQuery>,
-) -> impl IntoResponse {
+#[derive(Deserialize)]
+struct WsMessage {
+    selected_date: String,
+    #[serde(rename = "HEADERS")]
+    _headers: IgnoredAny,
+}
+
+async fn handle_socket(mut socket: WebSocket, state: AppState) {
+    let mut selected_date = OffsetDateTime::now_utc().date();
+
     #[derive(Template)]
     #[template(path = "components/home/content.html")]
     struct HomeContentTemplate {
@@ -194,21 +200,64 @@ async fn date_picker(
         reservation_hours: Vec<PossibleReservationSlot>,
     }
 
-    let current_date = OffsetDateTime::now_utc().date();
-    let selected_date = query
-        .selected_date
-        .and_then(|date| {
-            Date::parse(&date, date_formats::ISO_DATE)
-                .inspect_err(|e| warn!("Failed to parse date {date} with error: {e}"))
-                .ok()
-        })
-        .unwrap_or(current_date);
+    fn parse_message(message: Option<Result<Message, axum::Error>>) -> Option<WsMessage> {
+        let message = match message {
+            Some(Ok(message)) => message,
+            Some(Err(e)) => {
+                warn!("Socket closed: {e}");
+                return None;
+            }
+            None => return None,
+        };
 
-    HomeContentTemplate {
-        current_date,
-        selected_date,
-        weeks: get_weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
-        reservation_hours: get_reservation_hours(&state, selected_date).await,
+        match message {
+            Message::Text(text) => serde_json::from_str::<WsMessage>(text.as_str())
+                .inspect_err(|e| warn!("Failed to parse WebSocket message {text} with error: {e}"))
+                .ok(),
+            _ => None,
+        }
+    }
+
+    let mut reservations_changed = state.reservation_notifier.subscribe();
+    loop {
+        let reservations_task = reservations_changed.changed();
+
+        let current_date = OffsetDateTime::now_utc().date();
+        select! {
+            result = reservations_task => {
+                if let Err(e) = result {
+                    warn!("Watcher closed: {e}")
+                }
+            }
+            message = socket.recv() => {
+                let Some(ws_message) = parse_message(message) else {
+                    return;
+                };
+
+                selected_date = Date::parse(&ws_message.selected_date, date_formats::ISO_DATE)
+                    .inspect_err(|e| {
+                        warn!(
+                            "Failed to parse date {} with error: {e}",
+                            ws_message.selected_date
+                        )
+                    })
+                    .ok()
+                    .filter(|date| {
+                        date >= &current_date && selected_date <= current_date + DAYS_AHEAD_ALLOWED
+                    })
+                    .unwrap_or(current_date);
+                }
+        }
+
+        let response = HomeContentTemplate {
+            current_date,
+            selected_date,
+            weeks: get_weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
+            reservation_hours: get_reservation_hours(&state, selected_date).await,
+        }
+        .to_string();
+
+        socket.send(Message::Text(response)).await.unwrap();
     }
 }
 
@@ -224,11 +273,11 @@ async fn hour_picker(
 ) -> impl IntoResponse {
     #[derive(Template)]
     #[template(path = "components/home/reservation_confirm_card.html")]
-    struct ConfirmationTemplate {
+    struct ConfirmationTemplate<'a> {
         selected_date: Date,
         start_hour: u8,
         end_hour: u8,
-        location_name: String,
+        location_name: &'a str,
     }
 
     let selected_date = Date::parse(&query.selected_date, date_formats::READABLE_DATE)
@@ -246,8 +295,9 @@ async fn hour_picker(
         selected_date,
         start_hour: query.hour,
         end_hour: query.hour + structure.slot_duration as u8,
-        location_name: state.location.name,
+        location_name: state.location.name.as_ref(),
     }
+    .into_response()
 }
 
 async fn confirm_reservation(
@@ -280,7 +330,10 @@ async fn confirm_reservation(
     let successful = result.is_ok();
     let message = match result {
         Ok(success) => match success {
-            ReservationSuccess::Reservation => format!("Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>", query.selected_date),
+            ReservationSuccess::Reservation => format!(
+                "Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
+                query.selected_date
+            ),
             ReservationSuccess::Guest => format!(
                 "Ai rezervare pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
                 query.selected_date
@@ -288,6 +341,10 @@ async fn confirm_reservation(
         },
         Err(e) => e.to_string(),
     };
+
+    if successful {
+        let _ = state.reservation_notifier.send(());
+    }
 
     ConfirmationTemplate {
         successful,
