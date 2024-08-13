@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "select * from user_roles where id = $1",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "max_reservations",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "max_guest_reservations",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "admin_panel_access",
+        "ordinal": 4,
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "550eebe22b606a4aa201534f3d9d23201c2951614b1111c0eb6d9faa4badc352"
+}

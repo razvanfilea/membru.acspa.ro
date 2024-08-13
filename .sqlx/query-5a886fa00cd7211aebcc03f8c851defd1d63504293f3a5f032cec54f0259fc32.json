@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "select * from global_vars",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "in_maintenance",
+        "ordinal": 1,
+        "type_info": "Bool"
+      },
+      {
+        "name": "entrance_code",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "homepage_message",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "5a886fa00cd7211aebcc03f8c851defd1d63504293f3a5f032cec54f0259fc32"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into reservations_restrictions (date, hour, location, message) VALUES ($1, $2, $3, $4)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "66b03da3d97fb4165e81cc9e04c1d88e261e8692678488999aae4bec247b1e93"
+}

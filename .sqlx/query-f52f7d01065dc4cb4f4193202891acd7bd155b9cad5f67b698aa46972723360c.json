@@ -1,0 +1,68 @@
+{
+  "db_name": "SQLite",
+  "query": "select * from locations",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "slot_capacity",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "slots_start_hour",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "slot_duration",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "slots_per_day",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "alt_slots_start_hour",
+        "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "alt_slot_duration",
+        "ordinal": 7,
+        "type_info": "Integer"
+      },
+      {
+        "name": "alt_slots_per_day",
+        "ordinal": 8,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "f52f7d01065dc4cb4f4193202891acd7bd155b9cad5f67b698aa46972723360c"
+}

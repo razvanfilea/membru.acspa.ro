@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into free_days (date, description) VALUES ($1, $2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "c35b8d61a6e8a45840320d8c91aefa9afa064235548aad7cc67d52e32070f208"
+}

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select exists(select true from free_days where date = $1) as 'exists!'",
+  "describe": {
+    "columns": [
+      {
+        "name": "exists!",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "9989b5a25e082fb446a59049e3c70eea4e459acaff4cb5848476e8aac76c607e"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from free_days where date = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "55739903fb001814c5dea94617763e5fcc5ef0cd7498483087b6928af04d1e82"
+}

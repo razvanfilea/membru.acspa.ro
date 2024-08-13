@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "update user_roles set name = $2, max_reservations = $3, max_guest_reservations = $4 where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "59c6954e0aafb0407fae2bf4a6208ff912d60ba158b9c27d4866b2af9ea8cfb3"
+}

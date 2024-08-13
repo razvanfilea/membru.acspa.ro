@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select exists(select true from reservations where location = $1 and date = $2 and hour = $3 and user_id = $4) as 'exists!'",
+  "describe": {
+    "columns": [
+      {
+        "name": "exists!",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c34def2e4ba5a0c61897a72d1c06290a23c6e9852062915260d496f1f2b99b93"
+}

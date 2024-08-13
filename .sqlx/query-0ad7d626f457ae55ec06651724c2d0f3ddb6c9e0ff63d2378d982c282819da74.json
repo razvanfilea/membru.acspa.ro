@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "select * from reservations_restrictions order by date, hour",
+  "describe": {
+    "columns": [
+      {
+        "name": "date",
+        "ordinal": 0,
+        "type_info": "Date"
+      },
+      {
+        "name": "hour",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "location",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "message",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 4,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0ad7d626f457ae55ec06651724c2d0f3ddb6c9e0ff63d2378d982c282819da74"
+}

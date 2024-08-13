@@ -1,0 +1,56 @@
+{
+  "db_name": "SQLite",
+  "query": "select r.* from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = $2",
+  "describe": {
+    "columns": [
+      {
+        "name": "user_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "date",
+        "ordinal": 1,
+        "type_info": "Date"
+      },
+      {
+        "name": "hour",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "location",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "cancelled",
+        "ordinal": 4,
+        "type_info": "Bool"
+      },
+      {
+        "name": "in_waiting",
+        "ordinal": 5,
+        "type_info": "Bool"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 6,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "5f3f91cd5ec813ab80f806e9e1554a721533cad0fdcc85d0a22bd320a86c54a7"
+}

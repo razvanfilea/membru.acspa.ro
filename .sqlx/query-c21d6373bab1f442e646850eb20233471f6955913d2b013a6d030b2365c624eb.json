@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select name, hour from special_guests where date = $1 order by created_at",
+  "describe": {
+    "columns": [
+      {
+        "name": "name",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "hour",
+        "ordinal": 1,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "c21d6373bab1f442e646850eb20233471f6955913d2b013a6d030b2365c624eb"
+}

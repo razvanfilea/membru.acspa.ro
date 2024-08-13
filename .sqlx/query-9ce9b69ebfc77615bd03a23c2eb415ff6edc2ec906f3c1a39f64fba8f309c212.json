@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select(\n    (select count(*) from reservations where location = $1 and date = $2 and hour = $3 and cancelled = false) +\n    (select count(*) from special_guests where location = $1 and date = $2 and hour = $3)) as 'count!'",
+  "describe": {
+    "columns": [
+      {
+        "name": "count!",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "9ce9b69ebfc77615bd03a23c2eb415ff6edc2ec906f3c1a39f64fba8f309c212"
+}

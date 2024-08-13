@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select message from reservations_restrictions where location = $1 and date = $2 and (hour = $3 or hour is null)",
+  "describe": {
+    "columns": [
+      {
+        "name": "message",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "7f8ac08cd9e3eeaf776df9a29c70adcf567b0b96827102c343abebdbd4fe8d9a"
+}

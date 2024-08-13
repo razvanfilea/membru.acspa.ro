@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from guests where rowid in (select rowid from guests where date = $1 and hour = $2 order by created_at desc limit 1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "2e0bb3b873ba2625d3d510c9cc9994bef064103ec72d0b7d1aeb24f51f72594b"
+}

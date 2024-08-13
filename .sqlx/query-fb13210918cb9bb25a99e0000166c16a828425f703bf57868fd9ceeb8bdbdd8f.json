@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select u.name, g.hour from guests g inner join users u on g.created_by = u.id where g.date = $1 order by g.created_at",
+  "describe": {
+    "columns": [
+      {
+        "name": "name",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "hour",
+        "ordinal": 1,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "fb13210918cb9bb25a99e0000166c16a828425f703bf57868fd9ceeb8bdbdd8f"
+}

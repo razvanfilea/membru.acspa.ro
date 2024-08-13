@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "select g.rowid, g.name, g.date, g.hour, g.created_at, u.name as created_by from special_guests g\n        inner join users u on g.created_by = u.id\n        order by date desc, hour asc",
+  "describe": {
+    "columns": [
+      {
+        "name": "rowid",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "date",
+        "ordinal": 2,
+        "type_info": "Date"
+      },
+      {
+        "name": "hour",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 4,
+        "type_info": "Datetime"
+      },
+      {
+        "name": "created_by",
+        "ordinal": 5,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3810b0153bf5b7c0b9ce6508a9a2c836eaa870f290776ff4b85e87d20b95892a"
+}
