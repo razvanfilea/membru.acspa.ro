@@ -10,7 +10,7 @@ use tracing::{error, info};
 use crate::http::AppState;
 use crate::http::pages::AuthSession;
 use crate::model::user::UserUi;
-use crate::utils::{date_formats, get_hour_structure_for_day};
+use crate::utils::{date_formats, get_hour_structure_for_day, local_time};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -56,7 +56,7 @@ async fn guests_page(
     RestrictionsTemplate {
         user: auth_session.user.unwrap(),
         guests: get_special_guests(&state.pool).await,
-        current_date: OffsetDateTime::now_utc().date()
+        current_date: local_time().date()
     }
 }
 

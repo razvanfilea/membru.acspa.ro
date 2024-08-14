@@ -1,4 +1,4 @@
-<div hx-post="/profile/reservations?cancelled={{ !cancelled }}" hx-swap="outerHTML" hx-target="this">
+<div hx-swap="outerHTML" hx-target="this">
     <div class="flex flex-row justify-between items-center mt-8">
         <h2 class="text-2xl font-bold">Rezervările tale:</h2>
 
@@ -7,19 +7,35 @@
         </button>
     </div>
 
-    <label class="label cursor-pointer justify-start gap-8">
+    <label hx-post="/profile/reservations?show_cancelled={{ !show_cancelled }}" hx-trigger="mousedown"
+           class="label cursor-pointer justify-start gap-8">
         <span class="label-text">Afișează anulate</span>
         <input type="checkbox" class="checkbox checkbox-primary" autocomplete="off"
-               {% if cancelled %} checked="checked" {% endif %}/>
+               {% if show_cancelled %} checked="checked" {% endif %}/>
     </label>
 
     <div id="reservations" class="mt-4 flex flex-col gap-4">
+        {% if reservations.is_empty() %}
+        <p>Nu ai nici o rezervare</p>
+        {% endif %}
+
         {% for reservation in reservations %}
-        <div class="p-4 bg-gray-600 rounded">
-            <p class="my-1">Pe data de <b>{{ reservation.date.format(date_formats::READABLE_DATE).unwrap() }}</b>
-                de la ora <b>{{ reservation.hour }}:00</b> la <b>{{ reservation.hour + duration }}:00</b>
-            </p>
-            <p>Locația: {{ location_name }}</p>
+        <div id="res_{{ loop.index }}" class="flex flex-row justify-between items-center p-4 bg-gray-600 rounded">
+            <div class="flex flex-col">
+                <p class="my-1">Pe data de <b>{{ reservation.date.format(date_formats::READABLE_DATE).unwrap() }}</b>
+                    de la ora <b>{{ reservation.hour }}:00</b> la <b>{{ reservation.hour + duration }}:00</b>
+                </p>
+                <p>Locația: {{ location_name }}</p>
+            </div>
+
+            {% if reservation.is_cancellable() %}
+            <button
+                    class="btn btn-outline btn-warning"
+                    hx-target="#res_{{ loop.index }}"
+                    hx-vals='{"date": "{{ reservation.date.format(date_formats::ISO_DATE).unwrap() }}", "hour": {{ reservation.hour }} }'
+                    hx-delete="/reservation">Anulează
+            </button>
+            {% endif %}
         </div>
         {% endfor %}
     </div>

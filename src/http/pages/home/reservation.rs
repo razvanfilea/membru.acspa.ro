@@ -57,7 +57,7 @@ fn check_parameters_validity(
     selected_hour: u8,
 ) -> Result<(), ReservationError> {
     let now_date = now.date();
-    let now_hour = now.time().hour() as u8;
+    let now_hour = now.time().hour();
 
     if selected_date < now_date || (selected_date == now_date && selected_hour <= now_hour) {
         return Err(ReservationError::Other(

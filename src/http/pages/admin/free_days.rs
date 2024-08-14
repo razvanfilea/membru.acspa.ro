@@ -9,10 +9,10 @@ use axum::routing::{delete, get, put};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
-use time::{Date, OffsetDateTime};
+use time::Date;
 use time::macros::format_description;
 use tracing::info;
-use crate::utils::date_formats;
+use crate::utils::{date_formats, local_time};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -43,7 +43,7 @@ async fn free_days_page(
     FreeDaysTemplate {
         user: auth_session.user.unwrap(),
         free_days: get_free_days(&state.pool).await,
-        current_date: OffsetDateTime::now_utc().date(),
+        current_date: local_time().date(),
     }
 }
 

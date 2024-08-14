@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select r.* from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = false",
+  "query": "select r.* from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = $2 order by date desc, hour asc",
   "describe": {
     "columns": [
       {
@@ -40,7 +40,7 @@
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 2
     },
     "nullable": [
       false,
@@ -52,5 +52,5 @@
       false
     ]
   },
-  "hash": "a9a769622bc7738f6a6693437b80906e6988ba531482a09c8ecda356b331012c"
+  "hash": "a742e17b3d0783b6f4b60890bfa5c5915d7e4f732657320efcb3281c66d29f57"
 }

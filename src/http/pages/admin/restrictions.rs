@@ -5,14 +5,14 @@ use axum::routing::{delete, get, post, put};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
-use time::{Date, OffsetDateTime};
+use time::Date;
 use tracing::{error, info};
 
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::restriction::Restriction;
 use crate::model::user::UserUi;
-use crate::utils::{date_formats, get_hour_structure_for_day};
+use crate::utils::{date_formats, get_hour_structure_for_day, local_time};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -47,7 +47,7 @@ async fn restrictions_page(
     RestrictionsTemplate {
         user: auth_session.user.unwrap(),
         restrictions: get_restrictions(&state.pool).await,
-        current_date: OffsetDateTime::now_utc().date()
+        current_date: local_time().date()
     }
 }
 

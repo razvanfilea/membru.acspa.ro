@@ -8,6 +8,7 @@ use sqlx::{query_as, SqlitePool};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use anyhow::Context;
+use time::Date;
 use tokio::sync::watch;
 use tower_http::trace;
 use tower_http::trace::TraceLayer;
@@ -22,12 +23,12 @@ mod pages;
 pub struct AppState {
     pub pool: SqlitePool,
     pub location: Location,
-    pub reservation_notifier: Arc<watch::Sender<()>>,
+    pub reservation_notifier: Arc<watch::Sender<Date>>
 }
 
 impl AppState {
     pub async fn new(pool: SqlitePool) -> Self {
-        let (tx, _) = watch::channel(());
+        let (tx, _) = watch::channel(Date::MIN);
 
         Self {
             location: query_as!(Location, "select * from locations")

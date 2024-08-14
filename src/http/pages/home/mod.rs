@@ -5,19 +5,21 @@ use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::restriction::Restriction;
 use crate::model::user::UserUi;
-use crate::utils::{date_formats, get_hour_structure_for_day};
+use crate::utils::{date_formats, get_hour_structure_for_day, local_time};
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::ws::{Message, WebSocket};
-use axum::extract::{State, WebSocketUpgrade};
-use axum::routing::{get, post};
+use axum::extract::{Query, State, WebSocketUpgrade};
+use axum::routing::{delete, get, post};
 use axum::{Form, Router};
+use axum::http::StatusCode;
 use serde::de::IgnoredAny;
 use serde::Deserialize;
 use sqlx::{query, query_as};
-use time::{Date, OffsetDateTime};
+use time::Date;
 use tokio::select;
-use tracing::warn;
+use tracing::{error, warn};
+use crate::model::reservation::Reservation;
 
 mod calendar;
 mod reservation;
@@ -29,7 +31,8 @@ pub fn router() -> Router<AppState> {
         .route("/", get(index))
         .route("/ws", get(ws))
         .route("/choose_hour", post(hour_picker))
-        .route("/confirm_reservation", post(confirm_reservation))
+        .route("/reservation", post(confirm_reservation))
+        .route("/reservation", delete(cancel_reservation))
 }
 
 async fn get_global_vars(state: &AppState) -> GlobalVars {
@@ -102,7 +105,7 @@ async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<PossibleRese
             let reservations = date_reservations
                 .iter()
                 .filter(|record| record.hour as u8 == hour)
-                .map(|record| Reservation {
+                .map(|record| PossibleReservation {
                     name: record.name.clone(),
                     has_key: record.has_key,
                     res_type: ReservationType::Normal,
@@ -111,7 +114,7 @@ async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<PossibleRese
             let special_guests = date_special_guests
                 .iter()
                 .filter(|record| record.hour as u8 == hour)
-                .map(|record| Reservation {
+                .map(|record| PossibleReservation {
                     name: record.name.clone(),
                     has_key: false,
                     res_type: ReservationType::SpecialGuest,
@@ -120,7 +123,7 @@ async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<PossibleRese
             let guests = date_guests
                 .iter()
                 .filter(|record| record.hour as u8 == hour)
-                .map(|record| Reservation {
+                .map(|record| PossibleReservation {
                     name: record.name.clone(),
                     has_key: false,
                     res_type: ReservationType::Guest,
@@ -141,7 +144,7 @@ enum ReservationType {
     Guest,
 }
 
-struct Reservation {
+struct PossibleReservation {
     name: String,
     has_key: bool,
     res_type: ReservationType,
@@ -150,7 +153,7 @@ struct Reservation {
 struct PossibleReservationSlot {
     start_hour: u8,
     end_hour: u8,
-    reservations: Result<Vec<Reservation>, String>,
+    reservations: Result<Vec<PossibleReservation>, String>,
 }
 
 async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
@@ -165,7 +168,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         global_vars: GlobalVars,
     }
 
-    let current_date = OffsetDateTime::now_utc().date();
+    let current_date = local_time().date();
 
     HomeTemplate {
         current_date,
@@ -189,7 +192,7 @@ struct WsMessage {
 }
 
 async fn handle_socket(mut socket: WebSocket, state: AppState) {
-    let mut selected_date = OffsetDateTime::now_utc().date();
+    let mut selected_date = local_time().date();
 
     #[derive(Template)]
     #[template(path = "components/home/content.html")]
@@ -222,11 +225,17 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
     loop {
         let reservations_task = reservations_changed.changed();
 
-        let current_date = OffsetDateTime::now_utc().date();
+        let current_date = local_time().date();
         select! {
             result = reservations_task => {
                 if let Err(e) = result {
-                    warn!("Watcher closed: {e}")
+                    error!("Watcher closed unexpectedly: {e}");
+                    return;
+                }
+
+                // Only send update if something changed on this day
+                if *reservations_changed.borrow_and_update() != selected_date {
+                    continue;
                 }
             }
             message = socket.recv() => {
@@ -246,7 +255,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
                         date >= &current_date && selected_date <= current_date + DAYS_AHEAD_ALLOWED
                     })
                     .unwrap_or(current_date);
-                }
+            }
         }
 
         let response = HomeContentTemplate {
@@ -286,7 +295,7 @@ async fn hour_picker(
                 "Failed to pase date {} with error: {}",
                 query.selected_date, e
             );
-            OffsetDateTime::now_utc().date()
+            local_time().date()
         });
 
     let structure = get_hour_structure_for_day(&state, &selected_date).await;
@@ -313,15 +322,13 @@ async fn confirm_reservation(
     }
 
     let user = auth_session.user.unwrap();
-
     let selected_date =
         Date::parse(&query.selected_date, date_formats::READABLE_DATE).expect("Invalid date");
-
     let selected_hour = query.hour;
 
     let result = create_reservation(
         &state,
-        OffsetDateTime::now_utc(),
+        local_time(),
         &user,
         selected_date,
         selected_hour,
@@ -329,25 +336,51 @@ async fn confirm_reservation(
     .await;
     let successful = result.is_ok();
     let message = match result {
-        Ok(success) => match success {
-            ReservationSuccess::Reservation => format!(
-                "Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
-                query.selected_date
-            ),
-            ReservationSuccess::Guest => format!(
-                "Ai rezervare pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
-                query.selected_date
-            ),
+        Ok(success) => {
+            let _ = state.reservation_notifier.send(selected_date);
+
+            match success {
+                ReservationSuccess::Reservation => format!(
+                    "Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
+                    query.selected_date
+                ),
+                ReservationSuccess::Guest => format!(
+                    "Ai rezervare pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
+                    query.selected_date
+                ),
+            }
         },
         Err(e) => e.to_string(),
     };
-
-    if successful {
-        let _ = state.reservation_notifier.send(());
-    }
 
     ConfirmationTemplate {
         successful,
         message,
     }
+}
+
+#[derive(Deserialize)]
+struct CancelReservationQuery {
+    date: String,
+    hour: u8,
+}
+
+async fn cancel_reservation(
+    auth_session: AuthSession,
+    State(state): State<AppState>,
+    Query(query): Query<CancelReservationQuery>
+) -> impl IntoResponse {
+    let date = Date::parse(&query.date, date_formats::ISO_DATE).unwrap();
+    let user = auth_session.user.unwrap();
+
+    let reservation = query_as!(Reservation, "delete from reservations where date = $1 and hour = $2 and user_id = $3 and location = $4 returning *", date, query.hour, user.id, state.location.id)
+        .fetch_optional(&state.pool)
+        .await
+        .expect("Database error");
+
+    if let Some(_reservation) = reservation {
+        return ().into_response()
+    }
+
+    StatusCode::BAD_REQUEST.into_response()
 }

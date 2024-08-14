@@ -34,6 +34,7 @@ FROM scratch
 
 ARG TARGET_ARCH
 
-COPY --from=builder /acspa/target/${TARGET_ARCH}/release/acspa /acspa/assets ./
+COPY --from=builder /acspa/assets/ ./assets/
+COPY --from=builder /acspa/target/${TARGET_ARCH}/release/acspa ./
 
 ENTRYPOINT ["./acspa"]

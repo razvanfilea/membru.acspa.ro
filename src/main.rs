@@ -3,6 +3,7 @@ use axum_login::tower_sessions::ExpiredDeletion;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous};
 use std::str::FromStr;
 use std::time::Duration;
+use time::util::local_offset::{set_soundness, Soundness};
 use tower_sessions_sqlx_store::SqliteStore;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -16,6 +17,9 @@ mod utils;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    unsafe {
+        set_soundness(Soundness::Unsound);
+    }
     dotenvy::dotenv().ok();
     tracing_subscriber::registry()
         .with(EnvFilter::new(std::env::var("RUST_LOG").unwrap_or_else(
