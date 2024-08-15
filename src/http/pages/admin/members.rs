@@ -61,7 +61,7 @@ async fn members_page(
         .expect("Database error");
 
     MembersTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         members,
     }
 }
@@ -87,7 +87,7 @@ async fn new_member_page(
     }
 
     NewMemberTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         roles: get_all_roles(&state).await,
     }
 }
@@ -146,7 +146,7 @@ async fn edit_member_page(
     .expect("Database error");
 
     NewMemberTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         roles: get_all_roles(&state).await,
         existing_user,
     }

@@ -29,7 +29,7 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn get_global_vars(state: &AppState) -> GlobalVars {
-    query_as!(GlobalVars, "select * from global_vars")
+    query_as!(GlobalVars, "select in_maintenance, entrance_code, homepage_message from global_vars")
         .fetch_one(&state.pool)
         .await
         .expect("Database error")
@@ -44,7 +44,7 @@ async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) ->
     }
 
     HomeTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         global_vars: get_global_vars(&state).await,
     }
 }

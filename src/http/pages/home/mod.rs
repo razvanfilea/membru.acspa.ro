@@ -10,16 +10,15 @@ use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{Query, State, WebSocketUpgrade};
+use axum::http::StatusCode;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
-use axum::http::StatusCode;
 use serde::de::IgnoredAny;
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use time::Date;
 use tokio::select;
 use tracing::{error, warn};
-use crate::model::reservation::Reservation;
 
 mod calendar;
 mod reservation;
@@ -36,7 +35,7 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn get_global_vars(state: &AppState) -> GlobalVars {
-    query_as!(GlobalVars, "select * from global_vars")
+    query_as!(GlobalVars, "select in_maintenance, entrance_code, homepage_message from global_vars")
         .fetch_one(&state.pool)
         .await
         .expect("Database error")
@@ -174,7 +173,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         current_date,
         selected_date: current_date,
         weeks: get_weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         reservation_hours: get_reservation_hours(&state, current_date).await,
         global_vars: get_global_vars(&state).await,
     }
@@ -321,19 +320,13 @@ async fn confirm_reservation(
         message: String,
     }
 
-    let user = auth_session.user.unwrap();
+    let user = auth_session.user.expect("User should be logged in");
     let selected_date =
         Date::parse(&query.selected_date, date_formats::READABLE_DATE).expect("Invalid date");
     let selected_hour = query.hour;
 
-    let result = create_reservation(
-        &state,
-        local_time(),
-        &user,
-        selected_date,
-        selected_hour,
-    )
-    .await;
+    let result =
+        create_reservation(&state, local_time(), &user, selected_date, selected_hour).await;
     let successful = result.is_ok();
     let message = match result {
         Ok(success) => {
@@ -349,7 +342,7 @@ async fn confirm_reservation(
                     query.selected_date
                 ),
             }
-        },
+        }
         Err(e) => e.to_string(),
     };
 
@@ -368,18 +361,22 @@ struct CancelReservationQuery {
 async fn cancel_reservation(
     auth_session: AuthSession,
     State(state): State<AppState>,
-    Query(query): Query<CancelReservationQuery>
+    Query(query): Query<CancelReservationQuery>,
 ) -> impl IntoResponse {
     let date = Date::parse(&query.date, date_formats::ISO_DATE).unwrap();
-    let user = auth_session.user.unwrap();
+    let user = auth_session.user.expect("User should be logged in");
 
-    let reservation = query_as!(Reservation, "delete from reservations where date = $1 and hour = $2 and user_id = $3 and location = $4 returning *", date, query.hour, user.id, state.location.id)
+    let cancelled_date = query!(
+        "update reservations set cancelled = true where date = $1 and hour = $2 and user_id = $3 and location = $4 returning date",
+        date, query.hour, user.id, state.location.id)
         .fetch_optional(&state.pool)
         .await
-        .expect("Database error");
+        .expect("Database error")
+        .map(|record| record.date);
 
-    if let Some(_reservation) = reservation {
-        return ().into_response()
+    if let Some(date) = cancelled_date {
+        let _ = state.reservation_notifier.send(date);
+        return ().into_response();
     }
 
     StatusCode::BAD_REQUEST.into_response()

@@ -28,7 +28,7 @@ pub async fn profile_page(
     State(state): State<AppState>,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/profile.html")]
+    #[template(path = "pages/user/profile.html")]
     struct ProfileTemplate<'a> {
         user: UserUi,
         location_name: &'a str,
@@ -37,7 +37,7 @@ pub async fn profile_page(
         show_cancelled: bool,
     }
 
-    let user = auth_session.user.unwrap();
+    let user = auth_session.user.expect("User should be logged in");
 
     ProfileTemplate {
         location_name: state.location.name.as_ref(),
@@ -67,7 +67,7 @@ pub async fn profile_reservations(
         show_cancelled: bool,
     }
 
-    let user = auth_session.user.unwrap();
+    let user = auth_session.user.expect("User should be logged in");
 
     ProfileTemplate {
         location_name: state.location.name.as_ref(),

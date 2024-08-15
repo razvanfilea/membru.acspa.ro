@@ -41,7 +41,7 @@ async fn free_days_page(
     }
 
     FreeDaysTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         free_days: get_free_days(&state.pool).await,
         current_date: local_time().date(),
     }

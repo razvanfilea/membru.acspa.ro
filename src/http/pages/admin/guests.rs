@@ -1,6 +1,7 @@
 use askama_axum::{IntoResponse, Template};
 use axum::{Form, Router};
 use axum::extract::{Path, State};
+use axum::http::StatusCode;
 use axum::routing::{delete, get, post, put};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
@@ -54,7 +55,7 @@ async fn guests_page(
     }
 
     RestrictionsTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         guests: get_special_guests(&state.pool).await,
         current_date: local_time().date()
     }
@@ -112,7 +113,7 @@ async fn create_guest(
             };
         }
 
-    let user = auth_session.user.unwrap();
+    let user = auth_session.user.expect("User should be logged in");
     let name = guest.name.trim();
 
     query!(
@@ -132,14 +133,24 @@ async fn create_guest(
         guest.hour
     );
 
+    let _ = state.reservation_notifier.send(date);
+
     GuestsListTemplate {
         guests: get_special_guests(&state.pool).await,
     }
 }
 
 async fn delete_guest(State(state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    query!("delete from special_guests where rowid = $1", id)
-        .execute(&state.pool)
+    let deleted_date = query!("delete from special_guests where rowid = $1 returning date", id)
+        .fetch_optional(&state.pool)
         .await
-        .expect("Database error");
+        .expect("Database error")
+        .map(|record| record.date);
+
+    if let Some(date) = deleted_date {
+        let _ = state.reservation_notifier.send(date);
+        return ().into_response();
+    }
+
+    StatusCode::BAD_REQUEST.into_response()
 }

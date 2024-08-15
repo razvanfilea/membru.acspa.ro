@@ -1,36 +1,29 @@
+use crate::http::auth::{generate_hash_from_password, validate_credentials};
+use crate::http::pages::AuthSession;
+use crate::http::AppState;
+use crate::model::user::UserUi;
 use askama::Template;
 use askama_axum::{IntoResponse, Response};
 use axum::extract::State;
-use axum::routing::{get, post};
-use axum::{Form, Router};
+use axum::Form;
 use serde::Deserialize;
 use sqlx::query;
 use tracing::debug;
-use crate::http::pages::AuthSession;
-use crate::http::AppState;
-use crate::http::auth::{generate_hash_from_password, validate_credentials};
-use crate::model::user::UserUi;
 
-pub fn router() -> Router<AppState> {
-    Router::new()
-        .route("/", get(change_password_page))
-        .route("/", post(change_password))
-}
-
-async fn change_password_page(auth_session: AuthSession) -> impl IntoResponse {
+pub async fn change_password_page(auth_session: AuthSession) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/change_password.html")]
+    #[template(path = "pages/user/change_password.html")]
     struct ChangePasswordTemplate {
         user: UserUi,
     }
 
     ChangePasswordTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
     }
 }
 
 #[derive(Deserialize)]
-struct ChangePasswordForm {
+pub struct ChangePasswordForm {
     old: String,
     new: String,
     new_duplicate: String,
@@ -49,7 +42,7 @@ fn change_password_error(message: impl AsRef<str>) -> Response {
     .into_response()
 }
 
-async fn change_password(
+pub async fn change_password(
     State(state): State<AppState>,
     auth: AuthSession,
     Form(passwords): Form<ChangePasswordForm>,

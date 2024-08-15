@@ -45,7 +45,7 @@ async fn restrictions_page(
     }
 
     RestrictionsTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         restrictions: get_restrictions(&state.pool).await,
         current_date: local_time().date()
     }

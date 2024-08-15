@@ -3,7 +3,7 @@ use crate::http::AppState;
 use axum::routing::{get, post};
 use axum::Router;
 use axum_login::{login_required, permission_required};
-use user::{change_password, login, profile};
+use crate::http::pages::user::login;
 
 mod admin;
 mod home;
@@ -23,15 +23,14 @@ pub fn router() -> Router<AppState> {
 
     let authenticated_router = Router::<AppState>::new()
         .merge(home::router())
-        .route("/profile", get(profile::profile_page))
-        .route("/profile/reservations", post(profile::profile_reservations))
+        .merge(user::user_router())
         .route("/logout", post(login::logout))
-        .nest("/change_password", change_password::router())
         .route_layer(login_required!(UserAuthenticator, login_url = "/login"));
 
     let unauthenticated_router = Router::<AppState>::new()
         .route("/login", get(login::login_page))
-        .route("/login", post(login::login));
+        .route("/login", post(login::login))
+        .route("/forgot_password", get(user::forgot_password));
 
     Router::new()
         .merge(admin_router)

@@ -34,7 +34,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
         .expect("Database error");
 
     UsersTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         roles,
     }
 }
@@ -55,7 +55,7 @@ struct NewRoleTemplate {
 
 async fn new_role_page(auth_session: AuthSession) -> impl IntoResponse {
     NewRoleTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         value: None,
     }
 }
@@ -99,7 +99,7 @@ async fn edit_role_page(
     }
 
     NewRoleTemplate {
-        user: auth_session.user.unwrap(),
+        user: auth_session.user.expect("User should be logged in"),
         value: role,
     }
     .into_response()

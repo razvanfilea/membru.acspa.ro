@@ -13,7 +13,6 @@ tower = "0.4"
 tower-http = { version = "0.5", features = ["trace", "fs"] }
 askama = { version = "0.12.1", features = ["with-axum"] }
 askama_axum = "0.4.0"
-#tower-livereload = "0.9.3"
 axum-login = "0.15"
 
 sqlx = { version = "0.8.0", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }

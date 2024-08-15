@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "update reservations set cancelled = true where date = $1 and hour = $2 and user_id = $3 and location = $4 returning date",
+  "describe": {
+    "columns": [
+      {
+        "name": "date",
+        "ordinal": 0,
+        "type_info": "Date"
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "8a76fa2067c4d54ae473f55b7d1cc1bb393bd4edfe35fb0cb302c4f367b658e0"
+}

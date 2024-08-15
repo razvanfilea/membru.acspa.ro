@@ -1,4 +1,4 @@
-INSERT INTO global_vars VALUES (0, FALSE, '', '');
+INSERT INTO global_vars VALUES (0, FALSE, '123456', '');
 
 INSERT INTO user_roles
 VALUES (1, 'Admin', 100, 100, TRUE),
