@@ -41,15 +41,20 @@ CREATE TABLE locations
 
 CREATE TABLE reservations
 (
-    user_id    INTEGER  NOT NULL,
-    date       DATE     NOT NULL,
-    hour       TINYINT  NOT NULL,
-    location   INTEGER  NOT NULL,
-    cancelled  BOOLEAN  NOT NULL DEFAULT FALSE CHECK (cancelled IN (FALSE, TRUE)),
-    in_waiting BOOLEAN  NOT NULL DEFAULT FALSE CHECK (in_waiting IN (FALSE, TRUE)),
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    user_id     INTEGER  NOT NULL,
+    date        DATE     NOT NULL,
+    hour        TINYINT  NOT NULL,
+    location    INTEGER  NOT NULL,
 
-    PRIMARY KEY (user_id, date, hour, location),
+    created_for TEXT,
+    as_guest    BOOLEAN  NOT NULL DEFAULT FALSE CHECK (as_guest IN (FALSE, TRUE)),
+
+    cancelled   BOOLEAN  NOT NULL DEFAULT FALSE CHECK (cancelled IN (FALSE, TRUE)),
+    in_waiting  BOOLEAN  NOT NULL DEFAULT FALSE CHECK (in_waiting IN (FALSE, TRUE)),
+
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (user_id, date, hour, location, created_for),
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (location) REFERENCES locations (id)
 );
@@ -74,39 +79,6 @@ CREATE TABLE free_days
 
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE TABLE special_guests
-(
-    name       TEXT     NOT NULL,
-    location   INTEGER  NOT NULL,
-    date       DATE     NOT NULL,
-    hour       TINYINT  NOT NULL,
-
-    created_by INTEGER  NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (name, location, date, hour),
-    FOREIGN KEY (created_by) REFERENCES users (id),
-    FOREIGN KEY (location) REFERENCES locations (id)
-);
-
-CREATE INDEX special_guests_created_by ON special_guests (created_by);
-
-CREATE TABLE guests
-(
-    location   INTEGER  NOT NULL,
-    date       DATE     NOT NULL,
-    hour       TINYINT  NOT NULL,
-
-    created_by INTEGER  NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (location, date, hour, created_by),
-    FOREIGN KEY (created_by) REFERENCES users (id),
-    FOREIGN KEY (location) REFERENCES locations (id)
-);
-
-CREATE INDEX guests_created_by ON guests (created_by);
 
 CREATE TABLE global_vars
 (

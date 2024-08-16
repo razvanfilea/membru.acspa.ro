@@ -57,26 +57,13 @@ async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<PossibleRese
             .collect();
     }
 
-    let date_reservations = query!("select users.name, hour, has_key from reservations inner join users on user_id = users.id where date = $1 order by created_at", date)
+    let date_reservations = query!(
+        r#"select users.name as 'name!', hour, has_key, as_guest, created_for
+        from reservations inner join users on user_id = users.id
+        where date = $1 order by as_guest, created_at"#, date)
         .fetch_all(&state.pool)
         .await
         .expect("Database error");
-
-    let date_special_guests = query!(
-        "select name, hour from special_guests where date = $1 order by created_at",
-        date
-    )
-    .fetch_all(&state.pool)
-    .await
-    .expect("Database error");
-
-    let date_guests = query!(
-        "select u.name, g.hour from guests g inner join users u on g.created_by = u.id where g.date = $1 order by g.created_at",
-        date
-    )
-    .fetch_all(&state.pool)
-    .await
-    .expect("Database error");
 
     hour_structure
         .iter()
@@ -98,33 +85,23 @@ async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<PossibleRese
                 .iter()
                 .filter(|record| record.hour as u8 == hour)
                 .map(|record| PossibleReservation {
-                    name: record.name.clone(),
-                    has_key: record.has_key,
-                    res_type: ReservationType::Normal,
-                });
-
-            let special_guests = date_special_guests
-                .iter()
-                .filter(|record| record.hour as u8 == hour)
-                .map(|record| PossibleReservation {
-                    name: record.name.clone(),
-                    has_key: false,
-                    res_type: ReservationType::SpecialGuest,
-                });
-
-            let guests = date_guests
-                .iter()
-                .filter(|record| record.hour as u8 == hour)
-                .map(|record| PossibleReservation {
-                    name: record.name.clone(),
-                    has_key: false,
-                    res_type: ReservationType::Guest,
+                    name: record.created_for.clone().unwrap_or_else(|| record.name.clone()),
+                    has_key: record.has_key && record.created_for.is_none(),
+                    res_type: if record.as_guest {
+                        ReservationType::Guest
+                    } else {
+                        if record.created_for.is_none() {
+                            ReservationType::Normal
+                        } else {
+                            ReservationType::SpecialGuest
+                        }
+                    },
                 });
 
             PossibleReservationSlot {
                 start_hour: hour,
                 end_hour,
-                reservations: Ok(reservations.chain(special_guests).chain(guests).collect()),
+                reservations: Ok(reservations.collect()),
             }
         })
         .collect()
@@ -284,7 +261,7 @@ async fn hour_picker(
     let selected_date = Date::parse(&query.selected_date, date_formats::READABLE_DATE)
         .unwrap_or_else(|e| {
             warn!(
-                "Failed to pase date {} with error: {}",
+                "Failed to parse date {} with error: {}",
                 query.selected_date, e
             );
             local_time().date()

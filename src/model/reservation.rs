@@ -6,8 +6,13 @@ pub struct Reservation {
     pub date: Date,
     pub hour: i64,
     pub location: i64,
+
+    pub created_for: Option<String>,
+    pub as_guest: bool,
+
     pub cancelled: bool,
     pub in_waiting: bool,
+
     pub created_at: OffsetDateTime,
 }
 

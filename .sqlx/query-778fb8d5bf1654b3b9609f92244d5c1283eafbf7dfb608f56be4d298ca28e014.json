@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from reservations where rowid in\n            (select rowid from reservations where date = $1 and hour = $2 and location = $3 and as_guest = true order by created_at desc limit 1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "778fb8d5bf1654b3b9609f92244d5c1283eafbf7dfb608f56be4d298ca28e014"
+}

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select count(*) as 'count!' from guests where location = $1 and date = $2 and hour = $3",
+  "query": "select count(*) as 'count!' from reservations where\n        location = $1 and date = $2 and hour = $3 and as_guest = false and cancelled = false",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "86caf716b57cb649beed4bce58662458b82f275df32168295ca2e46e48531a45"
+  "hash": "54ddff0e8809afdc897fff368211cf2f1df7aadd944491c65a542cdb914d5e57"
 }

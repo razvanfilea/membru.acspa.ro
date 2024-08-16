@@ -1,3 +1,4 @@
+use std::ops::Not;
 use askama_axum::{IntoResponse, Template};
 use axum::{Form, Router};
 use axum::extract::{Path, State};
@@ -22,20 +23,24 @@ pub fn router() -> Router<AppState> {
 }
 
 
-pub struct SpecialGuestDto {
+pub struct GuestDto {
     rowid: i64,
     name: String,
     date: Date,
     hour: i64,
+    as_guest: bool,
     created_by: String,
     created_at: OffsetDateTime,
 }
-async fn get_special_guests(pool: &SqlitePool) -> Vec<SpecialGuestDto> {
+
+async fn get_guests(pool: &SqlitePool) -> Vec<GuestDto> {
     query_as!(
-        SpecialGuestDto,
-        r#"select g.rowid, g.name, g.date, g.hour, g.created_at, u.name as created_by from special_guests g
-        inner join users u on g.created_by = u.id
-        order by date desc, hour asc"#
+        GuestDto,
+        r#"select r._rowid_ as 'rowid!', r.created_for 'name!', r.date, r.hour, r.as_guest, r.created_at, u.name as created_by
+        from reservations r
+        inner join users u on r.user_id = u.id
+        where r.created_for is not null
+        order by date desc, hour, created_at"#
     )
     .fetch_all(pool)
     .await
@@ -48,15 +53,15 @@ async fn guests_page(
 ) -> impl IntoResponse {
     #[derive(Template)]
     #[template(path = "pages/admin/guests.html")]
-    struct RestrictionsTemplate {
+    struct GuestsTemplate {
         user: UserUi,
         current_date: Date,
-        guests: Vec<SpecialGuestDto>,
+        guests: Vec<GuestDto>,
     }
 
-    RestrictionsTemplate {
+    GuestsTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        guests: get_special_guests(&state.pool).await,
+        guests: get_guests(&state.pool).await,
         current_date: local_time().date()
     }
 }
@@ -90,6 +95,7 @@ struct NewSpecialGuest {
     name: String,
     date: String,
     hour: u8,
+    special: Option<String>
 }
 
 async fn create_guest(
@@ -100,7 +106,7 @@ async fn create_guest(
     #[derive(Template)]
     #[template(path = "components/admin/guests_content.html")]
     struct GuestsListTemplate {
-        guests: Vec<SpecialGuestDto>,
+        guests: Vec<GuestDto>,
     }
 
     let date = Date::parse(&guest.date, date_formats::ISO_DATE).unwrap();
@@ -109,20 +115,22 @@ async fn create_guest(
             error!("Invalid hour: {} for date: {}", guest.hour, guest.date);
 
             return GuestsListTemplate {
-                guests: get_special_guests(&state.pool).await,
+                guests: get_guests(&state.pool).await,
             };
         }
 
     let user = auth_session.user.expect("User should be logged in");
     let name = guest.name.trim();
+    let special = guest.special.is_some().not();
 
     query!(
-        "insert into special_guests (name, date, location, hour, created_by) VALUES ($1, $2, $3, $4, $5)",
-        name,
-        date,
-        state.location.id,
-        guest.hour,
+        "insert into reservations (user_id, date, hour, location, created_for, as_guest) VALUES ($1, $2, $3, $4, $5, $6)",
         user.id,
+        date,
+        guest.hour,
+        state.location.id,
+        name,
+        special
     )
         .execute(&state.pool)
         .await
@@ -136,12 +144,12 @@ async fn create_guest(
     let _ = state.reservation_notifier.send(date);
 
     GuestsListTemplate {
-        guests: get_special_guests(&state.pool).await,
+        guests: get_guests(&state.pool).await,
     }
 }
 
 async fn delete_guest(State(state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    let deleted_date = query!("delete from special_guests where rowid = $1 returning date", id)
+    let deleted_date = query!("delete from reservations where rowid = $1 returning date", id)
         .fetch_optional(&state.pool)
         .await
         .expect("Database error")

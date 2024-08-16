@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select count(*) as 'count!' from reservations \n            where user_id = $1 and as_guest = false and cancelled = false and\n            strftime('%Y%W', date) = strftime('%Y%W', $2) and\n            strftime('%w', date) != 0 and strftime('%w', date) != 6",
+  "describe": {
+    "columns": [
+      {
+        "name": "count!",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "8442ea0968ee83ace2a2c6d319ea9972149d06b5af69ebdbfdb3e0252cad3fdc"
+}

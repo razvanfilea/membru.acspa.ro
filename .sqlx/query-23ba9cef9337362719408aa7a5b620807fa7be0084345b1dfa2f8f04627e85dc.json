@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "delete from special_guests where rowid = $1 returning date",
+  "query": "delete from reservations where rowid = $1 returning date",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "81e66ed17ef210c33e3ae39f864b548ce113d4104bf3e5498131817d14fd145a"
+  "hash": "23ba9cef9337362719408aa7a5b620807fa7be0084345b1dfa2f8f04627e85dc"
 }

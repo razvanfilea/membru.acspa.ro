@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "select users.name as 'name!', hour, has_key, as_guest, created_for\n        from reservations inner join users on user_id = users.id\n        where date = $1 order by as_guest, created_at",
+  "describe": {
+    "columns": [
+      {
+        "name": "name!",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "hour",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "has_key",
+        "ordinal": 2,
+        "type_info": "Bool"
+      },
+      {
+        "name": "as_guest",
+        "ordinal": 3,
+        "type_info": "Bool"
+      },
+      {
+        "name": "created_for",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "34baa545d5db19f4afddb983cd8496b20c74a97da830e21216ef7ee03c409ddf"
+}

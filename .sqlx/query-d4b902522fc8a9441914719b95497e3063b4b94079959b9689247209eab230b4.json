@@ -24,23 +24,33 @@
         "type_info": "Integer"
       },
       {
-        "name": "cancelled",
+        "name": "created_for",
         "ordinal": 4,
-        "type_info": "Bool"
+        "type_info": "Text"
       },
       {
-        "name": "in_waiting",
+        "name": "as_guest",
         "ordinal": 5,
         "type_info": "Bool"
       },
       {
-        "name": "created_at",
+        "name": "cancelled",
         "ordinal": 6,
+        "type_info": "Bool"
+      },
+      {
+        "name": "in_waiting",
+        "ordinal": 7,
+        "type_info": "Bool"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 8,
         "type_info": "Datetime"
       },
       {
         "name": "name",
-        "ordinal": 7,
+        "ordinal": 9,
         "type_info": "Text"
       }
     ],
@@ -51,6 +61,8 @@
       false,
       false,
       false,
+      false,
+      true,
       false,
       false,
       false,

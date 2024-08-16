@@ -14,7 +14,7 @@ use crate::model::user::UserUi;
 async fn user_reservation(pool: &SqlitePool, email: &str, cancelled: bool) -> Vec<Reservation> {
     query_as!(
         Reservation,
-        "select r.* from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = $2 order by date desc, hour asc",
+        "select r.* from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = $2 and created_for is null order by date desc, hour asc",
         email,
         cancelled
     ).fetch_all(pool)

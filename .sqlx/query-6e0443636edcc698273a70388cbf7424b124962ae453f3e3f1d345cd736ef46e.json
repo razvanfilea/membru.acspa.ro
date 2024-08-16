@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select exists(select true from reservations where location = $1 and date = $2 and hour = $3 and user_id = $4) as 'exists!'",
+  "query": "select exists(select true from reservations where\n        location = $1 and date = $2 and hour = $3 and user_id = $4 and created_for is null) as 'exists!'",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "c34def2e4ba5a0c61897a72d1c06290a23c6e9852062915260d496f1f2b99b93"
+  "hash": "6e0443636edcc698273a70388cbf7424b124962ae453f3e3f1d345cd736ef46e"
 }

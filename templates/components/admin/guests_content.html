@@ -6,6 +6,9 @@
             <p class="font-bold mb-2">{{ guest.name }}</p>
             <p>Data: <b>{{ guest.date.format(date_formats::READABLE_DATE).unwrap() }}</b></p>
             <p>Ora: <b>{{ guest.hour }}</b></p>
+            {% if !guest.as_guest %}
+            <p class="text-pink-500">Special</p>
+            {% endif %}
             <p class="text-sm">Creat de {{ guest.created_by }} pe {{ guest.created_at.format(date_formats::READABLE_DATE_TIME).unwrap() }}</p>
         </div>
 
