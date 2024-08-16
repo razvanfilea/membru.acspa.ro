@@ -154,6 +154,7 @@ async fn edit_member_page(
 
 #[derive(Deserialize)]
 struct ExistingUser {
+    email: String,
     name: String,
     role: String,
     has_key: Option<String>,
@@ -170,8 +171,9 @@ async fn update_user(
 
     let has_key = user.has_key.is_some();
     query!(
-        "update users set name = $2, role_id = $3, has_key = $4 where id = $1",
+        "update users set email = $2, name = $3, role_id = $4, has_key = $5 where id = $1",
         user_id,
+        user.email,
         user.name,
         role_id,
         has_key

@@ -1,6 +1,6 @@
 use crate::http::pages::home::calendar::{get_weeks_in_range, Weeks};
 use crate::http::pages::home::reservation::{create_reservation, ReservationSuccess};
-use crate::http::pages::AuthSession;
+use crate::http::pages::{get_global_vars, AuthSession};
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::restriction::Restriction;
@@ -32,13 +32,6 @@ pub fn router() -> Router<AppState> {
         .route("/choose_hour", post(hour_picker))
         .route("/reservation", post(confirm_reservation))
         .route("/reservation", delete(cancel_reservation))
-}
-
-async fn get_global_vars(state: &AppState) -> GlobalVars {
-    query_as!(GlobalVars, "select in_maintenance, entrance_code, homepage_message from global_vars")
-        .fetch_one(&state.pool)
-        .await
-        .expect("Database error")
 }
 
 async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<PossibleReservationSlot> {

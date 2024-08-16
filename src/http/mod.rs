@@ -16,7 +16,6 @@ use tower_sessions_sqlx_store::SqliteStore;
 use tracing::Level;
 
 mod auth;
-mod error;
 mod pages;
 
 #[derive(Clone)]

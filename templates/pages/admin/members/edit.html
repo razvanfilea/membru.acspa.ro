@@ -8,7 +8,8 @@
     <div class="label">
         <label for="email" class="label-text">Email:</label>
     </div>
-    <input id="email" type="email" value="{{ existing_user.email }}" disabled
+    <input id="email" name="email" type="email" placeholder="Email" autocomplete="off"
+           value="{{ existing_user.email }}" required
            class="input input-bordered"/>
 
     <div class="label">

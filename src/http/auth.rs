@@ -91,10 +91,10 @@ pub fn generate_hash_from_password<T: AsRef<str>>(password: T) -> String {
     let rng = Hc128Rng::seed_from_u64(since_the_epoch.as_millis() as u64);
     let salt = SaltString::generate(rng);
 
-    return Argon2::default()
+    Argon2::default()
         .hash_password(password.as_ref().as_bytes(), &salt)
         .expect("Failed to hash password")
-        .to_string();
+        .to_string()
 }
 
 pub fn validate_credentials<T: AsRef<str>, E: AsRef<str>>(
@@ -103,7 +103,7 @@ pub fn validate_credentials<T: AsRef<str>, E: AsRef<str>>(
 ) -> Result<bool, password_hash::Error> {
     let expected_password_hash = PasswordHash::new(expected_password_hash.as_ref())?;
 
-    return Ok(Argon2::default()
+    Ok(Argon2::default()
         .verify_password(password.as_ref().as_bytes(), &expected_password_hash)
-        .is_ok());
+        .is_ok())
 }

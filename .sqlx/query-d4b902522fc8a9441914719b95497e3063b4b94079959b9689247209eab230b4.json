@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "select r.*, u.name from reservations r join users u on r.user_id = u.id order by date, hour, created_at",
+  "describe": {
+    "columns": [
+      {
+        "name": "user_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "date",
+        "ordinal": 1,
+        "type_info": "Date"
+      },
+      {
+        "name": "hour",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "location",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "cancelled",
+        "ordinal": 4,
+        "type_info": "Bool"
+      },
+      {
+        "name": "in_waiting",
+        "ordinal": 5,
+        "type_info": "Bool"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 6,
+        "type_info": "Datetime"
+      },
+      {
+        "name": "name",
+        "ordinal": 7,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d4b902522fc8a9441914719b95497e3063b4b94079959b9689247209eab230b4"
+}

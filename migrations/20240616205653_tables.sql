@@ -4,7 +4,7 @@ CREATE TABLE user_roles
     name                   TEXT    NOT NULL UNIQUE,
     max_reservations       TINYINT NOT NULL CHECK (max_reservations >= 0),
     max_guest_reservations TINYINT NOT NULL CHECK (max_guest_reservations >= 0),
-    admin_panel_access     BOOLEAN NOT NULL CHECK (admin_panel_access IN (FALSE, TRUE))
+    admin_panel_access     BOOLEAN NOT NULL DEFAULT FALSE CHECK (admin_panel_access IN (FALSE, TRUE))
 );
 
 CREATE TABLE users

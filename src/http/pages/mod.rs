@@ -3,13 +3,22 @@ use crate::http::AppState;
 use axum::routing::{get, post};
 use axum::Router;
 use axum_login::{login_required, permission_required};
+use sqlx::query_as;
 use crate::http::pages::user::login;
+use crate::model::global_vars::GlobalVars;
 
 mod admin;
 mod home;
 mod user;
 
 pub type AuthSession = axum_login::AuthSession<UserAuthenticator>;
+
+async fn get_global_vars(state: &AppState) -> GlobalVars {
+    query_as!(GlobalVars, "select in_maintenance, entrance_code, homepage_message from global_vars")
+        .fetch_one(&state.pool)
+        .await
+        .expect("Database error")
+}
 
 pub fn router() -> Router<AppState> {
     let admin_router =
