@@ -164,8 +164,8 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
     let mut selected_date = local_time().date();
 
     #[derive(Template)]
-    #[template(path = "components/home/content.html")]
-    struct HomeContentTemplate {
+    #[template(path = "components/home/hours.html")]
+    struct HoursTemplate {
         current_date: Date,
         selected_date: Date,
         weeks: Weeks,
@@ -227,7 +227,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
             }
         }
 
-        let response = HomeContentTemplate {
+        let response = HoursTemplate {
             current_date,
             selected_date,
             weeks: get_weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
@@ -304,11 +304,11 @@ async fn confirm_reservation(
 
             match success {
                 ReservationSuccess::Reservation => format!(
-                    "Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
+                    "Ai rezervare pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
                     query.selected_date
                 ),
                 ReservationSuccess::Guest => format!(
-                    "Ai rezervare pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
+                    "Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
                     query.selected_date
                 ),
             }

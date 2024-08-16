@@ -7,9 +7,9 @@ use serde::Deserialize;
 use sqlx::{query, query_as};
 use tracing::error;
 
-use crate::http::auth::generate_hash_from_password;
-use crate::http::pages::AuthSession;
+use crate::http::pages::{get_user, AuthSession};
 use crate::http::AppState;
+use crate::http::auth::generate_hash_from_password;
 use crate::model::user::UserUi;
 
 pub fn router() -> Router<AppState> {
@@ -19,6 +19,8 @@ pub fn router() -> Router<AppState> {
         .route("/new", post(create_new_user))
         .route("/edit/:id", get(edit_member_page))
         .route("/edit/:id", post(update_user))
+        .route("/change_password/:id", get(change_password_page))
+        .route("/change_password/:id", post(update_password))
 }
 
 async fn get_all_roles(state: &AppState) -> Vec<String> {
@@ -130,25 +132,16 @@ async fn edit_member_page(
 ) -> impl IntoResponse {
     #[derive(Template)]
     #[template(path = "pages/admin/members/edit.html")]
-    struct NewMemberTemplate {
+    struct EditMemberTemplate {
         user: UserUi,
         roles: Vec<String>,
         existing_user: UserUi,
     }
 
-    let existing_user = query_as!(
-        UserUi,
-        "select * from users_with_role where id = $1",
-        user_id
-    )
-    .fetch_one(&state.pool)
-    .await
-    .expect("Database error");
-
-    NewMemberTemplate {
+    EditMemberTemplate {
         user: auth_session.user.expect("User should be logged in"),
         roles: get_all_roles(&state).await,
-        existing_user,
+        existing_user: get_user(&state.pool, user_id).await,
     }
 }
 
@@ -189,4 +182,51 @@ async fn update_user(
             error!("Failed to return headers: {e}");
             "OOps".to_string() // TODO
         })
+}
+
+async fn change_password_page(
+    State(state): State<AppState>,
+    auth_session: AuthSession,
+    Path(user_id): Path<i64>,
+) -> impl IntoResponse {
+    #[derive(Template)]
+    #[template(path = "pages/admin/members/change_password.html")]
+    struct ChangePasswordTemplate {
+        user: UserUi,
+        existing_user: UserUi,
+    }
+
+    ChangePasswordTemplate {
+        user: auth_session.user.expect("User should be logged in"),
+        existing_user: get_user(&state.pool, user_id).await,
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ChangePasswordForm {
+    password: String,
+}
+
+pub async fn update_password(
+    State(state): State<AppState>,
+    auth: AuthSession,
+    Form(passwords): Form<ChangePasswordForm>,
+) -> Response {
+    let user = auth.user.as_ref().unwrap();
+
+    let new_password_hash = generate_hash_from_password(passwords.password);
+    query!(
+        "update users set password_hash = $1 where id = $2",
+        new_password_hash,
+        user.id
+    )
+        .execute(&state.pool)
+        .await
+        .expect("Database error");
+
+    Response::builder()
+        .header("HX-Redirect", "/")
+        .body("Parola a fost schimbata cu succes".to_string())
+        .unwrap()
+        .into_response()
 }

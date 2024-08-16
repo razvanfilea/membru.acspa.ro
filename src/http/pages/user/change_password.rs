@@ -22,13 +22,6 @@ pub async fn change_password_page(auth_session: AuthSession) -> impl IntoRespons
     }
 }
 
-#[derive(Deserialize)]
-pub struct ChangePasswordForm {
-    old: String,
-    new: String,
-    new_duplicate: String,
-}
-
 fn change_password_error(message: impl AsRef<str>) -> Response {
     #[derive(Template)]
     #[template(path = "components/login_error.html")]
@@ -40,6 +33,13 @@ fn change_password_error(message: impl AsRef<str>) -> Response {
         error_message: message.as_ref(),
     }
     .into_response()
+}
+
+#[derive(Deserialize)]
+pub struct ChangePasswordForm {
+    old: String,
+    new: String,
+    new_duplicate: String,
 }
 
 pub async fn change_password(
