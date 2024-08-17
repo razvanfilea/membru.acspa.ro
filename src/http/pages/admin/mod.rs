@@ -82,18 +82,20 @@ async fn download_situations(State(state): State<AppState>) -> impl IntoResponse
     .into_iter()
     .map(|res| {
         format!(
-            "{}, \"{}\", {}, {}, {}, \"{}\"",
+            "{}, \"{}\", {}, {}, {}, {}, \"{}\", \"{}\"",
             res.user_id,
             res.name,
             res.date,
             res.hour,
+            res.as_guest,
             res.cancelled,
+            res.created_for.unwrap_or_default(),
             res.created_at.format(READABLE_DATE_TIME).unwrap()
         )
     })
     .collect();
 
-    situations.insert(0, "User ID, Nume, Data, Ora, Anulat, Creat pe".to_string());
+    situations.insert(0, "User ID, Nume, Data, Ora, Ca invitat, Anulat, Creat pentru, Creat pe".to_string());
 
     let csv = situations.join("\n");
 

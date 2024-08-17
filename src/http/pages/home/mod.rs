@@ -60,10 +60,12 @@ async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<PossibleRese
     let date_reservations = query!(
         r#"select users.name as 'name!', hour, has_key, as_guest, created_for
         from reservations inner join users on user_id = users.id
-        where date = $1 order by as_guest, created_at"#, date)
-        .fetch_all(&state.pool)
-        .await
-        .expect("Database error");
+        where date = $1 order by as_guest, created_at"#,
+        date
+    )
+    .fetch_all(&state.pool)
+    .await
+    .expect("Database error");
 
     hour_structure
         .iter()
@@ -85,7 +87,10 @@ async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<PossibleRese
                 .iter()
                 .filter(|record| record.hour as u8 == hour)
                 .map(|record| PossibleReservation {
-                    name: record.created_for.clone().unwrap_or_else(|| record.name.clone()),
+                    name: record
+                        .created_for
+                        .clone()
+                        .unwrap_or_else(|| record.name.clone()),
                     has_key: record.has_key && record.created_for.is_none(),
                     res_type: if record.as_guest {
                         ReservationType::Guest
@@ -164,11 +169,17 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
     let mut selected_date = local_time().date();
 
     #[derive(Template)]
-    #[template(path = "components/home/hours.html")]
-    struct HoursTemplate {
+    #[template(path = "components/home/content.html")]
+    struct HomeContentTemplate {
         current_date: Date,
         selected_date: Date,
         weeks: Weeks,
+        reservation_hours: Vec<PossibleReservationSlot>,
+    }
+
+    #[derive(Template)]
+    #[template(path = "components/home/hours.html")]
+    struct HoursTemplate {
         reservation_hours: Vec<PossibleReservationSlot>,
     }
 
@@ -193,9 +204,10 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
     let mut reservations_changed = state.reservation_notifier.subscribe();
     loop {
         let reservations_task = reservations_changed.changed();
+        let recv_task = socket.recv();
 
         let current_date = local_time().date();
-        select! {
+        let response = select! {
             result = reservations_task => {
                 if let Err(e) = result {
                     error!("Watcher closed unexpectedly: {e}");
@@ -206,8 +218,13 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
                 if *reservations_changed.borrow_and_update() != selected_date {
                     continue;
                 }
+
+                HoursTemplate {
+                    reservation_hours: get_reservation_hours(&state, selected_date).await,
+                }
+                .to_string()
             }
-            message = socket.recv() => {
+            message = recv_task => {
                 let Some(ws_message) = parse_message(message) else {
                     return;
                 };
@@ -224,16 +241,16 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
                         date >= &current_date && selected_date <= current_date + DAYS_AHEAD_ALLOWED
                     })
                     .unwrap_or(current_date);
-            }
-        }
 
-        let response = HoursTemplate {
-            current_date,
-            selected_date,
-            weeks: get_weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
-            reservation_hours: get_reservation_hours(&state, selected_date).await,
-        }
-        .to_string();
+                HomeContentTemplate {
+                    current_date,
+                    selected_date,
+                    weeks: get_weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
+                    reservation_hours: get_reservation_hours(&state, selected_date).await,
+                }
+                .to_string()
+            }
+        };
 
         socket.send(Message::Text(response)).await.unwrap();
     }
