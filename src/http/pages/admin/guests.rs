@@ -1,16 +1,16 @@
-use std::ops::Not;
 use askama_axum::{IntoResponse, Template};
-use axum::{Form, Router};
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::{delete, get, post, put};
+use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
+use std::ops::Not;
 use time::{Date, OffsetDateTime};
 use tracing::{error, info};
 
-use crate::http::AppState;
 use crate::http::pages::AuthSession;
+use crate::http::AppState;
 use crate::model::user::UserUi;
 use crate::utils::{date_formats, get_hour_structure_for_day, local_time};
 
@@ -21,7 +21,6 @@ pub fn router() -> Router<AppState> {
         .route("/select_hour", post(select_hour))
         .route("/:id", delete(delete_guest))
 }
-
 
 pub struct GuestDto {
     rowid: i64,
@@ -62,7 +61,7 @@ async fn guests_page(
     GuestsTemplate {
         user: auth_session.user.expect("User should be logged in"),
         guests: get_guests(&state.pool).await,
-        current_date: local_time().date()
+        current_date: local_time().date(),
     }
 }
 
@@ -83,7 +82,7 @@ async fn select_hour(
 
     let date = Date::parse(&form.date, date_formats::ISO_DATE).unwrap();
 
-    let hour_structure = get_hour_structure_for_day(&state, &date).await;
+    let hour_structure = get_hour_structure_for_day(&state, date).await;
 
     SelectHourTemplate {
         hours: hour_structure.iter().collect(),
@@ -95,7 +94,7 @@ struct NewSpecialGuest {
     name: String,
     date: String,
     hour: u8,
-    special: Option<String>
+    special: Option<String>,
 }
 
 async fn create_guest(
@@ -110,14 +109,14 @@ async fn create_guest(
     }
 
     let date = Date::parse(&guest.date, date_formats::ISO_DATE).unwrap();
-        let hour_structure = get_hour_structure_for_day(&state, &date).await;
-        if !hour_structure.is_hour_valid(guest.hour) {
-            error!("Invalid hour: {} for date: {}", guest.hour, guest.date);
+    let hour_structure = get_hour_structure_for_day(&state, date).await;
+    if !hour_structure.is_hour_valid(guest.hour) {
+        error!("Invalid hour: {} for date: {}", guest.hour, guest.date);
 
-            return GuestsListTemplate {
-                guests: get_guests(&state.pool).await,
-            };
-        }
+        return GuestsListTemplate {
+            guests: get_guests(&state.pool).await,
+        };
+    }
 
     let user = auth_session.user.expect("User should be logged in");
     let name = guest.name.trim();
@@ -149,11 +148,14 @@ async fn create_guest(
 }
 
 async fn delete_guest(State(state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    let deleted_date = query!("delete from reservations where rowid = $1 returning date", id)
-        .fetch_optional(&state.pool)
-        .await
-        .expect("Database error")
-        .map(|record| record.date);
+    let deleted_date = query!(
+        "delete from reservations where rowid = $1 returning date",
+        id
+    )
+    .fetch_optional(&state.pool)
+    .await
+    .expect("Database error")
+    .map(|record| record.date);
 
     if let Some(date) = deleted_date {
         let _ = state.reservation_notifier.send(date);

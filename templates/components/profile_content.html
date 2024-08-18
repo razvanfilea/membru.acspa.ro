@@ -24,12 +24,12 @@
         <div id="res_{{ loop.index }}" class="flex flex-row gap-4 justify-between items-center p-4 bg-gray-600 rounded">
             <div class="flex flex-col gap-1">
                 <p>Pe data de <b>{{ reservation.date.format(date_formats::READABLE_DATE).unwrap() }}</b>
-                    de la ora <b>{{ reservation.hour }}:00</b> la <b>{{ reservation.hour + duration }}:00</b>
+                    de la ora <b>{{ reservation.hour }}:00</b>
                 </p>
-                <p>Locația: {{ location_name }}</p>
                 {% if reservation.as_guest %}
                 <p class="text-blue-300">Ca invitat</p>
                 {% endif %}
+                <p class="text-sm">Creat pe: {{ reservation.created_at.format(date_formats::READABLE_DATE_TIME).unwrap()}}</p>
             </div>
 
             {% if reservation.is_cancellable() %}

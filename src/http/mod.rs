@@ -1,5 +1,6 @@
 use crate::http::auth::UserAuthenticator;
 use crate::model::location::Location;
+use anyhow::Context;
 use axum::Router;
 use axum_login::tower_sessions::cookie::time::Duration;
 use axum_login::tower_sessions::{Expiry, SessionManagerLayer};
@@ -7,7 +8,6 @@ use axum_login::AuthManagerLayerBuilder;
 use sqlx::{query_as, SqlitePool};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use anyhow::Context;
 use time::Date;
 use tokio::sync::watch;
 use tower_http::trace;
@@ -22,7 +22,7 @@ mod pages;
 pub struct AppState {
     pub pool: SqlitePool,
     pub location: Location,
-    pub reservation_notifier: Arc<watch::Sender<Date>>
+    pub reservation_notifier: Arc<watch::Sender<Date>>,
 }
 
 impl AppState {
@@ -35,7 +35,7 @@ impl AppState {
                 .await
                 .expect("No locations found"),
             pool,
-            reservation_notifier: Arc::new(tx)
+            reservation_notifier: Arc::new(tx),
         }
     }
 }
@@ -71,5 +71,7 @@ pub async fn http_server(app_state: AppState, session_store: SqliteStore) -> any
     println!("Server started on port {port}");
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, http_service).await.context("Failed to start server")
+    axum::serve(listener, http_service)
+        .await
+        .context("Failed to start server")
 }

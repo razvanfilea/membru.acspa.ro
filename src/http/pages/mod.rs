@@ -1,12 +1,12 @@
 use crate::http::auth::UserAuthenticator;
+use crate::http::pages::user::login;
 use crate::http::AppState;
+use crate::model::global_vars::GlobalVars;
+use crate::model::user::UserUi;
 use axum::routing::{get, post};
 use axum::Router;
 use axum_login::{login_required, permission_required};
 use sqlx::{query_as, SqlitePool};
-use crate::http::pages::user::login;
-use crate::model::global_vars::GlobalVars;
-use crate::model::user::UserUi;
 
 mod admin;
 mod home;
@@ -15,10 +15,13 @@ mod user;
 pub type AuthSession = axum_login::AuthSession<UserAuthenticator>;
 
 async fn get_global_vars(state: &AppState) -> GlobalVars {
-    query_as!(GlobalVars, "select in_maintenance, entrance_code, homepage_message from global_vars")
-        .fetch_one(&state.pool)
-        .await
-        .expect("Database error")
+    query_as!(
+        GlobalVars,
+        "select in_maintenance, entrance_code, homepage_message from global_vars"
+    )
+    .fetch_one(&state.pool)
+    .await
+    .expect("Database error")
 }
 
 async fn get_user(pool: &SqlitePool, id: i64) -> UserUi {
@@ -26,7 +29,6 @@ async fn get_user(pool: &SqlitePool, id: i64) -> UserUi {
         .fetch_one(pool)
         .await
         .expect("Database error")
-
 }
 
 pub fn router() -> Router<AppState> {

@@ -7,9 +7,9 @@ use serde::Deserialize;
 use sqlx::{query, query_as};
 use tracing::error;
 
+use crate::http::auth::generate_hash_from_password;
 use crate::http::pages::{get_user, AuthSession};
 use crate::http::AppState;
-use crate::http::auth::generate_hash_from_password;
 use crate::model::user::UserUi;
 
 pub fn router() -> Router<AppState> {
@@ -209,10 +209,10 @@ pub struct ChangePasswordForm {
 
 pub async fn update_password(
     State(state): State<AppState>,
-    auth: AuthSession,
+    Path(user_id): Path<i64>,
     Form(passwords): Form<ChangePasswordForm>,
 ) -> Response {
-    let user = auth.user.as_ref().unwrap();
+    let user = get_user(&state.pool, user_id).await;
 
     let new_password_hash = generate_hash_from_password(passwords.password);
     query!(
@@ -220,9 +220,9 @@ pub async fn update_password(
         new_password_hash,
         user.id
     )
-        .execute(&state.pool)
-        .await
-        .expect("Database error");
+    .execute(&state.pool)
+    .await
+    .expect("Database error");
 
     Response::builder()
         .header("HX-Redirect", "/")

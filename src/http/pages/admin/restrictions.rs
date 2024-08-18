@@ -47,7 +47,7 @@ async fn restrictions_page(
     RestrictionsTemplate {
         user: auth_session.user.expect("User should be logged in"),
         restrictions: get_restrictions(&state.pool).await,
-        current_date: local_time().date()
+        current_date: local_time().date(),
     }
 }
 
@@ -73,7 +73,7 @@ async fn select_hour(
 
     let date = Date::parse(&form.date, date_formats::ISO_DATE).unwrap();
 
-    let hour_structure = get_hour_structure_for_day(&state, &date).await;
+    let hour_structure = get_hour_structure_for_day(&state, date).await;
 
     SelectHourTemplate {
         hours: hour_structure.iter().collect(),
@@ -100,7 +100,7 @@ async fn create_restriction(
 
     let date = Date::parse(&restriction.date, date_formats::ISO_DATE).unwrap();
     if let Some(hour) = restriction.hour {
-        let hour_structure = get_hour_structure_for_day(&state, &date).await;
+        let hour_structure = get_hour_structure_for_day(&state, date).await;
         if !hour_structure.is_hour_valid(hour) {
             error!("Invalid hour: {hour} for date: {}", restriction.date);
 

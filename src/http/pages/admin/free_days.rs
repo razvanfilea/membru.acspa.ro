@@ -2,6 +2,7 @@ use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::free_day::FreeDay;
 use crate::model::user::UserUi;
+use crate::utils::{date_formats, local_time};
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::{Path, State};
@@ -9,10 +10,9 @@ use axum::routing::{delete, get, put};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
-use time::Date;
 use time::macros::format_description;
+use time::Date;
 use tracing::info;
-use crate::utils::{date_formats, local_time};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -22,10 +22,13 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn get_free_days(pool: &SqlitePool) -> Vec<FreeDay> {
-    query_as!(FreeDay, "select * from free_days order by date")
-        .fetch_all(pool)
-        .await
-        .expect("Database error")
+    query_as!(
+        FreeDay,
+        "select * from free_days order by date desc, created_at"
+    )
+    .fetch_all(pool)
+    .await
+    .expect("Database error")
 }
 
 async fn free_days_page(

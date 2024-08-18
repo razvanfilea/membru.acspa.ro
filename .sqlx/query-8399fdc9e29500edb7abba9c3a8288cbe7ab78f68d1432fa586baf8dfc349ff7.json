@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from free_days order by date",
+  "query": "select * from free_days order by date desc, created_at",
   "describe": {
     "columns": [
       {
@@ -28,5 +28,5 @@
       false
     ]
   },
-  "hash": "3062c5b3f5651e1c113a3a8ca016056cb4a1948192cc8085ee81dfdf5c372133"
+  "hash": "8399fdc9e29500edb7abba9c3a8288cbe7ab78f68d1432fa586baf8dfc349ff7"
 }

@@ -1,3 +1,9 @@
+use crate::http::pages::{get_global_vars, AuthSession};
+use crate::http::AppState;
+use crate::model::global_vars::GlobalVars;
+use crate::model::user::UserUi;
+use crate::utils::date_formats::{ISO_DATE_UNDERLINE, READABLE_DATE_TIME};
+use crate::utils::local_time;
 use askama::Template;
 use askama_axum::Response;
 use axum::extract::State;
@@ -6,12 +12,6 @@ use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
-use crate::http::pages::{get_global_vars, AuthSession};
-use crate::http::AppState;
-use crate::model::global_vars::GlobalVars;
-use crate::model::user::UserUi;
-use crate::utils::date_formats::{ISO_DATE_UNDERLINE, READABLE_DATE_TIME};
-use crate::utils::local_time;
 
 mod free_days;
 mod guests;
@@ -95,13 +95,19 @@ async fn download_situations(State(state): State<AppState>) -> impl IntoResponse
     })
     .collect();
 
-    situations.insert(0, "User ID, Nume, Data, Ora, Ca invitat, Anulat, Creat pentru, Creat pe".to_string());
+    situations.insert(
+        0,
+        "User ID, Nume, Data, Ora, Ca invitat, Anulat, Creat pentru, Creat pe".to_string(),
+    );
 
     let csv = situations.join("\n");
 
     Response::builder()
         .header("Content-Type", "text/csv; charset=utf-8")
-        .header("Content-Disposition", format!("attachment; filename=\"situatie_{current_date}.csv\""))
+        .header(
+            "Content-Disposition",
+            format!("attachment; filename=\"situatie_{current_date}.csv\""),
+        )
         .body(csv)
         .expect("Failed to create response")
 }

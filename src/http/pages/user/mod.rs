@@ -1,18 +1,21 @@
+use crate::http::AppState;
 use askama::Template;
 use axum::response::IntoResponse;
-use axum::Router;
 use axum::routing::{get, post};
-use crate::http::AppState;
+use axum::Router;
 
+mod change_password;
 pub mod login;
 mod profile;
-mod change_password;
 
 pub fn user_router() -> Router<AppState> {
     Router::new()
         .route("/profile", get(profile::profile_page))
         .route("/profile/reservations", post(profile::profile_reservations))
-        .route("/change_password", get(change_password::change_password_page))
+        .route(
+            "/change_password",
+            get(change_password::change_password_page),
+        )
         .route("/change_password", post(change_password::change_password))
 }
 

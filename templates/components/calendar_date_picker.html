@@ -6,8 +6,7 @@
     <p class="text-center text-yellow-200">Vi</p>
     <p class="text-center text-red-300">Sâ</p>
     <p class="text-center text-red-300">Du</p>
-    {% for week in weeks %}
-    {% for date in week %}
+    {% for date in days %}
     <button
             class="rounded-full border border-transparent aspect-square
                 disabled:text-neutral-500 disabled:pointer-events-none
@@ -15,13 +14,11 @@
             hx-vals='{"selected_date": "{{ date.format(date_formats::ISO_DATE).unwrap() }}"}'
             ws-send
             style="
-                {% if date == selected_date|as_ref %}background-color: oklch(var(--p)); color: black; font-weight: bold;{% endif %}
+                {% if date == selected_date %}background-color: oklch(var(--p)); color: black; font-weight: bold;{% endif %}
                 "
-            {% if date
-    < current_date|as_ref || date > (current_date + DAYS_AHEAD_ALLOWED)|as_ref %}disabled{% endif %}
+            {% if date < current_date || date > (current_date + DAYS_AHEAD_ALLOWED) %}disabled{% endif %}
     >
     {{ date.day() }}
     </button>
-    {% endfor %}
     {% endfor %}
 </div>

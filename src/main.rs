@@ -5,6 +5,7 @@ use std::str::FromStr;
 use std::time::Duration;
 use time::util::local_offset::{set_soundness, Soundness};
 use tower_sessions_sqlx_store::SqliteStore;
+use tracing::error;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
@@ -47,7 +48,9 @@ async fn main() -> anyhow::Result<()> {
         .migrate()
         .await
         .expect("Failed to run schema migration for authentication");
-    session_store.delete_expired().await?;
+    if let Err(e) = session_store.delete_expired().await {
+        error!("Failed to clean up expired sessions: {e}");
+    }
 
     let app_state = AppState::new(pool).await;
 

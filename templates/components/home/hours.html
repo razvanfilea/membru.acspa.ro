@@ -12,24 +12,27 @@
                     {% when ReservationType::SpecialGuest %}
                     bg-fuchsia-600
                     {% when ReservationType::Guest %}
-                    bg-cyan-500
+                    bg-cyan-600
                     {% endmatch %}">
                 {{ loop.index }}. {{ res.name }}
                 {% if res.has_key %}
                 <span class="material-symbols-outlined">vpn_key</span>
+                {% endif %}
+                {% if !res.has_account %}
+                <span class="material-symbols-outlined">account_circle_off</span>
                 {% endif %}
             </button>
             {% endfor %}
             {% endif %}
 
             {% if let Err(restriction) = possible_hour.reservations %}
-            <span class="text-red-600 font-semibold">{{ restriction }}</span>
+            <p class="text-red-600 font-semibold">{{ restriction }}</p>
             {% endif %}
         </div>
 
         {% if possible_hour.reservations.is_ok() %}
         <input name="reservation" type="radio" aria-label="Rezervare" autocomplete="off"
-               hx-post="/choose_hour" hx-target="#confirmation" hx-swap="outerHTML scroll:bottom"
+               hx-post="/choose_hour" hx-target="#confirmation" hx-swap="outerHTML show:bottom"
                class="btn btn-md btn-outline btn-primary w-min"/>
         {% endif %}
 
