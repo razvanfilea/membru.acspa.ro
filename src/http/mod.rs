@@ -20,21 +20,24 @@ mod pages;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub pool: SqlitePool,
-    pub location: Location,
+    pub read_pool: SqlitePool,
+    pub write_pool: SqlitePool,
+    pub location: Arc<Location>,
     pub reservation_notifier: Arc<watch::Sender<Date>>,
 }
 
 impl AppState {
-    pub async fn new(pool: SqlitePool) -> Self {
+    pub async fn new(read_pool: SqlitePool, write_pool: SqlitePool) -> Self {
         let (tx, _) = watch::channel(Date::MIN);
+        let location = query_as!(Location, "select * from locations")
+            .fetch_one(&read_pool)
+            .await
+            .expect("No locations found");
 
         Self {
-            location: query_as!(Location, "select * from locations")
-                .fetch_one(&pool)
-                .await
-                .expect("No locations found"),
-            pool,
+            location: Arc::new(location),
+            read_pool,
+            write_pool,
             reservation_notifier: Arc::new(tx),
         }
     }
@@ -46,7 +49,7 @@ pub async fn http_server(app_state: AppState, session_store: SqliteStore) -> any
         .with_secure(false);
 
     let auth_layer = AuthManagerLayerBuilder::new(
-        UserAuthenticator::new(app_state.pool.clone()),
+        UserAuthenticator::new(app_state.read_pool.clone()),
         session_layer,
     )
     .build();

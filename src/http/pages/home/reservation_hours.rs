@@ -32,7 +32,7 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
         "select * from reservations_restrictions where date = $1 order by hour",
         date
     )
-        .fetch_all(&state.pool)
+        .fetch_all(&state.read_pool)
         .await
         .expect("Database error");
 
@@ -54,7 +54,7 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
         where date = $1 order by as_guest, created_at"#,
         date
     )
-        .fetch_all(&state.pool)
+        .fetch_all(&state.read_pool)
         .await
         .expect("Database error");
 

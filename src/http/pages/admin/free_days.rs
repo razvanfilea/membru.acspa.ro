@@ -45,7 +45,7 @@ async fn free_days_page(
 
     FreeDaysTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        free_days: get_free_days(&state.pool).await,
+        free_days: get_free_days(&state.read_pool).await,
         current_date: local_time().date(),
     }
 }
@@ -78,7 +78,7 @@ async fn create_free_day(
             date,
             description,
         )
-        .execute(&state.pool)
+        .execute(&state.write_pool)
         .await
         .expect("Database error");
 
@@ -89,7 +89,7 @@ async fn create_free_day(
     }
 
     FreeDaysListTemplate {
-        free_days: get_free_days(&state.pool).await,
+        free_days: get_free_days(&state.read_pool).await,
     }
 }
 
@@ -100,7 +100,7 @@ async fn delete_free_day(
     let date = Date::parse(&date, format_description!("[year]-[month]-[day]")).unwrap();
 
     query!("delete from free_days where date = $1", date)
-        .execute(&state.pool)
+        .execute(&state.write_pool)
         .await
         .expect("Database error");
 }

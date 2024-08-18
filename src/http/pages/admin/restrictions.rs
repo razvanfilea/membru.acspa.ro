@@ -46,7 +46,7 @@ async fn restrictions_page(
 
     RestrictionsTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        restrictions: get_restrictions(&state.pool).await,
+        restrictions: get_restrictions(&state.read_pool).await,
         current_date: local_time().date(),
     }
 }
@@ -105,7 +105,7 @@ async fn create_restriction(
             error!("Invalid hour: {hour} for date: {}", restriction.date);
 
             return RestrictionsListTemplate {
-                restrictions: get_restrictions(&state.pool).await,
+                restrictions: get_restrictions(&state.read_pool).await,
             };
         }
     }
@@ -119,7 +119,7 @@ async fn create_restriction(
         state.location.id,
         message,
     )
-    .execute(&state.pool)
+    .execute(&state.write_pool)
     .await
     .expect("Database error");
 
@@ -129,7 +129,7 @@ async fn create_restriction(
     );
 
     RestrictionsListTemplate {
-        restrictions: get_restrictions(&state.pool).await,
+        restrictions: get_restrictions(&state.read_pool).await,
     }
 }
 
@@ -151,7 +151,7 @@ async fn delete_restriction(
             date,
             hour
         )
-        .execute(&state.pool)
+        .execute(&state.write_pool)
         .await
         .expect("Database error");
     } else {
@@ -159,7 +159,7 @@ async fn delete_restriction(
             "delete from reservations_restrictions where date = $1",
             date
         )
-        .execute(&state.pool)
+        .execute(&state.write_pool)
         .await
         .expect("Database error");
     }

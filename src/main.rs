@@ -5,7 +5,7 @@ use std::str::FromStr;
 use std::time::Duration;
 use time::util::local_offset::{set_soundness, Soundness};
 use tower_sessions_sqlx_store::SqliteStore;
-use tracing::error;
+use tracing::warn;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
@@ -38,21 +38,28 @@ async fn main() -> anyhow::Result<()> {
         .pragma("temp_store", "memory")
         .pragma("cache_size", "-20000");
 
-    let pool = SqlitePoolOptions::new()
+    let read_pool = SqlitePoolOptions::new()
+        .min_connections(1)
         .max_connections(4)
+        .connect_with(connection_options.clone().read_only(true))
+        .await?;
+
+    let write_pool = SqlitePoolOptions::new()
+        .min_connections(1)
+        .max_connections(1)
         .connect_with(connection_options)
         .await?;
 
-    let session_store = SqliteStore::new(pool.clone());
+    let session_store = SqliteStore::new(write_pool.clone());
     session_store
         .migrate()
         .await
         .expect("Failed to run schema migration for authentication");
     if let Err(e) = session_store.delete_expired().await {
-        error!("Failed to clean up expired sessions: {e}");
+        warn!("Failed to clean up expired sessions: {e}");
     }
 
-    let app_state = AppState::new(pool).await;
+    let app_state = AppState::new(read_pool, write_pool).await;
 
     http_server(app_state, session_store)
         .await

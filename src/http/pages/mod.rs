@@ -19,7 +19,7 @@ async fn get_global_vars(state: &AppState) -> GlobalVars {
         GlobalVars,
         "select in_maintenance, entrance_code, homepage_message from global_vars"
     )
-    .fetch_one(&state.pool)
+    .fetch_one(&state.read_pool)
     .await
     .expect("Database error")
 }

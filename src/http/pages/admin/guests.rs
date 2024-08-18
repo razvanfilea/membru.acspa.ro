@@ -60,7 +60,7 @@ async fn guests_page(
 
     GuestsTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        guests: get_guests(&state.pool).await,
+        guests: get_guests(&state.read_pool).await,
         current_date: local_time().date(),
     }
 }
@@ -114,7 +114,7 @@ async fn create_guest(
         error!("Invalid hour: {} for date: {}", guest.hour, guest.date);
 
         return GuestsListTemplate {
-            guests: get_guests(&state.pool).await,
+            guests: get_guests(&state.read_pool).await,
         };
     }
 
@@ -131,7 +131,7 @@ async fn create_guest(
         name,
         special
     )
-        .execute(&state.pool)
+        .execute(&state.write_pool)
         .await
         .expect("Database error");
 
@@ -143,7 +143,7 @@ async fn create_guest(
     let _ = state.reservation_notifier.send(date);
 
     GuestsListTemplate {
-        guests: get_guests(&state.pool).await,
+        guests: get_guests(&state.read_pool).await,
     }
 }
 
@@ -152,7 +152,7 @@ async fn delete_guest(State(state): State<AppState>, Path(id): Path<i64>) -> imp
         "delete from reservations where rowid = $1 returning date",
         id
     )
-    .fetch_optional(&state.pool)
+    .fetch_optional(&state.write_pool)
     .await
     .expect("Database error")
     .map(|record| record.date);

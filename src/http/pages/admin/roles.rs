@@ -29,7 +29,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
     }
 
     let roles = query_as!(UserRole, "select * from user_roles")
-        .fetch_all(&state.pool)
+        .fetch_all(&state.read_pool)
         .await
         .expect("Database error");
 
@@ -70,7 +70,7 @@ async fn create_new_role(
         role.reservations,
         role.as_guest
     )
-    .execute(&state.pool)
+    .execute(&state.write_pool)
     .await
     .expect("Database error");
 
@@ -86,7 +86,7 @@ async fn edit_role_page(
     Path(role_id): Path<i64>,
 ) -> impl IntoResponse {
     let role = query_as!(UserRole, "select * from user_roles where id = $1", role_id)
-        .fetch_optional(&state.pool)
+        .fetch_optional(&state.read_pool)
         .await
         .expect("Database error");
 
@@ -117,7 +117,7 @@ async fn update_role(
         role.reservations,
         role.as_guest
     )
-    .execute(&state.pool)
+    .execute(&state.write_pool)
     .await
     .expect("Database error");
 

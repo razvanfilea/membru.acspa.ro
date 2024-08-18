@@ -1,23 +1,23 @@
+use crate::http::pages::home::reservation_hours::ReservationType;
 use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationSlot};
+use crate::http::pages::home::socket::ws;
 use crate::http::pages::{get_global_vars, AuthSession};
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::UserUi;
 use crate::utils::date_iter::DateIter;
-use crate::utils::reservation::{create_reservation, ReservationSuccess};
+use crate::utils::reservation::{create_reservation, is_reservation_possible, ReservationSuccess};
 use crate::utils::{date_formats, get_hour_structure_for_day, local_time};
 use askama::Template;
 use askama_axum::IntoResponse;
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
-use axum::extract::{Query, State};
 use serde::Deserialize;
 use sqlx::query;
 use time::Date;
 use tracing::warn;
-use crate::http::pages::home::reservation_hours::ReservationType;
-use crate::http::pages::home::socket::ws;
 
 mod reservation_hours;
 mod socket;
@@ -63,19 +63,28 @@ struct HourQuery {
     hour: u8,
 }
 
+#[derive(Template)]
+#[template(path = "components/home/reservation_confirmed.html")]
+struct ConfirmedTemplate {
+    successful: bool,
+    message: String,
+}
+
 async fn hour_picker(
+    auth_session: AuthSession,
     State(state): State<AppState>,
     Form(query): Form<HourQuery>,
 ) -> impl IntoResponse {
     #[derive(Template)]
     #[template(path = "components/home/reservation_confirm_card.html")]
-    struct ConfirmationTemplate<'a> {
+    struct ConfirmationPromptTemplate<'a> {
         selected_date: Date,
         start_hour: u8,
         end_hour: u8,
         location_name: &'a str,
     }
 
+    let user = auth_session.user.expect("User should be logged in");
     let selected_date = Date::parse(&query.selected_date, date_formats::READABLE_DATE)
         .unwrap_or_else(|e| {
             warn!(
@@ -87,13 +96,31 @@ async fn hour_picker(
 
     let structure = get_hour_structure_for_day(&state, selected_date).await;
 
-    ConfirmationTemplate {
+    let is_possible = is_reservation_possible(
+        &state.read_pool,
+        &state.location,
+        local_time(),
+        &user,
         selected_date,
-        start_hour: query.hour,
-        end_hour: query.hour + structure.slot_duration as u8,
-        location_name: state.location.name.as_ref(),
+        query.hour,
+    )
+    .await;
+
+    if let Err(e) = is_possible {
+        ConfirmedTemplate {
+            successful: false,
+            message: e.to_string(),
+        }
+        .into_response()
+    } else {
+        ConfirmationPromptTemplate {
+            selected_date,
+            start_hour: query.hour,
+            end_hour: query.hour + structure.slot_duration as u8,
+            location_name: state.location.name.as_ref(),
+        }
+        .into_response()
     }
-    .into_response()
 }
 
 async fn confirm_reservation(
@@ -101,27 +128,28 @@ async fn confirm_reservation(
     State(state): State<AppState>,
     Form(query): Form<HourQuery>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
-    #[template(path = "components/home/reservation_confirmed.html")]
-    struct ConfirmationTemplate {
-        successful: bool,
-        message: String,
-    }
-
     let user = auth_session.user.expect("User should be logged in");
     let selected_date =
         Date::parse(&query.selected_date, date_formats::READABLE_DATE).expect("Invalid date");
     let selected_hour = query.hour;
 
-    let result =
-        create_reservation(&state, local_time(), &user, selected_date, selected_hour).await;
+    let result = create_reservation(
+        &state.write_pool,
+        &state.location,
+        local_time(),
+        &user,
+        selected_date,
+        selected_hour,
+    )
+    .await;
+
     let successful = result.is_ok();
     let message = match result {
         Ok(success) => {
             let _ = state.reservation_notifier.send(selected_date);
 
             match success {
-                ReservationSuccess::Reservation => format!(
+                ReservationSuccess::Reservation{ deletes_guest: _has_deleted_guest } => format!(
                     "Ai rezervare pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
                     query.selected_date
                 ),
@@ -134,7 +162,7 @@ async fn confirm_reservation(
         Err(e) => e.to_string(),
     };
 
-    ConfirmationTemplate {
+    ConfirmedTemplate {
         successful,
         message,
     }
@@ -157,7 +185,7 @@ async fn cancel_reservation(
     let cancelled_date = query!(
         "update reservations set cancelled = true where date = $1 and hour = $2 and user_id = $3 and location = $4 returning date",
         date, query.hour, user.id, state.location.id)
-        .fetch_optional(&state.pool)
+        .fetch_optional(&state.write_pool)
         .await
         .expect("Database error")
         .map(|record| record.date);

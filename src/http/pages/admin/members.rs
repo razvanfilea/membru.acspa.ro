@@ -25,7 +25,7 @@ pub fn router() -> Router<AppState> {
 
 async fn get_all_roles(state: &AppState) -> Vec<String> {
     query!("select name from user_roles")
-        .fetch_all(&state.pool)
+        .fetch_all(&state.read_pool)
         .await
         .expect("Database error")
         .into_iter()
@@ -40,7 +40,7 @@ async fn get_role_id(state: &AppState, role: impl AsRef<str>) -> Option<i64> {
 
     let role = role.as_ref();
     query_as!(RoleId, "select id from user_roles where name = $1", role)
-        .fetch_optional(&state.pool)
+        .fetch_optional(&state.read_pool)
         .await
         .expect("Database error")
         .map(|row| row.id)
@@ -58,7 +58,7 @@ async fn members_page(
     }
 
     let members = query_as!(UserUi, "select * from users_with_role")
-        .fetch_all(&state.pool)
+        .fetch_all(&state.read_pool)
         .await
         .expect("Database error");
 
@@ -112,7 +112,7 @@ async fn create_new_user(
         has_key,
         password_hash
     )
-        .execute(&state.pool)
+        .execute(&state.write_pool)
         .await
         .expect("Database error");
 
@@ -141,7 +141,7 @@ async fn edit_member_page(
     EditMemberTemplate {
         user: auth_session.user.expect("User should be logged in"),
         roles: get_all_roles(&state).await,
-        existing_user: get_user(&state.pool, user_id).await,
+        existing_user: get_user(&state.read_pool, user_id).await,
     }
 }
 
@@ -171,7 +171,7 @@ async fn update_user(
         role_id,
         has_key
     )
-    .execute(&state.pool)
+    .execute(&state.write_pool)
     .await
     .expect("Database error");
 
@@ -198,7 +198,7 @@ async fn change_password_page(
 
     ChangePasswordTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        existing_user: get_user(&state.pool, user_id).await,
+        existing_user: get_user(&state.read_pool, user_id).await,
     }
 }
 
@@ -212,7 +212,7 @@ pub async fn update_password(
     Path(user_id): Path<i64>,
     Form(passwords): Form<ChangePasswordForm>,
 ) -> Response {
-    let user = get_user(&state.pool, user_id).await;
+    let user = get_user(&state.read_pool, user_id).await;
 
     let new_password_hash = generate_hash_from_password(passwords.password);
     query!(
@@ -220,7 +220,7 @@ pub async fn update_password(
         new_password_hash,
         user.id
     )
-    .execute(&state.pool)
+    .execute(&state.write_pool)
     .await
     .expect("Database error");
 

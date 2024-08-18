@@ -60,7 +60,7 @@ pub async fn profile_page(
     let user = auth_session.user.expect("User should be logged in");
 
     ProfileTemplate {
-        reservations: user_reservation(&state.pool, user.email.as_str(), false).await,
+        reservations: user_reservation(&state.read_pool, user.email.as_str(), false).await,
         user,
         show_cancelled: false,
     }
@@ -87,7 +87,7 @@ pub async fn profile_reservations(
     let user = auth_session.user.expect("User should be logged in");
 
     ProfileTemplate {
-        reservations: user_reservation(&state.pool, user.email.as_str(), query.show_cancelled)
+        reservations: user_reservation(&state.read_pool, user.email.as_str(), query.show_cancelled)
             .await,
         show_cancelled: query.show_cancelled,
     }

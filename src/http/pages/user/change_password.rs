@@ -63,7 +63,7 @@ pub async fn change_password(
         new_password_hash,
         user.id
     )
-    .execute(&state.pool)
+    .execute(&state.write_pool)
     .await
     .expect("Database error");
 

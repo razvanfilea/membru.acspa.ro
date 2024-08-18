@@ -63,7 +63,7 @@ async fn apply_settings(
         settings.entrance_code,
         settings.homepage_message
     )
-    .execute(&state.pool)
+    .execute(&state.write_pool)
     .await
     .expect("Database error");
 
@@ -76,7 +76,7 @@ async fn download_situations(State(state): State<AppState>) -> impl IntoResponse
     let mut situations: Vec<_> = query!(
         "select r.*, u.name from reservations r join users u on r.user_id = u.id order by date, hour, created_at"
     )
-    .fetch_all(&state.pool)
+    .fetch_all(&state.read_pool)
     .await
     .expect("Database error")
     .into_iter()

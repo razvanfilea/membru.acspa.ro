@@ -1,18 +1,15 @@
-
 use std::fmt::{Display, Formatter};
-use std::ops::DerefMut;
 
-use crate::http::AppState;
 use crate::model::location::Location;
 use crate::model::role::UserRole;
 use crate::model::user::UserUi;
 use crate::utils::is_free_day;
-use sqlx::{query, query_as, Sqlite, Transaction};
+use sqlx::{query, query_as, SqlitePool};
 use time::{Date, OffsetDateTime};
 
 #[derive(Debug, PartialEq)]
 pub enum ReservationSuccess {
-    Reservation,
+    Reservation { deletes_guest: bool },
     Guest,
 }
 
@@ -87,14 +84,13 @@ fn check_parameters_validity(
     Ok(())
 }
 
-async fn check_other_errors<'a>(
-    tx: &mut Transaction<'a, Sqlite>,
+async fn check_other_errors(
+    pool: &SqlitePool,
     location: &Location,
     user: &UserUi,
     selected_date: Date,
     selected_hour: u8,
 ) -> Result<(), ReservationError> {
-    // Check if it already exists
     let reservation_already_exists = query!(
         "select exists(select true from reservations where
         location = $1 and date = $2 and hour = $3 and user_id = $4 and created_for is null) as 'exists!'",
@@ -103,7 +99,7 @@ async fn check_other_errors<'a>(
         selected_hour,
         user.id
     )
-        .fetch_one(tx.deref_mut())
+        .fetch_one(pool)
         .await
         .map_err(ReservationError::from)?
         .exists;
@@ -118,7 +114,7 @@ async fn check_other_errors<'a>(
         selected_date,
         selected_hour
     )
-        .fetch_optional(tx.deref_mut())
+        .fetch_optional(pool)
         .await
         .map_err(ReservationError::from)?;
 
@@ -130,65 +126,59 @@ async fn check_other_errors<'a>(
     Ok(())
 }
 
-pub async fn create_reservation(
-    state: &AppState,
+pub async fn is_reservation_possible(
+    pool: &SqlitePool,
+    location: &Location,
     now: OffsetDateTime,
     user: &UserUi,
     selected_date: Date,
     selected_hour: u8,
 ) -> Result<ReservationSuccess, ReservationError> {
-    let is_free_day = is_free_day(&state.pool, selected_date).await;
+    let is_free_day = is_free_day(pool, selected_date).await;
 
-    check_parameters_validity(
-        &state.location,
-        now,
-        is_free_day,
-        selected_date,
-        selected_hour,
-    )?;
+    check_parameters_validity(location, now, is_free_day, selected_date, selected_hour)?;
 
-    let mut tx = state.pool.begin().await.expect("Database error");
-    check_other_errors(&mut tx, &state.location, user, selected_date, selected_hour).await?;
+    check_other_errors(pool, location, user, selected_date, selected_hour).await?;
 
     let role = query_as!(
         UserRole,
         "select * from user_roles where name = $1",
         user.role
     )
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?;
+    .fetch_one(pool)
+    .await
+    .map_err(ReservationError::from)?;
 
     let fixed_reservations_count = query!(
         "select count(*) as 'count!' from reservations where
         location = $1 and date = $2 and hour = $3 and as_guest = false and cancelled = false",
-        state.location.id,
+        location.id,
         selected_date,
         selected_hour
     )
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?
-        .count;
+    .fetch_one(pool)
+    .await
+    .map_err(ReservationError::from)?
+    .count;
 
-    if fixed_reservations_count >= state.location.slot_capacity {
+    if fixed_reservations_count >= location.slot_capacity {
         return Err(ReservationError::SlotFull);
     }
 
     let guest_reservations_count = query!(
         "select count(*) as 'count!' from reservations where
         location = $1 and date = $2 and hour = $3 and as_guest = true",
-        state.location.id,
+        location.id,
         selected_date,
         selected_hour
     )
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?
-        .count;
+    .fetch_one(pool)
+    .await
+    .map_err(ReservationError::from)?
+    .count;
 
     let total_count = fixed_reservations_count + guest_reservations_count;
-    if role.max_reservations == 0 && total_count >= state.location.slot_capacity {
+    if role.max_reservations == 0 && total_count >= location.slot_capacity {
         return Err(ReservationError::SlotFull);
     }
 
@@ -200,10 +190,10 @@ pub async fn create_reservation(
         user.id,
         selected_date
     )
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?
-        .count;
+    .fetch_one(pool)
+    .await
+    .map_err(ReservationError::from)?
+    .count;
 
     let user_reservations_as_guest_count = query!(
         r#"select count(*) as 'count!' from reservations
@@ -213,65 +203,81 @@ pub async fn create_reservation(
         user.id,
         selected_date
     )
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?
-        .count;
+    .fetch_one(pool)
+    .await
+    .map_err(ReservationError::from)?
+    .count;
 
-    let mut as_guest = false;
     if user_reservations_count >= role.max_reservations && !is_free_day {
         if user_reservations_as_guest_count >= role.max_guest_reservations && !is_free_day {
             return Err(ReservationError::NoMoreReservation);
         }
 
-        as_guest = true;
-    } else if total_count >= state.location.slot_capacity {
-        query!(
-            "delete from reservations where rowid in
-            (select rowid from reservations where date = $1 and hour = $2 and location = $3 and as_guest = true order by created_at desc limit 1)",
-            selected_date,
-            selected_hour,
-            state.location.id
-        )
-            .execute(&mut *tx)
-            .await
-            .map_err(ReservationError::from)?;
+        return Ok(ReservationSuccess::Guest);
     }
 
+    Ok(ReservationSuccess::Reservation {
+        deletes_guest: total_count >= location.slot_capacity,
+    })
+}
+
+pub async fn create_reservation(
+    pool: &SqlitePool,
+    location: &Location,
+    now: OffsetDateTime,
+    user: &UserUi,
+    selected_date: Date,
+    selected_hour: u8,
+) -> Result<ReservationSuccess, ReservationError> {
+    let success = is_reservation_possible(pool, location, now, user, selected_date, selected_hour).await?;
+    let mut tx = pool.begin().await.map_err(ReservationError::from)?;
+
+    if let ReservationSuccess::Reservation { deletes_guest } = success {
+        if deletes_guest {
+            query!(
+                "delete from reservations where rowid in
+                (select rowid from reservations
+                where date = $1 and hour = $2 and location = $3 and as_guest = true
+                order by created_at desc limit 1)",
+                selected_date,
+                selected_hour,
+                location.id
+            )
+                .execute(tx.as_mut())
+                .await
+                .map_err(ReservationError::from)?;
+        }
+    }
+
+    let as_guest = success == ReservationSuccess::Guest;
     query!(
         "insert into reservations (user_id, location, date, hour, as_guest) values ($1, $2, $3, $4, $5)",
         user.id,
-        state.location.id,
+        location.id,
         selected_date,
         selected_hour,
         as_guest
     )
-        .execute(&mut *tx)
+        .execute(tx.as_mut())
         .await
         .map_err(ReservationError::from)?;
 
     tx.commit().await.map_err(ReservationError::from)?;
 
-    Ok(if as_guest {
-        ReservationSuccess::Guest
-    } else {
-        ReservationSuccess::Reservation
-    })
+    Ok(success)
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
     use sqlx::SqlitePool;
-    use std::sync::Arc;
     use time::macros::{date, datetime};
-    use tokio::sync::watch;
 
     async fn setup(
-        pool: SqlitePool,
+        pool: &SqlitePool,
         user_max_reservations: u8,
         user_max_guest_reservations: u8,
-    ) -> (AppState, UserUi, UserUi) {
+    ) -> (Location, UserUi, UserUi) {
         sqlx::query!(
             r#"
         insert into user_roles VALUES (100, 'Test Role', $1, $2, FALSE);
@@ -282,154 +288,149 @@ mod test {
         insert into locations (name, slot_capacity, slots_start_hour, slot_duration, slots_per_day, alt_slots_start_hour, alt_slot_duration, alt_slots_per_day)
         VALUES ('test_location', 1, 18, 2, 2, 10, 3, 4);
         "#, user_max_reservations, user_max_guest_reservations
-        ).execute(&pool).await.unwrap();
+        ).execute(pool).await.unwrap();
 
-        let state = AppState {
-            location: query_as!(
-                Location,
-                "select * from locations where name = 'test_location'"
-            )
-                .fetch_one(&pool)
-                .await
-                .expect("No locations found"),
-            pool,
-            reservation_notifier: Arc::new(watch::Sender::new(Date::MIN)),
-        };
+        let location = query_as!(
+            Location,
+            "select * from locations where name = 'test_location'"
+        )
+        .fetch_one(pool)
+        .await
+        .expect("No locations found");
 
         let user1 = query_as!(UserUi, "select * from users_with_role where id = 1000")
-            .fetch_one(&state.pool)
+            .fetch_one(pool)
             .await
             .unwrap();
 
         let user2 = query_as!(UserUi, "select * from users_with_role where id = 2000")
-            .fetch_one(&state.pool)
+            .fetch_one(pool)
             .await
             .unwrap();
 
-        (state, user1, user2)
+        (location, user1, user2)
     }
 
     #[sqlx::test]
     async fn no_guest(pool: SqlitePool) {
-        let (state, user_1, user_2) = setup(pool, 2, 0).await;
+        let (location, user_1, user_2) = setup(&pool, 2, 0).await;
 
         let now = datetime!(2024-07-11 10:00:00 +00:00:00);
         let date_1 = date!(2024 - 07 - 11);
         let date_2 = date!(2024 - 07 - 12);
 
         assert_eq!(
-            create_reservation(&state, now, &user_1, date_1, 18).await,
-            Ok(ReservationSuccess::Reservation)
+            create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
+            Ok(ReservationSuccess::Reservation{deletes_guest: false})
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user_1, date_1, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
             Err(ReservationError::AlreadyExists)
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user_2, date_1, 18).await,
+            create_reservation(&pool, &location, now, &user_2, date_1, 18).await,
             Err(ReservationError::SlotFull)
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user_1, date_1, 20).await,
-            Ok(ReservationSuccess::Reservation)
+            create_reservation(&pool, &location, now, &user_1, date_1, 20).await,
+            Ok(ReservationSuccess::Reservation{deletes_guest: false})
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user_1, date_2, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date_2, 18).await,
             Err(ReservationError::NoMoreReservation)
         );
         assert_eq!(
-            create_reservation(&state, now, &user_1, date_2, 20).await,
+            create_reservation(&pool, &location, now, &user_1, date_2, 20).await,
             Err(ReservationError::NoMoreReservation)
         );
     }
 
     #[sqlx::test]
     async fn with_guest(pool: SqlitePool) {
-        let (state, user, _) = setup(pool, 1, 2).await;
+        let (location, user, _) = setup(&pool, 1, 2).await;
 
         let now = datetime!(2024-07-11 10:00:00 +00:00:00);
         let date_1 = date!(2024 - 07 - 11);
         let date_2 = date!(2024 - 07 - 12);
 
         assert_eq!(
-            create_reservation(&state, now, &user, date_1, 18).await,
-            Ok(ReservationSuccess::Reservation)
+            create_reservation(&pool, &location, now, &user, date_1, 18).await,
+            Ok(ReservationSuccess::Reservation{deletes_guest: false})
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user, date_1, 18).await,
+            create_reservation(&pool, &location, now, &user, date_1, 18).await,
             Err(ReservationError::AlreadyExists)
         );
 
-        // As guest
         assert_eq!(
-            create_reservation(&state, now, &user, date_1, 20).await,
+            create_reservation(&pool, &location, now, &user, date_1, 20).await,
             Ok(ReservationSuccess::Guest)
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user, date_2, 18).await,
+            create_reservation(&pool, &location, now, &user, date_2, 18).await,
             Ok(ReservationSuccess::Guest)
         );
         assert_eq!(
-            create_reservation(&state, now, &user, date_2, 20).await,
+            create_reservation(&pool, &location, now, &user, date_2, 20).await,
             Err(ReservationError::NoMoreReservation)
         );
     }
 
     #[sqlx::test]
     async fn only_guest(pool: SqlitePool) {
-        let (state, user_1, user_2) = setup(pool, 0, 2).await;
+        let (location, user_1, user_2) = setup(&pool, 0, 2).await;
 
         let now = datetime!(2024-07-11 10:00:00 +00:00:00);
         let date_1 = date!(2024 - 07 - 11);
         let date_2 = date!(2024 - 07 - 12);
 
         assert_eq!(
-            create_reservation(&state, now, &user_1, date_1, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
             Ok(ReservationSuccess::Guest)
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user_2, date_1, 18).await,
+            create_reservation(&pool, &location, now, &user_2, date_1, 18).await,
             Err(ReservationError::SlotFull)
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user_1, date_1, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
             Err(ReservationError::AlreadyExists)
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user_1, date_1, 20).await,
+            create_reservation(&pool, &location, now, &user_1, date_1, 20).await,
             Ok(ReservationSuccess::Guest)
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user_1, date_2, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date_2, 18).await,
             Err(ReservationError::NoMoreReservation)
         );
     }
 
     #[sqlx::test]
     async fn too_late(pool: SqlitePool) {
-        let (state, user, _) = setup(pool, 1, 0).await;
+        let (location, user, _) = setup(&pool, 1, 0).await;
 
         let now_good = datetime!(2024-07-11 16:59:00 +00:00:00);
         let now_too_late = datetime!(2024-07-11 17:00:00 +00:00:00);
         let date = date!(2024 - 07 - 11);
 
         assert_eq!(
-            create_reservation(&state, now_good, &user, date, 18).await,
-            Ok(ReservationSuccess::Reservation)
+            create_reservation(&pool, &location, now_good, &user, date, 18).await,
+            Ok(ReservationSuccess::Reservation{deletes_guest: false})
         );
 
         assert_eq!(
-            create_reservation(&state, now_too_late, &user, date, 18).await,
+            create_reservation(&pool, &location, now_too_late, &user, date, 18).await,
             Err(ReservationError::Other(
                 "Rezervările se fac cu cel putin o oră înainte".to_string()
             ))
@@ -438,63 +439,63 @@ mod test {
 
     #[sqlx::test]
     async fn replace_guest(pool: SqlitePool) {
-        let (state, user_1, user_2) = setup(pool, 1, 1).await;
+        let (location, user_1, user_2) = setup(&pool, 1, 1).await;
 
         let now = datetime!(2024-07-11 10:00:00 +00:00:00);
         let date = date!(2024 - 07 - 11);
 
         assert_eq!(
-            create_reservation(&state, now, &user_1, date, 18).await,
-            Ok(ReservationSuccess::Reservation)
+            create_reservation(&pool, &location, now, &user_1, date, 18).await,
+            Ok(ReservationSuccess::Reservation{deletes_guest: false})
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user_1, date, 20).await,
+            create_reservation(&pool, &location, now, &user_1, date, 20).await,
             Ok(ReservationSuccess::Guest)
         );
 
         // It should replace the guest
         assert_eq!(
-            create_reservation(&state, now, &user_2, date, 20).await,
-            Ok(ReservationSuccess::Reservation)
+            create_reservation(&pool, &location, now, &user_2, date, 20).await,
+            Ok(ReservationSuccess::Reservation{deletes_guest: true})
         );
     }
 
     #[sqlx::test]
     async fn free_days(pool: SqlitePool) {
-        let (state, user, _) = setup(pool, 1, 1).await;
+        let (location, user, _) = setup(&pool, 1, 1).await;
 
         let now = datetime!(2024-07-11 10:00:00 +00:00:00);
         let date = date!(2024 - 07 - 11);
         let weekend = date!(2024 - 07 - 13);
 
         assert_eq!(
-            create_reservation(&state, now, &user, date, 18).await,
-            Ok(ReservationSuccess::Reservation)
+            create_reservation(&pool, &location, now, &user, date, 18).await,
+            Ok(ReservationSuccess::Reservation{deletes_guest: false})
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user, date, 20).await,
+            create_reservation(&pool, &location, now, &user, date, 20).await,
             Ok(ReservationSuccess::Guest)
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user, weekend, 10).await,
-            Ok(ReservationSuccess::Reservation)
+            create_reservation(&pool, &location, now, &user, weekend, 10).await,
+            Ok(ReservationSuccess::Reservation{deletes_guest: false})
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user, weekend, 13).await,
-            Ok(ReservationSuccess::Reservation)
+            create_reservation(&pool, &location, now, &user, weekend, 13).await,
+            Ok(ReservationSuccess::Reservation{deletes_guest: false})
         );
     }
 
     #[sqlx::test]
     async fn restrictions(pool: SqlitePool) {
-        let (state, user, _) = setup(pool, 1, 1).await;
+        let (location, user, _) = setup(&pool, 1, 1).await;
 
-        query!("insert into reservations_restrictions (message, location, date, hour) values ('res1', $1, '2024-07-11', NULL), ('res2', $1, '2024-07-12', 18)", state.location.id)
-            .execute(&state.pool)
+        query!("insert into reservations_restrictions (message, location, date, hour) values ('res1', $1, '2024-07-11', NULL), ('res2', $1, '2024-07-12', 18)", location.id)
+            .execute(&pool)
             .await
             .unwrap();
 
@@ -503,23 +504,23 @@ mod test {
         let date_2 = date!(2024 - 07 - 12);
 
         assert_eq!(
-            create_reservation(&state, now, &user, date_1, 18).await,
+            create_reservation(&pool, &location, now, &user, date_1, 18).await,
             Err(ReservationError::Restriction("res1".to_string()))
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user, date_1, 20).await,
+            create_reservation(&pool, &location, now, &user, date_1, 20).await,
             Err(ReservationError::Restriction("res1".to_string()))
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user, date_2, 18).await,
+            create_reservation(&pool, &location, now, &user, date_2, 18).await,
             Err(ReservationError::Restriction("res2".to_string()))
         );
 
         assert_eq!(
-            create_reservation(&state, now, &user, date_2, 20).await,
-            Ok(ReservationSuccess::Reservation)
+            create_reservation(&pool, &location, now, &user, date_2, 20).await,
+            Ok(ReservationSuccess::Reservation{deletes_guest: false})
         );
     }
 }

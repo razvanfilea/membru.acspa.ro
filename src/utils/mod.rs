@@ -1,6 +1,6 @@
 pub mod date_formats;
-pub mod reservation;
 pub mod date_iter;
+pub mod reservation;
 
 use crate::http::AppState;
 use crate::model::location::HourStructure;
@@ -13,7 +13,7 @@ pub fn local_time() -> OffsetDateTime {
 }
 
 pub async fn get_hour_structure_for_day(state: &AppState, date: Date) -> HourStructure {
-    if is_free_day(&state.pool, date).await {
+    if is_free_day(&state.read_pool, date).await {
         state.location.get_alt_hour_structure()
     } else {
         state.location.get_hour_structure()
