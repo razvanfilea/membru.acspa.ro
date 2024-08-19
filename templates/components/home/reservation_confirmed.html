@@ -1,12 +1,23 @@
-<div id="confirmation" class="bg-gray-600 p-6 mt-8 m-4 rounded-2xl">
+<div id="confirmation" class="bg-gray-600 p-6 mt-8 m-2 md:m-4 rounded-2xl">
 
-    <div class="p-5 my-2 rounded-full bg-gray-800 shadow">
-        <p class="my-1 text-center">{{ message|safe }}</p>
+    <div class="p-5 my-2 rounded-full shadow
+        text-lg text-black font-medium text-center
+        {% match message_color %}
+        {% when CssColor::Info %}
+        bg-info
+        {% when CssColor::Success %}
+        bg-success
+        {% when CssColor::Warning %}
+        bg-warning
+        {% when CssColor::Error %}
+        bg-error
+        {% endmatch %}">
+        {{ message|safe }}
     </div>
 
     {% if successful %}
     <div class="flex flex-row items-center mt-4 gap-3 justify-center w-full">
-        <p>Rezervarea poate fi anulată pe pagina ta de profil: </p>
+        <p>Rezervarea poate fi anulată pe pagina ta de profil:</p>
         <a href="/profile" class="btn btn-sm btn-accent">Vezi profilul</a>
     </div>
     {% endif %}

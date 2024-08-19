@@ -33,7 +33,7 @@
         {% if possible_hour.reservations.is_ok() %}
         <input name="reservation" type="radio" aria-label="Rezervare" autocomplete="off"
                hx-post="/choose_hour" hx-target="#confirmation" hx-swap="outerHTML show:bottom"
-               class="btn btn-md btn-outline btn-primary w-min"/>
+               class="btn btn-md btn-outline btn-accent w-min"/>
         {% endif %}
 
         {% if !loop.last %}

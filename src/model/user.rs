@@ -2,17 +2,7 @@ use axum_login::AuthUser;
 use serde::Deserialize;
 use validator::Validate;
 
-// #[derive(Debug, Clone, sqlx::FromRow)]
-// pub struct UserDb {
-//     pub id: i64,
-//     pub email: String,
-//     pub name: String,
-//     pub password_hash: String,
-//     pub role_id: i64,
-//     pub has_key: bool,
-// }
-
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(Debug, Clone)]
 pub struct UserUi {
     pub id: i64,
     pub email: String,

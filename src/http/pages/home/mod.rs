@@ -6,8 +6,12 @@ use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::UserUi;
 use crate::utils::date_iter::DateIter;
-use crate::utils::reservation::{create_reservation, is_reservation_possible, ReservationSuccess};
-use crate::utils::{date_formats, get_hour_structure_for_day, local_time};
+use crate::utils::reservation::{
+    create_reservation, is_reservation_possible, ReservationSuccess,
+};
+use crate::utils::{
+    date_formats, get_hour_structure_for_day, get_reservation_result_color, local_time, CssColor,
+};
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
@@ -67,6 +71,7 @@ struct HourQuery {
 #[template(path = "components/home/reservation_confirmed.html")]
 struct ConfirmedTemplate {
     successful: bool,
+    message_color: CssColor,
     message: String,
 }
 
@@ -106,10 +111,11 @@ async fn hour_picker(
     )
     .await;
 
-    if let Err(e) = is_possible {
+    if let Err(e) = is_possible.as_ref() {
         ConfirmedTemplate {
-            successful: false,
             message: e.to_string(),
+            message_color: get_reservation_result_color(&is_possible),
+            successful: false,
         }
         .into_response()
     } else {
@@ -143,13 +149,12 @@ async fn confirm_reservation(
     )
     .await;
 
-    let successful = result.is_ok();
-    let message = match result {
+    let message = match result.as_ref() {
         Ok(success) => {
             let _ = state.reservation_notifier.send(selected_date);
 
             match success {
-                ReservationSuccess::Reservation{ deletes_guest: _has_deleted_guest } => format!(
+                ReservationSuccess::Reservation{ .. } => format!(
                     "Ai rezervare pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
                     query.selected_date
                 ),
@@ -163,7 +168,8 @@ async fn confirm_reservation(
     };
 
     ConfirmedTemplate {
-        successful,
+        successful: result.is_ok(),
+        message_color: get_reservation_result_color(&result),
         message,
     }
 }

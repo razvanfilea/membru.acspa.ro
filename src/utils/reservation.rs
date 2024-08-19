@@ -7,13 +7,13 @@ use crate::utils::is_free_day;
 use sqlx::{query, query_as, SqlitePool};
 use time::{Date, OffsetDateTime};
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum ReservationSuccess {
     Reservation { deletes_guest: bool },
     Guest,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub enum ReservationError {
     AlreadyExists,
     Restriction(String),
@@ -22,6 +22,8 @@ pub enum ReservationError {
     NoMoreReservation,
     Other(String),
 }
+
+pub type ReservationResult = Result<ReservationSuccess, ReservationError>;
 
 impl From<sqlx::Error> for ReservationError {
     fn from(value: sqlx::Error) -> Self {
@@ -133,7 +135,7 @@ pub async fn is_reservation_possible(
     user: &UserUi,
     selected_date: Date,
     selected_hour: u8,
-) -> Result<ReservationSuccess, ReservationError> {
+) -> ReservationResult {
     let is_free_day = is_free_day(pool, selected_date).await;
 
     check_parameters_validity(location, now, is_free_day, selected_date, selected_hour)?;
@@ -228,7 +230,7 @@ pub async fn create_reservation(
     user: &UserUi,
     selected_date: Date,
     selected_hour: u8,
-) -> Result<ReservationSuccess, ReservationError> {
+) -> ReservationResult {
     let success = is_reservation_possible(pool, location, now, user, selected_date, selected_hour).await?;
     let mut tx = pool.begin().await.map_err(ReservationError::from)?;
 

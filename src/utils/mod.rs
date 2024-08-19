@@ -4,6 +4,7 @@ pub mod reservation;
 
 use crate::http::AppState;
 use crate::model::location::HourStructure;
+use crate::utils::reservation::{ReservationError, ReservationResult, ReservationSuccess};
 use sqlx::{query, SqlitePool};
 use time::{Date, OffsetDateTime, UtcOffset, Weekday};
 
@@ -33,7 +34,26 @@ pub async fn is_free_day(pool: &SqlitePool, date: Date) -> bool {
             != 0
     };
 
-    date.weekday() == Weekday::Saturday
-        || date.weekday() == Weekday::Sunday
-        || exists_in_table.await
+    let weekday = date.weekday();
+    weekday == Weekday::Saturday || weekday == Weekday::Sunday || exists_in_table.await
+}
+
+pub enum CssColor {
+    Success,
+    Info,
+    Warning,
+    Error,
+}
+
+pub fn get_reservation_result_color(result: &ReservationResult) -> CssColor {
+    match result {
+        Ok(success) => match success {
+            ReservationSuccess::Reservation { .. } => CssColor::Success,
+            ReservationSuccess::Guest => CssColor::Info,
+        },
+        Err(error) => match error {
+            ReservationError::AlreadyExists => CssColor::Warning,
+            _ => CssColor::Error,
+        },
+    }
 }

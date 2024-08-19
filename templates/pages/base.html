@@ -17,10 +17,9 @@
     <link rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"/>
 
-    <title>{% block title %}ACSPA{% endblock %}</title>
+    <title>{% block title %}Rezervări ACSPA{% endblock %}</title>
 </head>
 <body>
-{% block pre_content %}{% endblock %}
 <div class="drawer lg:drawer-open">
     <input id="drawer-sidebar" type="checkbox" class="drawer-toggle"/>
     <div class="drawer-content flex flex-col">
@@ -128,8 +127,6 @@
     </dialog>
 
 </div>
-
-{% block post_content %}{% endblock %}
 
 <script>
     if (!navigator.serviceWorker.controller) {
