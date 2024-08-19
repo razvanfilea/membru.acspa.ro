@@ -1,10 +1,8 @@
 ARG TARGET_ARCH=x86_64-unknown-linux-musl
 
-FROM rust:1.80-bookworm AS builder
+FROM rust:1.80-alpine AS builder
 
-RUN apt-get update && \
-    apt-get install -y \
-    musl-tools npm
+RUN apk add --no-cache deno musl-dev
 
 ARG TARGET_ARCH
 
@@ -25,7 +23,7 @@ RUN rm src/*.rs
 # copy everything else
 COPY . .
 
-RUN npm i && npm run prod
+RUN deno task prod
 
 RUN rm ./target/${TARGET_ARCH}/release/deps/acspa*
 RUN cargo build --release --target ${TARGET_ARCH}
