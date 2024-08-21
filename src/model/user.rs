@@ -9,7 +9,6 @@ pub struct User {
     pub name: String,
     pub password_hash: String,
     pub role: String,
-    pub role_color: Option<String>,
     pub has_key: bool,
     pub admin_panel_access: bool,
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from reservations_restrictions order by date, hour",
+  "query": "select date, hour, message, created_at from reservations_restrictions where date = $1 order by hour",
   "describe": {
     "columns": [
       {
@@ -14,31 +14,25 @@
         "type_info": "Integer"
       },
       {
-        "name": "location",
-        "ordinal": 2,
-        "type_info": "Integer"
-      },
-      {
         "name": "message",
-        "ordinal": 3,
+        "ordinal": 2,
         "type_info": "Text"
       },
       {
         "name": "created_at",
-        "ordinal": 4,
+        "ordinal": 3,
         "type_info": "Datetime"
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
       false,
       true,
       false,
-      false,
       false
     ]
   },
-  "hash": "0ad7d626f457ae55ec06651724c2d0f3ddb6c9e0ff63d2378d982c282819da74"
+  "hash": "82eace21c4b7c62e66f2204bff6c830b854f961c5526c14d94efe1ad58a31730"
 }

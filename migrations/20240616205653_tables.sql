@@ -96,7 +96,6 @@ SELECT u.id,
        u.password_hash,
        u.has_key,
        r.name  AS role,
-       r.color AS role_color,
        r.admin_panel_access
 FROM users u
          INNER JOIN user_roles r ON u.role_id = r.id;

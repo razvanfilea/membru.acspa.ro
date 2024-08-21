@@ -25,7 +25,7 @@ pub fn router() -> Router<AppState> {
 async fn get_restrictions(pool: &SqlitePool) -> Vec<Restriction> {
     query_as!(
         Restriction,
-        "select * from reservations_restrictions order by date, hour"
+        "select date, hour, message, created_at from reservations_restrictions order by date desc, hour"
     )
     .fetch_all(pool)
     .await
