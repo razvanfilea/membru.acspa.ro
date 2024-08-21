@@ -1,7 +1,7 @@
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::free_day::FreeDay;
-use crate::model::user::UserUi;
+use crate::model::user::User;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use askama_axum::IntoResponse;
@@ -38,7 +38,7 @@ async fn free_days_page(
     #[derive(Template)]
     #[template(path = "pages/admin/free_days.html")]
     struct FreeDaysTemplate {
-        user: UserUi,
+        user: User,
         current_date: Date,
         free_days: Vec<FreeDay>,
     }

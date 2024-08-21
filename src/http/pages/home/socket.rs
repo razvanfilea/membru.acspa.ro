@@ -12,7 +12,8 @@ use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
 use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationSlot};
 use crate::utils::date_iter::DateIter;
 use crate::utils::{date_formats, local_time};
-use crate::http::pages::home::ReservationType;
+use crate::utils::CssColor;
+
 
 pub async fn ws(State(state): State<AppState>, ws: WebSocketUpgrade) -> impl IntoResponse {
     ws.on_upgrade(move |socket| handle_socket(socket, state))

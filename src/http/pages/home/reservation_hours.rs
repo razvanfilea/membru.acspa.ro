@@ -1,22 +1,15 @@
-use sqlx::{query, query_as};
-use time::Date;
+use std::str::FromStr;
 use crate::http::AppState;
 use crate::model::restriction::Restriction;
-use crate::utils::get_hour_structure_for_day;
-
-
-#[derive(PartialEq, Eq)]
-pub enum ReservationType {
-    Normal,
-    SpecialGuest,
-    Guest,
-}
+use crate::utils::{get_hour_structure_for_day, CssColor};
+use sqlx::{query, query_as};
+use time::Date;
 
 pub struct PossibleReservation {
     pub name: String,
     pub has_key: bool,
     pub has_account: bool,
-    pub res_type: ReservationType,
+    pub color: CssColor,
 }
 
 pub struct ReservationSlot {
@@ -32,9 +25,9 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
         "select * from reservations_restrictions where date = $1 order by hour",
         date
     )
-        .fetch_all(&state.read_pool)
-        .await
-        .expect("Database error");
+    .fetch_all(&state.read_pool)
+    .await
+    .expect("Database error");
 
     // Check if the whole day is restricted
     if let Some(restriction) = restrictions.first().filter(|r| r.hour.is_none()) {
@@ -49,14 +42,14 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
     }
 
     let date_reservations = query!(
-        r#"select users.name as 'name!', hour, has_key, as_guest, created_for
-        from reservations inner join users on user_id = users.id
+        r#"select u.name as 'name!', hour, has_key, as_guest, created_for, role_color
+        from reservations inner join users_with_role u on user_id = u.id
         where date = $1 order by as_guest, created_at"#,
         date
     )
-        .fetch_all(&state.read_pool)
-        .await
-        .expect("Database error");
+    .fetch_all(&state.read_pool)
+    .await
+    .expect("Database error");
 
     hour_structure
         .iter()
@@ -84,12 +77,13 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
                         .unwrap_or_else(|| record.name.clone()),
                     has_key: record.has_key && record.created_for.is_none(),
                     has_account: record.created_for.is_none(),
-                    res_type: if record.as_guest {
-                        ReservationType::Guest
+                    color: if record.as_guest {
+                        CssColor::Blue
                     } else if record.created_for.is_none() {
-                        ReservationType::Normal
+                        CssColor::from_str(record.role_color.as_ref().map_or("", String::as_str))
+                            .unwrap_or(CssColor::None)
                     } else {
-                        ReservationType::SpecialGuest
+                        CssColor::Pink
                     },
                 });
 

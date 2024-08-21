@@ -11,7 +11,7 @@ use tracing::{error, info};
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::restriction::Restriction;
-use crate::model::user::UserUi;
+use crate::model::user::User;
 use crate::utils::{date_formats, get_hour_structure_for_day, local_time};
 
 pub fn router() -> Router<AppState> {
@@ -39,7 +39,7 @@ async fn restrictions_page(
     #[derive(Template)]
     #[template(path = "pages/admin/restrictions.html")]
     struct RestrictionsTemplate {
-        user: UserUi,
+        user: User,
         current_date: Date,
         restrictions: Vec<Restriction>,
     }

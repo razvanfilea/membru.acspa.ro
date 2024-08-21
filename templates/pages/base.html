@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-    <script src="https://unpkg.com/htmx.org@2.0.1/dist/htmx.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.2/dist/htmx.min.js"></script>
     <script src="https://unpkg.com/htmx-ext-ws@2.0.0/ws.js"></script>
 
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/fav/apple-touch-icon.png"/>
@@ -72,15 +72,7 @@
             </a></li>
 
             {% block side_bar_content %}
-            {% if user.admin_panel_access %}
-            <li><a href="/admin">
-                <span class="material-symbols-outlined">admin_panel_settings</span>
-                Panou Administrare
-            </a></li>
-
-            {% endif %}
-
-            {% include "components/side_bar_profile.html" %}
+            {% include "components/side_bar.html" %}
             {% endblock %}
         </ul>
 

@@ -1,7 +1,8 @@
 pub struct UserRole {
     pub id: i64,
     pub name: String,
-    pub max_reservations: i64,
-    pub max_guest_reservations: i64,
+    pub reservations: i64,
+    pub guest_reservations: i64,
+    pub color: Option<String>,
     pub admin_panel_access: bool,
 }

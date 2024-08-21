@@ -10,7 +10,7 @@ use tracing::error;
 use crate::http::auth::generate_hash_from_password;
 use crate::http::pages::{get_user, AuthSession};
 use crate::http::AppState;
-use crate::model::user::UserUi;
+use crate::model::user::User;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -53,11 +53,11 @@ async fn members_page(
     #[derive(Template)]
     #[template(path = "pages/admin/members/list.html")]
     struct MembersTemplate {
-        user: UserUi,
-        members: Vec<UserUi>,
+        user: User,
+        members: Vec<User>,
     }
 
-    let members = query_as!(UserUi, "select * from users_with_role")
+    let members = query_as!(User, "select * from users_with_role")
         .fetch_all(&state.read_pool)
         .await
         .expect("Database error");
@@ -84,7 +84,7 @@ async fn new_member_page(
     #[derive(Template)]
     #[template(path = "pages/admin/members/new.html")]
     struct NewMemberTemplate {
-        user: UserUi,
+        user: User,
         roles: Vec<String>,
     }
 
@@ -133,9 +133,9 @@ async fn edit_member_page(
     #[derive(Template)]
     #[template(path = "pages/admin/members/edit.html")]
     struct EditMemberTemplate {
-        user: UserUi,
+        user: User,
         roles: Vec<String>,
-        existing_user: UserUi,
+        existing_user: User,
     }
 
     EditMemberTemplate {
@@ -192,8 +192,8 @@ async fn change_password_page(
     #[derive(Template)]
     #[template(path = "pages/admin/members/change_password.html")]
     struct ChangePasswordTemplate {
-        user: UserUi,
-        existing_user: UserUi,
+        user: User,
+        existing_user: User,
     }
 
     ChangePasswordTemplate {

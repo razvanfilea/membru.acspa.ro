@@ -6,6 +6,7 @@ use crate::http::AppState;
 use crate::model::location::HourStructure;
 use crate::utils::reservation::{ReservationError, ReservationResult, ReservationSuccess};
 use sqlx::{query, SqlitePool};
+use strum::{AsRefStr, EnumIter, EnumString};
 use time::{Date, OffsetDateTime, UtcOffset, Weekday};
 
 pub fn local_time() -> OffsetDateTime {
@@ -38,22 +39,33 @@ pub async fn is_free_day(pool: &SqlitePool, date: Date) -> bool {
     weekday == Weekday::Saturday || weekday == Weekday::Sunday || exists_in_table.await
 }
 
-pub enum CssColor {
+pub enum CssStatusColor {
     Success,
     Info,
     Warning,
     Error,
 }
 
-pub fn get_reservation_result_color(result: &ReservationResult) -> CssColor {
+pub fn get_reservation_result_color(result: &ReservationResult) -> CssStatusColor {
     match result {
         Ok(success) => match success {
-            ReservationSuccess::Reservation { .. } => CssColor::Success,
-            ReservationSuccess::Guest => CssColor::Info,
+            ReservationSuccess::Reservation { .. } => CssStatusColor::Success,
+            ReservationSuccess::Guest => CssStatusColor::Info,
         },
         Err(error) => match error {
-            ReservationError::AlreadyExists => CssColor::Warning,
-            _ => CssColor::Error,
+            ReservationError::AlreadyExists => CssStatusColor::Warning,
+            _ => CssStatusColor::Error,
         },
     }
+}
+
+#[derive(Debug, PartialEq, EnumString, EnumIter, strum::Display, AsRefStr)]
+pub enum CssColor {
+    None,
+    Blue,
+    Red,
+    Pink,
+    Green,
+    Yellow,
+    Orange,
 }

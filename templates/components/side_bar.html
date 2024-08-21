@@ -1,0 +1,30 @@
+<div class="divider">Profil</div>
+
+<li><a href="/profile">
+    <img src="https://ui-avatars.com/api/?name={{user.name}}&rounded=true&format=svg" loading="lazy" width="48px" height="48px" alt="{{user.name}}"/>
+    <div class="flex flex-col">
+        {{ user.name }}
+        <span class="text-sm text-gray-300">{{ user.role }}</span>
+    </div>
+</a></li>
+{% if user.admin_panel_access %}
+<div class="divider">Administrare</div>
+
+<li><a href="/admin">
+    <span class="material-symbols-outlined">admin_panel_settings</span>
+    Panou
+</a></li>
+<li><a href="/admin/guests">
+    <span class="material-symbols-outlined">person_add</span>
+    Invitați
+</a></li>
+<li><a href="/admin/restrictions">
+    <span class="material-symbols-outlined">block</span>
+    Restricționare
+</a></li>
+<li><a href="/admin/free_days">
+    <span class="material-symbols-outlined">clear_day</span>
+    Zile libere
+</a></li>
+
+{% endif %}

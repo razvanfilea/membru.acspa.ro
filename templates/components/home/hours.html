@@ -6,13 +6,21 @@
             {% if let Ok(reservations) = possible_hour.reservations %}
             {% for res in reservations %}
             <button class="btn btn-sm rounded-full text-white items-center
-                    {% match res.res_type %}
-                    {% when ReservationType::Normal %}
+                    {% match res.color %}
+                    {% when CssColor::None %}
                     bg-slate-600
-                    {% when ReservationType::SpecialGuest %}
+                    {% when CssColor::Blue %}
+                    bg-info
+                    {% when CssColor::Red %}
+                    bg-error
+                    {% when CssColor::Pink %}
                     bg-fuchsia-600
-                    {% when ReservationType::Guest %}
-                    bg-cyan-600
+                    {% when CssColor::Green %}
+                    bg-success
+                    {% when CssColor::Yellow %}
+                    bg-warning
+                    {% when CssColor::Orange %}
+                    bg-orange-500
                     {% endmatch %}">
                 {{ loop.index }}. {{ res.name }}
                 {% if res.has_key %}

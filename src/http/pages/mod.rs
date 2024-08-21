@@ -2,7 +2,7 @@ use crate::http::auth::UserAuthenticator;
 use crate::http::pages::user::login;
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
-use crate::model::user::UserUi;
+use crate::model::user::User;
 use axum::routing::{get, post};
 use axum::Router;
 use axum_login::{login_required, permission_required};
@@ -24,8 +24,8 @@ async fn get_global_vars(state: &AppState) -> GlobalVars {
     .expect("Database error")
 }
 
-async fn get_user(pool: &SqlitePool, id: i64) -> UserUi {
-    query_as!(UserUi, "select * from users_with_role where id = $1", id)
+async fn get_user(pool: &SqlitePool, id: i64) -> User {
+    query_as!(User, "select * from users_with_role where id = $1", id)
         .fetch_one(pool)
         .await
         .expect("Database error")

@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use askama::Template;
 use askama_axum::{IntoResponse, Response};
 use axum::extract::{Path, State};
@@ -5,11 +6,12 @@ use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
-
+use strum::IntoEnumIterator;
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::role::UserRole;
-use crate::model::user::UserUi;
+use crate::model::user::User;
+use crate::utils::CssColor;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -24,7 +26,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
     #[derive(Template)]
     #[template(path = "pages/admin/roles/list.html")]
     struct UsersTemplate {
-        user: UserUi,
+        user: User,
         roles: Vec<UserRole>,
     }
 
@@ -44,12 +46,13 @@ struct NewRole {
     name: String,
     reservations: i64,
     as_guest: i64,
+    color: String
 }
 
 #[derive(Template)]
 #[template(path = "pages/admin/roles/new_edit.html")]
 struct NewRoleTemplate {
-    user: UserUi,
+    user: User,
     value: Option<UserRole>,
 }
 
@@ -65,7 +68,7 @@ async fn create_new_role(
     Form(role): Form<NewRole>,
 ) -> impl IntoResponse {
     query!(
-        "insert into user_roles (name, max_reservations, max_guest_reservations) VALUES ($1, $2, $3)",
+        "insert into user_roles (name, reservations, guest_reservations) values ($1, $2, $3)",
         role.name,
         role.reservations,
         role.as_guest
@@ -110,12 +113,15 @@ async fn update_role(
     Path(role_id): Path<i64>,
     Form(role): Form<NewRole>,
 ) -> impl IntoResponse {
+    let color = CssColor::from_str(role.color.as_str()).unwrap_or(CssColor::None);
+    let color = color.as_ref();
     query!(
-        "update user_roles set name = $2, max_reservations = $3, max_guest_reservations = $4 where id = $1",
+        "update user_roles set name = $2, reservations = $3, guest_reservations = $4, color = $5 where id = $1",
         role_id,
         role.name,
         role.reservations,
-        role.as_guest
+        role.as_guest,
+        color
     )
     .execute(&state.write_pool)
     .await

@@ -9,7 +9,7 @@ use tracing::error;
 
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
-use crate::model::user::UserUi;
+use crate::model::user::User;
 
 struct UserReservation {
     pub date: Date,
@@ -52,7 +52,7 @@ pub async fn profile_page(
     #[derive(Template)]
     #[template(path = "pages/user/profile.html")]
     struct ProfileTemplate {
-        user: UserUi,
+        user: User,
         reservations: Vec<UserReservation>,
         show_cancelled: bool,
     }

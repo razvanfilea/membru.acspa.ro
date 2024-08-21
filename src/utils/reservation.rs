@@ -2,18 +2,18 @@ use std::fmt::{Display, Formatter};
 
 use crate::model::location::Location;
 use crate::model::role::UserRole;
-use crate::model::user::UserUi;
+use crate::model::user::User;
 use crate::utils::is_free_day;
 use sqlx::{query, query_as, SqlitePool};
 use time::{Date, OffsetDateTime};
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum ReservationSuccess {
     Reservation { deletes_guest: bool },
     Guest,
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum ReservationError {
     AlreadyExists,
     Restriction(String),
@@ -89,7 +89,7 @@ fn check_parameters_validity(
 async fn check_other_errors(
     pool: &SqlitePool,
     location: &Location,
-    user: &UserUi,
+    user: &User,
     selected_date: Date,
     selected_hour: u8,
 ) -> Result<(), ReservationError> {
@@ -132,7 +132,7 @@ pub async fn is_reservation_possible(
     pool: &SqlitePool,
     location: &Location,
     now: OffsetDateTime,
-    user: &UserUi,
+    user: &User,
     selected_date: Date,
     selected_hour: u8,
 ) -> ReservationResult {
@@ -180,7 +180,7 @@ pub async fn is_reservation_possible(
     .count;
 
     let total_count = fixed_reservations_count + guest_reservations_count;
-    if role.max_reservations == 0 && total_count >= location.slot_capacity {
+    if role.reservations == 0 && total_count >= location.slot_capacity {
         return Err(ReservationError::SlotFull);
     }
 
@@ -210,8 +210,8 @@ pub async fn is_reservation_possible(
     .map_err(ReservationError::from)?
     .count;
 
-    if user_reservations_count >= role.max_reservations && !is_free_day {
-        if user_reservations_as_guest_count >= role.max_guest_reservations && !is_free_day {
+    if user_reservations_count >= role.reservations && !is_free_day {
+        if user_reservations_as_guest_count >= role.guest_reservations && !is_free_day {
             return Err(ReservationError::NoMoreReservation);
         }
 
@@ -227,7 +227,7 @@ pub async fn create_reservation(
     pool: &SqlitePool,
     location: &Location,
     now: OffsetDateTime,
-    user: &UserUi,
+    user: &User,
     selected_date: Date,
     selected_hour: u8,
 ) -> ReservationResult {
@@ -279,10 +279,10 @@ mod test {
         pool: &SqlitePool,
         user_max_reservations: u8,
         user_max_guest_reservations: u8,
-    ) -> (Location, UserUi, UserUi) {
+    ) -> (Location, User, User) {
         sqlx::query!(
             r#"
-        insert into user_roles VALUES (100, 'Test Role', $1, $2, FALSE);
+        insert into user_roles VALUES (100, 'Test Role', $1, $2, null, FALSE);
         insert into users (id, email, name, password_hash, role_id, has_key)
         VALUES (1000, 'test@test.com', 'Test', '', 100, FALSE),
         (2000, 'hello@test.com', 'Test', '', 100, FALSE);
@@ -300,12 +300,12 @@ mod test {
         .await
         .expect("No locations found");
 
-        let user1 = query_as!(UserUi, "select * from users_with_role where id = 1000")
+        let user1 = query_as!(User, "select * from users_with_role where id = 1000")
             .fetch_one(pool)
             .await
             .unwrap();
 
-        let user2 = query_as!(UserUi, "select * from users_with_role where id = 2000")
+        let user2 = query_as!(User, "select * from users_with_role where id = 2000")
             .fetch_one(pool)
             .await
             .unwrap();

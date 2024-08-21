@@ -1,7 +1,7 @@
 use crate::http::pages::{get_global_vars, AuthSession};
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
-use crate::model::user::UserUi;
+use crate::model::user::User;
 use crate::utils::date_formats::{ISO_DATE_UNDERLINE, READABLE_DATE_TIME};
 use crate::utils::local_time;
 use askama::Template;
@@ -35,7 +35,7 @@ async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) ->
     #[derive(Template)]
     #[template(path = "pages/admin/admin.html")]
     struct HomeTemplate {
-        user: UserUi,
+        user: User,
         global_vars: GlobalVars,
     }
 

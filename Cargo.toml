@@ -28,6 +28,7 @@ dotenvy = "0.15.7"
 validator = { version = "0.18.1", features = ["derive"] }
 anyhow = "1"
 time = { version = "0.3", features = ["formatting", "macros", "local-offset"] }
+strum = { version = "0.26", features = ["derive"] }
 
 # Crypto
 argon2 = { version = "0.5", features = ["std"] }

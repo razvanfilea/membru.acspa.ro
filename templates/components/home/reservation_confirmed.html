@@ -1,15 +1,15 @@
 <div id="confirmation" class="bg-gray-600 p-6 mt-8 m-2 md:m-4 rounded-2xl">
 
     <div class="p-5 my-2 rounded-full shadow
-        text-lg text-black font-medium text-center
+        text-md text-black font-medium text-center
         {% match message_color %}
-        {% when CssColor::Info %}
+        {% when CssStatusColor::Info %}
         bg-info
-        {% when CssColor::Success %}
+        {% when CssStatusColor::Success %}
         bg-success
-        {% when CssColor::Warning %}
+        {% when CssStatusColor::Warning %}
         bg-warning
-        {% when CssColor::Error %}
+        {% when CssStatusColor::Error %}
         bg-error
         {% endmatch %}">
         {{ message|safe }}

@@ -1,10 +1,11 @@
 CREATE TABLE user_roles
 (
-    id                     INTEGER NOT NULL PRIMARY KEY,
-    name                   TEXT    NOT NULL UNIQUE,
-    max_reservations       TINYINT NOT NULL CHECK (max_reservations >= 0),
-    max_guest_reservations TINYINT NOT NULL CHECK (max_guest_reservations >= 0),
-    admin_panel_access     BOOLEAN NOT NULL DEFAULT FALSE CHECK (admin_panel_access IN (FALSE, TRUE))
+    id                 INTEGER NOT NULL PRIMARY KEY,
+    name               TEXT    NOT NULL UNIQUE,
+    reservations       TINYINT NOT NULL CHECK (reservations >= 0),
+    guest_reservations TINYINT NOT NULL CHECK (guest_reservations >= 0),
+    color              TEXT,
+    admin_panel_access BOOLEAN NOT NULL DEFAULT FALSE CHECK (admin_panel_access IN (FALSE, TRUE))
 );
 
 CREATE TABLE users
@@ -94,7 +95,8 @@ SELECT u.id,
        u.name,
        u.password_hash,
        u.has_key,
-       r.name AS role,
+       r.name  AS role,
+       r.color AS role_color,
        r.admin_panel_access
 FROM users u
          INNER JOIN user_roles r ON u.role_id = r.id;

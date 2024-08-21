@@ -1,16 +1,15 @@
-use crate::http::pages::home::reservation_hours::ReservationType;
 use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationSlot};
 use crate::http::pages::home::socket::ws;
 use crate::http::pages::{get_global_vars, AuthSession};
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
-use crate::model::user::UserUi;
+use crate::model::user::User;
 use crate::utils::date_iter::DateIter;
-use crate::utils::reservation::{
-    create_reservation, is_reservation_possible, ReservationSuccess,
-};
+use crate::utils::reservation::{create_reservation, is_reservation_possible, ReservationSuccess};
+use crate::utils::CssColor;
 use crate::utils::{
-    date_formats, get_hour_structure_for_day, get_reservation_result_color, local_time, CssColor,
+    date_formats, get_hour_structure_for_day, get_reservation_result_color, local_time,
+    CssStatusColor,
 };
 use askama::Template;
 use askama_axum::IntoResponse;
@@ -44,7 +43,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         current_date: Date,
         selected_date: Date,
         days: DateIter,
-        user: UserUi,
+        user: User,
         reservation_hours: Vec<ReservationSlot>,
         global_vars: GlobalVars,
     }
@@ -71,7 +70,7 @@ struct HourQuery {
 #[template(path = "components/home/reservation_confirmed.html")]
 struct ConfirmedTemplate {
     successful: bool,
-    message_color: CssColor,
+    message_color: CssStatusColor,
     message: String,
 }
 

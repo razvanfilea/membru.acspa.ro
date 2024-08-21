@@ -1,7 +1,7 @@
 use crate::http::auth::{generate_hash_from_password, validate_credentials};
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
-use crate::model::user::UserUi;
+use crate::model::user::User;
 use askama::Template;
 use askama_axum::{IntoResponse, Response};
 use axum::extract::State;
@@ -14,7 +14,7 @@ pub async fn change_password_page(auth_session: AuthSession) -> impl IntoRespons
     #[derive(Template)]
     #[template(path = "pages/user/change_password.html")]
     struct ChangePasswordTemplate {
-        user: UserUi,
+        user: User,
     }
 
     ChangePasswordTemplate {

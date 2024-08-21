@@ -3,17 +3,18 @@ use serde::Deserialize;
 use validator::Validate;
 
 #[derive(Debug, Clone)]
-pub struct UserUi {
+pub struct User {
     pub id: i64,
     pub email: String,
     pub name: String,
     pub password_hash: String,
     pub role: String,
+    pub role_color: Option<String>,
     pub has_key: bool,
     pub admin_panel_access: bool,
 }
 
-impl AuthUser for UserUi {
+impl AuthUser for User {
     type Id = String;
 
     fn id(&self) -> Self::Id {

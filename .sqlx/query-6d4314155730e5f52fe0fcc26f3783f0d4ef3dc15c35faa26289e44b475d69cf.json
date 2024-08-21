@@ -34,8 +34,13 @@
         "type_info": "Text"
       },
       {
-        "name": "admin_panel_access",
+        "name": "role_color",
         "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "admin_panel_access",
+        "ordinal": 7,
         "type_info": "Bool"
       }
     ],
@@ -49,6 +54,7 @@
       false,
       false,
       false,
+      true,
       false
     ]
   },

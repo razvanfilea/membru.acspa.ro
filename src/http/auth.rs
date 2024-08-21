@@ -10,7 +10,7 @@ use rand_hc::Hc128Rng;
 use sqlx::{query_as, SqlitePool};
 use tokio::task;
 
-use crate::model::user::{UserCredentials, UserUi};
+use crate::model::user::{UserCredentials, User};
 
 #[derive(Clone)]
 pub struct UserAuthenticator {
@@ -25,7 +25,7 @@ impl UserAuthenticator {
 
 #[async_trait]
 impl AuthnBackend for UserAuthenticator {
-    type User = UserUi;
+    type User = User;
     type Credentials = UserCredentials;
     type Error = std::io::Error;
 
@@ -54,7 +54,7 @@ impl AuthnBackend for UserAuthenticator {
 
     async fn get_user(&self, user_id: &UserId<Self>) -> Result<Option<Self::User>, Self::Error> {
         query_as!(
-            UserUi,
+            User,
             r#"select * from users_with_role where email = $1"#,
             user_id
         )
