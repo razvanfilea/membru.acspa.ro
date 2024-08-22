@@ -161,6 +161,10 @@ async fn confirm_reservation(
                     "Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
                     query.selected_date
                 ),
+                ReservationSuccess::InWaiting => format!(
+                    "Ești in așteptare pentru data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
+                    query.selected_date
+                ),
             }
         }
         Err(e) => e.to_string(),

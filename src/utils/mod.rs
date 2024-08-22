@@ -51,6 +51,7 @@ pub fn get_reservation_result_color(result: &ReservationResult) -> CssStatusColo
         Ok(success) => match success {
             ReservationSuccess::Reservation { .. } => CssStatusColor::Success,
             ReservationSuccess::Guest => CssStatusColor::Info,
+            ReservationSuccess::InWaiting => CssStatusColor::Info,
         },
         Err(error) => match error {
             ReservationError::AlreadyExists => CssStatusColor::Warning,

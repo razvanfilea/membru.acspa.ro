@@ -45,8 +45,7 @@ impl AppState {
 
 pub async fn http_server(app_state: AppState, session_store: SqliteStore) -> anyhow::Result<()> {
     let session_layer = SessionManagerLayer::new(session_store)
-        .with_expiry(Expiry::OnInactivity(Duration::days(90)))
-        .with_secure(false);
+        .with_expiry(Expiry::OnInactivity(Duration::days(60)));
 
     let auth_layer = AuthManagerLayerBuilder::new(
         UserAuthenticator::new(app_state.read_pool.clone()),

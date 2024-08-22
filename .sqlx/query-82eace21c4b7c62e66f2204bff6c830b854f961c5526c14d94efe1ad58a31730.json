@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select date, hour, message, created_at from reservations_restrictions where date = $1 order by hour",
+  "query": "select date, hour, message, created_at from restrictions where date = $1 order by hour",
   "describe": {
     "columns": [
       {

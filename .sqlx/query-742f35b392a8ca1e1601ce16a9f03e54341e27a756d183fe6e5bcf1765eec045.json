@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "delete from reservations_restrictions where date = $1 and hour = $2",
+  "query": "delete from restrictions where date = $1 and hour = $2",
   "describe": {
     "columns": [],
     "parameters": {

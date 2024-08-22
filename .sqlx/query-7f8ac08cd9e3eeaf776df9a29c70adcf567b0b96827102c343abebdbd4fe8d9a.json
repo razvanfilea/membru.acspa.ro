@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select message from reservations_restrictions where location = $1 and date = $2 and (hour = $3 or hour is null)",
+  "query": "select message from restrictions where location = $1 and date = $2 and (hour = $3 or hour is null)",
   "describe": {
     "columns": [
       {

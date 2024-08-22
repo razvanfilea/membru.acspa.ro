@@ -25,7 +25,8 @@ CREATE TABLE locations
 (
     id                   INTEGER NOT NULL PRIMARY KEY,
     name                 TEXT    NOT NULL,
-    slot_capacity        TINYINT NOT NULL CHECK ( slot_capacity > 0 ),
+    slot_capacity        TINYINT NOT NULL CHECK ( slot_capacity >= 0 ),
+    waiting_capacity     TINYINT NOT NULL CHECK ( waiting_capacity >= 0 ),
 
     slots_start_hour     TINYINT NOT NULL CHECK ( slots_start_hour > 0 AND slots_start_hour < 24 ),
     slot_duration        TINYINT NOT NULL CHECK ( slot_duration > 0 AND slot_duration < 12 ),
@@ -60,7 +61,7 @@ CREATE TABLE reservations
     FOREIGN KEY (location) REFERENCES locations (id)
 );
 
-CREATE TABLE reservations_restrictions
+CREATE TABLE restrictions
 (
     date       DATE     NOT NULL,
     hour       TINYINT,
@@ -95,7 +96,7 @@ SELECT u.id,
        u.name,
        u.password_hash,
        u.has_key,
-       r.name  AS role,
+       r.name AS role,
        r.admin_panel_access
 FROM users u
          INNER JOIN user_roles r ON u.role_id = r.id;

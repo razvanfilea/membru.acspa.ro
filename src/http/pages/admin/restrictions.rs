@@ -25,7 +25,7 @@ pub fn router() -> Router<AppState> {
 async fn get_restrictions(pool: &SqlitePool) -> Vec<Restriction> {
     query_as!(
         Restriction,
-        "select date, hour, message, created_at from reservations_restrictions order by date desc, hour"
+        "select date, hour, message, created_at from restrictions order by date desc, hour"
     )
     .fetch_all(pool)
     .await
@@ -113,7 +113,7 @@ async fn create_restriction(
     let message = restriction.message.trim();
 
     query!(
-        "insert into reservations_restrictions (date, hour, location, message) VALUES ($1, $2, $3, $4)",
+        "insert into restrictions (date, hour, location, message) VALUES ($1, $2, $3, $4)",
         date,
         restriction.hour,
         state.location.id,
@@ -147,7 +147,7 @@ async fn delete_restriction(
 
     if let Some(hour) = query.hour {
         query!(
-            "delete from reservations_restrictions where date = $1 and hour = $2",
+            "delete from restrictions where date = $1 and hour = $2",
             date,
             hour
         )
@@ -156,7 +156,7 @@ async fn delete_restriction(
         .expect("Database error");
     } else {
         query!(
-            "delete from reservations_restrictions where date = $1",
+            "delete from restrictions where date = $1",
             date
         )
         .execute(&state.write_pool)

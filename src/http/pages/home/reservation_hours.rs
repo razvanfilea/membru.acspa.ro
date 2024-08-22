@@ -22,7 +22,7 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
     let hour_structure = get_hour_structure_for_day(state, date).await;
     let restrictions = query_as!(
         Restriction,
-        "select date, hour, message, created_at from reservations_restrictions where date = $1 order by hour",
+        "select date, hour, message, created_at from restrictions where date = $1 order by hour",
         date
     )
     .fetch_all(&state.read_pool)

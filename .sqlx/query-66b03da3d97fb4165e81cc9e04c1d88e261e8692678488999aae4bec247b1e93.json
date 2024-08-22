@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "insert into reservations_restrictions (date, hour, location, message) VALUES ($1, $2, $3, $4)",
+  "query": "insert into restrictions (date, hour, location, message) VALUES ($1, $2, $3, $4)",
   "describe": {
     "columns": [],
     "parameters": {
