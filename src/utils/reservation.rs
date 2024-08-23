@@ -78,7 +78,7 @@ fn check_parameters_validity(
         ));
     }
 
-    if !is_free_day && now_hour == selected_hour - 1 {
+    if selected_date == now_date && now_hour == selected_hour - 1 {
         return Err(ReservationError::Other(
             "Rezervările se fac cu cel putin o oră înainte".to_string(),
         ));

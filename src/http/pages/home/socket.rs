@@ -9,7 +9,7 @@ use tokio::select;
 use tracing::{error, warn};
 use crate::http::AppState;
 use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
-use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationSlot};
+use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationsSlot};
 use crate::utils::date_iter::DateIter;
 use crate::utils::{date_formats, local_time};
 use crate::utils::CssColor;
@@ -52,13 +52,13 @@ struct HomeContentTemplate {
     current_date: Date,
     selected_date: Date,
     days: DateIter,
-    reservation_hours: Vec<ReservationSlot>,
+    reservation_hours: Vec<ReservationsSlot>,
 }
 
 #[derive(Template)]
 #[template(path = "components/home/hours.html")]
 struct HoursTemplate {
-    reservation_hours: Vec<ReservationSlot>,
+    reservation_hours: Vec<ReservationsSlot>,
 }
 
 async fn handle_socket(mut socket: WebSocket, state: AppState) {

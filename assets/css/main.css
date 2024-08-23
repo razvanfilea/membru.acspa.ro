@@ -2294,6 +2294,12 @@ html {
       var(--handleoffsetcalculator) 0 0 3px var(--fallback-bc,oklch(var(--bc)/1)) inset;
 }
 
+.no-animation {
+  --btn-focus-scale: 1;
+  --animation-btn: 0;
+  --animation-input: 0;
+}
+
 .btn-sm {
   height: 2rem;
   min-height: 2rem;

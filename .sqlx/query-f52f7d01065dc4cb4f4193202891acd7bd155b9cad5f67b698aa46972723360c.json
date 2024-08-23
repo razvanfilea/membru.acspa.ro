@@ -19,33 +19,38 @@
         "type_info": "Integer"
       },
       {
-        "name": "slots_start_hour",
+        "name": "waiting_capacity",
         "ordinal": 3,
         "type_info": "Integer"
       },
       {
-        "name": "slot_duration",
+        "name": "slots_start_hour",
         "ordinal": 4,
         "type_info": "Integer"
       },
       {
-        "name": "slots_per_day",
+        "name": "slot_duration",
         "ordinal": 5,
         "type_info": "Integer"
       },
       {
-        "name": "alt_slots_start_hour",
+        "name": "slots_per_day",
         "ordinal": 6,
         "type_info": "Integer"
       },
       {
-        "name": "alt_slot_duration",
+        "name": "alt_slots_start_hour",
         "ordinal": 7,
         "type_info": "Integer"
       },
       {
-        "name": "alt_slots_per_day",
+        "name": "alt_slot_duration",
         "ordinal": 8,
+        "type_info": "Integer"
+      },
+      {
+        "name": "alt_slots_per_day",
+        "ordinal": 9,
         "type_info": "Integer"
       }
     ],
@@ -53,6 +58,7 @@
       "Right": 0
     },
     "nullable": [
+      false,
       false,
       false,
       false,

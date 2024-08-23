@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select date, hour, message, created_at from restrictions where date = $1 order by hour",
+  "query": "select date, hour, message, created_at from restrictions order by date desc, hour",
   "describe": {
     "columns": [
       {
@@ -25,7 +25,7 @@
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 0
     },
     "nullable": [
       false,
@@ -34,5 +34,5 @@
       false
     ]
   },
-  "hash": "82eace21c4b7c62e66f2204bff6c830b854f961c5526c14d94efe1ad58a31730"
+  "hash": "08c56818d25432d23b04d58bf257620fd367fa3489b0efb5c93fa6dfb562969b"
 }
