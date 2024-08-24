@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "update reservations set in_waiting = false where rowid =\n                (select rowid from reservations where\n                    date = $1 and hour = $2 and location = $3 and cancelled = false and in_waiting = true\n                    order by created_at limit 1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "fde8207eb8f9e73ed9290cd04889ab071961eae34cc0b8f6d8fb942724f3a427"
+}

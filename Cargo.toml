@@ -15,7 +15,7 @@ askama = { version = "0.12.1", features = ["with-axum"] }
 askama_axum = "0.4.0"
 axum-login = "0.15"
 
-sqlx = { version = "0.8.0", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
+sqlx = { version = "0.8.1", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
 tower-sessions-sqlx-store = { version = "0.13", features = ["sqlite"] }
 
 serde = { version = "1", features = ["derive"] }

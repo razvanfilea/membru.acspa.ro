@@ -140,7 +140,7 @@ async fn create_guest(
         guest.hour
     );
 
-    let _ = state.reservation_notifier.send(date);
+    let _ = state.reservation_notifier.send(());
 
     GuestsListTemplate {
         guests: get_guests(&state.read_pool).await,
@@ -148,17 +148,14 @@ async fn create_guest(
 }
 
 async fn delete_guest(State(state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    let deleted_date = query!(
-        "delete from reservations where rowid = $1 returning date",
-        id
-    )
-    .fetch_optional(&state.write_pool)
-    .await
-    .expect("Database error")
-    .map(|record| record.date);
+    let rows_affected = query!("delete from reservations where rowid = $1", id)
+        .execute(&state.write_pool)
+        .await
+        .expect("Database error")
+        .rows_affected();
 
-    if let Some(date) = deleted_date {
-        let _ = state.reservation_notifier.send(date);
+    if rows_affected == 1 {
+        let _ = state.reservation_notifier.send(());
         return ().into_response();
     }
 

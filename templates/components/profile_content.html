@@ -29,6 +29,9 @@
                 {% if reservation.as_guest %}
                 <p class="text-blue-300">Ca invitat</p>
                 {% endif %}
+                {% if reservation.in_waiting %}
+                <p class="text-pink-600">În așteptare</p>
+                {% endif %}
                 <p class="text-sm">Creat pe: {{ reservation.created_at.format(date_formats::READABLE_DATE_TIME).unwrap()}}</p>
             </div>
 

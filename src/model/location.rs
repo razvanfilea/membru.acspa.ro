@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 
-#[derive(Clone)]
 pub struct Location {
     pub id: i64,
     pub name: Cow<'static, str>,

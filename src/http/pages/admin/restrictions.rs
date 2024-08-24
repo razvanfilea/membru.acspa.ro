@@ -155,12 +155,9 @@ async fn delete_restriction(
         .await
         .expect("Database error");
     } else {
-        query!(
-            "delete from restrictions where date = $1",
-            date
-        )
-        .execute(&state.write_pool)
-        .await
-        .expect("Database error");
+        query!("delete from restrictions where date = $1", date)
+            .execute(&state.write_pool)
+            .await
+            .expect("Database error");
     }
 }

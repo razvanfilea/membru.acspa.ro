@@ -10,7 +10,7 @@ use rand_hc::Hc128Rng;
 use sqlx::{query_as, SqlitePool};
 use tokio::task;
 
-use crate::model::user::{UserCredentials, User};
+use crate::model::user::{User, UserCredentials};
 
 #[derive(Clone)]
 pub struct UserAuthenticator {

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from reservations where in_waiting = true and (date < $1 or (date == $1 and hour <= $2))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "eb5721e1a8c59a8112b7778f9b9a501726893823fabaaad30a0a6e95f351aa2e"
+}

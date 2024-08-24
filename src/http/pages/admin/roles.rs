@@ -1,4 +1,8 @@
-use std::str::FromStr;
+use crate::http::pages::AuthSession;
+use crate::http::AppState;
+use crate::model::role::UserRole;
+use crate::model::user::User;
+use crate::utils::CssColor;
 use askama::Template;
 use askama_axum::{IntoResponse, Response};
 use axum::extract::{Path, State};
@@ -6,12 +10,8 @@ use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
+use std::str::FromStr;
 use strum::IntoEnumIterator;
-use crate::http::pages::AuthSession;
-use crate::http::AppState;
-use crate::model::role::UserRole;
-use crate::model::user::User;
-use crate::utils::CssColor;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -46,7 +46,7 @@ struct NewRole {
     name: String,
     reservations: i64,
     as_guest: i64,
-    color: String
+    color: String,
 }
 
 #[derive(Template)]

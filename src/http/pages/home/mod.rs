@@ -150,7 +150,7 @@ async fn confirm_reservation(
 
     let message = match result.as_ref() {
         Ok(success) => {
-            let _ = state.reservation_notifier.send(selected_date);
+            let _ = state.reservation_notifier.send(());
 
             match success {
                 ReservationSuccess::Reservation{ .. } => format!(
@@ -191,18 +191,46 @@ async fn cancel_reservation(
     let date = Date::parse(&query.date, date_formats::ISO_DATE).unwrap();
     let user = auth_session.user.expect("User should be logged in");
 
-    let cancelled_date = query!(
-        "update reservations set cancelled = true where date = $1 and hour = $2 and user_id = $3 and location = $4 returning date",
+    let mut tx = state.write_pool.begin().await.expect("Database error");
+    let rows = query!(
+        "update reservations set cancelled = true where date = $1 and hour = $2 and user_id = $3 and location = $4",
         date, query.hour, user.id, state.location.id)
-        .fetch_optional(&state.write_pool)
+        .execute(tx.as_mut())
         .await
         .expect("Database error")
-        .map(|record| record.date);
+        .rows_affected();
 
-    if let Some(date) = cancelled_date {
-        let _ = state.reservation_notifier.send(date);
-        return ().into_response();
+    if rows != 1 {
+        return StatusCode::BAD_REQUEST.into_response();
     }
 
-    StatusCode::BAD_REQUEST.into_response()
+    let count = query!(
+        "select count(*) as 'count!' from reservations where
+            date = $1 and hour = $2 and location = $3 and cancelled = false and in_waiting = false",
+        date,
+        query.hour,
+        state.location.id
+    )
+    .fetch_one(tx.as_mut())
+    .await
+    .expect("Database error")
+    .count;
+
+    if count < state.location.slot_capacity {
+        query!(
+            "update reservations set in_waiting = false where rowid =
+                (select rowid from reservations where
+                    date = $1 and hour = $2 and location = $3 and cancelled = false and in_waiting = true
+                    order by created_at limit 1)",
+            date, query.hour, state.location.id)
+        .execute(tx.as_mut())
+        .await
+        .expect("Database error");
+    }
+
+    tx.commit().await.expect("Database error");
+
+    let _ = state.reservation_notifier.send(());
+
+    ().into_response()
 }

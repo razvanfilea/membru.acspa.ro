@@ -1,19 +1,18 @@
+use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationsSlot};
+use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
+use crate::http::AppState;
+use crate::utils::date_iter::DateIter;
+use crate::utils::CssColor;
+use crate::utils::{date_formats, local_time};
 use askama::Template;
 use askama_axum::IntoResponse;
-use axum::extract::{State, WebSocketUpgrade};
 use axum::extract::ws::{Message, WebSocket};
+use axum::extract::{State, WebSocketUpgrade};
 use serde::de::IgnoredAny;
 use serde::Deserialize;
 use time::Date;
 use tokio::select;
 use tracing::{error, warn};
-use crate::http::AppState;
-use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
-use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationsSlot};
-use crate::utils::date_iter::DateIter;
-use crate::utils::{date_formats, local_time};
-use crate::utils::CssColor;
-
 
 pub async fn ws(State(state): State<AppState>, ws: WebSocketUpgrade) -> impl IntoResponse {
     ws.on_upgrade(move |socket| handle_socket(socket, state))
@@ -65,6 +64,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
     let mut selected_date = local_time().date();
 
     let mut reservations_changed = state.reservation_notifier.subscribe();
+
     loop {
         let reservations_task = reservations_changed.changed();
         let recv_task = socket.recv();
@@ -77,10 +77,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
                     return;
                 }
 
-                // Only send update if something changed on this day
-                if *reservations_changed.borrow_and_update() != selected_date {
-                    continue;
-                }
+                reservations_changed.borrow_and_update();
 
                 HoursTemplate {
                     reservation_hours: get_reservation_hours(&state, selected_date).await,
@@ -118,4 +115,3 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
         socket.send(Message::Text(response)).await.unwrap();
     }
 }
-

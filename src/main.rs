@@ -4,13 +4,14 @@ use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, S
 use std::str::FromStr;
 use std::time::Duration;
 use time::util::local_offset::{set_soundness, Soundness};
+use tokio::task;
 use tower_sessions_sqlx_store::SqliteStore;
 use tracing::warn;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 
-use crate::http::{http_server, AppState};
+use crate::http::{http_server, periodic_cleanup_of_waiting_reservations, AppState};
 
 mod http;
 mod model;
@@ -60,6 +61,8 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let app_state = AppState::new(read_pool, write_pool).await;
+
+    task::spawn(periodic_cleanup_of_waiting_reservations(app_state.clone()));
 
     http_server(app_state, session_store)
         .await

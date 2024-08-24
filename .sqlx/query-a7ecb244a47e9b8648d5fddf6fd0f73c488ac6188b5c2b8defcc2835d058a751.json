@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from reservations where rowid = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "a7ecb244a47e9b8648d5fddf6fd0f73c488ac6188b5c2b8defcc2835d058a751"
+}
