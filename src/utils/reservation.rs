@@ -21,7 +21,7 @@ pub enum ReservationError {
     SlotFull,
     DatabaseError(String),
     NoMoreReservation,
-    Other(String),
+    Other(&'static str),
 }
 
 pub type ReservationResult = Result<ReservationSuccess, ReservationError>;
@@ -62,7 +62,7 @@ fn check_parameters_validity(
 
     if selected_date < now_date || (selected_date == now_date && selected_hour <= now_hour) {
         return Err(ReservationError::Other(
-            "Nu poți face o rezervare în trecut".to_string(),
+            "Nu poți face o rezervare în trecut",
         ));
     }
 
@@ -74,13 +74,13 @@ fn check_parameters_validity(
 
     if !hour_structure.is_hour_valid(selected_hour) {
         return Err(ReservationError::Other(
-            "Ora pentru rezervare nu este validă".to_string(),
+            "Ora pentru rezervare nu este validă",
         ));
     }
 
     if selected_date == now_date && now_hour == selected_hour - 1 {
         return Err(ReservationError::Other(
-            "Rezervările se fac cu cel putin o oră înainte".to_string(),
+            "Rezervările se fac cu cel putin o oră înainte",
         ));
     }
 
@@ -155,8 +155,7 @@ pub async fn is_reservation_possible(
     let user_reservations_count = query!(
         r#"select count(*) as 'count!' from reservations
             where user_id = $1 and as_guest = false and cancelled = false and
-            strftime('%Y%W', date) = strftime('%Y%W', $2) and
-            strftime('%w', date) != 0 and strftime('%w', date) != 6"#,
+            strftime('%Y%W', date) = strftime('%Y%W', $2)"#,
         user.id,
         selected_date
     )
@@ -207,8 +206,7 @@ pub async fn is_reservation_possible(
     let user_reservations_as_guest_count = query!(
         r#"select count(*) as 'count!' from reservations
             where user_id = $1 and as_guest = true and cancelled = false and
-            strftime('%Y%W', date) = strftime('%Y%W', $2) and
-            strftime('%w', date) != 0 and strftime('%w', date) != 6"#,
+            strftime('%Y%W', date) = strftime('%Y%W', $2)"#,
         user.id,
         selected_date
     )
@@ -217,8 +215,8 @@ pub async fn is_reservation_possible(
     .map_err(ReservationError::from)?
     .count;
 
-    if user_reservations_count >= role.reservations && !is_free_day {
-        if user_reservations_as_guest_count >= role.guest_reservations && !is_free_day {
+    if user_reservations_count >= role.reservations {
+        if user_reservations_as_guest_count >= role.guest_reservations {
             return Err(ReservationError::NoMoreReservation);
         }
 
