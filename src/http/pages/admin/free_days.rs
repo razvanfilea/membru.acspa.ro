@@ -1,6 +1,5 @@
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
-use crate::model::free_day::FreeDay;
 use crate::model::user::User;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
@@ -11,7 +10,7 @@ use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
 use time::macros::format_description;
-use time::Date;
+use time::{Date, OffsetDateTime};
 use tracing::info;
 
 pub fn router() -> Router<AppState> {
@@ -19,6 +18,12 @@ pub fn router() -> Router<AppState> {
         .route("/", get(free_days_page))
         .route("/", put(create_free_day))
         .route("/:date", delete(delete_free_day))
+}
+
+struct FreeDay {
+    date: Date,
+    description: Option<String>,
+    created_at: OffsetDateTime,
 }
 
 async fn get_free_days(pool: &SqlitePool) -> Vec<FreeDay> {

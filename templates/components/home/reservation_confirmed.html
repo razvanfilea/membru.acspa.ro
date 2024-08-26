@@ -3,14 +3,15 @@
     <div class="p-5 my-2 rounded-full shadow
         text-md text-black font-medium text-center
         {% match message_color %}
-        {% when CssStatusColor::Info %}
+        {% when CssColor::Blue %}
         bg-info
-        {% when CssStatusColor::Success %}
+        {% when CssColor::Green %}
         bg-success
-        {% when CssStatusColor::Warning %}
+        {% when CssColor::Yellow %}
         bg-warning
-        {% when CssStatusColor::Error %}
+        {% when CssColor::Red %}
         bg-error
+        {% else %}
         {% endmatch %}">
         {{ message|safe }}
     </div>

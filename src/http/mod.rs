@@ -64,8 +64,7 @@ pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
             .expect("Database error")
             .rows_affected();
 
-        if rows_affected != 0
-        {
+        if rows_affected != 0 {
             info!("Deleted {rows_affected} expired reservations");
         }
 

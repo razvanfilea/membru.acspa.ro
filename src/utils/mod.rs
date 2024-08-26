@@ -39,23 +39,16 @@ pub async fn is_free_day(pool: &SqlitePool, date: Date) -> bool {
     weekday == Weekday::Saturday || weekday == Weekday::Sunday || exists_in_table.await
 }
 
-pub enum CssStatusColor {
-    Success,
-    Info,
-    Warning,
-    Error,
-}
-
-pub fn get_reservation_result_color(result: &ReservationResult) -> CssStatusColor {
+pub fn get_reservation_result_color(result: &ReservationResult) -> CssColor {
     match result {
         Ok(success) => match success {
-            ReservationSuccess::Reservation { .. } => CssStatusColor::Success,
-            ReservationSuccess::Guest => CssStatusColor::Info,
-            ReservationSuccess::InWaiting => CssStatusColor::Info,
+            ReservationSuccess::Reservation { .. } => CssColor::Green,
+            ReservationSuccess::Guest => CssColor::Blue,
+            ReservationSuccess::InWaiting => CssColor::Blue,
         },
         Err(error) => match error {
-            ReservationError::AlreadyExists => CssStatusColor::Warning,
-            _ => CssStatusColor::Error,
+            ReservationError::AlreadyExists => CssColor::Yellow,
+            _ => CssColor::Red,
         },
     }
 }

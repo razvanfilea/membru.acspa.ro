@@ -9,7 +9,6 @@ use crate::utils::reservation::{create_reservation, is_reservation_possible, Res
 use crate::utils::CssColor;
 use crate::utils::{
     date_formats, get_hour_structure_for_day, get_reservation_result_color, local_time,
-    CssStatusColor,
 };
 use askama::Template;
 use askama_axum::IntoResponse;
@@ -70,7 +69,7 @@ struct HourQuery {
 #[template(path = "components/home/reservation_confirmed.html")]
 struct ConfirmedTemplate {
     successful: bool,
-    message_color: CssStatusColor,
+    message_color: CssColor,
     message: String,
 }
 
