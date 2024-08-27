@@ -53,7 +53,8 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
         from reservations r
         inner join users u on r.user_id = u.id
         inner join user_roles ur on u.role_id = ur.id
-        where date = $1 order by as_guest, created_at"#,
+        where date = $1 and cancelled = false
+        order by as_guest, created_at"#,
         date
     )
     .fetch_all(&state.read_pool)

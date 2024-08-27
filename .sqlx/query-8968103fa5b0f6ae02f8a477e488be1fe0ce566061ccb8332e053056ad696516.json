@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select u.name as 'name!', hour, has_key, as_guest, in_waiting, created_for, ur.color as role_color\n        from reservations r\n        inner join users u on r.user_id = u.id\n        inner join user_roles ur on u.role_id = ur.id\n        where date = $1 order by as_guest, created_at",
+  "query": "select u.name as 'name!', hour, has_key, as_guest, in_waiting, created_for, ur.color as role_color\n        from reservations r\n        inner join users u on r.user_id = u.id\n        inner join user_roles ur on u.role_id = ur.id\n        where date = $1 and cancelled = false\n        order by as_guest, created_at",
   "describe": {
     "columns": [
       {
@@ -52,5 +52,5 @@
       true
     ]
   },
-  "hash": "4e4945547260a7e75248857a6fe12af9a1012ea9ea1b4cb18c8fe025392d14bd"
+  "hash": "8968103fa5b0f6ae02f8a477e488be1fe0ce566061ccb8332e053056ad696516"
 }
