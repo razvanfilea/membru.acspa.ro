@@ -1,5 +1,13 @@
+<style>
+    .popover_m {
+        position: absolute;
+        top: calc(.5em + anchor(auto));
+    }
+</style>
 {% macro res_btn(index, res) %}
-<button class="btn btn-sm no-animation rounded-full text-white items-center
+<button id="res_{{ index }}"
+        popovertarget="popover_{{ index }}"
+    class="btn btn-sm no-animation rounded-full text-white items-center
     {% match res.color %}
     {% when CssColor::None %}
     bg-slate-600
@@ -27,6 +35,9 @@
     <span class="material-symbols-outlined">account_circle_off</span>
     {% endif %}
 </button>
+<div id="popover_{{ index }}" popover anchor="res_{{ index }}" class="popover_m">
+    Hello
+</div>
 {% endmacro %}
 
 <div id="hours">

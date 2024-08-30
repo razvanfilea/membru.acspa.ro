@@ -8,6 +8,7 @@ use axum_login::AuthManagerLayerBuilder;
 use sqlx::{query, query_as, SqlitePool};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use axum_login::tower_sessions::cookie::SameSite;
 use tokio::sync::watch;
 use tokio::time::interval;
 use tower_http::trace;
@@ -74,7 +75,8 @@ pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
 
 pub async fn http_server(app_state: AppState, session_store: SqliteStore) -> anyhow::Result<()> {
     let session_layer = SessionManagerLayer::new(session_store)
-        .with_expiry(Expiry::OnInactivity(time::Duration::days(60)));
+        .with_expiry(Expiry::OnInactivity(time::Duration::days(60)))
+        .with_same_site(SameSite::Lax);
 
     let auth_layer = AuthManagerLayerBuilder::new(
         UserAuthenticator::new(app_state.read_pool.clone()),
