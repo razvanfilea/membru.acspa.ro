@@ -46,9 +46,9 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     let write_pool = SqlitePoolOptions::new()
-        .min_connections(1)
+        .min_connections(0)
         .max_connections(1)
-        .connect_with(connection_options)
+        .connect_with(connection_options.optimize_on_close(true, None))
         .await?;
 
     let session_store = SqliteStore::new(write_pool.clone());

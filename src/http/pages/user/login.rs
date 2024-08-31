@@ -66,7 +66,8 @@ pub async fn login(
         Ok(()) => {
             debug!("User has been logged in: {}", user.email);
             Response::builder()
-                .header("HX-Redirect", "/")
+                .header("HX-Replace-Url", "/")
+                .header("HX-Refresh", "true")
                 .body("Ai fost logat cu succes".to_string())
                 .unwrap()
                 .into_response()
@@ -88,7 +89,7 @@ pub async fn logout(mut auth: AuthSession) -> impl IntoResponse {
     }
 
     Response::builder()
-        .header("HX-Redirect", "/")
+        .header("HX-Redirect", "/login")
         .body("Ai fost de-logat cu succes".to_string())
         .unwrap()
 }
