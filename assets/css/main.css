@@ -2532,10 +2532,6 @@ html:has(.drawer-toggle:checked) {
   border-bottom-left-radius: 0px;
 }
 
-.absolute {
-  position: absolute;
-}
-
 .col-span-2 {
   grid-column: span 2 / span 2;
 }
@@ -2802,11 +2798,6 @@ html:has(.drawer-toggle:checked) {
 .bg-fuchsia-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(192 38 211 / var(--tw-bg-opacity));
-}
-
-.bg-fuchsia-700 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(162 28 175 / var(--tw-bg-opacity));
 }
 
 .bg-gray-600 {

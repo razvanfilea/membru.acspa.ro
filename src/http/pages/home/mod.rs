@@ -180,6 +180,8 @@ async fn confirm_reservation(
 struct CancelReservationQuery {
     date: String,
     hour: u8,
+    user_id: Option<i64>,
+    created_for: Option<String>,
 }
 
 async fn cancel_reservation(
@@ -189,16 +191,28 @@ async fn cancel_reservation(
 ) -> impl IntoResponse {
     let date = Date::parse(&query.date, date_formats::ISO_DATE).unwrap();
     let user = auth_session.user.expect("User should be logged in");
+    let user_id = query.user_id.unwrap_or(user.id);
+
+    if (user_id != user.id || query.created_for.is_some()) && !user.admin_panel_access {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
 
     let mut tx = state.write_pool.begin().await.expect("Database error");
-    let rows = query!(
-        "update reservations set cancelled = true where date = $1 and hour = $2 and user_id = $3 and location = $4",
-        date, query.hour, user.id, state.location.id)
-        .execute(tx.as_mut())
-        .await
+    let rows = if let Some(created_for) = query.created_for {
+        query!("delete from reservations where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for = $5", 
+            date, query.hour, user_id, state.location.id, created_for)
+            .execute(tx.as_mut())
+            .await
+    } else {
+        query!("update reservations set cancelled = true
+        where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for is null",
+            date, query.hour, user_id, state.location.id)
+            .execute(tx.as_mut())
+            .await
+    }
+
         .expect("Database error")
         .rows_affected();
-
     if rows != 1 {
         return StatusCode::BAD_REQUEST.into_response();
     }

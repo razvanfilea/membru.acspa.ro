@@ -1,13 +1,8 @@
-<style>
-    .popover_m {
-        position: absolute;
-        top: calc(.5em + anchor(auto));
-    }
-</style>
+{% let selected_date_formatted = selected_date.format(date_formats::ISO_DATE).unwrap() %}
+
 {% macro res_btn(index, res) %}
-<button id="res_{{ index }}"
-        popovertarget="popover_{{ index }}"
-    class="btn btn-sm no-animation rounded-full text-white items-center
+<button popovertarget="popover_{{ index }}"
+        class="btn btn-sm no-animation rounded-full text-white items-center
     {% match res.color %}
     {% when CssColor::None %}
     bg-slate-600
@@ -35,31 +30,44 @@
     <span class="material-symbols-outlined">account_circle_off</span>
     {% endif %}
 </button>
-<div id="popover_{{ index }}" popover anchor="res_{{ index }}" class="popover_m">
-    Hello
+
+{% if user.admin_panel_access || user.id == res.user_id %}
+<div id="popover_{{ index }}" class="rounded-2xl" popover>
+    <div class="p-6 flex flex-col gap-4">
+        <p>Rezervarea de la ora <b>{{ slot.start_hour }}</b> pe numele <b>{{ res.name }}</b></p>
+
+        <button class="btn btn-error"
+                hx-vals="unset"
+                hx-delete='/reservation?date={{ selected_date_formatted }}&hour={{ slot.start_hour }}&user_id={{ res.user_id }}
+{%- if let Some(created_for) = res.created_for %}&created_for={{ created_for }}{% endif %}'>
+            Anulează
+        </button>
+    </div>
 </div>
+{% endif %}
+
 {% endmacro %}
 
 <div id="hours">
-    {% for possible_hour in reservation_hours %}
-    <div hx-vals='{"hour": {{ possible_hour.start_hour }} }'>
-        <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
-            Ora {{ possible_hour.start_hour }} - {{ possible_hour.end_hour }}:
-            {% if let Ok(reservations) = possible_hour.reservations %}
+    {% for slot in reservation_hours %}
+    <div hx-vals='{"hour": {{ slot.start_hour }} }'>
+        <div class="flex flex-row flex-wrap gap-1 mb-4 items-center">
+            Ora {{ slot.start_hour }} - {{ slot.end_hour }}:
+            {% if let Ok(reservations) = slot.reservations %}
             {% for res in reservations.list %}
             {% call res_btn(loop.index, res) %}
             {% endfor %}
             {% endif %}
 
-            {% if let Err(restriction) = possible_hour.reservations %}
+            {% if let Err(restriction) = slot.reservations %}
             <p class="text-red-600 font-semibold">{{ restriction }}</p>
             {% endif %}
         </div>
 
-        {% if let Ok(reservations) = possible_hour.reservations %}
+        {% if let Ok(reservations) = slot.reservations %}
         {% if !reservations.waiting.is_empty() %}
         <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
-            În aștepare:
+            În așteptare:
             {% for res in reservations.waiting %}
             {% call res_btn(loop.index, res) %}
             {% endfor %}
@@ -67,7 +75,7 @@
         {% endif %}
         {% endif %}
 
-        {% if possible_hour.reservations.is_ok() %}
+        {% if slot.reservations.is_ok() %}
         <input name="reservation" type="radio" aria-label="Rezervare" autocomplete="off"
                hx-post="/choose_hour" hx-target="#confirmation" hx-swap="outerHTML show:bottom"
                class="btn btn-md btn-outline btn-accent w-min"/>

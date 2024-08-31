@@ -13,9 +13,12 @@ use serde::Deserialize;
 use time::Date;
 use tokio::select;
 use tracing::{error, warn};
+use crate::http::pages::AuthSession;
+use crate::model::user::User;
 
-pub async fn ws(State(state): State<AppState>, ws: WebSocketUpgrade) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, state))
+pub async fn ws(State(state): State<AppState>, auth_session: AuthSession, ws: WebSocketUpgrade) -> impl IntoResponse {
+    let user = auth_session.user.expect("User should be logged in");
+    ws.on_upgrade(move |socket| handle_socket(socket, state, user))
 }
 
 #[derive(Deserialize)]
@@ -47,22 +50,24 @@ impl WsMessage {
 
 #[derive(Template)]
 #[template(path = "components/home/content.html")]
-struct HomeContentTemplate {
+struct HomeContentTemplate<'a> {
     current_date: Date,
     selected_date: Date,
     days: DateIter,
     reservation_hours: Vec<ReservationsSlot>,
+    user: &'a User,
 }
 
 #[derive(Template)]
 #[template(path = "components/home/hours.html")]
-struct HoursTemplate {
+struct HoursTemplate<'a> {
     reservation_hours: Vec<ReservationsSlot>,
+    selected_date: Date,
+    user: &'a User,
 }
 
-async fn handle_socket(mut socket: WebSocket, state: AppState) {
+async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
     let mut selected_date = local_time().date();
-
     let mut reservations_changed = state.reservation_notifier.subscribe();
 
     loop {
@@ -81,6 +86,8 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
 
                 HoursTemplate {
                     reservation_hours: get_reservation_hours(&state, selected_date).await,
+                    selected_date,
+                    user: &user
                 }
                 .to_string()
             }
@@ -107,6 +114,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
                     selected_date,
                     days: DateIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
                     reservation_hours: get_reservation_hours(&state, selected_date).await,
+                    user: &user
                 }
                 .to_string()
             }

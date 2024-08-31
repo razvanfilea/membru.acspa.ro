@@ -11,6 +11,9 @@ pub struct Reservation {
     pub has_account: bool,
     pub color: CssColor,
     pub waiting: bool,
+    
+    pub user_id: i64,
+    pub created_for: Option<String>,
 }
 
 pub struct Reservations {
@@ -49,7 +52,7 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
     }
 
     let date_reservations = query!(
-        r#"select u.name as 'name!', hour, has_key, as_guest, in_waiting, created_for, ur.color as role_color
+        r#"select u.name as 'name!', r.user_id, hour, has_key, as_guest, in_waiting, created_for, ur.color as role_color
         from reservations r
         inner join users u on r.user_id = u.id
         inner join user_roles ur on u.role_id = ur.id
@@ -96,6 +99,8 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
                         CssColor::Pink
                     },
                     waiting: record.in_waiting,
+                    user_id: record.user_id,
+                    created_for: record.created_for.clone(),
                 })
                 .partition(|r| !r.waiting);
 
