@@ -62,4 +62,7 @@ pub enum CssColor {
     Green,
     Yellow,
     Orange,
+    Violet,
+    Indigo,
+    Brown,
 }

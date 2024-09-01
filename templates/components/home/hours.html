@@ -1,23 +1,29 @@
 {% let selected_date_formatted = selected_date.format(date_formats::ISO_DATE).unwrap() %}
 
-{% macro res_btn(index, res) %}
-<button popovertarget="popover_{{ index }}"
+{% macro res_btn(index, id, res) %}
+<button popovertarget="popover_{{ id }}_{{ index }}"
         class="btn btn-sm no-animation rounded-full text-white items-center
     {% match res.color %}
     {% when CssColor::None %}
     bg-slate-600
     {% when CssColor::Blue %}
-    bg-info
+    bg-sky-500
     {% when CssColor::Red %}
     bg-error
     {% when CssColor::Pink %}
     bg-fuchsia-600
     {% when CssColor::Green %}
-    bg-success
+    bg-green-600
     {% when CssColor::Yellow %}
     bg-warning
     {% when CssColor::Orange %}
     bg-orange-500
+    {% when CssColor::Violet %}
+    bg-violet-600
+    {% when CssColor::Indigo %}
+    bg-indigo-600
+    {% when CssColor::Brown %}
+    bg-amber-800
     {% endmatch %}">
 
     {{ index }}. {{ res.name }}
@@ -32,7 +38,7 @@
 </button>
 
 {% if user.admin_panel_access || user.id == res.user_id %}
-<div id="popover_{{ index }}" class="rounded-2xl" popover>
+<div id="popover_{{ id }}_{{ index }}" class="rounded-2xl" popover>
     <div class="p-6 flex flex-col gap-4">
         <p>Rezervarea de la ora <b>{{ slot.start_hour }}</b> pe numele <b>{{ res.name }}</b></p>
 
@@ -55,7 +61,7 @@
             Ora {{ slot.start_hour }} - {{ slot.end_hour }}:
             {% if let Ok(reservations) = slot.reservations %}
             {% for res in reservations.list %}
-            {% call res_btn(loop.index, res) %}
+            {% call res_btn(loop.index, "reservation", res) %}
             {% endfor %}
             {% endif %}
 
@@ -67,9 +73,9 @@
         {% if let Ok(reservations) = slot.reservations %}
         {% if !reservations.waiting.is_empty() %}
         <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
-            În așteptare:
+            <p class="text-red-500">În așteptare:</p>
             {% for res in reservations.waiting %}
-            {% call res_btn(loop.index, res) %}
+            {% call res_btn(loop.index, "waiting", res) %}
             {% endfor %}
         </div>
         {% endif %}
