@@ -1,7 +1,7 @@
 {% let selected_date_formatted = selected_date.format(date_formats::ISO_DATE).unwrap() %}
 
 {% macro res_btn(index, id, res) %}
-<button popovertarget="popover_{{ id }}_{{ index }}"
+<button popovertarget="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}"
         class="btn btn-sm no-animation rounded-full text-white items-center
     {% match res.color %}
     {% when CssColor::None %}
@@ -40,7 +40,7 @@
 </button>
 
 {% if user.admin_panel_access || user.id == res.user_id %}
-<div id="popover_{{ id }}_{{ index }}" class="rounded-2xl" popover>
+<div id="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}" class="rounded-2xl" popover>
     <div class="p-6 flex flex-col gap-4">
         <p>Rezervarea de la ora <b>{{ slot.start_hour }}</b> pe numele <b>{{ res.name }}</b></p>
 

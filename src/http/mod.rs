@@ -2,15 +2,19 @@ use crate::http::auth::UserAuthenticator;
 use crate::model::location::Location;
 use crate::utils::local_time;
 use anyhow::Context;
+use askama::Template;
+use axum::response::IntoResponse;
 use axum::Router;
+use axum_login::tower_sessions::cookie::SameSite;
 use axum_login::tower_sessions::{Expiry, SessionManagerLayer};
 use axum_login::AuthManagerLayerBuilder;
 use sqlx::{query, query_as, SqlitePool};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use axum_login::tower_sessions::cookie::SameSite;
+use tokio::signal;
 use tokio::sync::watch;
 use tokio::time::interval;
+use tower_http::timeout::TimeoutLayer;
 use tower_http::trace;
 use tower_http::trace::TraceLayer;
 use tower_sessions_sqlx_store::SqliteStore;
@@ -73,7 +77,39 @@ pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
     }
 }
 
-pub async fn http_server(app_state: AppState, session_store: SqliteStore, timetable_path: String) -> anyhow::Result<()> {
+async fn handler_404() -> impl IntoResponse {
+    #[derive(Template)]
+    #[template(path = "pages/404.html")]
+    struct NotFoundTemplate;
+
+    NotFoundTemplate
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler");
+    };
+
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("Failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+}
+
+pub async fn http_server(
+    app_state: AppState,
+    session_store: SqliteStore,
+    timetable_path: String,
+) -> anyhow::Result<()> {
     let session_layer = SessionManagerLayer::new(session_store)
         .with_expiry(Expiry::OnInactivity(time::Duration::days(60)))
         .with_same_site(SameSite::Lax);
@@ -83,17 +119,19 @@ pub async fn http_server(app_state: AppState, session_store: SqliteStore, timeta
         session_layer,
     )
     .build();
-    
+
     let app = Router::new()
         .nest_service("/assets", tower_http::services::ServeDir::new("assets"))
         .nest_service("/orar", tower_http::services::ServeDir::new(timetable_path))
         .merge(pages::router())
         .with_state(app_state)
-        .layer(
+        .fallback(handler_404)
+        .layer((
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
                 .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
-        )
+            TimeoutLayer::new(std::time::Duration::from_secs(10)),
+        ))
         .layer(auth_layer);
 
     let port_str = std::env::var("SERVER_PORT").context("Failed to get server port")?;
@@ -106,6 +144,7 @@ pub async fn http_server(app_state: AppState, session_store: SqliteStore, timeta
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, http_service)
+        .with_graceful_shutdown(shutdown_signal())
         .await
         .context("Failed to start server")
 }
