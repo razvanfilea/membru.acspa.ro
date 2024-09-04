@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
         )))
         .with(tracing_subscriber::fmt::layer().compact())
         .init();
-
+    
     let database_url = std::env::var("DATABASE_URL").context("Failed to get database URL")?;
     let connection_options = SqliteConnectOptions::from_str(&database_url)?
         .journal_mode(SqliteJournalMode::Wal)
@@ -64,7 +64,9 @@ async fn main() -> anyhow::Result<()> {
 
     task::spawn(periodic_cleanup_of_waiting_reservations(app_state.clone()));
 
-    http_server(app_state, session_store)
+    let timetable_path = std::env::var("TIMETABLE_PATH").context("Failed to get TIMETABLE_PATH")?;
+
+    http_server(app_state, session_store, timetable_path)
         .await
         .context("Failed to start HTTP Server")
 }

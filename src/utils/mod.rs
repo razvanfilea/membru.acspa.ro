@@ -47,7 +47,7 @@ pub fn get_reservation_result_color(result: &ReservationResult) -> CssColor {
             ReservationSuccess::InWaiting => CssColor::Blue,
         },
         Err(error) => match error {
-            ReservationError::AlreadyExists => CssColor::Yellow,
+            ReservationError::AlreadyExists{..} => CssColor::Yellow,
             _ => CssColor::Red,
         },
     }
@@ -65,4 +65,5 @@ pub enum CssColor {
     Violet,
     Indigo,
     Brown,
+    Gray,
 }
