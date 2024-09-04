@@ -16,7 +16,7 @@ pub enum ReservationSuccess {
 
 #[derive(Debug, PartialEq)]
 pub enum ReservationError {
-    AlreadyExists,
+    AlreadyExists { cancelled: bool },
     Restriction(String),
     SlotFull,
     DatabaseError(String),
@@ -35,7 +35,13 @@ impl From<sqlx::Error> for ReservationError {
 impl Display for ReservationError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ReservationError::AlreadyExists => write!(f, "Ai făcut deja o astfel de rezervare."),
+            ReservationError::AlreadyExists { cancelled } => {
+                if *cancelled {
+                    write!(f, "Nu te poți reînscrie după ce ai anulat o rezervare")
+                } else {
+                    write!(f, "Ai făcut deja o astfel de rezervare.")
+                }
+            }
             ReservationError::Restriction(message) => write!(f, "{}", message),
             ReservationError::SlotFull => write!(
                 f,
@@ -100,20 +106,21 @@ pub async fn is_reservation_possible(
     check_parameters_validity(location, now, is_free_day, selected_date, selected_hour)?;
 
     let reservation_already_exists = query!(
-        "select exists(select true from reservations where
-        location = $1 and date = $2 and hour = $3 and user_id = $4 and created_for is null) as 'exists!'",
+        "select cancelled from reservations where
+        location = $1 and date = $2 and hour = $3 and user_id = $4 and created_for is null",
         location.id,
         selected_date,
         selected_hour,
         user.id
     )
-        .fetch_one(pool)
-        .await
-        .map_err(ReservationError::from)?
-        .exists;
+    .fetch_optional(pool)
+    .await
+    .map_err(ReservationError::from)?;
 
-    if reservation_already_exists == 1 {
-        return Err(ReservationError::AlreadyExists);
+    if let Some(reservation) = reservation_already_exists {
+        return Err(ReservationError::AlreadyExists {
+            cancelled: reservation.cancelled,
+        });
     }
 
     let restriction = query!(
@@ -283,6 +290,7 @@ mod test {
     use super::*;
     use sqlx::SqlitePool;
     use time::macros::{date, datetime};
+    use crate::utils::reservation::ReservationError::NoMoreReservation;
 
     async fn setup(
         pool: &SqlitePool,
@@ -340,7 +348,7 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
-            Err(ReservationError::AlreadyExists)
+            Err(ReservationError::AlreadyExists{cancelled: false})
         );
 
         assert_eq!(
@@ -382,7 +390,7 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user, date_1, 18).await,
-            Err(ReservationError::AlreadyExists)
+            Err(ReservationError::AlreadyExists{cancelled: false})
         );
 
         assert_eq!(
@@ -420,7 +428,7 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
-            Err(ReservationError::AlreadyExists)
+            Err(ReservationError::AlreadyExists{cancelled: false})
         );
 
         assert_eq!(
@@ -452,7 +460,7 @@ mod test {
         assert_eq!(
             create_reservation(&pool, &location, now_too_late, &user, date, 18).await,
             Err(ReservationError::Other(
-                "Rezervările se fac cu cel putin o oră înainte".to_string()
+                "Rezervările se fac cu cel putin o oră înainte"
             ))
         );
     }
@@ -507,16 +515,7 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user, weekend, 10).await,
-            Ok(ReservationSuccess::Reservation {
-                deletes_guest: false
-            })
-        );
-
-        assert_eq!(
-            create_reservation(&pool, &location, now, &user, weekend, 13).await,
-            Ok(ReservationSuccess::Reservation {
-                deletes_guest: false
-            })
+            Err(NoMoreReservation)
         );
     }
 

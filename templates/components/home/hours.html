@@ -5,7 +5,7 @@
         class="btn btn-sm no-animation rounded-full text-white items-center
     {% match res.color %}
     {% when CssColor::None %}
-    bg-slate-600
+    bg-slate-500
     {% when CssColor::Blue %}
     bg-sky-500
     {% when CssColor::Red %}
@@ -24,6 +24,8 @@
     bg-indigo-600
     {% when CssColor::Brown %}
     bg-amber-800
+    {% when CssColor::Gray %}
+    bg-gray-700
     {% endmatch %}">
 
     {{ index }}. {{ res.name }}

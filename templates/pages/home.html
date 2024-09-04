@@ -3,14 +3,21 @@
 {% block page_title %}Rezervări{% endblock %}
 
 {% block content %}
+<div class="flex flex-col" style="min-height: calc(100vh - 72px)">
+    <div class="p-4 md:p-8 grow" hx-ext="ws" ws-connect="/ws">
+        <div class="flex flex-row w-full items-center justify-end gap-2 mb-2 md:mb-6 flex-wrap md:flex-nowrap">
+            <p class="bg-cyan-600 text-white text-sm mx-2 p-3 rounded-md grow">{{ global_vars.homepage_message }}</p>
+            <p class="text-nowrap text-lg">Cod intrare: <b>{{ global_vars.entrance_code }}</b></p>
+        </div>
 
-<div class="p-4 md:p-8" hx-ext="ws" ws-connect="/ws">
-    <div class="flex flex-row w-full items-center justify-end gap-2 mb-2 md:mb-6 flex-wrap md:flex-nowrap">
-        <p class="bg-cyan-600 text-white text-sm mx-2 p-3 rounded-md grow">{{ global_vars.homepage_message }}</p>
-        <p class="text-nowrap text-lg">Cod intrare: <b>{{ global_vars.entrance_code }}</b></p>
+        {% include "components/home/content.html" %}
+
     </div>
 
-    {% include "components/home/content.html" %}
-
+    <footer class="w-full bg-base-200 p-4 flex flex-row items-center justify-between">
+        <p class="uppercase opacity-60 font-bold">V{{ VERSION }}</p>
+        <p class="uppercase opacity-60 font-bold">Realizat de Filea Răzvan</p>
+    </footer>
 </div>
+
 {% endblock %}
