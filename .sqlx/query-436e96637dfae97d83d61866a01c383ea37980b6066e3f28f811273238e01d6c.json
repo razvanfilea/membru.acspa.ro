@@ -1,0 +1,56 @@
+{
+  "db_name": "SQLite",
+  "query": "select r.*, (select count(*) from users u where u.role_id = r.id) as 'members_count' from user_roles r",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "reservations",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "guest_reservations",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "color",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "admin_panel_access",
+        "ordinal": 5,
+        "type_info": "Bool"
+      },
+      {
+        "name": "members_count",
+        "ordinal": 6,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "436e96637dfae97d83d61866a01c383ea37980b6066e3f28f811273238e01d6c"
+}

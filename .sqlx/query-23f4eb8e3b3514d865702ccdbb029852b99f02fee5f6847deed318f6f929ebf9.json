@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from users_with_role",
+  "query": "select * from users_with_role order by name",
   "describe": {
     "columns": [
       {
@@ -52,5 +52,5 @@
       false
     ]
   },
-  "hash": "6d4314155730e5f52fe0fcc26f3783f0d4ef3dc15c35faa26289e44b475d69cf"
+  "hash": "23f4eb8e3b3514d865702ccdbb029852b99f02fee5f6847deed318f6f929ebf9"
 }

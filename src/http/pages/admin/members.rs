@@ -15,6 +15,7 @@ use crate::model::user::User;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(members_page))
+        .route("/search", post(search_members))
         .route("/new", get(new_member_page))
         .route("/new", post(create_new_user))
         .route("/edit/:id", get(edit_member_page))
@@ -34,12 +35,8 @@ async fn get_all_roles(state: &AppState) -> Vec<String> {
 }
 
 async fn get_role_id(state: &AppState, role: impl AsRef<str>) -> Option<i64> {
-    struct RoleId {
-        id: i64,
-    }
-
     let role = role.as_ref();
-    query_as!(RoleId, "select id from user_roles where name = $1", role)
+    query!("select id from user_roles where name = $1", role)
         .fetch_optional(&state.read_pool)
         .await
         .expect("Database error")
@@ -57,7 +54,7 @@ async fn members_page(
         members: Vec<User>,
     }
 
-    let members = query_as!(User, "select * from users_with_role")
+    let members = query_as!(User, "select * from users_with_role order by name")
         .fetch_all(&state.read_pool)
         .await
         .expect("Database error");
@@ -66,6 +63,35 @@ async fn members_page(
         user: auth_session.user.expect("User should be logged in"),
         members,
     }
+}
+
+#[derive(Deserialize)]
+struct SearchQuery {
+    search: String,
+}
+
+async fn search_members(
+    State(state): State<AppState>,
+    Form(search_query): Form<SearchQuery>,
+) -> impl IntoResponse {
+    #[derive(Template)]
+    #[template(path = "components/admin/members_content.html")]
+    struct MembersListTemplate {
+        members: Vec<User>,
+    }
+
+    let query = format!("%{}%", search_query.search);
+
+    let members = query_as!(
+        User,
+        "select * from users_with_role where name like $1 or email like $1 order by name",
+        query
+    )
+    .fetch_all(&state.read_pool)
+    .await
+    .expect("Database error");
+
+    MembersListTemplate { members }
 }
 
 #[derive(Deserialize)]

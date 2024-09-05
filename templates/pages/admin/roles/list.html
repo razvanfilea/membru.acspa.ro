@@ -24,6 +24,7 @@
                 <p>Culoare rezervări: <b>{{ color }}</b></p>
                 {% endif %}
                 <p>Access la panou de administrare: <b>{{ role.admin_panel_access }}</b></p>
+                <p class="text-lg mt-2">Membri cu acest rol: <b>{{ role.members_count }}</b></p>
             </div>
 
             <a href="/admin/roles/edit/{{ role.id }}">

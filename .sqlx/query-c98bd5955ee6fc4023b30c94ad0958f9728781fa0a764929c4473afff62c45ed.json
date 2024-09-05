@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from user_roles",
+  "query": "select * from users_with_role where name like $1 or email like $1 order by name",
   "describe": {
     "columns": [
       {
@@ -9,42 +9,48 @@
         "type_info": "Integer"
       },
       {
-        "name": "name",
+        "name": "email",
         "ordinal": 1,
         "type_info": "Text"
       },
       {
-        "name": "reservations",
+        "name": "name",
         "ordinal": 2,
-        "type_info": "Integer"
+        "type_info": "Text"
       },
       {
-        "name": "guest_reservations",
+        "name": "password_hash",
         "ordinal": 3,
-        "type_info": "Integer"
+        "type_info": "Text"
       },
       {
-        "name": "color",
+        "name": "has_key",
         "ordinal": 4,
+        "type_info": "Bool"
+      },
+      {
+        "name": "role",
+        "ordinal": 5,
         "type_info": "Text"
       },
       {
         "name": "admin_panel_access",
-        "ordinal": 5,
+        "ordinal": 6,
         "type_info": "Bool"
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
       false,
       false,
       false,
       false,
-      true,
+      false,
+      false,
       false
     ]
   },
-  "hash": "81632b8e775bc65a179d20d44e5416fc40d5d50063e2ee7aa9915225dbd1cfb5"
+  "hash": "c98bd5955ee6fc4023b30c94ad0958f9728781fa0a764929c4473afff62c45ed"
 }

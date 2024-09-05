@@ -23,14 +23,23 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
+    struct UserRoleWithCount {
+        pub id: i64,
+        pub name: String,
+        pub reservations: i64,
+        pub guest_reservations: i64,
+        pub color: Option<String>,
+        pub admin_panel_access: bool,
+        pub members_count: i64,
+    }
     #[derive(Template)]
     #[template(path = "pages/admin/roles/list.html")]
     struct UsersTemplate {
         user: User,
-        roles: Vec<UserRole>,
+        roles: Vec<UserRoleWithCount>,
     }
 
-    let roles = query_as!(UserRole, "select * from user_roles")
+    let roles = query_as!(UserRoleWithCount, "select r.*, (select count(*) from users u where u.role_id = r.id) as 'members_count' from user_roles r")
         .fetch_all(&state.read_pool)
         .await
         .expect("Database error");
