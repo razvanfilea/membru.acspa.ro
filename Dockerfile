@@ -1,32 +1,29 @@
 ARG TARGET_ARCH=x86_64-unknown-linux-musl
 
-FROM rust:1.80-alpine AS builder
+FROM rust:1.80-alpine AS base
+USER root
 
 RUN apk add --no-cache deno musl-dev
 
 ARG TARGET_ARCH
-
 RUN rustup target add $TARGET_ARCH
 
-# create a new empty shell project
-RUN USER=root cargo new --bin acspa
+RUN cargo install cargo-chef
 WORKDIR /acspa
 
-# copy manifests
-COPY ./Cargo.lock ./Cargo.lock
-COPY ./Cargo.toml ./Cargo.toml
 
-# cache dependencies
-RUN cargo build --release --target ${TARGET_ARCH}
-RUN rm src/*.rs
-
-# copy everything else
+FROM base AS planner
 COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
+
+FROM base AS builder
+COPY --from=planner /acspa/recipe.json recipe.json
+RUN cargo chef cook --release --target $TARGET_ARCH --recipe-path recipe.json
+COPY . .
 RUN deno task prod
+RUN cargo build --release --target $TARGET_ARCH
 
-RUN rm ./target/${TARGET_ARCH}/release/deps/acspa*
-RUN cargo build --release --target ${TARGET_ARCH}
 
 FROM scratch
 
