@@ -37,7 +37,7 @@ pub fn router() -> Router<AppState> {
 
 async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
-    
+
     #[derive(Template)]
     #[template(path = "pages/home.html")]
     struct HomeTemplate {

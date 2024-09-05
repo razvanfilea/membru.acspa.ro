@@ -1,12 +1,22 @@
-<div id="confirmation" class="bg-gray-600 p-6 mt-8 m-2 md:m-4 rounded-2xl">
-    <p class="my-1">Pe data de <b>{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}</b> de la ora <b>{{ start_hour }}:00</b> la <b>{{
-        end_hour }}:00</b></p>
-    <p>Locația: {{ location_name }}</p>
+<div id="confirmation">
+    <div class="bg-gray-600 p-6 mt-8 m-2 md:m-4 rounded-2xl">
+        <p class="my-1">Pe data de <b>{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}</b> de la ora <b>{{
+            start_hour }}:00</b> la <b>{{
+            end_hour }}:00</b></p>
+        <p>Locația: {{ location_name }}</p>
 
-    <button class="btn btn-primary btn-wide mt-3"
-            hx-vals='{"hour": {{ start_hour }} }'
-            hx-target="#confirmation"
-            hx-swap="outerHTML"
-            hx-post="/reservation">Confirmă rezervarea
-    </button>
+        <div class="flex flex-row items-center gap-2 mt-3">
+            <input type="radio" name="reservation" class="btn btn-error btn-outline" autocomplete="off"
+                   aria-label="Anulează"
+                   onclick="document.getElementById('confirmation').innerHTML = ''">
+
+            <button class="btn btn-primary"
+                    hx-vals='{"hour": {{ start_hour }} }'
+                    hx-target="#confirmation"
+                    hx-swap="outerHTML"
+                    hx-post="/reservation">Confirmă rezervarea
+            </button>
+
+        </div>
+    </div>
 </div>

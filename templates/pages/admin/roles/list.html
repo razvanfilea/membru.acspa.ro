@@ -23,7 +23,9 @@
                 {% if let Some(color) = role.color %}
                 <p>Culoare rezervări: <b>{{ color }}</b></p>
                 {% endif %}
-                <p>Access la panou de administrare: <b>{{ role.admin_panel_access }}</b></p>
+                {% if role.admin_panel_access %}
+                <p>Access la panoul de administrare</p>
+                {% endif %}
                 <p class="text-lg mt-2">Membri cu acest rol: <b>{{ role.members_count }}</b></p>
             </div>
 

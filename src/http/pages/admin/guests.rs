@@ -1,7 +1,6 @@
 use askama_axum::{IntoResponse, Template};
-use axum::extract::{Path, State};
-use axum::http::StatusCode;
-use axum::routing::{delete, get, post, put};
+use axum::extract::State;
+use axum::routing::{get, post, put};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
@@ -19,7 +18,6 @@ pub fn router() -> Router<AppState> {
         .route("/", get(guests_page))
         .route("/", put(create_guest))
         .route("/select_hour", post(select_hour))
-        .route("/:id", delete(delete_guest))
 }
 
 pub struct GuestDto {
@@ -29,13 +27,14 @@ pub struct GuestDto {
     hour: i64,
     as_guest: bool,
     created_by: String,
+    created_by_id: i64,
     created_at: OffsetDateTime,
 }
 
 async fn get_guests(pool: &SqlitePool) -> Vec<GuestDto> {
     query_as!(
         GuestDto,
-        r#"select r._rowid_ as 'rowid!', r.created_for 'name!', r.date, r.hour, r.as_guest, r.created_at, u.name as created_by
+        r#"select r._rowid_ as 'rowid!', r.created_for 'name!', r.date, r.hour, r.as_guest, r.created_at, r.user_id as created_by_id, u.name as created_by
         from reservations r
         inner join users u on r.user_id = u.id
         where r.created_for is not null
@@ -145,19 +144,4 @@ async fn create_guest(
     GuestsListTemplate {
         guests: get_guests(&state.read_pool).await,
     }
-}
-
-async fn delete_guest(State(state): State<AppState>, Path(id): Path<i64>) -> impl IntoResponse {
-    let rows_affected = query!("delete from reservations where rowid = $1", id)
-        .execute(&state.write_pool)
-        .await
-        .expect("Database error")
-        .rows_affected();
-
-    if rows_affected == 1 {
-        let _ = state.reservation_notifier.send(());
-        return ().into_response();
-    }
-
-    StatusCode::BAD_REQUEST.into_response()
 }

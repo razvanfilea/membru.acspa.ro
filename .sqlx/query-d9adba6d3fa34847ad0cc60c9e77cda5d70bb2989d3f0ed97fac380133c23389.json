@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select r._rowid_ as 'rowid!', r.created_for 'name!', r.date, r.hour, r.as_guest, r.created_at, u.name as created_by\n        from reservations r\n        inner join users u on r.user_id = u.id\n        where r.created_for is not null\n        order by date desc, hour, created_at",
+  "query": "select r._rowid_ as 'rowid!', r.created_for 'name!', r.date, r.hour, r.as_guest, r.created_at, r.user_id as created_by_id, u.name as created_by\n        from reservations r\n        inner join users u on r.user_id = u.id\n        where r.created_for is not null\n        order by date desc, hour, created_at",
   "describe": {
     "columns": [
       {
@@ -34,8 +34,13 @@
         "type_info": "Datetime"
       },
       {
-        "name": "created_by",
+        "name": "created_by_id",
         "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_by",
+        "ordinal": 7,
         "type_info": "Text"
       }
     ],
@@ -49,8 +54,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "ecc70d63320576838a35bff249ae9a855d658c4dbb76000624c8f453e40f402c"
+  "hash": "d9adba6d3fa34847ad0cc60c9e77cda5d70bb2989d3f0ed97fac380133c23389"
 }

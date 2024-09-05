@@ -7,7 +7,7 @@
             {% if let Some(description) = day.description %}
             <p>Nume: <b>{{ description }}</b></p>
             {% endif %}
-            <p class="text-sm">Creat pe: {{ day.created_at.format(date_formats::READABLE_DATE_TIME).unwrap() }}</p>
+            <p class="text-sm">Creat pe: {{ day.created_at.format(date_formats::READABLE_DATE).unwrap() }}</p>
         </div>
 
         <button class="btn btn-square btn-sm btn-error btn-outline"

@@ -9,12 +9,14 @@
             {% if !guest.as_guest %}
             <p class="text-pink-500">Special</p>
             {% endif %}
-            <p class="text-sm">Creat de {{ guest.created_by }} pe {{ guest.created_at.format(date_formats::READABLE_DATE_TIME).unwrap() }}</p>
+            <p class="text-sm">Creat de {{ guest.created_by }} pe {{ guest.created_at.format(date_formats::READABLE_DATE).unwrap() }}</p>
         </div>
+
+        {% let selected_date_formatted = guest.date.format(date_formats::ISO_DATE).unwrap() %}
 
         <button
                 class="btn btn-square btn-sm btn-error btn-outline"
-                hx-delete='/admin/guests/{{ guest.rowid }}'
+                hx-delete='/reservation?date={{ selected_date_formatted }}&hour={{ guest.hour }}&user_id={{ guest.created_by_id }}&created_for={{ guest.name }}'
                 hx-target="#guest_{{ guest.rowid }}"
                 hx-swap="outerHTML">
             <span class="material-symbols-outlined">delete</span>
