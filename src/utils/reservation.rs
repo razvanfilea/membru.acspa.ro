@@ -290,7 +290,6 @@ mod test {
     use super::*;
     use sqlx::SqlitePool;
     use time::macros::{date, datetime};
-    use crate::utils::reservation::ReservationError::NoMoreReservation;
 
     async fn setup(
         pool: &SqlitePool,
@@ -410,7 +409,7 @@ mod test {
 
     #[sqlx::test]
     async fn only_guest(pool: SqlitePool) {
-        let (location, user_1, user_2) = setup(&pool, 0, 2, 0).await;
+        let (location, user_1, user_2) = setup(&pool, 0, 2, 1).await;
 
         let now = datetime!(2024-07-11 10:00:00 +00:00:00);
         let date_1 = date!(2024 - 07 - 11);
@@ -515,13 +514,13 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user, weekend, 10).await,
-            Err(NoMoreReservation)
+            Err(ReservationError::NoMoreReservation)
         );
     }
 
     #[sqlx::test]
     async fn restrictions(pool: SqlitePool) {
-        let (location, user, _) = setup(&pool, 1, 1, 0).await;
+        let (location, user, _) = setup(&pool, 1, 1, 1).await;
 
         query!("insert into restrictions (message, location, date, hour) values ('res1', $1, '2024-07-11', NULL), ('res2', $1, '2024-07-12', 18)", location.id)
             .execute(&pool)
@@ -557,7 +556,7 @@ mod test {
 
     #[sqlx::test]
     async fn in_waiting(pool: SqlitePool) {
-        let (location, user_1, user_2) = setup(&pool, 1, 0, 1).await;
+        let (location, user_1, user_2) = setup(&pool, 1, 1, 1).await;
         query!(
             "insert into users (id, email, name, password_hash, role_id, has_key)
             VALUES (3000, 'test3@test.com', 'Test3', '', 100, FALSE)"
