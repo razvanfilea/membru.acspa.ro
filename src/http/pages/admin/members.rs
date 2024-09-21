@@ -5,12 +5,14 @@ use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
+use time::Date;
 use tracing::error;
 
 use crate::http::auth::generate_hash_from_password;
 use crate::http::pages::{get_user, AuthSession};
 use crate::http::AppState;
 use crate::model::user::User;
+use crate::utils::{date_formats, local_time};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -41,6 +43,10 @@ async fn get_role_id(state: &AppState, role: impl AsRef<str>) -> Option<i64> {
         .await
         .expect("Database error")
         .map(|row| row.id)
+}
+
+fn map_date_to_string(date: &Option<Date>) -> String {
+    date.map(|date| date.format(date_formats::READABLE_DATE).unwrap()).unwrap_or_else(|| "?".to_string())
 }
 
 async fn members_page(
@@ -84,7 +90,7 @@ async fn search_members(
 
     let members = query_as!(
         User,
-        "select * from users_with_role where name like $1 or email like $1 order by name",
+        "select * from users_with_role where name like $1 or email like $1 or role like $1 order by name, email, role",
         query
     )
     .fetch_all(&state.read_pool)
@@ -131,7 +137,7 @@ async fn create_new_user(
     let has_key = new_user.has_key.is_some();
     let password_hash = generate_hash_from_password(new_user.password);
     query!(
-        "insert into users (email, name, role_id, has_key, password_hash) VALUES ($1, $2, $3, $4, $5)",
+        "insert into users (email, name, role_id, has_key, password_hash, member_since) VALUES ($1, $2, $3, $4, $5, date('now'))",
         new_user.email,
         new_user.name,
         role_id,
@@ -159,12 +165,14 @@ async fn edit_member_page(
     #[derive(Template)]
     #[template(path = "pages/admin/members/edit.html")]
     struct EditMemberTemplate {
+        current_date: String,
         user: User,
         roles: Vec<String>,
         existing_user: User,
     }
 
     EditMemberTemplate {
+        current_date: local_time().date().format(date_formats::ISO_DATE).unwrap(),
         user: auth_session.user.expect("User should be logged in"),
         roles: get_all_roles(&state).await,
         existing_user: get_user(&state.read_pool, user_id).await,
@@ -177,25 +185,36 @@ struct ExistingUser {
     name: String,
     role: String,
     has_key: Option<String>,
+    birthday: Option<String>,
+    member_since: Option<String>,
+    received_gift: Option<String>,
 }
 
 async fn update_user(
     State(state): State<AppState>,
     Path(user_id): Path<i64>,
-    Form(user): Form<ExistingUser>,
+    Form(updated_user): Form<ExistingUser>,
 ) -> impl IntoResponse {
-    let role_id = get_role_id(&state, user.role.as_str())
+    let parse_date = |date: String| Date::parse(date.as_str(), date_formats::ISO_DATE).unwrap();
+    
+    let role_id = get_role_id(&state, updated_user.role.as_str())
         .await
         .expect("Invalid role");
-
-    let has_key = user.has_key.is_some();
+    let has_key = updated_user.has_key.is_some();
+    let birthday = updated_user.birthday.map(parse_date);
+    let member_since = updated_user.member_since.map(parse_date);
+    let received_gift = updated_user.received_gift.map(parse_date);
+    
     query!(
-        "update users set email = $2, name = $3, role_id = $4, has_key = $5 where id = $1",
+        "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8 where id = $1",
         user_id,
-        user.email,
-        user.name,
+        updated_user.email,
+        updated_user.name,
         role_id,
-        has_key
+        has_key,
+        birthday,
+        member_since,
+        received_gift
     )
     .execute(&state.write_pool)
     .await

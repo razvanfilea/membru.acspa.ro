@@ -5,25 +5,29 @@
              height="48px" alt="{{user.name}}"/>
         <div class="flex flex-col">
             <div class="flex flex-row items-center gap-4">
-                {{ user.name }}
+                <p class="text-white">{{ user.name }}</p>
                 {% if user.has_key %}
                 <span class="material-symbols-outlined">vpn_key</span>
                 {% endif %}
             </div>
-            <span class="text-sm text-gray-300">{{ user.role }} • {{ user.email }}</span>
+            <span class="text-sm text-gray-100">{{ user.role }} • {{ user.email }}</span>
+            <span class="text-sm text-gray-100">Zi de naștere: {{ self::map_date_to_string(user.birthday) }} • Membru din: {{ self::map_date_to_string(user.member_since) }}</span>
+            {% if user.received_gift.is_some() %}
+            <span class="text-sm text-gray-100">Primit cadou pe: {{ self::map_date_to_string(user.received_gift) }}</span>
+            {% endif %}
         </div>
     </div>
 
-    <div class="flex flex-row gap-4">
-        <a href="/admin/members/change_password/{{ user.id }}">
-            <button title="Schimbă parola" class="btn btn-square btn-warning btn-sm btn-outline">
-                <span class="material-symbols-outlined">password</span>
-            </button>
-        </a>
-
+    <div class="flex flex-col md:flex-row gap-4">
         <a href="/admin/members/edit/{{ user.id }}">
             <button title="Editează" class="btn btn-square btn-sm btn-outline">
                 <span class="material-symbols-outlined">edit</span>
+            </button>
+        </a>
+
+        <a href="/admin/members/change_password/{{ user.id }}">
+            <button title="Schimbă parola" class="btn btn-square btn-warning btn-sm btn-outline">
+                <span class="material-symbols-outlined">password</span>
             </button>
         </a>
     </div>

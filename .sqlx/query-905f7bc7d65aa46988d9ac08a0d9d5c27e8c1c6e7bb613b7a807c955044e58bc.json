@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from users_with_role where name like $1 or email like $1 order by name",
+  "query": "select * from users_with_role where name like $1 or email like $1 or role like $1 order by name, email, role",
   "describe": {
     "columns": [
       {
@@ -24,18 +24,38 @@
         "type_info": "Text"
       },
       {
-        "name": "has_key",
+        "name": "role_id",
         "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "has_key",
+        "ordinal": 5,
         "type_info": "Bool"
       },
       {
+        "name": "birthday",
+        "ordinal": 6,
+        "type_info": "Date"
+      },
+      {
+        "name": "member_since",
+        "ordinal": 7,
+        "type_info": "Date"
+      },
+      {
+        "name": "received_gift",
+        "ordinal": 8,
+        "type_info": "Date"
+      },
+      {
         "name": "role",
-        "ordinal": 5,
+        "ordinal": 9,
         "type_info": "Text"
       },
       {
         "name": "admin_panel_access",
-        "ordinal": 6,
+        "ordinal": 10,
         "type_info": "Bool"
       }
     ],
@@ -49,8 +69,12 @@
       false,
       false,
       false,
+      true,
+      true,
+      true,
+      false,
       false
     ]
   },
-  "hash": "c98bd5955ee6fc4023b30c94ad0958f9728781fa0a764929c4473afff62c45ed"
+  "hash": "905f7bc7d65aa46988d9ac08a0d9d5c27e8c1c6e7bb613b7a807c955044e58bc"
 }

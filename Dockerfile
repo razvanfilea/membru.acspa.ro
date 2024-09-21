@@ -1,6 +1,6 @@
 ARG TARGET_ARCH=x86_64-unknown-linux-musl
 
-FROM rust:1.80-alpine AS base
+FROM rust:1.81-alpine AS base
 USER root
 
 RUN apk add --no-cache deno musl-dev

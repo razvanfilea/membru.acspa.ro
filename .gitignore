@@ -3,4 +3,4 @@
 /assets/css/main.css
 
 .env
-test.db*
+*.db*

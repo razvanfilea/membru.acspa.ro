@@ -51,6 +51,8 @@ async fn main() -> anyhow::Result<()> {
         .connect_with(connection_options.optimize_on_close(true, None))
         .await?;
 
+    sqlx::migrate!().run(&write_pool).await?;
+
     let session_store = SqliteStore::new(write_pool.clone());
     session_store
         .migrate()

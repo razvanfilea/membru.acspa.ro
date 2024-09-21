@@ -1,5 +1,6 @@
 use axum_login::AuthUser;
 use serde::Deserialize;
+use time::Date;
 use validator::Validate;
 
 #[derive(Debug, Clone)]
@@ -8,9 +9,13 @@ pub struct User {
     pub email: String,
     pub name: String,
     pub password_hash: String,
+    pub role_id: i64,
     pub role: String,
     pub has_key: bool,
     pub admin_panel_access: bool,
+    pub birthday: Option<Date>,
+    pub member_since: Option<Date>,
+    pub received_gift: Option<Date>,
 }
 
 impl AuthUser for User {

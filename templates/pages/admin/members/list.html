@@ -14,10 +14,10 @@
             </button>
         </a>
     </div>
-    <label class="input input-bordered flex items-center gap-2 mx-4 mb-6">
+    <label class="input input-bordered flex items-center gap-2 md:mx-4 mb-6">
         <span class="material-symbols-outlined">search</span>
 
-        <input type="search" name="search" class="grow" placeholder="Search" autocomplete="off"
+        <input type="search" name="search" class="grow" placeholder="Caută după nume, email sau rol" autocomplete="off"
                hx-post="/admin/members/search" hx-trigger="input changed delay:500ms, search"
                hx-target="#members_list"/>
     </label>
