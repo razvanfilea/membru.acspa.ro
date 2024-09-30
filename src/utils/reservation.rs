@@ -6,6 +6,7 @@ use crate::model::user::User;
 use crate::utils::is_free_day;
 use sqlx::{query, query_as, SqlitePool};
 use time::{Date, OffsetDateTime};
+use tracing::error;
 
 #[derive(Debug, PartialEq)]
 pub enum ReservationSuccess {
@@ -249,7 +250,7 @@ pub async fn create_reservation(
 
     if let ReservationSuccess::Reservation { deletes_guest } = success {
         if deletes_guest {
-            query!(
+            let deleted_guests = query!(
                 "delete from reservations where rowid in
                 (select rowid from reservations
                 where date = $1 and hour = $2 and location = $3 and as_guest = true
@@ -260,7 +261,17 @@ pub async fn create_reservation(
             )
             .execute(tx.as_mut())
             .await
-            .map_err(ReservationError::from)?;
+            .map_err(ReservationError::from)?
+            .rows_affected();
+            
+            if deleted_guests > 1 {
+                error!("Deleted more than one guest reservation");
+                return Err(ReservationError::DatabaseError("Deleted more than one guest reservation".to_string()));
+            }
+            
+            if deleted_guests == 0 {
+                return Err(ReservationError::SlotFull);
+            }
         }
     }
 
@@ -347,7 +358,7 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
-            Err(ReservationError::AlreadyExists{cancelled: false})
+            Err(ReservationError::AlreadyExists { cancelled: false })
         );
 
         assert_eq!(
@@ -389,7 +400,7 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user, date_1, 18).await,
-            Err(ReservationError::AlreadyExists{cancelled: false})
+            Err(ReservationError::AlreadyExists { cancelled: false })
         );
 
         assert_eq!(
@@ -427,7 +438,7 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
-            Err(ReservationError::AlreadyExists{cancelled: false})
+            Err(ReservationError::AlreadyExists { cancelled: false })
         );
 
         assert_eq!(
@@ -584,6 +595,21 @@ mod test {
             Ok(ReservationSuccess::InWaiting)
         );
 
+        // Will attempt as normal reservation
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_3, date, 18).await,
+            Err(ReservationError::SlotFull)
+        );
+
+        // Use up the reservation
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_3, date, 20).await,
+            Ok(ReservationSuccess::Reservation {
+                deletes_guest: false
+            })
+        );
+
+        // Attempt as guest
         assert_eq!(
             create_reservation(&pool, &location, now, &user_3, date, 18).await,
             Err(ReservationError::SlotFull)
