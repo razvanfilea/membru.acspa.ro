@@ -196,15 +196,16 @@ async fn update_user(
     Path(user_id): Path<i64>,
     Form(updated_user): Form<ExistingUser>,
 ) -> impl IntoResponse {
+    let filter_is_default = |date: &String| date == "yyyy-mm-dd";
     let parse_date = |date: String| Date::parse(date.as_str(), date_formats::ISO_DATE).unwrap();
     
     let role_id = get_role_id(&state, updated_user.role.as_str())
         .await
         .expect("Invalid role");
     let has_key = updated_user.has_key.is_some();
-    let birthday = updated_user.birthday.map(parse_date);
-    let member_since = updated_user.member_since.map(parse_date);
-    let received_gift = updated_user.received_gift.map(parse_date);
+    let birthday = updated_user.birthday.filter(filter_is_default).map(parse_date);
+    let member_since = updated_user.member_since.filter(filter_is_default).map(parse_date);
+    let received_gift = updated_user.received_gift.filter(filter_is_default).map(parse_date);
     
     query!(
         "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8 where id = $1",
