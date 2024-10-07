@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from reservations where user_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "fac4bc9f918d56c847f9b9d8faa9de9183731604069256200111040d92cb1193"
+}

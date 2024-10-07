@@ -25,7 +25,7 @@ pub enum ReservationError {
     Other(&'static str),
 }
 
-pub type ReservationResult = Result<ReservationSuccess, ReservationError>;
+pub type ReservationResult<T = ReservationSuccess> = Result<T, ReservationError>;
 
 impl From<sqlx::Error> for ReservationError {
     fn from(value: sqlx::Error) -> Self {
@@ -63,7 +63,7 @@ fn check_parameters_validity(
     is_free_day: bool,
     selected_date: Date,
     selected_hour: u8,
-) -> Result<(), ReservationError> {
+) -> ReservationResult<()> {
     let now_date = now.date();
     let now_hour = now.time().hour();
 

@@ -24,6 +24,7 @@ pub fn router() -> Router<AppState> {
         .route("/edit/:id", post(update_user))
         .route("/change_password/:id", get(change_password_page))
         .route("/change_password/:id", post(update_password))
+        .route("/delete/:id", post(delete_user))
 }
 
 async fn get_all_roles(state: &AppState) -> Vec<String> {
@@ -245,6 +246,29 @@ async fn change_password_page(
         user: auth_session.user.expect("User should be logged in"),
         existing_user: get_user(&state.read_pool, user_id).await,
     }
+}
+
+async fn delete_user(
+    State(state): State<AppState>,
+    Path(user_id): Path<i64>,
+) -> impl IntoResponse {
+    query!("delete from reservations where user_id = $1", user_id)
+        .execute(&state.write_pool)
+        .await
+        .expect("Database error");
+    
+    query!("delete from users where id = $1", user_id)
+        .execute(&state.write_pool)
+        .await
+        .expect("Database error");
+
+    Response::builder()
+        .header("HX-Redirect", "/admin/members")
+        .body("Utilizatorul a fost sters cu success".to_string())
+        .map_err(|e| {
+            error!("Failed to return headers: {e}");
+            "OOps".to_string() // TODO
+        })
 }
 
 #[derive(Deserialize)]
