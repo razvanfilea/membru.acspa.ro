@@ -9,7 +9,6 @@ use axum::routing::{delete, get, put};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
-use time::macros::format_description;
 use time::{Date, OffsetDateTime};
 use tracing::info;
 
@@ -22,18 +21,22 @@ pub fn router() -> Router<AppState> {
 
 struct FreeDay {
     date: Date,
-    description: Option<String>,
+    description: String,
     created_at: OffsetDateTime,
 }
 
 async fn get_free_days(pool: &SqlitePool) -> Vec<FreeDay> {
-    query_as!(
-        FreeDay,
-        "select * from free_days order by date desc, created_at"
-    )
-    .fetch_all(pool)
-    .await
-    .expect("Database error")
+    query!("select * from free_days order by date desc, created_at")
+        .fetch_all(pool)
+        .await
+        .expect("Database error")
+        .into_iter()
+        .map(|day| FreeDay {
+            date: day.date,
+            description: day.description.unwrap_or_default(),
+            created_at: day.created_at,
+        })
+        .collect()
 }
 
 async fn free_days_page(
@@ -102,7 +105,7 @@ async fn delete_free_day(
     State(state): State<AppState>,
     Path(date): Path<String>,
 ) -> impl IntoResponse {
-    let date = Date::parse(&date, format_description!("[year]-[month]-[day]")).unwrap();
+    let date = Date::parse(&date, date_formats::ISO_DATE).unwrap();
 
     query!("delete from free_days where date = $1", date)
         .execute(&state.write_pool)
