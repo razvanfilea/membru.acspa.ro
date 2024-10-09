@@ -75,8 +75,12 @@
             {% include "components/side_bar.html" %}
             {% endblock %}
         </ul>
-
     </nav>
+
+    <div class="absolute bottom-0 right-0">
+        <div id="errors-list" class="flex flex-col gap-4 p-4">
+        </div>
+    </div>
 
     <dialog id="help_modal" class="modal">
         <div class="modal-box">

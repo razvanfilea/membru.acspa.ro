@@ -11,6 +11,7 @@ use sqlx::{query_as, SqlitePool};
 mod admin;
 mod home;
 mod user;
+pub mod error_template;
 
 pub type AuthSession = axum_login::AuthSession<UserAuthenticator>;
 

@@ -8,7 +8,7 @@ use axum::extract::{Path, State};
 use axum::routing::{delete, get, put};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{query, query_as, SqlitePool};
+use sqlx::{query, SqlitePool};
 use time::{Date, OffsetDateTime};
 use tracing::info;
 

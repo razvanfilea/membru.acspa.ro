@@ -1,0 +1,9 @@
+<div hx-swap-oob="beforeend:#errors-list">
+    <div role="alert" class="alert alert-error">
+        <span class="material-symbols-outlined h-6 w-6 shrink-0">error</span>
+
+        <span>{{ message }}</span>
+
+        <button class="btn btn-sm" onclick="this.parentNode.outerHTML = ''">X</button>
+    </div>
+</div>

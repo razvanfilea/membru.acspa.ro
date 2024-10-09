@@ -1,9 +1,10 @@
+use std::any::Any;
 use crate::http::auth::UserAuthenticator;
 use crate::model::location::Location;
 use crate::utils::local_time;
 use anyhow::Context;
 use askama::Template;
-use axum::response::IntoResponse;
+use axum::response::{IntoResponse, Response};
 use axum::Router;
 use axum_login::tower_sessions::cookie::SameSite;
 use axum_login::tower_sessions::{Expiry, SessionManagerLayer};
@@ -14,11 +15,13 @@ use std::sync::Arc;
 use tokio::signal;
 use tokio::sync::watch;
 use tokio::time::interval;
+use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace;
 use tower_http::trace::TraceLayer;
 use tower_sessions_sqlx_store::SqliteStore;
 use tracing::{info, Level};
+use crate::http::pages::error_template::error_bubble_response;
 
 mod auth;
 mod pages;
@@ -105,6 +108,18 @@ async fn shutdown_signal() {
     }
 }
 
+fn handle_panic(err: Box<dyn Any + Send + 'static>) -> Response {
+    let details = if let Some(s) = err.downcast_ref::<String>() {
+        s.clone()
+    } else if let Some(s) = err.downcast_ref::<&str>() {
+        s.to_string()
+    } else {
+        "Unknown panic message".to_string()
+    };
+
+    error_bubble_response(details)
+}
+
 pub async fn http_server(
     app_state: AppState,
     session_store: SqliteStore,
@@ -126,6 +141,7 @@ pub async fn http_server(
         .merge(pages::router())
         .with_state(app_state)
         .fallback(handler_404)
+        .layer(CatchPanicLayer::custom(handle_panic))
         .layer((
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
