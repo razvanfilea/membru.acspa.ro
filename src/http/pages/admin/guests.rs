@@ -79,7 +79,8 @@ async fn select_hour(
         hours: Vec<u8>,
     }
 
-    let date = Date::parse(&form.date, date_formats::ISO_DATE).expect("Data selectata este invalidă");
+    let date =
+        Date::parse(&form.date, date_formats::ISO_DATE).expect("Data selectata este invalidă");
 
     let hour_structure = get_hour_structure_for_day(&state, date).await;
 

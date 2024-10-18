@@ -1,6 +1,8 @@
 use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationsSlot};
 use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
+use crate::http::pages::AuthSession;
 use crate::http::AppState;
+use crate::model::user::User;
 use crate::utils::date_iter::DateIter;
 use crate::utils::CssColor;
 use crate::utils::{date_formats, local_time};
@@ -13,10 +15,12 @@ use serde::Deserialize;
 use time::Date;
 use tokio::select;
 use tracing::{error, warn};
-use crate::http::pages::AuthSession;
-use crate::model::user::User;
 
-pub async fn ws(State(state): State<AppState>, auth_session: AuthSession, ws: WebSocketUpgrade) -> impl IntoResponse {
+pub async fn ws(
+    State(state): State<AppState>,
+    auth_session: AuthSession,
+    ws: WebSocketUpgrade,
+) -> impl IntoResponse {
     let user = auth_session.user.expect("User should be logged in");
     ws.on_upgrade(move |socket| handle_socket(socket, state, user))
 }

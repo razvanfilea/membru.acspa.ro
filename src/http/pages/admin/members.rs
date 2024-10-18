@@ -47,7 +47,8 @@ async fn get_role_id(state: &AppState, role: impl AsRef<str>) -> Option<i64> {
 }
 
 fn map_date_to_string(date: &Option<Date>) -> String {
-    date.map(|date| date.format(date_formats::READABLE_DATE).unwrap()).unwrap_or_else(|| "?".to_string())
+    date.map(|date| date.format(date_formats::READABLE_DATE).unwrap())
+        .unwrap_or_else(|| "?".to_string())
 }
 
 async fn members_page(
@@ -198,15 +199,24 @@ async fn update_user(
 ) -> impl IntoResponse {
     let filter_is_default = |date: &String| date == "yyyy-mm-dd";
     let parse_date = |date: String| Date::parse(date.as_str(), date_formats::ISO_DATE).unwrap();
-    
+
     let role_id = get_role_id(&state, updated_user.role.as_str())
         .await
         .expect("Invalid role");
     let has_key = updated_user.has_key.is_some();
-    let birthday = updated_user.birthday.filter(filter_is_default).map(parse_date);
-    let member_since = updated_user.member_since.filter(filter_is_default).map(parse_date);
-    let received_gift = updated_user.received_gift.filter(filter_is_default).map(parse_date);
-    
+    let birthday = updated_user
+        .birthday
+        .filter(filter_is_default)
+        .map(parse_date);
+    let member_since = updated_user
+        .member_since
+        .filter(filter_is_default)
+        .map(parse_date);
+    let received_gift = updated_user
+        .received_gift
+        .filter(filter_is_default)
+        .map(parse_date);
+
     query!(
         "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8 where id = $1",
         user_id,
@@ -249,15 +259,12 @@ async fn change_password_page(
     }
 }
 
-async fn delete_user(
-    State(state): State<AppState>,
-    Path(user_id): Path<i64>,
-) -> impl IntoResponse {
+async fn delete_user(State(state): State<AppState>, Path(user_id): Path<i64>) -> impl IntoResponse {
     query!("delete from reservations where user_id = $1", user_id)
         .execute(&state.write_pool)
         .await
         .expect("Database error");
-    
+
     query!("delete from users where id = $1", user_id)
         .execute(&state.write_pool)
         .await

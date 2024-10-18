@@ -48,7 +48,11 @@ impl Display for ReservationError {
                 f,
                 "S-a atins numărul maxim de rezervări pentru intervalul orar."
             ),
-            ReservationError::DatabaseError(e) => write!(f, "Eroare cu baza de date, trimite te rog un screenshot cu aceasta eroare: {}", e),
+            ReservationError::DatabaseError(e) => write!(
+                f,
+                "Eroare cu baza de date, trimite te rog un screenshot cu aceasta eroare: {}",
+                e
+            ),
             ReservationError::NoMoreReservation => {
                 write!(f, "Ți-ai epuizat rezervările pe săptămâna aceasta")
             }
@@ -245,8 +249,15 @@ pub async fn create_reservation(
     selected_hour: u8,
 ) -> ReservationResult {
     let mut tx = pool.begin().await.map_err(ReservationError::from)?;
-    let success =
-        is_reservation_possible(tx.as_mut(), location, now, user, selected_date, selected_hour).await?;
+    let success = is_reservation_possible(
+        tx.as_mut(),
+        location,
+        now,
+        user,
+        selected_date,
+        selected_hour,
+    )
+    .await?;
 
     if let ReservationSuccess::Reservation { deletes_guest } = success {
         if deletes_guest {
@@ -263,12 +274,14 @@ pub async fn create_reservation(
             .await
             .map_err(ReservationError::from)?
             .rows_affected();
-            
+
             if deleted_guests > 1 {
                 error!("Deleted more than one guest reservation");
-                return Err(ReservationError::DatabaseError("Deleted more than one guest reservation".to_string()));
+                return Err(ReservationError::DatabaseError(
+                    "Deleted more than one guest reservation".to_string(),
+                ));
             }
-            
+
             if deleted_guests == 0 {
                 return Err(ReservationError::SlotFull);
             }
@@ -284,13 +297,14 @@ pub async fn create_reservation(
             selected_date,
             selected_hour
         )
-            .fetch_one(&mut *tx)
-            .await
-            .map_err(ReservationError::from)?
-            .count;
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(ReservationError::from)?
+        .count;
 
         if total_reservation_in_slot >= location.slot_capacity {
-            return Err(ReservationError::DatabaseError(format!("A aparut o eroare la insciere pe data {selected_date} ora {selected_hour}, te rog trimite un screenshot cu aceasta eroare unui administrator.")));
+            return Err(
+                ReservationError::DatabaseError(format!("A aparut o eroare la insciere pe data {selected_date} ora {selected_hour} ca {:?}, te rog trimite un screenshot cu aceasta eroare unui administrator.", success)));
         }
     }
 

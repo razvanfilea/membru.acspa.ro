@@ -11,7 +11,7 @@ pub struct Reservation {
     pub has_account: bool,
     pub color: CssColor,
     pub waiting: bool,
-    
+
     pub user_id: i64,
     pub created_for: Option<String>,
 }

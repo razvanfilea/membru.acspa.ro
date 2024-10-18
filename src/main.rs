@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
         )))
         .with(tracing_subscriber::fmt::layer().compact())
         .init();
-    
+
     let database_url = std::env::var("DATABASE_URL").context("Failed to get database URL")?;
     let connection_options = SqliteConnectOptions::from_str(&database_url)?
         .journal_mode(SqliteJournalMode::Wal)

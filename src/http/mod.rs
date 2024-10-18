@@ -1,5 +1,5 @@
-use std::any::Any;
 use crate::http::auth::UserAuthenticator;
+use crate::http::pages::error_template::error_bubble_response;
 use crate::model::location::Location;
 use crate::utils::local_time;
 use anyhow::Context;
@@ -10,6 +10,7 @@ use axum_login::tower_sessions::cookie::SameSite;
 use axum_login::tower_sessions::{Expiry, SessionManagerLayer};
 use axum_login::AuthManagerLayerBuilder;
 use sqlx::{query, query_as, SqlitePool};
+use std::any::Any;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::signal;
@@ -21,7 +22,6 @@ use tower_http::trace;
 use tower_http::trace::TraceLayer;
 use tower_sessions_sqlx_store::SqliteStore;
 use tracing::{info, Level};
-use crate::http::pages::error_template::error_bubble_response;
 
 mod auth;
 mod pages;
