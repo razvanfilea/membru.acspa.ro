@@ -4,7 +4,7 @@ use crate::model::location::Location;
 use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::utils::is_free_day;
-use sqlx::{query, query_as, SqlitePool};
+use sqlx::{query, query_as, SqliteConnection, SqlitePool};
 use time::{Date, OffsetDateTime};
 use tracing::error;
 
@@ -48,7 +48,7 @@ impl Display for ReservationError {
                 f,
                 "S-a atins numărul maxim de rezervări pentru intervalul orar."
             ),
-            ReservationError::DatabaseError(e) => write!(f, "Database error: {}", e),
+            ReservationError::DatabaseError(e) => write!(f, "Eroare cu baza de date, trimite te rog un screenshot cu aceasta eroare: {}", e),
             ReservationError::NoMoreReservation => {
                 write!(f, "Ți-ai epuizat rezervările pe săptămâna aceasta")
             }
@@ -95,14 +95,14 @@ fn check_parameters_validity(
 }
 
 pub async fn is_reservation_possible(
-    pool: &SqlitePool,
+    tx: &'_ mut SqliteConnection,
     location: &Location,
     now: OffsetDateTime,
     user: &User,
     selected_date: Date,
     selected_hour: u8,
 ) -> ReservationResult {
-    let is_free_day = is_free_day(pool, selected_date).await;
+    let is_free_day = is_free_day(&mut *tx, selected_date).await;
 
     check_parameters_validity(location, now, is_free_day, selected_date, selected_hour)?;
 
@@ -114,7 +114,7 @@ pub async fn is_reservation_possible(
         selected_hour,
         user.id
     )
-    .fetch_optional(pool)
+    .fetch_optional(&mut *tx)
     .await
     .map_err(ReservationError::from)?;
 
@@ -130,7 +130,7 @@ pub async fn is_reservation_possible(
         selected_date,
         selected_hour
     )
-        .fetch_optional(pool)
+        .fetch_optional(&mut *tx)
         .await
         .map_err(ReservationError::from)?;
 
@@ -144,7 +144,7 @@ pub async fn is_reservation_possible(
         "select * from user_roles where name = $1",
         user.role
     )
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await
     .map_err(ReservationError::from)?;
 
@@ -155,7 +155,7 @@ pub async fn is_reservation_possible(
         selected_date,
         selected_hour
     )
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await
     .map_err(ReservationError::from)?
     .count;
@@ -167,7 +167,7 @@ pub async fn is_reservation_possible(
         user.id,
         selected_date
     )
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await
     .map_err(ReservationError::from)?
     .count;
@@ -180,7 +180,7 @@ pub async fn is_reservation_possible(
             selected_date,
             selected_hour
         )
-        .fetch_one(pool)
+        .fetch_one(&mut *tx)
         .await
         .map_err(ReservationError::from)?
         .count;
@@ -201,7 +201,7 @@ pub async fn is_reservation_possible(
         selected_date,
         selected_hour
     )
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await
     .map_err(ReservationError::from)?
     .count;
@@ -218,7 +218,7 @@ pub async fn is_reservation_possible(
         user.id,
         selected_date
     )
-    .fetch_one(pool)
+    .fetch_one(&mut *tx)
     .await
     .map_err(ReservationError::from)?
     .count;
@@ -244,9 +244,9 @@ pub async fn create_reservation(
     selected_date: Date,
     selected_hour: u8,
 ) -> ReservationResult {
-    let success =
-        is_reservation_possible(pool, location, now, user, selected_date, selected_hour).await?;
     let mut tx = pool.begin().await.map_err(ReservationError::from)?;
+    let success =
+        is_reservation_possible(tx.as_mut(), location, now, user, selected_date, selected_hour).await?;
 
     if let ReservationSuccess::Reservation { deletes_guest } = success {
         if deletes_guest {
@@ -272,6 +272,25 @@ pub async fn create_reservation(
             if deleted_guests == 0 {
                 return Err(ReservationError::SlotFull);
             }
+        }
+    }
+
+    // sanity check
+    {
+        let total_reservation_in_slot = query!(
+            "select count(*) as 'count!' from reservations where
+            location = $1 and date = $2 and hour = $3 and cancelled = false and in_waiting = false",
+            location.id,
+            selected_date,
+            selected_hour
+        )
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(ReservationError::from)?
+            .count;
+
+        if total_reservation_in_slot >= location.slot_capacity {
+            return Err(ReservationError::DatabaseError(format!("A aparut o eroare la insciere pe data {selected_date} ora {selected_hour}, te rog trimite un screenshot cu aceasta eroare unui administrator.")));
         }
     }
 

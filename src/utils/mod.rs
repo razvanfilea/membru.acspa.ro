@@ -5,7 +5,7 @@ pub mod reservation;
 use crate::http::AppState;
 use crate::model::location::HourStructure;
 use crate::utils::reservation::{ReservationError, ReservationResult, ReservationSuccess};
-use sqlx::{query, SqlitePool};
+use sqlx::{query, Executor, Sqlite};
 use strum::{AsRefStr, EnumIter, EnumString};
 use time::{Date, OffsetDateTime, UtcOffset, Weekday};
 
@@ -22,13 +22,16 @@ pub async fn get_hour_structure_for_day(state: &AppState, date: Date) -> HourStr
     }
 }
 
-pub async fn is_free_day(pool: &SqlitePool, date: Date) -> bool {
+pub async fn is_free_day<'a, E>(executor: E, date: Date) -> bool
+where
+    E: Executor<'a, Database = Sqlite>,
+{
     let exists_in_table = async {
         query!(
             "select exists(select true from free_days where date = $1) as 'exists!'",
             date
         )
-        .fetch_one(pool)
+        .fetch_one(executor)
         .await
         .expect("Database error")
         .exists
@@ -47,7 +50,7 @@ pub fn get_reservation_result_color(result: &ReservationResult) -> CssColor {
             ReservationSuccess::InWaiting => CssColor::Blue,
         },
         Err(error) => match error {
-            ReservationError::AlreadyExists{..} => CssColor::Yellow,
+            ReservationError::AlreadyExists { .. } => CssColor::Yellow,
             _ => CssColor::Red,
         },
     }

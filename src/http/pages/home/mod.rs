@@ -5,7 +5,7 @@ use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
 use crate::utils::date_iter::DateIter;
-use crate::utils::reservation::{create_reservation, is_reservation_possible, ReservationSuccess};
+use crate::utils::reservation::{create_reservation, is_reservation_possible, ReservationError, ReservationSuccess};
 use crate::utils::CssColor;
 use crate::utils::{
     date_formats, get_hour_structure_for_day, get_reservation_result_color, local_time,
@@ -19,7 +19,7 @@ use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
 use time::Date;
-use tracing::warn;
+use tracing::{error, warn};
 
 mod reservation_hours;
 mod socket;
@@ -101,8 +101,14 @@ async fn hour_picker(
 
     let structure = get_hour_structure_for_day(&state, selected_date).await;
 
+    let mut tx = state
+        .read_pool
+        .begin()
+        .await
+        .expect("Failed to create transaction");
+    
     let is_possible = is_reservation_possible(
-        &state.read_pool,
+        tx.as_mut(),
         &state.location,
         local_time(),
         &user,
@@ -168,7 +174,12 @@ async fn confirm_reservation(
                 ),
             }
         }
-        Err(e) => e.to_string(),
+        Err(e) => {
+            if let ReservationError::DatabaseError(e) = &e {
+                error!("Database error when creating reservation on {selected_date} hour {selected_hour} for user {}: {e}", user.email);
+            }
+            e.to_string()
+        }
     };
 
     ConfirmedTemplate {
