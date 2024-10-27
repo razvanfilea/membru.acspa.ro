@@ -153,10 +153,7 @@ async fn create_new_user(
     Response::builder()
         .header("HX-Redirect", "/admin/members")
         .body("Utilizatorul a fost creat cu success".to_string())
-        .map_err(|e| {
-            error!("Failed to return headers: {e}");
-            "OOps".to_string() // TODO
-        })
+        .expect("Failed to return headers")
 }
 
 async fn edit_member_page(
@@ -181,7 +178,7 @@ async fn edit_member_page(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct ExistingUser {
     email: String,
     name: String,
@@ -197,25 +194,18 @@ async fn update_user(
     Path(user_id): Path<i64>,
     Form(updated_user): Form<ExistingUser>,
 ) -> impl IntoResponse {
-    let filter_is_default = |date: &String| date == "yyyy-mm-dd";
-    let parse_date = |date: String| Date::parse(date.as_str(), date_formats::ISO_DATE).unwrap();
+    fn parse_date(date: Option<String>) -> Option<Date> {
+        date.filter(|date| !date.is_empty() && date != "yyyy-mm-dd")
+            .and_then(|date| Date::parse(date.as_str(), date_formats::ISO_DATE).ok())
+    }
 
     let role_id = get_role_id(&state, updated_user.role.as_str())
         .await
         .expect("Invalid role");
     let has_key = updated_user.has_key.is_some();
-    let birthday = updated_user
-        .birthday
-        .filter(filter_is_default)
-        .map(parse_date);
-    let member_since = updated_user
-        .member_since
-        .filter(filter_is_default)
-        .map(parse_date);
-    let received_gift = updated_user
-        .received_gift
-        .filter(filter_is_default)
-        .map(parse_date);
+    let birthday = parse_date(updated_user.birthday);
+    let member_since = parse_date(updated_user.member_since);
+    let received_gift = parse_date(updated_user.received_gift);
 
     query!(
         "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8 where id = $1",
@@ -235,10 +225,7 @@ async fn update_user(
     Response::builder()
         .header("HX-Redirect", "/admin/members")
         .body("Utilizatorul a fost creat cu success".to_string())
-        .map_err(|e| {
-            error!("Failed to return headers: {e}");
-            "OOps".to_string() // TODO
-        })
+        .expect("Failed to return headers")
 }
 
 async fn change_password_page(
@@ -272,7 +259,7 @@ async fn delete_user(State(state): State<AppState>, Path(user_id): Path<i64>) ->
 
     Response::builder()
         .header("HX-Redirect", "/admin/members")
-        .body("Utilizatorul a fost sters cu success".to_string())
+        .body("Utilizatorul a fost șters cu success".to_string())
         .map_err(|e| {
             error!("Failed to return headers: {e}");
             "OOps".to_string() // TODO
