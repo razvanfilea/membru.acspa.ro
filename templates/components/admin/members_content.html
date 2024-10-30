@@ -19,6 +19,12 @@
     </div>
 
     <div class="flex flex-col md:flex-row gap-4">
+        <a href="mailto:{{ user.email }}?subject=Cotiza%C8%9Bie%20ACSPA&body=Te%20rog%20verific%C4%83%20plata%20cotiza%C8%9Biei%20de%20membru%20ACS%20PA">
+            <button title="Trimite mail cotizație" class="btn btn-square btn-sm btn-outline">
+                <span class="material-symbols-outlined">email</span>
+            </button>
+        </a>
+
         <a href="/admin/members/edit/{{ user.id }}">
             <button title="Editează" class="btn btn-square btn-sm btn-outline">
                 <span class="material-symbols-outlined">edit</span>
