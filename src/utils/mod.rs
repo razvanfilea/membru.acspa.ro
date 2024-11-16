@@ -1,3 +1,4 @@
+mod color;
 pub mod date_formats;
 pub mod date_iter;
 pub mod reservation;
@@ -5,9 +6,11 @@ pub mod reservation;
 use crate::http::AppState;
 use crate::model::location::HourStructure;
 use crate::utils::reservation::{ReservationError, ReservationResult, ReservationSuccess};
-use sqlx::{query, Executor, Sqlite};
-use strum::{AsRefStr, EnumIter, EnumString};
+pub use color::*;
+use sqlx::{query, query_as, Executor, Sqlite, SqlitePool};
 use time::{Date, OffsetDateTime, UtcOffset, Weekday};
+use tracing::error;
+use crate::model::user_reservation::UserReservation;
 
 pub fn local_time() -> OffsetDateTime {
     let offset = UtcOffset::current_local_offset().expect("Failed to set Soundness to Unsound");
@@ -56,17 +59,19 @@ pub fn get_reservation_result_color(result: &ReservationResult) -> CssColor {
     }
 }
 
-#[derive(Debug, PartialEq, EnumString, EnumIter, strum::Display, AsRefStr)]
-pub enum CssColor {
-    None,
-    Blue,
-    Red,
-    Pink,
-    Green,
-    Yellow,
-    Orange,
-    Violet,
-    Indigo,
-    Brown,
-    Gray,
+pub async fn get_user_reservations(
+    pool: &SqlitePool,
+    email: &str,
+    cancelled: bool,
+) -> Vec<UserReservation> {
+    query_as!(
+        UserReservation,
+        "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = $2 and created_for is null order by date desc, hour asc",
+        email,
+        cancelled
+    ).fetch_all(pool)
+        .await
+        .inspect_err(|e| error!("Failed querying reservations for user: {e}"))
+        .unwrap_or_default()
 }
+

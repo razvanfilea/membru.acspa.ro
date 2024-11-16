@@ -2,10 +2,7 @@ use crate::http::pages::{get_global_vars, AuthSession};
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
-use crate::utils::date_formats::{ISO_DATE_UNDERLINE, READABLE_DATE_TIME};
-use crate::utils::local_time;
 use askama::Template;
-use askama_axum::Response;
 use axum::extract::State;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
@@ -18,6 +15,7 @@ mod guests;
 mod members;
 mod restrictions;
 mod roles;
+mod situations;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -28,7 +26,7 @@ pub fn router() -> Router<AppState> {
         .nest("/free_days", free_days::router())
         .nest("/restrictions", restrictions::router())
         .nest("/guests", guests::router())
-        .route("/situations", get(download_situations))
+        .nest("/situations", situations::router())
 }
 
 async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
@@ -70,44 +68,3 @@ async fn apply_settings(
     "Setările au fost aplicate"
 }
 
-async fn download_situations(State(state): State<AppState>) -> impl IntoResponse {
-    let current_date = local_time().date().format(ISO_DATE_UNDERLINE).unwrap();
-
-    let mut situations: Vec<_> = query!(
-        "select r.*, u.name from reservations r join users u on r.user_id = u.id order by date, hour, created_at"
-    )
-    .fetch_all(&state.read_pool)
-    .await
-    .expect("Database error")
-    .into_iter()
-    .map(|res| {
-        format!(
-            "{}, \"{}\", {}, {}, {}, {}, \"{}\", \"{}\"",
-            res.user_id,
-            res.name,
-            res.date,
-            res.hour,
-            res.as_guest,
-            res.cancelled,
-            res.created_for.unwrap_or_default(),
-            res.created_at.format(READABLE_DATE_TIME).unwrap()
-        )
-    })
-    .collect();
-
-    situations.insert(
-        0,
-        "User ID, Nume, Data, Ora, Ca invitat, Anulat, Creat pentru, Creat pe".to_string(),
-    );
-
-    let csv = situations.join("\n");
-
-    Response::builder()
-        .header("Content-Type", "text/csv; charset=utf-8")
-        .header(
-            "Content-Disposition",
-            format!("attachment; filename=\"situatie_{current_date}.csv\""),
-        )
-        .body(csv)
-        .expect("Failed to create response")
-}
