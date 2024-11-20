@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select name, received_gift from users where strftime('%d%m', birthday) = strftime('%d%m', $1)",
+  "describe": {
+    "columns": [
+      {
+        "name": "name",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "received_gift",
+        "ordinal": 1,
+        "type_info": "Date"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "e6d456da5db9836e56149641b80b013fa5c7b31009d822e26c4ee16a582401ac"
+}

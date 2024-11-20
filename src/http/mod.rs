@@ -1,5 +1,5 @@
 use crate::http::auth::UserAuthenticator;
-use crate::http::pages::error_template::error_bubble_response;
+use crate::http::pages::notification_template::error_bubble_response;
 use crate::model::location::Location;
 use crate::utils::local_time;
 use anyhow::Context;

@@ -9,7 +9,7 @@ use axum_login::{login_required, permission_required};
 use sqlx::{query_as, SqlitePool};
 
 mod admin;
-pub mod error_template;
+pub mod notification_template;
 mod home;
 mod user;
 

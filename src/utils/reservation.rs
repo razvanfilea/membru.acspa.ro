@@ -304,7 +304,7 @@ pub async fn create_reservation(
 
         if total_reservation_in_slot >= location.slot_capacity && success != ReservationSuccess::InWaiting {
             return Err(
-                ReservationError::DatabaseError(format!("A aparut o eroare la insciere pe data {selected_date} ora {selected_hour} ca {:?}, te rog trimite un screenshot cu aceasta eroare unui administrator.", success)));
+                ReservationError::DatabaseError(format!("A apărut o eroare la însciere pentru data {selected_date} ora {selected_hour} ca {:?}, te rog trimite un screenshot cu aceasta eroare unui administrator.", success)));
         }
     }
 

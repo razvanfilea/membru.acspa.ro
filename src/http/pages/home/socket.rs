@@ -1,8 +1,12 @@
 use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationsSlot};
 use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
+use crate::http::pages::notification_template::{
+    notification_bubble_response, NotificationBubbleResponse,
+};
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
+use crate::utils::date_formats::READABLE_DATE;
 use crate::utils::date_iter::DateIter;
 use crate::utils::CssColor;
 use crate::utils::{date_formats, local_time};
@@ -12,6 +16,7 @@ use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
 use serde::de::IgnoredAny;
 use serde::Deserialize;
+use sqlx::{query, query_as};
 use time::Date;
 use tokio::select;
 use tracing::{error, warn};
@@ -73,6 +78,38 @@ struct HoursTemplate<'a> {
 async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
     let mut selected_date = local_time().date();
     let mut reservations_changed = state.reservation_notifier.subscribe();
+
+    if user.role == "Admin" {
+        let current_date = local_time().date();
+        if let Ok(celebrated) = query!(
+            "select name, received_gift from users where strftime('%d%m', birthday) = strftime('%d%m', $1)",
+            current_date
+        )
+        .fetch_all(&state.read_pool)
+        .await
+        {
+            for user in celebrated {
+                let gift = if let Some(gift_date) = user.received_gift {
+                    format!(
+                        ", a primit cadou pe {}",
+                        gift_date.format(READABLE_DATE).expect("Invalid date in DB")
+                    )
+                } else {
+                    " și nu a primit cadou!!".to_string()
+                };
+
+                let message = format!("Este ziua lui {}{}", user.name, gift);
+                let _ = socket
+                    .send(Message::Text(
+                        NotificationBubbleResponse {
+                            message: message.as_str(),
+                        }
+                        .to_string(),
+                    ))
+                    .await;
+            }
+        }
+    }
 
     loop {
         let reservations_task = reservations_changed.changed();
