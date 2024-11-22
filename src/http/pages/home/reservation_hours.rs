@@ -1,6 +1,7 @@
 use crate::http::AppState;
 use crate::model::restriction::Restriction;
-use crate::utils::{get_hour_structure_for_day, CssColor};
+use crate::utils::queries::get_hour_structure_for_day;
+use crate::utils::CssColor;
 use sqlx::{query, query_as};
 use std::str::FromStr;
 use time::Date;

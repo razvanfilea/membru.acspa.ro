@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select date, description, created_at from alternative_days where free_day = true order by date desc, created_at",
+  "query": "select date, description, created_at from alternative_days where type = 'holiday' order by date desc, created_at",
   "describe": {
     "columns": [
       {
@@ -28,5 +28,5 @@
       false
     ]
   },
-  "hash": "36b6185ef8202b734e7c8c7b6a4c9cf86d16110ba99604efcf8ec3cd732bee42"
+  "hash": "13ea5a24e0f3bb575eb7add4aa1beb5cb1c4a95ae6bf7aa9b5cc42f81002bb14"
 }

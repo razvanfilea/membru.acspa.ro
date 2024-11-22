@@ -11,7 +11,8 @@ use tracing::{error, info};
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
-use crate::utils::{date_formats, get_hour_structure_for_day, local_time};
+use crate::utils::queries::get_hour_structure_for_day;
+use crate::utils::{date_formats, local_time};
 
 pub fn router() -> Router<AppState> {
     Router::new()

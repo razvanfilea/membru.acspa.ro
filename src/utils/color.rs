@@ -1,5 +1,5 @@
-use strum::{AsRefStr, EnumIter, EnumString};
 use crate::utils::reservation::{ReservationError, ReservationResult, ReservationSuccess};
+use strum::{AsRefStr, EnumIter, EnumString};
 
 #[derive(Debug, PartialEq, EnumString, EnumIter, strum::Display, AsRefStr)]
 pub enum CssColor {

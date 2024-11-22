@@ -1,4 +1,3 @@
-use anyhow::Context;
 use axum_login::tower_sessions::ExpiredDeletion;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous};
 use std::str::FromStr;
@@ -18,7 +17,7 @@ mod model;
 mod utils;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> std::io::Result<()> {
     unsafe {
         set_soundness(Soundness::Unsound);
     }
@@ -30,8 +29,9 @@ async fn main() -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer().compact())
         .init();
 
-    let database_url = std::env::var("DATABASE_URL").context("Failed to get database URL")?;
-    let connection_options = SqliteConnectOptions::from_str(&database_url)?
+    let database_url = std::env::var("DATABASE_URL").expect("Failed to get database URL");
+    let connection_options = SqliteConnectOptions::from_str(&database_url)
+        .expect("Failed to parse Database URL")
         .journal_mode(SqliteJournalMode::Wal)
         .foreign_keys(true)
         .synchronous(SqliteSynchronous::Full)
@@ -43,15 +43,20 @@ async fn main() -> anyhow::Result<()> {
         .min_connections(1)
         .max_connections(4)
         .connect_with(connection_options.clone().read_only(true))
-        .await?;
+        .await
+        .expect("Failed to create Read-Only DB Pool");
 
     let write_pool = SqlitePoolOptions::new()
         .min_connections(0)
         .max_connections(1)
         .connect_with(connection_options.optimize_on_close(true, None))
-        .await?;
+        .await
+        .expect("Failed to create Write DB Pool");
 
-    sqlx::migrate!().run(&write_pool).await?;
+    sqlx::migrate!()
+        .run(&write_pool)
+        .await
+        .expect("Failed to run DB migrations");
 
     let session_store = SqliteStore::new(write_pool.clone());
     session_store
@@ -66,9 +71,9 @@ async fn main() -> anyhow::Result<()> {
 
     task::spawn(periodic_cleanup_of_waiting_reservations(app_state.clone()));
 
-    let timetable_path = std::env::var("TIMETABLE_PATH").context("Failed to get TIMETABLE_PATH")?;
+    let timetable_path = std::env::var("TIMETABLE_PATH").expect("Failed to get TIMETABLE_PATH");
 
-    http_server(app_state, session_store, timetable_path)
-        .await
-        .context("Failed to start HTTP Server")
+    http_server(app_state, session_store, timetable_path).await;
+
+    Ok(())
 }

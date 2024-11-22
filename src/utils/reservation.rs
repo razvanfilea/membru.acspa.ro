@@ -1,12 +1,13 @@
 use std::fmt::{Display, Formatter};
 
-use crate::model::location::{HourStructure, Location};
+use crate::model::hour_structure::HourStructure;
+use crate::model::location::Location;
 use crate::model::role::UserRole;
 use crate::model::user::User;
+use crate::utils::queries::get_alt_hour_structure_for_day;
 use sqlx::{query, query_as, SqliteConnection, SqlitePool};
 use time::{Date, OffsetDateTime};
 use tracing::error;
-use crate::utils::{get_alt_hour_structure_for_day, get_default_alt_hour_structure};
 
 #[derive(Debug, PartialEq)]
 pub enum ReservationSuccess {
@@ -99,12 +100,9 @@ pub async fn is_reservation_possible(
     selected_date: Date,
     selected_hour: u8,
 ) -> ReservationResult {
-    let default_alt_hour_structure = get_default_alt_hour_structure(&mut *tx).await;
-
-    let hour_structure =
-        get_alt_hour_structure_for_day(&mut *tx, selected_date, default_alt_hour_structure)
-            .await
-            .unwrap_or_else(|| location.get_hour_structure());
+    let hour_structure = get_alt_hour_structure_for_day(&mut *tx, selected_date)
+        .await
+        .unwrap_or_else(|| location.hour_structure());
 
     check_parameters_validity(now, &hour_structure, selected_date, selected_hour)?;
 
@@ -537,7 +535,7 @@ mod test {
     }
 
     #[sqlx::test]
-    async fn free_days(pool: SqlitePool) {
+    async fn weekend(pool: SqlitePool) {
         let (location, user, _) = setup(&pool, 1, 1, 0).await;
 
         let now = datetime!(2024-07-11 10:00:00 +00:00:00);

@@ -67,4 +67,3 @@ async fn apply_settings(
 
     "Setările au fost aplicate"
 }
-

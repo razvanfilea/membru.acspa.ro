@@ -17,7 +17,7 @@ use serde::Deserialize;
 use sqlx::query;
 use time::Date;
 use tokio::select;
-use tracing::{error, warn};
+use tracing::{debug, error, warn};
 
 pub async fn ws(
     State(state): State<AppState>,
@@ -40,7 +40,7 @@ impl WsMessage {
         let message = match message {
             Some(Ok(message)) => message,
             Some(Err(e)) => {
-                warn!("Socket closed: {e}");
+                debug!("Socket closed: {e}");
                 return None;
             }
             None => return None,

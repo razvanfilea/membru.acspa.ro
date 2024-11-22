@@ -9,8 +9,8 @@ use axum_login::{login_required, permission_required};
 use sqlx::{query_as, SqlitePool};
 
 mod admin;
-pub mod notification_template;
 mod home;
+pub mod notification_template;
 mod user;
 
 pub type AuthSession = axum_login::AuthSession<UserAuthenticator>;

@@ -1,3 +1,12 @@
+CREATE TABLE alternative_days_type
+(
+    type TEXT NOT NULL PRIMARY KEY
+);
+
+INSERT INTO alternative_days_type
+VALUES ('holiday'),
+       ('turneu');
+
 ALTER TABLE locations
     DROP alt_slots_start_hour;
 ALTER TABLE locations
@@ -5,23 +14,24 @@ ALTER TABLE locations
 ALTER TABLE locations
     DROP alt_slots_per_day;
 
-ALTER TABLE free_days
-    ADD
-        slots_start_hour TINYINT NOT NULL DEFAULT 10
-            CHECK ( slots_start_hour > 0 AND slots_start_hour < 24 );
+CREATE TABLE alternative_days
+(
+    date             DATE     NOT NULL PRIMARY KEY,
+    description      TEXT,
+    type             TEXT     NOT NULL,
 
-ALTER TABLE free_days
-    ADD
-        slot_duration TINYINT NOT NULL DEFAULT 3
-            CHECK ( slot_duration > 0 AND slot_duration < 12 );
+    slots_start_hour TINYINT  NOT NULL
+        CHECK ( slots_start_hour > 0 AND slots_start_hour < 24 ),
+    slot_duration    TINYINT  NOT NULL
+        CHECK ( slot_duration > 0 AND slot_duration < 12 ),
+    slots_per_day    TINYINT  NOT NULL
+        CHECK ( slots_per_day > 0 AND slots_per_day < 12 ),
 
-ALTER TABLE free_days
-    ADD slots_per_day TINYINT NOT NULL DEFAULT 4
-        CHECK ( slots_per_day > 0 AND slots_per_day < 12 );
+    created_at       DATETIME NOT NULL DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
 
-ALTER TABLE free_days
-    ADD free_day BOOLEAN NOT NULL DEFAULT TRUE CHECK (free_day IN (FALSE, TRUE));
+    FOREIGN KEY (type) REFERENCES alternative_days_type (type)
+);
 
-
-ALTER TABLE free_days
-    RENAME TO alternative_days;
+INSERT INTO alternative_days (date, description, type, slots_start_hour, slot_duration, slots_per_day, created_at)
+SELECT date, description, 'holiday', 10, 3, 4, created_at FROM free_days;
+DROP TABLE free_days;

@@ -1,4 +1,5 @@
 pub mod global_vars;
+pub mod hour_structure;
 pub mod location;
 pub mod restriction;
 pub mod role;

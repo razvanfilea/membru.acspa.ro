@@ -5,13 +5,12 @@ use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
 use crate::utils::date_iter::DateIter;
+use crate::utils::queries::get_hour_structure_for_day;
 use crate::utils::reservation::{
     create_reservation, is_reservation_possible, ReservationError, ReservationSuccess,
 };
 use crate::utils::CssColor;
-use crate::utils::{
-    date_formats, get_hour_structure_for_day, get_reservation_result_color, local_time,
-};
+use crate::utils::{date_formats, get_reservation_result_color, local_time};
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::{Query, State};

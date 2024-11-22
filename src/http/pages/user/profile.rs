@@ -1,4 +1,4 @@
-use crate::utils::{date_formats, get_user_reservations};
+use crate::utils::date_formats;
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
@@ -8,6 +8,7 @@ use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
+use crate::utils::queries::get_user_reservations;
 
 pub async fn profile_page(
     auth_session: AuthSession,

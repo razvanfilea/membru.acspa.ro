@@ -4,6 +4,7 @@
     <file url="file://$PROJECT_DIR$/migrations/20240616205653_tables.sql" dialect="SQLite" />
     <file url="file://$PROJECT_DIR$/migrations/20240622161519_init_data.sql" dialect="SQLite" />
     <file url="file://$PROJECT_DIR$/migrations/20240921075743_add_user_dates.sql" dialect="SQLite" />
+    <file url="file://$PROJECT_DIR$/migrations/20241121170235_alternative_days.sql" dialect="SQLite" />
     <file url="PROJECT" dialect="SQLite" />
   </component>
 </project>

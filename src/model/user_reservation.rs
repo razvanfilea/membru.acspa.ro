@@ -1,5 +1,5 @@
-use time::{Date, OffsetDateTime};
 use crate::utils::local_time;
+use time::{Date, OffsetDateTime};
 
 pub struct UserReservation {
     pub date: Date,
@@ -19,7 +19,6 @@ impl UserReservation {
         let now_date = now.date();
         !self.cancelled
             && (self.date > now_date
-            || (self.date == now_date && self.hour as u8 >= now.time().hour()))
+                || (self.date == now_date && self.hour as u8 >= now.time().hour()))
     }
 }
-

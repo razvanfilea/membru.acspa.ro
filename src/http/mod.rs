@@ -1,8 +1,7 @@
 use crate::http::auth::UserAuthenticator;
 use crate::http::pages::notification_template::error_bubble_response;
-use crate::model::location::{HourStructure, Location};
-use crate::utils::{get_default_alt_hour_structure, local_time};
-use anyhow::Context;
+use crate::model::location::Location;
+use crate::utils::local_time;
 use askama::Template;
 use axum::response::{IntoResponse, Response};
 use axum::Router;
@@ -31,7 +30,6 @@ pub struct AppState {
     pub read_pool: SqlitePool,
     pub write_pool: SqlitePool,
     pub location: Arc<Location>,
-    pub alternative_hour_structure: HourStructure,
     pub reservation_notifier: Arc<watch::Sender<()>>,
 }
 
@@ -45,7 +43,6 @@ impl AppState {
 
         Self {
             location: Arc::new(location),
-            alternative_hour_structure: get_default_alt_hour_structure(&read_pool).await,
             read_pool,
             write_pool,
             reservation_notifier: Arc::new(tx),
@@ -126,7 +123,7 @@ pub async fn http_server(
     app_state: AppState,
     session_store: SqliteStore,
     timetable_path: String,
-) -> anyhow::Result<()> {
+) {
     let session_layer = SessionManagerLayer::new(session_store)
         .with_expiry(Expiry::OnInactivity(time::Duration::days(60)))
         .with_same_site(SameSite::Lax);
@@ -152,17 +149,17 @@ pub async fn http_server(
         ))
         .layer(auth_layer);
 
-    let port_str = std::env::var("SERVER_PORT").context("Failed to get server port")?;
-    let port: u16 = port_str.parse().context("Invalid port")?;
+    let port_str = std::env::var("SERVER_PORT").expect("Failed to get server port");
+    let port: u16 = port_str.parse().expect("Invalid port");
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let http_service = app.into_make_service();
 
     println!("Server started on port {port}");
 
-    let listener = tokio::net::TcpListener::bind(addr).await?;
+    let listener = tokio::net::TcpListener::bind(addr).await.expect("Failed to create TcpListener");
     axum::serve(listener, http_service)
         .with_graceful_shutdown(shutdown_signal())
         .await
-        .context("Failed to start server")
+        .expect("Failed to start HTTP server")
 }

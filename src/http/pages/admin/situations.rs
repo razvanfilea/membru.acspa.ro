@@ -1,7 +1,9 @@
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
-use crate::utils::{get_user_reservations, local_time};
+use crate::model::user_reservation::UserReservation;
+use crate::utils::date_formats;
+use crate::utils::local_time;
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::{Path, State};
@@ -9,10 +11,10 @@ use axum::response::Response;
 use axum::routing::get;
 use axum::Router;
 use sqlx::{query, query_as};
-use crate::model::user_reservation::UserReservation;
-use crate::utils::date_formats;
 
 use crate::utils::date_formats::{ISO_DATE_UNDERLINE, READABLE_DATE_TIME};
+use crate::utils::queries::get_user_reservations;
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/member", get(members_situation_page))
@@ -57,10 +59,10 @@ async fn member_situations(
         reservations: Vec<UserReservation>,
         allow_reservation_cancellation: bool,
     }
-    
+
     UserReservationsTemplate {
         reservations: get_user_reservations(&state.read_pool, &email, false).await,
-        allow_reservation_cancellation: false
+        allow_reservation_cancellation: false,
     }
 }
 
