@@ -37,21 +37,6 @@
         "name": "slots_per_day",
         "ordinal": 6,
         "type_info": "Integer"
-      },
-      {
-        "name": "alt_slots_start_hour",
-        "ordinal": 7,
-        "type_info": "Integer"
-      },
-      {
-        "name": "alt_slot_duration",
-        "ordinal": 8,
-        "type_info": "Integer"
-      },
-      {
-        "name": "alt_slots_per_day",
-        "ordinal": 9,
-        "type_info": "Integer"
       }
     ],
     "parameters": {
@@ -64,10 +49,7 @@
       false,
       false,
       false,
-      false,
-      true,
-      true,
-      true
+      false
     ]
   },
   "hash": "f52f7d01065dc4cb4f4193202891acd7bd155b9cad5f67b698aa46972723360c"

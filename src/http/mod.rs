@@ -1,7 +1,7 @@
 use crate::http::auth::UserAuthenticator;
 use crate::http::pages::notification_template::error_bubble_response;
-use crate::model::location::Location;
-use crate::utils::local_time;
+use crate::model::location::{HourStructure, Location};
+use crate::utils::{get_default_alt_hour_structure, local_time};
 use anyhow::Context;
 use askama::Template;
 use axum::response::{IntoResponse, Response};
@@ -31,6 +31,7 @@ pub struct AppState {
     pub read_pool: SqlitePool,
     pub write_pool: SqlitePool,
     pub location: Arc<Location>,
+    pub alternative_hour_structure: HourStructure,
     pub reservation_notifier: Arc<watch::Sender<()>>,
 }
 
@@ -44,6 +45,7 @@ impl AppState {
 
         Self {
             location: Arc::new(location),
+            alternative_hour_structure: get_default_alt_hour_structure(&read_pool).await,
             read_pool,
             write_pool,
             reservation_notifier: Arc::new(tx),

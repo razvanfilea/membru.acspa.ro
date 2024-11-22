@@ -1,8 +1,8 @@
 {% for user in members %}
 <div class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
     <div class="flex flex-row gap-4">
-        <img src="https://ui-avatars.com/api/?name={{user.name}}&rounded=true&format=svg" width="48px"
-             height="48px" alt="{{user.name}}"/>
+        <img src="https://ui-avatars.com/api/?name={{user.name}}&rounded=true&format=svg"
+             width="48px" height="48px" alt="{{user.name}}"/>
         <div class="flex flex-col">
             <div class="flex flex-row items-center gap-4">
                 <p class="text-white">{{ user.name }}</p>
@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <div class="flex flex-col md:flex-row gap-4">
+    <div class="flex flex-col md:flex-row gap-2 md:gap-4">
         <a href="mailto:{{ user.email }}?subject=Cotiza%C8%9Bie%20ACSPA&body=Te%20rog%20verific%C4%83%20plata%20cotiza%C8%9Biei%20de%20membru%20ACS%20PA">
             <button title="Trimite mail cotizație" class="btn btn-square btn-sm btn-outline">
                 <span class="material-symbols-outlined">email</span>

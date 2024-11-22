@@ -1,8 +1,6 @@
 use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationsSlot};
 use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
-use crate::http::pages::notification_template::{
-    notification_bubble_response, NotificationBubbleResponse,
-};
+use crate::http::pages::notification_template::NotificationBubbleResponse;
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
@@ -16,7 +14,7 @@ use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
 use serde::de::IgnoredAny;
 use serde::Deserialize;
-use sqlx::{query, query_as};
+use sqlx::query;
 use time::Date;
 use tokio::select;
 use tracing::{error, warn};

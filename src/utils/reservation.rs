@@ -1,12 +1,12 @@
 use std::fmt::{Display, Formatter};
 
-use crate::model::location::Location;
+use crate::model::location::{HourStructure, Location};
 use crate::model::role::UserRole;
 use crate::model::user::User;
-use crate::utils::is_free_day;
 use sqlx::{query, query_as, SqliteConnection, SqlitePool};
 use time::{Date, OffsetDateTime};
 use tracing::error;
+use crate::utils::{get_alt_hour_structure_for_day, get_default_alt_hour_structure};
 
 #[derive(Debug, PartialEq)]
 pub enum ReservationSuccess {
@@ -62,9 +62,8 @@ impl Display for ReservationError {
 }
 
 fn check_parameters_validity(
-    location: &Location,
     now: OffsetDateTime,
-    is_free_day: bool,
+    hour_structure: &HourStructure,
     selected_date: Date,
     selected_hour: u8,
 ) -> ReservationResult<()> {
@@ -76,12 +75,6 @@ fn check_parameters_validity(
             "Nu poți face o rezervare în trecut",
         ));
     }
-
-    let hour_structure = if is_free_day {
-        location.get_alt_hour_structure()
-    } else {
-        location.get_hour_structure()
-    };
 
     if !hour_structure.is_hour_valid(selected_hour) {
         return Err(ReservationError::Other(
@@ -106,9 +99,14 @@ pub async fn is_reservation_possible(
     selected_date: Date,
     selected_hour: u8,
 ) -> ReservationResult {
-    let is_free_day = is_free_day(&mut *tx, selected_date).await;
+    let default_alt_hour_structure = get_default_alt_hour_structure(&mut *tx).await;
 
-    check_parameters_validity(location, now, is_free_day, selected_date, selected_hour)?;
+    let hour_structure =
+        get_alt_hour_structure_for_day(&mut *tx, selected_date, default_alt_hour_structure)
+            .await
+            .unwrap_or_else(|| location.get_hour_structure());
+
+    check_parameters_validity(now, &hour_structure, selected_date, selected_hour)?;
 
     let reservation_already_exists = query!(
         "select cancelled from reservations where
@@ -302,7 +300,9 @@ pub async fn create_reservation(
         .map_err(ReservationError::from)?
         .count;
 
-        if total_reservation_in_slot >= location.slot_capacity && success != ReservationSuccess::InWaiting {
+        if total_reservation_in_slot >= location.slot_capacity
+            && success != ReservationSuccess::InWaiting
+        {
             return Err(
                 ReservationError::DatabaseError(format!("A apărut o eroare la însciere pentru data {selected_date} ora {selected_hour} ca {:?}, te rog trimite un screenshot cu aceasta eroare unui administrator.", success)));
         }
@@ -348,8 +348,8 @@ mod test {
         VALUES (1000, 'test@test.com', 'Test', '', 100, FALSE),
         (2000, 'hello@test.com', 'Test', '', 100, FALSE);
 
-        insert into locations (name, slot_capacity, waiting_capacity, slots_start_hour, slot_duration, slots_per_day, alt_slots_start_hour, alt_slot_duration, alt_slots_per_day)
-        VALUES ('test_location', 1, $3, 18, 2, 2, 10, 3, 4);
+        insert into locations (name, slot_capacity, waiting_capacity, slots_start_hour, slot_duration, slots_per_day)
+        VALUES ('test_location', 1, $3, 18, 2, 2);
         "#, user_max_reservations, user_max_guest_reservations, waiting_capacity
         ).execute(pool).await.unwrap();
 

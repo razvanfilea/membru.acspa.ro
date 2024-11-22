@@ -5,58 +5,48 @@ pub mod reservation;
 
 use crate::http::AppState;
 use crate::model::location::HourStructure;
-use crate::utils::reservation::{ReservationError, ReservationResult, ReservationSuccess};
+use crate::model::user_reservation::UserReservation;
 pub use color::*;
-use sqlx::{query, query_as, Executor, Sqlite, SqlitePool};
+use sqlx::{query_as, Executor, Row, Sqlite, SqlitePool};
 use time::{Date, OffsetDateTime, UtcOffset, Weekday};
 use tracing::error;
-use crate::model::user_reservation::UserReservation;
 
 pub fn local_time() -> OffsetDateTime {
     let offset = UtcOffset::current_local_offset().expect("Failed to set Soundness to Unsound");
     OffsetDateTime::now_utc().to_offset(offset)
 }
 
-pub async fn get_hour_structure_for_day(state: &AppState, date: Date) -> HourStructure {
-    if is_free_day(&state.read_pool, date).await {
-        state.location.get_alt_hour_structure()
-    } else {
-        state.location.get_hour_structure()
-    }
+fn is_weekend(weekday: Weekday) -> bool {
+    weekday == Weekday::Saturday || weekday == Weekday::Sunday
 }
 
-pub async fn is_free_day<'a, E>(executor: E, date: Date) -> bool
+pub async fn get_alt_hour_structure_for_day<'a, E>(
+    executor: E,
+    date: Date,
+    alternative_hour_structure: HourStructure,
+) -> Option<HourStructure>
 where
     E: Executor<'a, Database = Sqlite>,
 {
-    let exists_in_table = async {
-        query!(
-            "select exists(select true from free_days where date = $1) as 'exists!'",
+    if is_weekend(date.weekday()) {
+        Some(alternative_hour_structure)
+    } else {
+        query_as!(
+            HourStructure,
+            "select slots_start_hour, slot_duration, slots_per_day from alternative_days where date = $1",
             date
-        )
-        .fetch_one(executor)
-        .await
-        .expect("Database error")
-        .exists
-            != 0
-    };
-
-    let weekday = date.weekday();
-    weekday == Weekday::Saturday || weekday == Weekday::Sunday || exists_in_table.await
+        ).fetch_optional(executor).await.expect("Database error")
+    }
 }
 
-pub fn get_reservation_result_color(result: &ReservationResult) -> CssColor {
-    match result {
-        Ok(success) => match success {
-            ReservationSuccess::Reservation { .. } => CssColor::Green,
-            ReservationSuccess::Guest => CssColor::Blue,
-            ReservationSuccess::InWaiting => CssColor::Blue,
-        },
-        Err(error) => match error {
-            ReservationError::AlreadyExists { .. } => CssColor::Yellow,
-            _ => CssColor::Red,
-        },
-    }
+pub async fn get_hour_structure_for_day(state: &AppState, date: Date) -> HourStructure {
+    get_alt_hour_structure_for_day(
+        &state.read_pool,
+        date,
+        state.alternative_hour_structure.clone(),
+    )
+    .await
+    .unwrap_or_else(|| state.location.get_hour_structure())
 }
 
 pub async fn get_user_reservations(
@@ -75,3 +65,38 @@ pub async fn get_user_reservations(
         .unwrap_or_default()
 }
 
+pub async fn get_default_alt_hour_structure<'a, E>(executor: E) -> HourStructure
+where
+    E: Executor<'a, Database = Sqlite>,
+{
+    let mut slots_start_hour = 0;
+    let mut slot_duration = 0;
+    let mut slots_per_day = 0;
+
+    let rows = sqlx::query(
+        "select name, dflt_value FROM pragma_table_info('alternative_days') where name in ('slots_start_hour', 'slot_duration', 'slots_per_day')")
+        .fetch_all(executor)
+        .await
+        .expect("Cannot load default hour structures");
+
+    for row in rows {
+        let name: String = row.try_get("name").expect("name does not exist");
+        let value: String = row
+            .try_get("dflt_value")
+            .expect("dflt_value does not exist");
+        let value: i64 = value.parse().expect("dflt_value must be an int");
+
+        match name.as_str() {
+            "slots_start_hour" => slots_start_hour = value,
+            "slot_duration" => slot_duration = value,
+            "slots_per_day" => slots_per_day = value,
+            _ => panic!("Invalid row"),
+        }
+    }
+
+    HourStructure {
+        slots_start_hour,
+        slot_duration,
+        slots_per_day,
+    }
+}

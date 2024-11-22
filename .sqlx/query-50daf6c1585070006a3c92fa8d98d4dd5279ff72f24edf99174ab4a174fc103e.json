@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from alternative_days where date = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "50daf6c1585070006a3c92fa8d98d4dd5279ff72f24edf99174ab4a174fc103e"
+}

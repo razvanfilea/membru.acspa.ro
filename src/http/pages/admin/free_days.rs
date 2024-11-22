@@ -26,7 +26,7 @@ struct FreeDay {
 }
 
 async fn get_free_days(pool: &SqlitePool) -> Vec<FreeDay> {
-    query!("select * from free_days order by date desc, created_at")
+    query!("select date, description, created_at from alternative_days where free_day = true order by date desc, created_at")
         .fetch_all(pool)
         .await
         .expect("Database error")
@@ -82,7 +82,7 @@ async fn create_free_day(
 
     if let Some(date) = date {
         query!(
-            "insert into free_days (date, description) VALUES ($1, $2)",
+            "insert into alternative_days (date, description, free_day) VALUES ($1, $2, true)",
             date,
             description,
         )
@@ -107,7 +107,7 @@ async fn delete_free_day(
 ) -> impl IntoResponse {
     let date = Date::parse(&date, date_formats::ISO_DATE).unwrap();
 
-    query!("delete from free_days where date = $1", date)
+    query!("delete from alternative_days where date = $1", date)
         .execute(&state.write_pool)
         .await
         .expect("Database error");
