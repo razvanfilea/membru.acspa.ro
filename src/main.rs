@@ -15,6 +15,7 @@ use crate::http::{http_server, periodic_cleanup_of_waiting_reservations, AppStat
 mod http;
 mod model;
 mod utils;
+mod reservation;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {

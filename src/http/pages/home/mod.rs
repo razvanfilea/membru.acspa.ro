@@ -6,7 +6,7 @@ use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
 use crate::utils::date_iter::DateIter;
 use crate::utils::queries::get_hour_structure_for_day;
-use crate::utils::reservation::{
+use crate::reservation::{
     create_reservation, is_reservation_possible, ReservationError, ReservationSuccess,
 };
 use crate::utils::CssColor;

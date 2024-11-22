@@ -2,8 +2,8 @@ use askama::Template;
 use askama_axum::IntoResponse;
 use axum::response::{Redirect, Response};
 use axum::Form;
+use email_address::EmailAddress;
 use tracing::{debug, error};
-use validator::Validate;
 
 use crate::http::pages::AuthSession;
 use crate::model::user::UserCredentials;
@@ -41,8 +41,12 @@ pub async fn login(
         "Serverul a întâmpinat o problemă, dacă eroare persistă te rog contactează un membru fondator",
     );
 
-    if let Err(e) = login_user.validate() {
-        return login_error(e.to_string());
+    if !EmailAddress::is_valid(&login_user.email) {
+        return login_error("Adresa de email este invalidă");
+    }
+    
+    if login_user.password.len() < 8 {
+        return login_error("Parola este prea scurtă");
     }
 
     let user = match auth.authenticate(login_user.clone()).await {

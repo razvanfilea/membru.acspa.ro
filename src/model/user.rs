@@ -1,7 +1,6 @@
 use axum_login::AuthUser;
 use serde::Deserialize;
 use time::Date;
-use validator::Validate;
 
 #[derive(Debug, Clone)]
 pub struct User {
@@ -31,10 +30,8 @@ impl AuthUser for User {
     }
 }
 
-#[derive(Clone, Deserialize, Validate)]
+#[derive(Clone, Deserialize)]
 pub struct UserCredentials {
-    #[validate(email(message = "Email invalid"))]
     pub email: String,
-    #[validate(length(min = 8, message = "Parola este prea scurta"))]
     pub password: String,
 }
