@@ -185,12 +185,12 @@ mod test {
         .await
         .expect("No locations found");
 
-        let user1 = query_as!(User, "select * from users_with_role where id = 1000")
+        let user1 = query_as("select * from users_with_role where id = 1000")
             .fetch_one(pool)
             .await
             .unwrap();
 
-        let user2 = query_as!(User, "select * from users_with_role where id = 2000")
+        let user2 = query_as("select * from users_with_role where id = 2000")
             .fetch_one(pool)
             .await
             .unwrap();
@@ -425,14 +425,14 @@ mod test {
     #[sqlx::test]
     async fn in_waiting(pool: SqlitePool) {
         let (location, user_1, user_2) = setup(&pool, 1, 1, 1).await;
-        query!(
+        query(
             "insert into users (id, email, name, password_hash, role_id, has_key)
             VALUES (3000, 'test3@test.com', 'Test3', '', 100, FALSE)"
         )
         .execute(&pool)
         .await
         .unwrap();
-        let user_3 = query_as!(User, "select * from users_with_role where id = 3000")
+        let user_3 = query_as("select * from users_with_role where id = 3000")
             .fetch_one(&pool)
             .await
             .unwrap();
@@ -470,6 +470,45 @@ mod test {
         assert_eq!(
             create_reservation(&pool, &location, now, &user_3, date, 18).await,
             Err(ReservationError::SlotFull)
+        );
+    }
+
+
+    #[sqlx::test]
+    async fn alternative_days(pool: SqlitePool) {
+        let (location, user_1, user_2) = setup(&pool, 1, 1, 1).await;
+
+        query("insert into alternative_days (date, type, slots_start_hour, slot_duration, slots_per_day) values ('2024-07-11', 'holiday', 10, 3, 4)")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let now = datetime!(2024-07-10 10:00:00 +00:00:00);
+        let date_1 = date!(2024 - 07 - 11);
+
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
+            Err(ReservationError::Other("Ora pentru rezervare nu este validă"))
+        );
+
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_1, date_1, 10).await,
+            Ok(ReservationSuccess::Reservation {deletes_guest: false})
+        );
+        
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_1, date_1, 13).await,
+            Ok(ReservationSuccess::Guest)
+        );
+        
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_2, date_1, 16).await,
+            Ok(ReservationSuccess::Reservation {deletes_guest: false})
+        );
+        
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_2, date_1, 19).await,
+            Ok(ReservationSuccess::Guest)
         );
     }
 }

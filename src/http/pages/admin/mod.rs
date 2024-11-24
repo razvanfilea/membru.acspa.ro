@@ -16,6 +16,7 @@ mod members;
 mod restrictions;
 mod roles;
 mod situations;
+mod tournaments;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -24,6 +25,7 @@ pub fn router() -> Router<AppState> {
         .nest("/members", members::router())
         .nest("/roles", roles::router())
         .nest("/free_days", free_days::router())
+        .nest("/tournaments", tournaments::router())
         .nest("/restrictions", restrictions::router())
         .nest("/guests", guests::router())
         .nest("/situations", situations::router())

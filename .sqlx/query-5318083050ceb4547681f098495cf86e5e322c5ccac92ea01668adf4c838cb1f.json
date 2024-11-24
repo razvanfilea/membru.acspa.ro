@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "select date, description, slots_start_hour, slot_duration, created_at from alternative_days where type = 'turneu' order by date desc, created_at",
+  "describe": {
+    "columns": [
+      {
+        "name": "date",
+        "ordinal": 0,
+        "type_info": "Date"
+      },
+      {
+        "name": "description",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "slots_start_hour",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "slot_duration",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 4,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "5318083050ceb4547681f098495cf86e5e322c5ccac92ea01668adf4c838cb1f"
+}

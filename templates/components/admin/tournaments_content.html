@@ -1,0 +1,35 @@
+<div id="list" class="flex flex-col w-full gap-4">
+    {% for tournament in tournaments %}
+    {% let id_date = tournament.date.format(date_formats::ISO_DATE_UNDERLINE).unwrap() %}
+    {% let iso_date = tournament.date.format(date_formats::ISO_DATE).unwrap() %}
+
+    <div id="tournament_{{ id_date }}" class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
+        <div class="flex flex-col">
+            <p>Data: <b>{{ tournament.date.format(date_formats::READABLE_DATE).unwrap() }}</b></p>
+            {% if !tournament.description.is_empty() %}
+            <p>Descriere: <b>{{ tournament.description }}</b></p>
+            {% endif %}
+            <p>Ora de început: <b>{{ tournament.start_hour }}</b></p>
+            <p>Durata: <b>{{ tournament.duration }}</b></p>
+            <p class="text-sm">Creat pe: {{ tournament.created_at.format(date_formats::READABLE_DATE).unwrap() }}</p>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4">
+            <button title="Duplică turneul"
+                    class="btn btn-square btn-sm btn-info btn-outline"
+                    onclick='copyDateModal("{{ iso_date }}", "{{ tournament.description }}")'>
+                <span class="material-symbols-outlined">tab_duplicate</span>
+            </button>
+
+            <button title="Șterge turneul"
+                    class="btn btn-square btn-sm btn-error btn-outline"
+                    hx-delete='/admin/tournaments/{{ iso_date }}'
+                    hx-target="#day_{{ id_date }}"
+                    hx-swap="outerHTML">
+                <span class="material-symbols-outlined">delete</span>
+            </button>
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
