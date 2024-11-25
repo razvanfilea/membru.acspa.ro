@@ -24,7 +24,7 @@
             <button title="Șterge turneul"
                     class="btn btn-square btn-sm btn-error btn-outline"
                     hx-delete='/admin/tournaments/{{ iso_date }}'
-                    hx-target="#day_{{ id_date }}"
+                    hx-target="#tournament_{{ id_date }}"
                     hx-swap="outerHTML">
                 <span class="material-symbols-outlined">delete</span>
             </button>
