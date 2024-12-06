@@ -4,10 +4,10 @@ use std::fmt::{Display, Formatter};
 
 use crate::model::location::Location;
 use crate::model::user::User;
+pub use crate::reservation::check::*;
 use sqlx::{query, SqlitePool};
 use time::{Date, OffsetDateTime};
 use tracing::error;
-pub use crate::reservation::check::*;
 
 #[derive(Debug, PartialEq)]
 pub enum ReservationSuccess {
@@ -70,7 +70,7 @@ pub async fn create_reservation(
     selected_date: Date,
     selected_hour: u8,
 ) -> ReservationResult {
-    let mut tx = pool.begin().await.map_err(ReservationError::from)?;
+    let mut tx = pool.begin().await?;
     let success = is_reservation_possible(
         tx.as_mut(),
         location,
@@ -93,8 +93,7 @@ pub async fn create_reservation(
                 location.id
             )
             .execute(tx.as_mut())
-            .await
-            .map_err(ReservationError::from)?
+            .await?
             .rows_affected();
 
             if deleted_guests > 1 {
@@ -120,8 +119,7 @@ pub async fn create_reservation(
             selected_hour
         )
         .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?
+        .await?
         .count;
 
         if total_reservation_in_slot >= location.slot_capacity
@@ -145,10 +143,9 @@ pub async fn create_reservation(
         in_waiting,
     )
         .execute(tx.as_mut())
-        .await
-        .map_err(ReservationError::from)?;
+        .await?;
 
-    tx.commit().await.map_err(ReservationError::from)?;
+    tx.commit().await?;
 
     Ok(success)
 }
@@ -427,7 +424,7 @@ mod test {
         let (location, user_1, user_2) = setup(&pool, 1, 1, 1).await;
         query(
             "insert into users (id, email, name, password_hash, role_id, has_key)
-            VALUES (3000, 'test3@test.com', 'Test3', '', 100, FALSE)"
+            VALUES (3000, 'test3@test.com', 'Test3', '', 100, FALSE)",
         )
         .execute(&pool)
         .await
@@ -473,7 +470,6 @@ mod test {
         );
     }
 
-
     #[sqlx::test]
     async fn alternative_days(pool: SqlitePool) {
         let (location, user_1, user_2) = setup(&pool, 1, 1, 1).await;
@@ -488,24 +484,30 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
-            Err(ReservationError::Other("Ora pentru rezervare nu este validă"))
+            Err(ReservationError::Other(
+                "Ora pentru rezervare nu este validă"
+            ))
         );
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user_1, date_1, 10).await,
-            Ok(ReservationSuccess::Reservation {deletes_guest: false})
+            Ok(ReservationSuccess::Reservation {
+                deletes_guest: false
+            })
         );
-        
+
         assert_eq!(
             create_reservation(&pool, &location, now, &user_1, date_1, 13).await,
             Ok(ReservationSuccess::Guest)
         );
-        
+
         assert_eq!(
             create_reservation(&pool, &location, now, &user_2, date_1, 16).await,
-            Ok(ReservationSuccess::Reservation {deletes_guest: false})
+            Ok(ReservationSuccess::Reservation {
+                deletes_guest: false
+            })
         );
-        
+
         assert_eq!(
             create_reservation(&pool, &location, now, &user_2, date_1, 19).await,
             Ok(ReservationSuccess::Guest)

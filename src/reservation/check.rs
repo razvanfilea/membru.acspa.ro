@@ -1,11 +1,11 @@
-use sqlx::{query, query_as, SqliteConnection};
-use time::{Date, OffsetDateTime};
 use crate::model::hour_structure::HourStructure;
 use crate::model::location::Location;
 use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::reservation::{ReservationError, ReservationResult, ReservationSuccess};
 use crate::utils::queries::get_alt_hour_structure_for_day;
+use sqlx::{query, query_as, SqliteConnection};
+use time::{Date, OffsetDateTime};
 
 fn check_parameters_validity(
     now: OffsetDateTime,
@@ -59,9 +59,8 @@ pub async fn is_reservation_possible(
         selected_hour,
         user.id
     )
-        .fetch_optional(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?;
+    .fetch_optional(&mut *tx)
+    .await?;
 
     if let Some(reservation) = reservation_already_exists {
         return Err(ReservationError::AlreadyExists {
@@ -76,8 +75,7 @@ pub async fn is_reservation_possible(
         selected_hour
     )
         .fetch_optional(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?;
+        .await?;
 
     // Check if there is a restriction
     if let Some(restriction) = restriction {
@@ -89,9 +87,8 @@ pub async fn is_reservation_possible(
         "select * from user_roles where name = $1",
         user.role
     )
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?;
+    .fetch_one(&mut *tx)
+    .await?;
 
     let fixed_reservations_count = query!(
         "select count(*) as 'count!' from reservations where
@@ -101,8 +98,7 @@ pub async fn is_reservation_possible(
         selected_hour
     )
         .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?
+        .await?
         .count;
 
     let user_reservations_count = query!(
@@ -112,10 +108,9 @@ pub async fn is_reservation_possible(
         user.id,
         selected_date
     )
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?
-        .count;
+    .fetch_one(&mut *tx)
+    .await?
+    .count;
 
     if fixed_reservations_count >= location.slot_capacity {
         let in_waiting_count = query!(
@@ -125,10 +120,9 @@ pub async fn is_reservation_possible(
             selected_date,
             selected_hour
         )
-            .fetch_one(&mut *tx)
-            .await
-            .map_err(ReservationError::from)?
-            .count;
+        .fetch_one(&mut *tx)
+        .await?
+        .count;
 
         if user_reservations_count < role.reservations
             && in_waiting_count < location.waiting_capacity
@@ -146,10 +140,9 @@ pub async fn is_reservation_possible(
         selected_date,
         selected_hour
     )
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?
-        .count;
+    .fetch_one(&mut *tx)
+    .await?
+    .count;
 
     let total_count = fixed_reservations_count + guest_reservations_count;
     if role.reservations == 0 && total_count >= location.slot_capacity {
@@ -163,10 +156,9 @@ pub async fn is_reservation_possible(
         user.id,
         selected_date
     )
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(ReservationError::from)?
-        .count;
+    .fetch_one(&mut *tx)
+    .await?
+    .count;
 
     if user_reservations_count >= role.reservations {
         if user_reservations_as_guest_count >= role.guest_reservations {
@@ -180,4 +172,3 @@ pub async fn is_reservation_possible(
         deletes_guest: total_count >= location.slot_capacity,
     })
 }
-
