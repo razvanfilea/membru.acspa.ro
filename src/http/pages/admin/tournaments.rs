@@ -23,7 +23,7 @@ struct Tournament {
     date: Date,
     description: String,
     start_hour: i64,
-    duration: i64, 
+    duration: i64,
     created_at: OffsetDateTime,
 }
 

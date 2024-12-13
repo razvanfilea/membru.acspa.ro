@@ -44,7 +44,7 @@ pub async fn login(
     if !EmailAddress::is_valid(&login_user.email) {
         return login_error("Adresa de email este invalidă");
     }
-    
+
     if login_user.password.len() < 8 {
         return login_error("Parola este prea scurtă");
     }

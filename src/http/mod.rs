@@ -119,11 +119,7 @@ fn handle_panic(err: Box<dyn Any + Send + 'static>) -> Response {
     error_bubble_response(details)
 }
 
-pub async fn http_server(
-    app_state: AppState,
-    session_store: SqliteStore,
-    timetable_path: String,
-) {
+pub async fn http_server(app_state: AppState, session_store: SqliteStore, timetable_path: String) {
     let session_layer = SessionManagerLayer::new(session_store)
         .with_expiry(Expiry::OnInactivity(time::Duration::days(60)))
         .with_same_site(SameSite::Lax);
@@ -157,7 +153,9 @@ pub async fn http_server(
 
     println!("Server started on port {port}");
 
-    let listener = tokio::net::TcpListener::bind(addr).await.expect("Failed to create TcpListener");
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("Failed to create TcpListener");
     axum::serve(listener, http_service)
         .with_graceful_shutdown(shutdown_signal())
         .await

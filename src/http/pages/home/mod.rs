@@ -4,11 +4,11 @@ use crate::http::pages::{get_global_vars, AuthSession};
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
-use crate::utils::date_iter::DateIter;
-use crate::utils::queries::get_hour_structure_for_day;
 use crate::reservation::{
     create_reservation, is_reservation_possible, ReservationError, ReservationSuccess,
 };
+use crate::utils::date_iter::DateIter;
+use crate::utils::queries::get_hour_structure_for_day;
 use crate::utils::CssColor;
 use crate::utils::{date_formats, get_reservation_result_color, local_time};
 use askama::Template;
@@ -169,8 +169,9 @@ async fn confirm_reservation(
                     "Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
                     query.selected_date
                 ),
-                ReservationSuccess::InWaiting => format!(
-                    "Ești in așteptare pentru data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
+                ReservationSuccess::InWaiting{as_guest} => format!(
+                    "Ești in așteptare{} pentru data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
+                    if *as_guest { " ca și invitat"} else {""},
                     query.selected_date
                 ),
             }
@@ -248,7 +249,7 @@ async fn cancel_reservation(
             "update reservations set in_waiting = false where rowid =
                 (select rowid from reservations where
                     date = $1 and hour = $2 and location = $3 and cancelled = false and in_waiting = true
-                    order by created_at limit 1)",
+                    order by as_guest, created_at limit 1)",
             date, query.hour, state.location.id)
         .execute(tx.as_mut())
         .await

@@ -37,6 +37,56 @@ fn check_parameters_validity(
     Ok(())
 }
 
+async fn check_reservation_already_exists(
+    tx: &mut SqliteConnection,
+    location: &Location,
+    user: &User,
+    date: Date,
+    hour: u8,
+) -> ReservationResult<()> {
+    let reservation_already_exists = query!(
+        "select cancelled from reservations where
+        location = $1 and date = $2 and hour = $3 and user_id = $4 and created_for is null",
+        location.id,
+        date,
+        hour,
+        user.id
+    )
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    if let Some(reservation) = reservation_already_exists {
+        return Err(ReservationError::AlreadyExists {
+            cancelled: reservation.cancelled,
+        });
+    }
+
+    Ok(())
+}
+
+async fn check_restriction(
+    tx: &mut SqliteConnection,
+    location: &Location,
+    date: Date,
+    hour: u8,
+) -> ReservationResult<()> {
+    let restriction = query!(
+        "select message from restrictions where location = $1 and date = $2 and (hour = $3 or hour is null)",
+        location.id,
+        date,
+        hour
+    )
+        .fetch_optional(&mut *tx)
+        .await?;
+
+    // Check if there is a restriction
+    if let Some(restriction) = restriction {
+        return Err(ReservationError::Restriction(restriction.message));
+    }
+
+    Ok(())
+}
+
 pub async fn is_reservation_possible(
     tx: &'_ mut SqliteConnection,
     location: &Location,
@@ -51,36 +101,10 @@ pub async fn is_reservation_possible(
 
     check_parameters_validity(now, &hour_structure, selected_date, selected_hour)?;
 
-    let reservation_already_exists = query!(
-        "select cancelled from reservations where
-        location = $1 and date = $2 and hour = $3 and user_id = $4 and created_for is null",
-        location.id,
-        selected_date,
-        selected_hour,
-        user.id
-    )
-    .fetch_optional(&mut *tx)
-    .await?;
-
-    if let Some(reservation) = reservation_already_exists {
-        return Err(ReservationError::AlreadyExists {
-            cancelled: reservation.cancelled,
-        });
-    }
-
-    let restriction = query!(
-        "select message from restrictions where location = $1 and date = $2 and (hour = $3 or hour is null)",
-        location.id,
-        selected_date,
-        selected_hour
-    )
-        .fetch_optional(&mut *tx)
+    check_reservation_already_exists(&mut *tx, location, user, selected_date, selected_hour)
         .await?;
 
-    // Check if there is a restriction
-    if let Some(restriction) = restriction {
-        return Err(ReservationError::Restriction(restriction.message));
-    }
+    check_restriction(&mut *tx, location, selected_date, selected_hour).await?;
 
     let role = query_as!(
         UserRole,
@@ -90,7 +114,7 @@ pub async fn is_reservation_possible(
     .fetch_one(&mut *tx)
     .await?;
 
-    let fixed_reservations_count = query!(
+    let regular_reservations_count = query!(
         "select count(*) as 'count!' from reservations where
         location = $1 and date = $2 and hour = $3 and as_guest = false and cancelled = false and in_waiting = false",
         location.id,
@@ -101,7 +125,20 @@ pub async fn is_reservation_possible(
         .await?
         .count;
 
-    let user_reservations_count = query!(
+    let guest_reservations_count = query!(
+        "select count(*) as 'count!' from reservations where
+        location = $1 and date = $2 and hour = $3 and as_guest = true and cancelled = false and in_waiting = false",
+        location.id,
+        selected_date,
+        selected_hour
+    )
+        .fetch_one(&mut *tx)
+        .await?
+        .count;
+
+    let total_reservations = regular_reservations_count + guest_reservations_count;
+
+    let regular_user_reservations_count = query!(
         r#"select count(*) as 'count!' from reservations
             where user_id = $1 and as_guest = false and cancelled = false and
             strftime('%Y%W', date) = strftime('%Y%W', $2)"#,
@@ -112,44 +149,7 @@ pub async fn is_reservation_possible(
     .await?
     .count;
 
-    if fixed_reservations_count >= location.slot_capacity {
-        let in_waiting_count = query!(
-            "select count(*) as 'count!' from reservations where
-            location = $1 and date = $2 and hour = $3 and cancelled = false and in_waiting = true",
-            location.id,
-            selected_date,
-            selected_hour
-        )
-        .fetch_one(&mut *tx)
-        .await?
-        .count;
-
-        if user_reservations_count < role.reservations
-            && in_waiting_count < location.waiting_capacity
-        {
-            return Ok(ReservationSuccess::InWaiting);
-        }
-
-        return Err(ReservationError::SlotFull);
-    }
-
-    let guest_reservations_count = query!(
-        "select count(*) as 'count!' from reservations where
-        location = $1 and date = $2 and hour = $3 and as_guest = true and in_waiting = false",
-        location.id,
-        selected_date,
-        selected_hour
-    )
-    .fetch_one(&mut *tx)
-    .await?
-    .count;
-
-    let total_count = fixed_reservations_count + guest_reservations_count;
-    if role.reservations == 0 && total_count >= location.slot_capacity {
-        return Err(ReservationError::SlotFull);
-    }
-
-    let user_reservations_as_guest_count = query!(
+    let guest_user_reservations_count = query!(
         r#"select count(*) as 'count!' from reservations
             where user_id = $1 and as_guest = true and cancelled = false and
             strftime('%Y%W', date) = strftime('%Y%W', $2)"#,
@@ -160,15 +160,27 @@ pub async fn is_reservation_possible(
     .await?
     .count;
 
-    if user_reservations_count >= role.reservations {
-        if user_reservations_as_guest_count >= role.guest_reservations {
-            return Err(ReservationError::NoMoreReservation);
-        }
-
-        return Ok(ReservationSuccess::Guest);
+    if regular_user_reservations_count < role.reservations {
+        return Ok(if total_reservations < location.slot_capacity {
+            ReservationSuccess::Reservation {
+                deletes_guest: false,
+            }
+        } else if regular_reservations_count < location.slot_capacity {
+            ReservationSuccess::Reservation {
+                deletes_guest: true,
+            }
+        } else {
+            ReservationSuccess::InWaiting { as_guest: false }
+        });
     }
 
-    Ok(ReservationSuccess::Reservation {
-        deletes_guest: total_count >= location.slot_capacity,
-    })
+    if guest_user_reservations_count < role.guest_reservations {
+        return Ok(if total_reservations < location.slot_capacity {
+            ReservationSuccess::Guest
+        } else {
+            ReservationSuccess::InWaiting { as_guest: true }
+        });
+    }
+
+    Err(ReservationError::NoMoreReservation)
 }

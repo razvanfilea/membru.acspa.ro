@@ -19,23 +19,18 @@
         "type_info": "Integer"
       },
       {
-        "name": "waiting_capacity",
+        "name": "slots_start_hour",
         "ordinal": 3,
         "type_info": "Integer"
       },
       {
-        "name": "slots_start_hour",
+        "name": "slot_duration",
         "ordinal": 4,
         "type_info": "Integer"
       },
       {
-        "name": "slot_duration",
-        "ordinal": 5,
-        "type_info": "Integer"
-      },
-      {
         "name": "slots_per_day",
-        "ordinal": 6,
+        "ordinal": 5,
         "type_info": "Integer"
       }
     ],
@@ -43,7 +38,6 @@
       "Right": 0
     },
     "nullable": [
-      false,
       false,
       false,
       false,

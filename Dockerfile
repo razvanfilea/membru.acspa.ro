@@ -3,7 +3,7 @@ ARG TARGET_ARCH=x86_64-unknown-linux-musl
 FROM rust:1.83-alpine AS base
 USER root
 
-RUN apk add --no-cache deno musl-dev
+RUN apk add --no-cache npm musl-dev
 
 ARG TARGET_ARCH
 RUN rustup target add $TARGET_ARCH
@@ -21,8 +21,8 @@ FROM base AS builder
 COPY --from=planner /acspa/recipe.json recipe.json
 RUN cargo chef cook --release --target $TARGET_ARCH --recipe-path recipe.json
 COPY . .
-RUN deno task prod
-RUN cargo build --release --target $TARGET_ARCH
+RUN npm install && npm run prod && \
+    cargo build --release --target $TARGET_ARCH
 
 
 FROM scratch

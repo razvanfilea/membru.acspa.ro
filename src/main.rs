@@ -2,7 +2,6 @@ use axum_login::tower_sessions::ExpiredDeletion;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous};
 use std::str::FromStr;
 use std::time::Duration;
-use time::util::local_offset::{set_soundness, Soundness};
 use tokio::task;
 use tower_sessions_sqlx_store::SqliteStore;
 use tracing::warn;
@@ -14,14 +13,11 @@ use crate::http::{http_server, periodic_cleanup_of_waiting_reservations, AppStat
 
 mod http;
 mod model;
-mod utils;
 mod reservation;
+mod utils;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    unsafe {
-        set_soundness(Soundness::Unsound);
-    }
     dotenvy::dotenv().ok();
     tracing_subscriber::registry()
         .with(EnvFilter::new(std::env::var("RUST_LOG").unwrap_or_else(

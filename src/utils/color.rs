@@ -21,7 +21,13 @@ pub fn get_reservation_result_color(result: &ReservationResult) -> CssColor {
         Ok(success) => match success {
             ReservationSuccess::Reservation { .. } => CssColor::Green,
             ReservationSuccess::Guest => CssColor::Blue,
-            ReservationSuccess::InWaiting => CssColor::Blue,
+            ReservationSuccess::InWaiting { as_guest } => {
+                if *as_guest {
+                    CssColor::Blue
+                } else {
+                    CssColor::Green
+                }
+            }
         },
         Err(error) => match error {
             ReservationError::AlreadyExists { .. } => CssColor::Yellow,
