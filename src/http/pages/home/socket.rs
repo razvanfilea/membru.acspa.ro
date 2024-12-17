@@ -19,7 +19,7 @@ use time::Date;
 use tokio::select;
 use tracing::{debug, error, warn};
 
-pub async fn ws(
+pub async fn handle_ws(
     State(state): State<AppState>,
     auth_session: AuthSession,
     ws: WebSocketUpgrade,
@@ -67,10 +67,22 @@ struct HomeContentTemplate<'a> {
 
 #[derive(Template)]
 #[template(path = "components/home/hours.html")]
-struct HoursTemplate<'a> {
+pub struct HoursTemplate<'a> {
     reservation_hours: Vec<ReservationsSlot>,
     selected_date: Date,
     user: &'a User,
+    enable_editing: bool,
+}
+
+impl<'a> HoursTemplate<'a> {
+    pub async fn create_response(state: &AppState, selected_date: Date, user: &'a User, enable_editing: bool) -> String {
+        Self {
+            reservation_hours: get_reservation_hours(state, selected_date).await,
+            selected_date,
+            user,
+            enable_editing
+        }.to_string()
+    }
 }
 
 async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
@@ -123,12 +135,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
 
                 reservations_changed.borrow_and_update();
 
-                HoursTemplate {
-                    reservation_hours: get_reservation_hours(&state, selected_date).await,
-                    selected_date,
-                    user: &user
-                }
-                .to_string()
+                HoursTemplate::create_response(&state, selected_date, &user, true).await
             }
             message = recv_task => {
                 let Some(ws_message) = WsMessage::parse(message) else {

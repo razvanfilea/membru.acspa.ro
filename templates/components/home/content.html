@@ -8,6 +8,7 @@
     </div>
 
     <div class="flex flex-col max-w-full grow" hx-vals='{"selected_date": "{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}" }'>
+        {% let enable_editing = true%}
         {% include "components/home/hours.html" %}
 
         <div id="confirmation"></div>

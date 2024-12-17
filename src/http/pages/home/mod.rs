@@ -1,5 +1,5 @@
 use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationsSlot};
-use crate::http::pages::home::socket::ws;
+use crate::http::pages::home::socket::handle_ws;
 use crate::http::pages::{get_global_vars, AuthSession};
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
@@ -22,15 +22,15 @@ use sqlx::query;
 use time::Date;
 use tracing::{error, warn};
 
-mod reservation_hours;
-mod socket;
+pub mod reservation_hours;
+pub mod socket;
 
 const DAYS_AHEAD_ALLOWED: time::Duration = time::Duration::days(14);
 
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(index))
-        .route("/ws", get(ws))
+        .route("/ws", get(handle_ws))
         .route("/choose_hour", post(hour_picker))
         .route("/reservation", post(confirm_reservation))
         .route("/reservation", delete(cancel_reservation))

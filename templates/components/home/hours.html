@@ -1,4 +1,3 @@
-{% let selected_date_formatted = selected_date.format(date_formats::ISO_DATE).unwrap() %}
 
 {% macro res_btn(index, id, res) %}
 <button popovertarget="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}"
@@ -39,14 +38,14 @@
     {% endif %}
 </button>
 
-{% if user.admin_panel_access || user.id == res.user_id %}
+{% if enable_editing && (user.admin_panel_access || user.id == res.user_id) %}
 <div id="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}" class="rounded-2xl" popover>
     <div class="p-6 flex flex-col gap-4">
         <p>Rezervarea de la ora <b>{{ slot.start_hour }}</b> pe numele <b>{{ res.name }}</b></p>
 
         <button class="btn btn-error"
                 hx-vals="unset"
-                hx-delete='/reservation?date={{ selected_date_formatted }}&hour={{ slot.start_hour }}&user_id={{ res.user_id }}
+                hx-delete='/reservation?date={{ selected_date }}&hour={{ slot.start_hour }}&user_id={{ res.user_id }}
 {%- if let Some(created_for) = res.created_for %}&created_for={{ created_for }}{% endif %}'>
             Anulează
         </button>
@@ -83,7 +82,7 @@
         {% endif %}
         {% endif %}
 
-        {% if slot.reservations.is_ok() %}
+        {% if enable_editing && slot.reservations.is_ok() %}
         <input name="reservation" type="radio" aria-label="Rezervare" autocomplete="off"
                hx-post="/choose_hour" hx-target="#confirmation" hx-swap="outerHTML show:bottom"
                class="btn btn-md btn-outline btn-accent w-min"/>

@@ -1,0 +1,22 @@
+{% extends "../../base.html" %}
+
+{% block page_title %}Situație pe zile{% endblock %}
+
+{% block content %}
+
+<main class="p-4 md:p-8 w-full">
+    <label>
+        <div class="label">
+            <span class="label-text">Alege data:</span>
+        </div>
+        <input type="date" name="date" class="input input-bordered w-full max-w-xs" autocomplete="off"
+               value="{{ current_date }}"
+               hx-post="daily" hx-target="#hours">
+    </label>
+
+    <div id="hours" class="mt-8 flex flex-col">
+        {{ content|safe }}
+    </div>
+</main>
+
+{% endblock %}
