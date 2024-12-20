@@ -9,11 +9,11 @@
         <div class="label">
             <span class="label-text">Alege membrul:</span>
         </div>
-        <select class="select select-bordered w-full max-w-xs" autocomplete="off"
-            hx-target="#reservations">
+        <select class="select select-bordered w-full max-w-xs" autocomplete="off" name="email"
+            hx-target="#reservations" hx-post="member">
             <option disabled selected>alege un membru</option>
             {% for member in members %}
-            <option hx-get="member/{{member.email}}" >{{ member.name }}</option>
+            <option value="{{ member.email }}">{{ member.name }}</option>
             {% endfor %}
         </select>
     </label>

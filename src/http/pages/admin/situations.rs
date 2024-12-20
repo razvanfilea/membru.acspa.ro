@@ -1,26 +1,26 @@
+use crate::http::pages::home::socket::HoursTemplate;
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
 use crate::utils::date_formats;
+use crate::utils::date_formats::{ISO_DATE_UNDERLINE, READABLE_DATE_TIME};
 use crate::utils::local_time;
+use crate::utils::queries::get_user_reservations;
 use askama::Template;
 use askama_axum::IntoResponse;
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::response::Response;
 use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use time::Date;
-use crate::http::pages::home::socket::HoursTemplate;
-use crate::utils::date_formats::{ISO_DATE_UNDERLINE, READABLE_DATE_TIME};
-use crate::utils::queries::get_user_reservations;
 
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/member", get(members_situation_page))
-        .route("/member/:id", get(member_situations))
+        .route("/member", post(member_situations))
         .route("/daily", get(daily_situation_page))
         .route("/daily", post(daily_situation_choose_date))
         .route("/download", get(download_situations))
@@ -53,9 +53,14 @@ async fn members_situation_page(
     }
 }
 
+#[derive(Deserialize)]
+struct MemberSituationQuery {
+    email: String,
+}
+
 async fn member_situations(
-    Path(email): Path<String>,
     State(state): State<AppState>,
+    Form(form): Form<MemberSituationQuery>,
 ) -> impl IntoResponse {
     #[derive(Template)]
     #[template(path = "components/reservations_list.html")]
@@ -65,7 +70,7 @@ async fn member_situations(
     }
 
     UserReservationsTemplate {
-        reservations: get_user_reservations(&state.read_pool, &email, false).await,
+        reservations: get_user_reservations(&state.read_pool, &form.email, false).await,
         allow_reservation_cancellation: false,
     }
 }
@@ -81,12 +86,12 @@ async fn daily_situation_page(
         current_date: Date,
         content: String,
     }
-    
+
     let current_date = local_time().date();
     let user = auth_session.user.expect("User should be logged in");
-    
+
     let hours = HoursTemplate::create_response(&state, current_date, &user, false).await;
-    
+
     DailySituationTemplate {
         user,
         current_date,
@@ -96,7 +101,7 @@ async fn daily_situation_page(
 
 #[derive(Deserialize)]
 struct DailySituationQuery {
-    date: String
+    date: String,
 }
 
 async fn daily_situation_choose_date(
@@ -106,8 +111,8 @@ async fn daily_situation_choose_date(
 ) -> impl IntoResponse {
     let date = Date::parse(&query.date, date_formats::ISO_DATE).expect("Failed to parse date");
     let user = auth_session.user.expect("User should be logged in");
-    
-     HoursTemplate::create_response(&state, date, &user, false).await
+
+    HoursTemplate::create_response(&state, date, &user, false).await
 }
 
 async fn download_situations(State(state): State<AppState>) -> impl IntoResponse {
