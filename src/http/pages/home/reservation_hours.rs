@@ -28,7 +28,12 @@ pub struct ReservationsSlot {
     pub reservations: Result<Reservations, String>,
 }
 
-pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<ReservationsSlot> {
+pub struct ReservationHours {
+    pub description: Option<String>,
+    pub hours: Vec<ReservationsSlot>,
+}
+
+pub async fn get_reservation_hours(state: &AppState, date: Date) -> ReservationHours {
     let hour_structure = get_hour_structure_for_day(state, date).await;
     let restrictions = query_as!(
         Restriction,
@@ -42,14 +47,17 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
     // Check if the whole day is restricted
     // Since it's ordered by hour, a null hour should be first if there is one
     if let Some(restriction) = restrictions.first().filter(|r| r.hour.is_none()) {
-        return hour_structure
-            .iter()
-            .map(|hour| ReservationsSlot {
-                start_hour: hour,
-                end_hour: hour + hour_structure.slot_duration as u8,
-                reservations: Err(restriction.message.clone()),
-            })
-            .collect();
+        return ReservationHours {
+            hours: hour_structure
+                .iter()
+                .map(|hour| ReservationsSlot {
+                    start_hour: hour,
+                    end_hour: hour + hour_structure.slot_duration as u8,
+                    reservations: Err(restriction.message.clone()),
+                })
+                .collect(),
+            description: hour_structure.description,
+        };
     }
 
     let date_reservations = query!(
@@ -65,7 +73,7 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
     .await
     .expect("Database error");
 
-    hour_structure
+    let hours = hour_structure
         .iter()
         .map(|hour| {
             let end_hour = hour + hour_structure.slot_duration as u8;
@@ -111,5 +119,10 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> Vec<Reservat
                 reservations: Ok(Reservations { list, waiting }),
             }
         })
-        .collect()
+        .collect();
+
+    ReservationHours {
+        description: hour_structure.description,
+        hours
+    }
 }

@@ -22,7 +22,7 @@
     {% when CssColor::Indigo %}
     bg-indigo-600
     {% when CssColor::Brown %}
-    bg-amber-800
+    bg-yellow-950
     {% when CssColor::Gray %}
     bg-gray-700
     {% endmatch %}">
@@ -56,7 +56,10 @@
 {% endmacro %}
 
 <div id="hours">
-    {% for slot in reservation_hours %}
+    {% if let Some(description) = reservation_hours.description %}
+    <h4 class="text-xl underline mb-2">{{ description }}</h4>
+    {% endif %}
+    {% for slot in reservation_hours.hours %}
     <div hx-vals='{"hour": {{ slot.start_hour }} }'>
         <div class="flex flex-row flex-wrap gap-1 mb-4 items-center">
             Ora {{ slot.start_hour }} - {{ slot.end_hour }}:
@@ -74,7 +77,7 @@
         {% if let Ok(reservations) = slot.reservations %}
         {% if !reservations.waiting.is_empty() %}
         <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
-            <p class="text-red-500">În așteptare:</p>
+            <p class="text-red-500 font-semibold">În așteptare:</p>
             {% for res in reservations.waiting %}
             {% call res_btn(loop.index, "waiting", res) %}
             {% endfor %}

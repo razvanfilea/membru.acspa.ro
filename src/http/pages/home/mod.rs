@@ -1,4 +1,4 @@
-use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationsSlot};
+use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationHours};
 use crate::http::pages::home::socket::handle_ws;
 use crate::http::pages::{get_global_vars, AuthSession};
 use crate::http::AppState;
@@ -46,7 +46,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         selected_date: Date,
         days: DateIter,
         user: User,
-        reservation_hours: Vec<ReservationsSlot>,
+        reservation_hours: ReservationHours,
         global_vars: GlobalVars,
     }
 

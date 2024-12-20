@@ -1,4 +1,4 @@
-use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationsSlot};
+use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationHours};
 use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
 use crate::http::pages::notification_template::NotificationBubbleResponse;
 use crate::http::pages::AuthSession;
@@ -61,14 +61,14 @@ struct HomeContentTemplate<'a> {
     current_date: Date,
     selected_date: Date,
     days: DateIter,
-    reservation_hours: Vec<ReservationsSlot>,
+    reservation_hours: ReservationHours,
     user: &'a User,
 }
 
 #[derive(Template)]
 #[template(path = "components/home/hours.html")]
 pub struct HoursTemplate<'a> {
-    reservation_hours: Vec<ReservationsSlot>,
+    reservation_hours: ReservationHours,
     selected_date: Date,
     user: &'a User,
     enable_editing: bool,

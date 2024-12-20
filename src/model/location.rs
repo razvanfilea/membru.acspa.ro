@@ -12,10 +12,10 @@ pub struct Location {
 
 impl Location {
     pub fn hour_structure(&self) -> HourStructure {
-        HourStructure {
-            slots_start_hour: self.slots_start_hour,
-            slot_duration: self.slot_duration,
-            slots_per_day: self.slots_per_day,
-        }
+        HourStructure::new(
+            self.slots_start_hour,
+            self.slot_duration,
+            self.slots_per_day,
+        )
     }
 }

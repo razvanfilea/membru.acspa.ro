@@ -3,6 +3,7 @@ pub struct HourStructure {
     pub slots_start_hour: i64,
     pub slot_duration: i64,
     pub slots_per_day: i64,
+    pub description: Option<String>,
 }
 
 impl HourStructure {
@@ -15,6 +16,7 @@ impl HourStructure {
             slots_start_hour,
             slot_duration,
             slots_per_day,
+            description: None,
         }
     }
 

@@ -18,7 +18,7 @@ where
     } else {
         query_as!(
             HourStructure,
-            "select slots_start_hour, slot_duration, slots_per_day from alternative_days where date = $1",
+            "select slots_start_hour, slot_duration, slots_per_day, description from alternative_days where date = $1",
             date
         ).fetch_optional(executor).await.expect("Database error")
     }
