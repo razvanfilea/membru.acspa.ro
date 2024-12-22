@@ -1,6 +1,6 @@
 {% extends "../../base.html" %}
 
-{% block page_title %}Rol nou{% endblock %}
+{% block page_title %}{% if value.is_none() %}Rol nou{% else %}Editează rolul{% endif %}{% endblock %}
 
 {% block content %}
 
@@ -44,6 +44,10 @@
     {% if let Some(val) = value %}
     <button class="btn btn-primary mt-6" hx-post="/admin/roles/edit/{{ val.id }}">
         Actualizează
+    </button>
+
+    <button class="btn btn-error mt-6" hx-swap="none" hx-delete="/admin/roles/{{ val.id }}" hx-confirm="Ești absolut sigur că vrei să ștergi acest rol?">
+        Șterge
     </button>
     {% else %}
     <button class="btn btn-primary mt-6" hx-post="/admin/roles/new">

@@ -6,12 +6,13 @@ use crate::utils::CssColor;
 use askama::Template;
 use askama_axum::{IntoResponse, Response};
 use axum::extract::{Path, State};
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use std::str::FromStr;
 use strum::IntoEnumIterator;
+use crate::http::pages::notification_template::error_bubble_response;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -20,6 +21,7 @@ pub fn router() -> Router<AppState> {
         .route("/new", post(create_new_role))
         .route("/edit/:id", get(edit_role_page))
         .route("/edit/:id", post(update_role))
+        .route("/:id", delete(delete_role))
 }
 
 async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
@@ -140,4 +142,33 @@ async fn update_role(
         .header("HX-Redirect", "/admin/roles")
         .body("Rolul a fost actualizat cu succes".to_string())
         .expect("Failed to create headers")
+}
+
+async fn delete_role(
+    State(state): State<AppState>,
+    Path(role_id): Path<i64>,
+) -> impl IntoResponse {
+    let users_with_role = query!("select count(*) as 'count!' from users where role_id = $1", role_id)
+        .fetch_one(&state.write_pool)
+        .await
+        .expect("Database error")
+        .count;
+    
+    if users_with_role > 0 {
+        return error_bubble_response(format!("{users_with_role} utilizatori au acest rol, rolul nu poate fi șters"));
+    }
+    
+    query!(
+        "delete from user_roles where id = $1",
+        role_id,
+    )
+        .execute(&state.write_pool)
+        .await
+        .expect("Database error");
+
+    Response::builder()
+        .header("HX-Redirect", "/admin/roles")
+        .body("Rolul a fost actualizat cu succes".to_string())
+        .expect("Failed to create headers")
+        .into_response()
 }

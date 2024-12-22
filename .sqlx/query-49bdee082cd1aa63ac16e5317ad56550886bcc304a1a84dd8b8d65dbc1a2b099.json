@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select color as 'color!', name from user_roles where color is not null and color != 'None'",
+  "describe": {
+    "columns": [
+      {
+        "name": "color!",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true,
+      false
+    ]
+  },
+  "hash": "49bdee082cd1aa63ac16e5317ad56550886bcc304a1a84dd8b8d65dbc1a2b099"
+}
