@@ -1,31 +1,9 @@
+{% import "components/color_mapper.html" as color_mapper %}
 
 {% macro res_btn(index, id, res) %}
 <button popovertarget="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}"
         class="btn btn-sm no-animation rounded-full text-white items-center
-    {% match res.color %}
-    {% when CssColor::None %}
-    bg-slate-500
-    {% when CssColor::Blue %}
-    bg-sky-500
-    {% when CssColor::Red %}
-    bg-error
-    {% when CssColor::Pink %}
-    bg-fuchsia-600
-    {% when CssColor::Green %}
-    bg-green-600
-    {% when CssColor::Yellow %}
-    bg-warning
-    {% when CssColor::Orange %}
-    bg-orange-500
-    {% when CssColor::Violet %}
-    bg-violet-600
-    {% when CssColor::Indigo %}
-    bg-indigo-600
-    {% when CssColor::Brown %}
-    bg-yellow-950
-    {% when CssColor::Gray %}
-    bg-gray-700
-    {% endmatch %}">
+    {% call color_mapper::map_rust_color(res.color) %}">
 
     {{ index }}. {{ res.name }}
 

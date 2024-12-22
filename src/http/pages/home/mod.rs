@@ -19,6 +19,7 @@ use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
+use std::str::FromStr;
 use time::Date;
 use tracing::{error, warn};
 
@@ -39,6 +40,11 @@ pub fn router() -> Router<AppState> {
 async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+    struct ColorCode {
+        name: String,
+        color: CssColor,
+    }
+
     #[derive(Template)]
     #[template(path = "pages/home.html")]
     struct HomeTemplate {
@@ -48,9 +54,22 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         user: User,
         reservation_hours: ReservationHours,
         global_vars: GlobalVars,
+        reservation_color_code: Vec<ColorCode>,
     }
 
     let current_date = local_time().date();
+
+    let reservation_color_code =
+        query!("select color as 'color!', name from user_roles where color is not null and color != 'None'")
+            .fetch_all(&state.read_pool)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|color_code| ColorCode {
+                name: color_code.name,
+                color: CssColor::from_str(&color_code.color).unwrap_or(CssColor::None),
+            })
+            .collect();
 
     HomeTemplate {
         current_date,
@@ -59,6 +78,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         user: auth_session.user.expect("User should be logged in"),
         reservation_hours: get_reservation_hours(&state, current_date).await,
         global_vars: get_global_vars(&state).await,
+        reservation_color_code,
     }
 }
 

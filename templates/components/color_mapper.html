@@ -1,0 +1,26 @@
+{% macro map_rust_color(color) %}
+    {% match color %}
+    {% when CssColor::None %}
+    bg-slate-500
+    {% when CssColor::Blue %}
+    bg-sky-500
+    {% when CssColor::Red %}
+    bg-red-700
+    {% when CssColor::Pink %}
+    bg-fuchsia-600
+    {% when CssColor::Green %}
+    bg-green-600
+    {% when CssColor::Yellow %}
+    bg-yellow-600
+    {% when CssColor::Orange %}
+    bg-orange-500
+    {% when CssColor::Violet %}
+    bg-violet-600
+    {% when CssColor::Indigo %}
+    bg-indigo-600
+    {% when CssColor::Brown %}
+    bg-yellow-900
+    {% when CssColor::Gray %}
+    bg-gray-700
+    {% endmatch %}
+{% endmacro %}
