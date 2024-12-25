@@ -1,33 +1,33 @@
 use crate::http::AppState;
-use crate::model::hour_structure::{HourStructure, HOLIDAY_HOUR_STRUCTURE};
+use crate::model::day_structure::{DayStructure, HOLIDAY_DAY_STRUCTURE};
 use crate::model::user_reservation::UserReservation;
 use sqlx::{query_as, Executor, Sqlite, SqlitePool};
 use time::{Date, Weekday};
 use tracing::error;
 
-fn is_weekend(weekday: Weekday) -> bool {
-    weekday == Weekday::Saturday || weekday == Weekday::Sunday
-}
-
-pub async fn get_alt_hour_structure_for_day<'a, E>(executor: E, date: Date) -> Option<HourStructure>
+pub async fn get_alt_day_structure_for_day<'a, E>(executor: E, date: Date) -> Option<DayStructure>
 where
     E: Executor<'a, Database = Sqlite>,
 {
+    fn is_weekend(weekday: Weekday) -> bool {
+        weekday == Weekday::Saturday || weekday == Weekday::Sunday
+    }
+
     if is_weekend(date.weekday()) {
-        Some(HOLIDAY_HOUR_STRUCTURE)
+        Some(HOLIDAY_DAY_STRUCTURE)
     } else {
         query_as!(
-            HourStructure,
-            "select slots_start_hour, slot_duration, slots_per_day, description from alternative_days where date = $1",
+            DayStructure,
+            "select slots_start_hour, slot_duration, slots_per_day, description, slot_capacity from alternative_days where date = $1",
             date
         ).fetch_optional(executor).await.expect("Database error")
     }
 }
 
-pub async fn get_hour_structure_for_day(state: &AppState, date: Date) -> HourStructure {
-    get_alt_hour_structure_for_day(&state.read_pool, date)
+pub async fn get_day_structure_for_day(state: &AppState, date: Date) -> DayStructure {
+    get_alt_day_structure_for_day(&state.read_pool, date)
         .await
-        .unwrap_or_else(|| state.location.hour_structure())
+        .unwrap_or_else(|| state.location.day_structure())
 }
 
 pub async fn get_user_reservations(

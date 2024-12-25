@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select slots_start_hour, slot_duration, slots_per_day, description from alternative_days where date = $1",
+  "query": "select slots_start_hour, slot_duration, slots_per_day, description, slot_capacity from alternative_days where date = $1",
   "describe": {
     "columns": [
       {
@@ -22,6 +22,11 @@
         "name": "description",
         "ordinal": 3,
         "type_info": "Text"
+      },
+      {
+        "name": "slot_capacity",
+        "ordinal": 4,
+        "type_info": "Integer"
       }
     ],
     "parameters": {
@@ -31,8 +36,9 @@
       false,
       false,
       false,
+      true,
       true
     ]
   },
-  "hash": "74f1ad184fb6dc7e3363a1794199873bac55c62ef7df081a804c88a268ff52f7"
+  "hash": "525fcb64ee4f6b6956bd4fa509a5d2ecacce05398137c84ce4e6031bb0e0f089"
 }

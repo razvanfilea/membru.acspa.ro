@@ -1,6 +1,6 @@
 use crate::http::AppState;
 use crate::model::restriction::Restriction;
-use crate::utils::queries::get_hour_structure_for_day;
+use crate::utils::queries::get_day_structure_for_day;
 use crate::utils::CssColor;
 use sqlx::{query, query_as};
 use std::str::FromStr;
@@ -34,7 +34,7 @@ pub struct ReservationHours {
 }
 
 pub async fn get_reservation_hours(state: &AppState, date: Date) -> ReservationHours {
-    let hour_structure = get_hour_structure_for_day(state, date).await;
+    let day_structure = get_day_structure_for_day(state, date).await;
     let restrictions = query_as!(
         Restriction,
         "select date, hour, message, created_at from restrictions where date = $1 order by hour",
@@ -48,15 +48,15 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> ReservationH
     // Since it's ordered by hour, a null hour should be first if there is one
     if let Some(restriction) = restrictions.first().filter(|r| r.hour.is_none()) {
         return ReservationHours {
-            hours: hour_structure
+            hours: day_structure
                 .iter()
                 .map(|hour| ReservationsSlot {
                     start_hour: hour,
-                    end_hour: hour + hour_structure.slot_duration as u8,
+                    end_hour: hour + day_structure.slot_duration as u8,
                     reservations: Err(restriction.message.clone()),
                 })
                 .collect(),
-            description: hour_structure.description,
+            description: day_structure.description,
         };
     }
 
@@ -73,10 +73,10 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> ReservationH
     .await
     .expect("Database error");
 
-    let hours = hour_structure
+    let hours = day_structure
         .iter()
         .map(|hour| {
-            let end_hour = hour + hour_structure.slot_duration as u8;
+            let end_hour = hour + day_structure.slot_duration as u8;
 
             if let Some(restriction) = restrictions
                 .iter()
@@ -122,7 +122,7 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> ReservationH
         .collect();
 
     ReservationHours {
-        description: hour_structure.description,
+        description: day_structure.description,
         hours
     }
 }

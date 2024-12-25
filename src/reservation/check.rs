@@ -1,34 +1,34 @@
-use crate::model::hour_structure::HourStructure;
+use crate::model::day_structure::DayStructure;
 use crate::model::location::Location;
 use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::reservation::{ReservationError, ReservationResult, ReservationSuccess};
-use crate::utils::queries::get_alt_hour_structure_for_day;
+use crate::utils::queries::get_alt_day_structure_for_day;
 use sqlx::{query, query_as, SqliteConnection};
 use time::{Date, OffsetDateTime};
 
 fn check_parameters_validity(
     now: OffsetDateTime,
-    hour_structure: &HourStructure,
+    day_structure: &DayStructure,
     selected_date: Date,
     selected_hour: u8,
 ) -> ReservationResult<()> {
     let now_date = now.date();
     let now_hour = now.time().hour();
 
-    if selected_date < now_date || (selected_date == now_date && selected_hour <= now_hour) {
+    if selected_date < now_date {
         return Err(ReservationError::Other(
-            "Nu poți face o rezervare în trecut",
+            "Nu poți face o rezervare pentru o zi din trecut",
         ));
     }
 
-    if !hour_structure.is_hour_valid(selected_hour) {
+    if !day_structure.is_hour_valid(selected_hour) {
         return Err(ReservationError::Other(
             "Ora pentru rezervare nu este validă",
         ));
     }
 
-    if selected_date == now_date && now_hour == selected_hour - 1 {
+    if selected_date == now_date && now_hour >= selected_hour - 1 {
         return Err(ReservationError::Other(
             "Rezervările se fac cu cel putin o oră înainte",
         ));
@@ -95,11 +95,11 @@ pub async fn is_reservation_possible(
     selected_date: Date,
     selected_hour: u8,
 ) -> ReservationResult {
-    let hour_structure = get_alt_hour_structure_for_day(&mut *tx, selected_date)
+    let day_structure = get_alt_day_structure_for_day(&mut *tx, selected_date)
         .await
-        .unwrap_or_else(|| location.hour_structure());
+        .unwrap_or_else(|| location.day_structure());
 
-    check_parameters_validity(now, &hour_structure, selected_date, selected_hour)?;
+    check_parameters_validity(now, &day_structure, selected_date, selected_hour)?;
 
     check_reservation_already_exists(&mut *tx, location, user, selected_date, selected_hour)
         .await?;
@@ -160,12 +160,15 @@ pub async fn is_reservation_possible(
     .await?
     .count;
 
+    let capacity = day_structure.slot_capacity.unwrap_or(location.slot_capacity);
+
+    // Attempt to create a normal reservation
     if regular_user_reservations_count < role.reservations {
-        return Ok(if total_reservations < location.slot_capacity {
+        return Ok(if total_reservations < capacity {
             ReservationSuccess::Reservation {
                 deletes_guest: false,
             }
-        } else if regular_reservations_count < location.slot_capacity {
+        } else if regular_reservations_count < capacity {
             ReservationSuccess::Reservation {
                 deletes_guest: true,
             }
@@ -174,13 +177,14 @@ pub async fn is_reservation_possible(
         });
     }
 
+    // Otherwise try to create a guest reservation
     if guest_user_reservations_count < role.guest_reservations {
-        return Ok(if total_reservations < location.slot_capacity {
+        return Ok(if total_reservations < capacity {
             ReservationSuccess::Guest
         } else {
             ReservationSuccess::InWaiting { as_guest: true }
         });
     }
 
-    Err(ReservationError::NoMoreReservation)
+    Err(ReservationError::NoMoreReservations)
 }

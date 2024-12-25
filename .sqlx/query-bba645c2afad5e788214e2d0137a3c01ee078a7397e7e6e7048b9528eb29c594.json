@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slot_capacity, slots_per_day) VALUES ($1, $2, 'turneu', $3, $4, $5, 1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "bba645c2afad5e788214e2d0137a3c01ee078a7397e7e6e7048b9528eb29c594"
+}

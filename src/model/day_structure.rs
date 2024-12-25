@@ -1,22 +1,24 @@
 #[derive(Clone, PartialEq)]
-pub struct HourStructure {
+pub struct DayStructure {
     pub slots_start_hour: i64,
     pub slot_duration: i64,
     pub slots_per_day: i64,
     pub description: Option<String>,
+    pub slot_capacity: Option<i64>,
 }
 
-impl HourStructure {
+impl DayStructure {
     pub const fn new(
         slots_start_hour: i64,
         slot_duration: i64,
         slots_per_day: i64,
-    ) -> HourStructure {
-        HourStructure {
+    ) -> DayStructure {
+        DayStructure {
             slots_start_hour,
             slot_duration,
             slots_per_day,
             description: None,
+            slot_capacity: None,
         }
     }
 
@@ -30,4 +32,4 @@ impl HourStructure {
     }
 }
 
-pub const HOLIDAY_HOUR_STRUCTURE: HourStructure = HourStructure::new(10, 3, 4);
+pub const HOLIDAY_DAY_STRUCTURE: DayStructure = DayStructure::new(10, 3, 4);

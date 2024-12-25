@@ -1,6 +1,6 @@
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
-use crate::model::hour_structure::HOLIDAY_HOUR_STRUCTURE;
+use crate::model::day_structure::HOLIDAY_DAY_STRUCTURE;
 use crate::model::user::User;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
@@ -81,15 +81,15 @@ async fn create_free_day(
         .map(|date| date.trim().to_string())
         .filter(|date| !date.is_empty());
 
-    let hour_structure = &HOLIDAY_HOUR_STRUCTURE;
+    let day_structure = &HOLIDAY_DAY_STRUCTURE;
     if let Some(date) = date {
         query!(
             "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slots_per_day) VALUES ($1, $2, 'holiday', $3, $4, $5)",
             date,
             description,
-            hour_structure.slots_start_hour,
-            hour_structure.slot_duration,
-            hour_structure.slots_per_day
+            day_structure.slots_start_hour,
+            day_structure.slot_duration,
+            day_structure.slots_per_day
         )
         .execute(&state.write_pool)
         .await

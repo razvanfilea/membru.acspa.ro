@@ -29,19 +29,25 @@
                 <label for="description" class="label-text">Descriere:</label>
             </div>
             <input id="description" name="description" type="text" class="input input-bordered w-full"
-                   placeholder="Poate lipsi"/>
+                   placeholder="Descriere (nu trebuie specificat)"/>
 
             <div class="label">
                 <label for="start_hour" class="label-text">Ora de început:</label>
             </div>
             <input id="start_hour" name="start_hour" type="number" min="1" max="22" class="input input-bordered w-full"
-                   placeholder="Ora la care începe turneul"/>
+                   placeholder="Ora la care începe turneul" required/>
 
             <div class="label">
                 <label for="duration" class="label-text">Durata:</label>
             </div>
             <input id="duration" name="duration" type="number" min="1" max="5" class="input input-bordered w-full"
-                   placeholder="Durata turneului în ore"/>
+                   placeholder="Durata turneului în ore" required/>
+
+            <div class="label">
+                <label for="slot_duration" class="label-text">Durata:</label>
+            </div>
+            <input id="slot_duration" name="slot_duration" type="number" min="1" max="20" class="input input-bordered w-full"
+                   placeholder="Capacitate (nu trebuie specificat)" required/>
 
             <div class="modal-action grid grid-cols-2">
                 <button class="btn"

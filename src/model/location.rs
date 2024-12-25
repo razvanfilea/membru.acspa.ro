@@ -1,4 +1,4 @@
-use crate::model::hour_structure::HourStructure;
+use crate::model::day_structure::DayStructure;
 use std::borrow::Cow;
 
 pub struct Location {
@@ -11,8 +11,8 @@ pub struct Location {
 }
 
 impl Location {
-    pub fn hour_structure(&self) -> HourStructure {
-        HourStructure::new(
+    pub fn day_structure(&self) -> DayStructure {
+        DayStructure::new(
             self.slots_start_hour,
             self.slot_duration,
             self.slots_per_day,

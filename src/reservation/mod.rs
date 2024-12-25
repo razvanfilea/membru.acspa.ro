@@ -47,7 +47,7 @@ pub async fn create_reservation(
             if rows_affected > 1 {
                 error!("Updated more than one guest reservation");
                 return Err(ReservationError::DatabaseError(
-                    "Updaetd more than one guest reservation".to_string(),
+                    "Updated more than one guest reservation".to_string(),
                 ));
             }
 
@@ -181,11 +181,11 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user_1, date_2, 18).await,
-            Err(ReservationError::NoMoreReservation)
+            Err(ReservationError::NoMoreReservations)
         );
         assert_eq!(
             create_reservation(&pool, &location, now, &user_1, date_2, 20).await,
-            Err(ReservationError::NoMoreReservation)
+            Err(ReservationError::NoMoreReservations)
         );
     }
 
@@ -220,7 +220,7 @@ mod test {
         );
         assert_eq!(
             create_reservation(&pool, &location, now, &user, date_2, 20).await,
-            Err(ReservationError::NoMoreReservation)
+            Err(ReservationError::NoMoreReservations)
         );
     }
 
@@ -254,7 +254,7 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user_1, date_2, 18).await,
-            Err(ReservationError::NoMoreReservation)
+            Err(ReservationError::NoMoreReservations)
         );
     }
 
@@ -262,22 +262,30 @@ mod test {
     async fn too_late(pool: SqlitePool) {
         let (location, user, _) = setup(&pool, 1, 0).await;
 
-        let now_good = datetime!(2024-07-11 16:59:00 +00:00:00);
         let now_too_late = datetime!(2024-07-11 17:00:00 +00:00:00);
+        let way_too_late = datetime!(2024-07-11 19:00:00 +00:00:00);
+        let now_good = datetime!(2024-07-11 16:59:00 +00:00:00);
         let date = date!(2024 - 07 - 11);
-
-        assert_eq!(
-            create_reservation(&pool, &location, now_good, &user, date, 18).await,
-            Ok(ReservationSuccess::Reservation {
-                deletes_guest: false
-            })
-        );
 
         assert_eq!(
             create_reservation(&pool, &location, now_too_late, &user, date, 18).await,
             Err(ReservationError::Other(
                 "Rezervările se fac cu cel putin o oră înainte"
             ))
+        );
+
+        assert_eq!(
+            create_reservation(&pool, &location, way_too_late, &user, date, 18).await,
+            Err(ReservationError::Other(
+                "Rezervările se fac cu cel putin o oră înainte"
+            ))
+        );
+        
+        assert_eq!(
+            create_reservation(&pool, &location, now_good, &user, date, 18).await,
+            Ok(ReservationSuccess::Reservation {
+                deletes_guest: false
+            })
         );
     }
 
@@ -331,7 +339,7 @@ mod test {
 
         assert_eq!(
             create_reservation(&pool, &location, now, &user, weekend, 10).await,
-            Err(ReservationError::NoMoreReservation)
+            Err(ReservationError::NoMoreReservations)
         );
     }
 

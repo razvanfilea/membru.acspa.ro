@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select date, description, slots_start_hour, slot_duration, created_at from alternative_days where type = 'turneu' order by date desc, created_at",
+  "query": "select date, description, slots_start_hour, slot_duration, slot_capacity, created_at from alternative_days where type = 'turneu' order by date desc, created_at",
   "describe": {
     "columns": [
       {
@@ -24,8 +24,13 @@
         "type_info": "Integer"
       },
       {
-        "name": "created_at",
+        "name": "slot_capacity",
         "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 5,
         "type_info": "Datetime"
       }
     ],
@@ -37,8 +42,9 @@
       true,
       false,
       false,
+      true,
       false
     ]
   },
-  "hash": "5318083050ceb4547681f098495cf86e5e322c5ccac92ea01668adf4c838cb1f"
+  "hash": "fc143decd0259020950ad6b5ec996c6ee26ec7adaf61976ed6b128b81bbb7304"
 }

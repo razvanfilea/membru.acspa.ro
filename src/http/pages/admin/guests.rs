@@ -11,7 +11,7 @@ use tracing::{error, info};
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
-use crate::utils::queries::get_hour_structure_for_day;
+use crate::utils::queries::get_day_structure_for_day;
 use crate::utils::{date_formats, local_time};
 
 pub fn router() -> Router<AppState> {
@@ -83,10 +83,10 @@ async fn select_hour(
     let date =
         Date::parse(&form.date, date_formats::ISO_DATE).expect("Data selectata este invalidă");
 
-    let hour_structure = get_hour_structure_for_day(&state, date).await;
+    let day_structure = get_day_structure_for_day(&state, date).await;
 
     SelectHourTemplate {
-        hours: hour_structure.iter().collect(),
+        hours: day_structure.iter().collect(),
     }
 }
 
@@ -110,8 +110,8 @@ async fn create_guest(
     }
 
     let date = Date::parse(&guest.date, date_formats::ISO_DATE).unwrap();
-    let hour_structure = get_hour_structure_for_day(&state, date).await;
-    if !hour_structure.is_hour_valid(guest.hour) {
+    let day_structure = get_day_structure_for_day(&state, date).await;
+    if !day_structure.is_hour_valid(guest.hour) {
         error!("Invalid hour: {} for date: {}", guest.hour, guest.date);
 
         return GuestsListTemplate {

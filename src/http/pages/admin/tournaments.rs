@@ -24,11 +24,12 @@ struct Tournament {
     description: String,
     start_hour: i64,
     duration: i64,
+    slot_capacity: Option<i64>,
     created_at: OffsetDateTime,
 }
 
 async fn tournament_days(pool: &SqlitePool) -> Vec<Tournament> {
-    query!("select date, description, slots_start_hour, slot_duration, created_at from alternative_days where type = 'turneu' order by date desc, created_at")
+    query!("select date, description, slots_start_hour, slot_duration, slot_capacity, created_at from alternative_days where type = 'turneu' order by date desc, created_at")
         .fetch_all(pool)
         .await
         .expect("Database error")
@@ -38,6 +39,7 @@ async fn tournament_days(pool: &SqlitePool) -> Vec<Tournament> {
             description: record.description.unwrap_or_default(),
             start_hour: record.slots_start_hour,
             duration: record.slot_duration,
+            slot_capacity: record.slot_capacity,
             created_at: record.created_at,
         })
         .collect()
@@ -66,8 +68,9 @@ async fn tournaments_page(
 struct NewTournament {
     date: String,
     description: Option<String>,
-    start_hour: i64,
-    duration: i64,
+    start_hour: u8,
+    duration: u8,
+    capacity: Option<u8>
 }
 
 async fn create_tournament(
@@ -88,11 +91,12 @@ async fn create_tournament(
 
     if let Some(date) = date {
         query!(
-            "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slots_per_day) VALUES ($1, $2, 'turneu', $3, $4, 1)",
+            "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slot_capacity, slots_per_day) VALUES ($1, $2, 'turneu', $3, $4, $5, 1)",
             date,
             description,
             tournament.start_hour,
-            tournament.duration
+            tournament.duration,
+            tournament.capacity
         )
             .execute(&state.write_pool)
             .await

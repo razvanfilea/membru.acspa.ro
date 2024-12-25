@@ -12,7 +12,7 @@ pub enum ReservationError {
     AlreadyExists { cancelled: bool },
     Restriction(String),
     DatabaseError(String),
-    NoMoreReservation,
+    NoMoreReservations,
     Other(&'static str),
 }
 
@@ -40,7 +40,7 @@ impl Display for ReservationError {
                 "Eroare cu baza de date, trimite te rog un screenshot cu aceasta eroare: {}",
                 e
             ),
-            ReservationError::NoMoreReservation => {
+            ReservationError::NoMoreReservations => {
                 write!(f, "Ți-ai epuizat rezervările pe săptămâna aceasta")
             }
             ReservationError::Other(message) => write!(f, "{}", message),
