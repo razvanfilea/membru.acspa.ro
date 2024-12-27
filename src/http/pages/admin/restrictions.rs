@@ -12,7 +12,7 @@ use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::restriction::Restriction;
 use crate::model::user::User;
-use crate::utils::queries::get_day_structure_for_day;
+use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_time};
 
 pub fn router() -> Router<AppState> {
@@ -74,7 +74,7 @@ async fn select_hour(
 
     let date = Date::parse(&form.date, date_formats::ISO_DATE).unwrap();
 
-    let day_structure = get_day_structure_for_day(&state, date).await;
+    let day_structure = get_day_structure(&state, date).await;
 
     SelectHourTemplate {
         hours: day_structure.iter().collect(),
@@ -101,7 +101,7 @@ async fn create_restriction(
 
     let date = Date::parse(&restriction.date, date_formats::ISO_DATE).unwrap();
     if let Some(hour) = restriction.hour {
-        let day_structure = get_day_structure_for_day(&state, date).await;
+        let day_structure = get_day_structure(&state, date).await;
         if !day_structure.is_hour_valid(hour) {
             error!("Invalid hour: {hour} for date: {}", restriction.date);
 

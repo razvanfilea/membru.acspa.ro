@@ -1,6 +1,8 @@
+use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
+use crate::utils::queries::alt_day_exists;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use askama_axum::IntoResponse;
@@ -70,7 +72,7 @@ struct NewTournament {
     description: Option<String>,
     start_hour: u8,
     duration: u8,
-    capacity: Option<u8>
+    capacity: Option<u8>,
 }
 
 async fn create_tournament(
@@ -86,10 +88,17 @@ async fn create_tournament(
     let date = Date::parse(&tournament.date, date_formats::ISO_DATE).ok();
     let description = tournament
         .description
-        .map(|date| date.trim().to_string())
-        .filter(|date| !date.is_empty());
+        .map(|description| description.trim().to_string())
+        .filter(|description| !description.is_empty());
 
     if let Some(date) = date {
+        if alt_day_exists(&state.read_pool, date).await {
+            return error_bubble_response(format!(
+                "Deja exists o zi libera/turneu pe data de {}",
+                date.format(date_formats::READABLE_DATE).unwrap()
+            ));
+        }
+
         query!(
             "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slot_capacity, slots_per_day) VALUES ($1, $2, 'turneu', $3, $4, $5, 1)",
             date,
@@ -111,6 +120,7 @@ async fn create_tournament(
     TournamentsListTemplate {
         tournaments: tournament_days(&state.read_pool).await,
     }
+    .into_response()
 }
 
 async fn delete_tournament(

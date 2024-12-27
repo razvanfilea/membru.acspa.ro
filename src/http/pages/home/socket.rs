@@ -75,13 +75,19 @@ pub struct HoursTemplate<'a> {
 }
 
 impl<'a> HoursTemplate<'a> {
-    pub async fn create_response(state: &AppState, selected_date: Date, user: &'a User, enable_editing: bool) -> String {
+    pub async fn create_response(
+        state: &AppState,
+        selected_date: Date,
+        user: &'a User,
+        enable_editing: bool,
+    ) -> String {
         Self {
             reservation_hours: get_reservation_hours(state, selected_date).await,
             selected_date,
             user,
-            enable_editing
-        }.to_string()
+            enable_editing,
+        }
+        .to_string()
     }
 }
 

@@ -126,7 +126,7 @@ async fn get_current_reservations_count(
     })
 }
 
-async fn get_users_reservations_count(
+async fn get_user_reservations_count(
     tx: &mut SqliteConnection,
     user: &User,
     date: Date,
@@ -195,7 +195,7 @@ pub async fn is_reservation_possible(
         .unwrap_or(location.slot_capacity);
 
     let user_reservations_count =
-        get_users_reservations_count(&mut *tx, user, selected_date).await?;
+        get_user_reservations_count(&mut *tx, user, selected_date).await?;
 
     // Attempt to create a normal reservation
     if user_reservations_count.regular < role.reservations {

@@ -353,12 +353,10 @@ async fn alternative_day(pool: SqlitePool) {
             deletes_guest: false
         })
     );
-    
+
     assert_eq!(
         create_reservation(&pool, &location, now, &user_2, date, 10).await,
-        Ok(ReservationSuccess::InWaiting {
-            as_guest: false
-        })
+        Ok(ReservationSuccess::InWaiting { as_guest: false })
     );
 
     assert_eq!(
@@ -383,14 +381,13 @@ async fn alternative_day_custom_capacity(pool: SqlitePool) {
     let now = datetime!(2024-07-10 10:00:00 +00:00:00);
     let date = date!(2024 - 07 - 11);
 
-
     assert_eq!(
         create_reservation(&pool, &location, now, &user_1, date, 10).await,
         Ok(ReservationSuccess::Reservation {
             deletes_guest: false
         })
     );
-    
+
     assert_eq!(
         create_reservation(&pool, &location, now, &user_2, date, 10).await,
         Ok(ReservationSuccess::Reservation {

@@ -8,7 +8,7 @@ use crate::reservation::{
     create_reservation, is_reservation_possible, ReservationError, ReservationSuccess,
 };
 use crate::utils::date_iter::DateIter;
-use crate::utils::queries::get_day_structure_for_day;
+use crate::utils::queries::get_day_structure;
 use crate::utils::CssColor;
 use crate::utils::{date_formats, get_reservation_result_color, local_time};
 use askama::Template;
@@ -120,7 +120,7 @@ async fn hour_picker(
             local_time().date()
         });
 
-    let structure = get_day_structure_for_day(&state, selected_date).await;
+    let structure = get_day_structure(&state, selected_date).await;
 
     let mut tx = state
         .read_pool

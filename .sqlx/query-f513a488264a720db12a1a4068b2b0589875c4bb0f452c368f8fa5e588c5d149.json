@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select reservations, guest_reservations from user_roles where id = $1",
+  "describe": {
+    "columns": [
+      {
+        "name": "reservations",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "guest_reservations",
+        "ordinal": 1,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "f513a488264a720db12a1a4068b2b0589875c4bb0f452c368f8fa5e588c5d149"
+}

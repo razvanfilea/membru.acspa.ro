@@ -34,9 +34,14 @@
 {% endmacro %}
 
 <div id="hours">
-    {% if let Some(description) = reservation_hours.description %}
-    <h4 class="text-xl underline mb-2">{{ description }}</h4>
-    {% endif %}
+    <h4 class="text-xl mb-2">
+        {% if let Some(description) = reservation_hours.description %}
+        <span class="underline">{{ description }}</span>
+        {% endif %}
+        {% if let Some(capacity) = reservation_hours.capacity %}
+        <span>- Maxim {{ capacity }}</span>
+        {% endif %}
+    </h4>
     {% for slot in reservation_hours.hours %}
     <div hx-vals='{"hour": {{ slot.start_hour }} }'>
         <div class="flex flex-row flex-wrap gap-1 mb-4 items-center">

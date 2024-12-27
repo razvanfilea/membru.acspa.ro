@@ -1,3 +1,4 @@
+use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::role::UserRole;
@@ -12,7 +13,6 @@ use serde::Deserialize;
 use sqlx::{query, query_as};
 use std::str::FromStr;
 use strum::IntoEnumIterator;
-use crate::http::pages::notification_template::error_bubble_response;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -34,6 +34,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
         pub admin_panel_access: bool,
         pub members_count: i64,
     }
+    
     #[derive(Template)]
     #[template(path = "pages/admin/roles/list.html")]
     struct UsersTemplate {
@@ -144,24 +145,23 @@ async fn update_role(
         .expect("Failed to create headers")
 }
 
-async fn delete_role(
-    State(state): State<AppState>,
-    Path(role_id): Path<i64>,
-) -> impl IntoResponse {
-    let users_with_role = query!("select count(*) as 'count!' from users where role_id = $1", role_id)
-        .fetch_one(&state.write_pool)
-        .await
-        .expect("Database error")
-        .count;
-    
-    if users_with_role > 0 {
-        return error_bubble_response(format!("{users_with_role} utilizatori au acest rol, rolul nu poate fi șters"));
-    }
-    
-    query!(
-        "delete from user_roles where id = $1",
-        role_id,
+async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) -> impl IntoResponse {
+    let users_with_role = query!(
+        "select count(*) as 'count!' from users where role_id = $1",
+        role_id
     )
+    .fetch_one(&state.write_pool)
+    .await
+    .expect("Database error")
+    .count;
+
+    if users_with_role > 0 {
+        return error_bubble_response(format!(
+            "{users_with_role} utilizatori au acest rol, rolul nu poate fi șters"
+        ));
+    }
+
+    query!("delete from user_roles where id = $1", role_id,)
         .execute(&state.write_pool)
         .await
         .expect("Database error");

@@ -12,6 +12,8 @@ use serde::Deserialize;
 use sqlx::{query, SqlitePool};
 use time::{Date, OffsetDateTime};
 use tracing::info;
+use crate::http::pages::notification_template::error_bubble_response;
+use crate::utils::queries::alt_day_exists;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -83,6 +85,13 @@ async fn create_free_day(
 
     let day_structure = &HOLIDAY_DAY_STRUCTURE;
     if let Some(date) = date {
+        if alt_day_exists(&state.read_pool, date).await {
+            return error_bubble_response(format!(
+                "Deja exists o zi libera/turneu pe data de {}",
+                date.format(date_formats::READABLE_DATE).unwrap()
+            ));
+        }
+        
         query!(
             "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slots_per_day) VALUES ($1, $2, 'holiday', $3, $4, $5)",
             date,
@@ -103,7 +112,7 @@ async fn create_free_day(
 
     FreeDaysListTemplate {
         free_days: get_free_days(&state.read_pool).await,
-    }
+    }.into_response()
 }
 
 async fn delete_free_day(

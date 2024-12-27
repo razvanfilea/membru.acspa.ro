@@ -8,7 +8,7 @@
     <div class="flex flex-row flex-wrap gap-8 items-center justify-between p-6 bg-gray-600 rounded shadow">
         <div class="flex flex-col">
             <p class="text-lg">{{ user.name }}
-            <p class="text-gray-300">{{ user.role }} • {{ user.email }}</p>
+            <p class="text-gray-300">{{ user.email }}</p>
         </div>
         <div class="flex flex-row gap-4 flex-wrap">
             <a href="/change_password">
@@ -22,6 +22,10 @@
                 Sign out
             </button>
         </div>
+    </div>
+
+    <div class="mt-4">
+        Ai rolul de {{ user.role }}, astfel ai {{ max_member_reservations }} rezervări ca membru și {{ max_guest_reservations }} rezervări ca invitat pe săptămână.
     </div>
 
     {% include "components/profile_content.html" %}

@@ -8,7 +8,6 @@ pub struct User {
     pub email: String,
     pub name: String,
     pub password_hash: String,
-    #[allow(dead_code)]
     pub role_id: i64,
     pub role: String,
     pub has_key: bool,
