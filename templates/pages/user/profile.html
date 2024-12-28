@@ -24,8 +24,8 @@
         </div>
     </div>
 
-    <div class="mt-4">
-        Ai rolul de {{ user.role }}, astfel ai {{ max_member_reservations }} rezervări ca membru și {{ max_guest_reservations }} rezervări ca invitat pe săptămână.
+    <div class="mt-4 text-lg">
+        Ai rolul de {{ user.role }}. Săptămâna aceasta ai folosit <b>{{ this_weeks_reservations.member }}/{{ max_reservations.member }}</b> rezervări ca membru și <b>{{ this_weeks_reservations.guest }}/{{ max_reservations.guest }}</b> rezervări ca invitat.
     </div>
 
     {% include "components/profile_content.html" %}

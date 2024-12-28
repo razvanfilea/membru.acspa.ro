@@ -34,7 +34,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
         pub admin_panel_access: bool,
         pub members_count: i64,
     }
-    
+
     #[derive(Template)]
     #[template(path = "pages/admin/roles/list.html")]
     struct UsersTemplate {

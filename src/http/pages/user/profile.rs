@@ -2,8 +2,10 @@ use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
-use crate::utils::date_formats;
-use crate::utils::queries::get_user_reservations;
+use crate::utils::queries::{
+    get_user_reservations, get_user_weeks_reservations_count, ReservationsCount,
+};
+use crate::utils::{date_formats, local_time};
 use askama::Template;
 use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
@@ -20,8 +22,8 @@ pub async fn profile_page(
         user: User,
         reservations: Vec<UserReservation>,
         show_cancelled: bool,
-        max_member_reservations: i64,
-        max_guest_reservations: i64,
+        this_weeks_reservations: ReservationsCount,
+        max_reservations: ReservationsCount,
     }
 
     let user = auth_session.user.expect("User should be logged in");
@@ -34,12 +36,20 @@ pub async fn profile_page(
     .await
     .expect("Database error");
 
+    let this_weeks_reservations =
+        get_user_weeks_reservations_count(&state.read_pool, &user, local_time().date())
+            .await
+            .expect("Database error");
+
     ProfileTemplate {
         reservations: get_user_reservations(&state.read_pool, user.email.as_str(), false).await,
         user,
         show_cancelled: false,
-        max_member_reservations: role.reservations,
-        max_guest_reservations: role.guest_reservations,
+        this_weeks_reservations,
+        max_reservations: ReservationsCount {
+            member: role.reservations,
+            guest: role.guest_reservations,
+        },
     }
     .into_response()
 }

@@ -1,7 +1,9 @@
+use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::day_structure::HOLIDAY_DAY_STRUCTURE;
 use crate::model::user::User;
+use crate::utils::queries::alt_day_exists;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use askama_axum::IntoResponse;
@@ -12,8 +14,6 @@ use serde::Deserialize;
 use sqlx::{query, SqlitePool};
 use time::{Date, OffsetDateTime};
 use tracing::info;
-use crate::http::pages::notification_template::error_bubble_response;
-use crate::utils::queries::alt_day_exists;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -91,7 +91,7 @@ async fn create_free_day(
                 date.format(date_formats::READABLE_DATE).unwrap()
             ));
         }
-        
+
         query!(
             "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slots_per_day) VALUES ($1, $2, 'holiday', $3, $4, $5)",
             date,
@@ -112,7 +112,8 @@ async fn create_free_day(
 
     FreeDaysListTemplate {
         free_days: get_free_days(&state.read_pool).await,
-    }.into_response()
+    }
+    .into_response()
 }
 
 async fn delete_free_day(

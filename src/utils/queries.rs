@@ -1,6 +1,9 @@
 use crate::http::AppState;
 use crate::model::day_structure::{DayStructure, HOLIDAY_DAY_STRUCTURE};
+use crate::model::location::Location;
+use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
+use crate::reservation::ReservationResult;
 use sqlx::{query, query_as, Executor, Sqlite, SqlitePool};
 use time::{Date, Weekday};
 use tracing::error;
@@ -63,4 +66,75 @@ pub async fn get_user_reservations(
         .await
         .inspect_err(|e| error!("Failed querying reservations for user: {e}"))
         .unwrap_or_default()
+}
+
+#[derive(Debug, Default)]
+pub struct ReservationsCount {
+    pub member: i64,
+    pub guest: i64,
+}
+
+pub async fn get_current_reservations_count<'a, E>(
+    executor: E,
+    location: &Location,
+    date: Date,
+    hour: u8,
+) -> ReservationResult<ReservationsCount>
+where
+    E: Executor<'a, Database = Sqlite>,
+{
+    let counts = query!(
+        "select as_guest, count(*) as 'count!: i64' from reservations
+        where location = $1 and date = $2 and hour = $3 and cancelled = false and in_waiting = false
+        group by as_guest",
+        location.id,
+        date,
+        hour
+    )
+    .fetch_all(executor)
+    .await?;
+
+    let mut result = ReservationsCount::default();
+
+    for row in counts {
+        if row.as_guest {
+            result.guest = row.count;
+        } else {
+            result.member = row.count;
+        }
+    }
+
+    Ok(result)
+}
+
+pub async fn get_user_weeks_reservations_count<'a, E>(
+    executor: E,
+    user: &User,
+    date: Date,
+) -> ReservationResult<ReservationsCount>
+where
+    E: Executor<'a, Database = Sqlite>,
+{
+    let counts = query!(
+        "select as_guest, count(*) as 'count! :i64' from reservations
+        where user_id = $1 and cancelled = false and
+        strftime('%Y%W', date) = strftime('%Y%W', $2)
+        group by as_guest",
+        user.id,
+        date
+    )
+    .fetch_all(executor)
+    .await?;
+
+    let mut result = ReservationsCount::default();
+
+    for row in counts {
+        if row.as_guest {
+            result.guest = row.count;
+        } else {
+            result.member = row.count;
+        }
+    }
+
+    Ok(result)
 }
