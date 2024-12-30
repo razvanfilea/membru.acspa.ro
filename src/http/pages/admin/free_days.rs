@@ -1,3 +1,4 @@
+use crate::http::pages::admin::tournaments::delete_tournament;
 use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
@@ -77,38 +78,38 @@ async fn create_free_day(
         free_days: Vec<FreeDay>,
     }
 
-    let date = Date::parse(&day.date, date_formats::ISO_DATE).ok();
+    let Some(date) = Date::parse(&day.date, date_formats::ISO_DATE).ok() else {
+        return error_bubble_response("Data selectata nu este valida");
+    };
     let description = day
         .description
         .map(|date| date.trim().to_string())
         .filter(|date| !date.is_empty());
 
     let day_structure = &HOLIDAY_DAY_STRUCTURE;
-    if let Some(date) = date {
-        if alt_day_exists(&state.read_pool, date).await {
-            return error_bubble_response(format!(
-                "Deja exists o zi libera/turneu pe data de {}",
-                date.format(date_formats::READABLE_DATE).unwrap()
-            ));
-        }
-
-        query!(
-            "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slots_per_day) VALUES ($1, $2, 'holiday', $3, $4, $5)",
-            date,
-            description,
-            day_structure.slots_start_hour,
-            day_structure.slot_duration,
-            day_structure.slots_per_day
-        )
-        .execute(&state.write_pool)
-        .await
-        .expect("Database error");
-
-        info!(
-            "Add free day with date: {date} and description {}",
-            description.unwrap_or_default()
-        );
+    if alt_day_exists(&state.read_pool, date).await {
+        return error_bubble_response(format!(
+            "Deja exists o zi libera/turneu pe data de {}",
+            date.format(date_formats::READABLE_DATE).unwrap()
+        ));
     }
+
+    query!(
+        "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slots_per_day) VALUES ($1, $2, 'holiday', $3, $4, $5)",
+        date,
+        description,
+        day_structure.slots_start_hour,
+        day_structure.slot_duration,
+        day_structure.slots_per_day
+    )
+    .execute(&state.write_pool)
+    .await
+    .expect("Database error");
+
+    info!(
+        "Add free day with date: {date} and description {}",
+        description.unwrap_or_default()
+    );
 
     FreeDaysListTemplate {
         free_days: get_free_days(&state.read_pool).await,
@@ -116,14 +117,6 @@ async fn create_free_day(
     .into_response()
 }
 
-async fn delete_free_day(
-    State(state): State<AppState>,
-    Path(date): Path<String>,
-) -> impl IntoResponse {
-    let date = Date::parse(&date, date_formats::ISO_DATE).unwrap();
-
-    query!("delete from alternative_days where date = $1", date)
-        .execute(&state.write_pool)
-        .await
-        .expect("Database error");
+async fn delete_free_day(state: State<AppState>, date: Path<String>) {
+    delete_tournament(state, date).await
 }

@@ -1,8 +1,10 @@
-<div id="list" class="flex flex-col w-full gap-4">
+<div id="list" class="flex flex-col w-full gap-4" hx-swap-oob="outerHTML">
     {% for day in free_days %}
     {% let id_date = day.date.format(date_formats::ISO_DATE_UNDERLINE).unwrap() %}
     {% let iso_date = day.date.format(date_formats::ISO_DATE).unwrap() %}
-    <div id="day_{{ id_date }}" class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
+    <div id="day_{{ id_date }}" class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between"
+         hx-confirm="Ești sigur ca vrei să ștergi acestă zi liberă? Va șterge și toate rezervările făcute în acea zi">
+
         <div class="flex flex-col">
             <p>Data: <b>{{ day.date.format(date_formats::READABLE_DATE).unwrap() }}</b></p>
             {% if !day.description.is_empty() %}

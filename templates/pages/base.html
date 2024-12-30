@@ -74,8 +74,53 @@
 </div>
 
 <script>
+    document.addEventListener("htmx:confirm", function (e) {
+        // The event is triggered on every trigger for a request, so we need to check if the element
+        // that triggered the request has a hx-confirm attribute, if not we can return early and let
+        // the default behavior happen
+        if (!e.detail.target.hasAttribute('hx-confirm')) return
+        console.log("Showing dialog")
+
+        e.preventDefault()
+
+        const dialog = document.getElementById('confirm_dialog');
+        const prompt = document.getElementById('confirm_dialog_prompt');
+        const accept_button = document.getElementById('confirm_dialog_accept');
+
+        prompt.textContent = e.detail.question;
+        accept_button.onclick = () => {
+            e.detail.issueRequest(true); // true to skip the built-in window.confirm()
+            dialog.close();
+        };
+        dialog.showModal();
+    })
+</script>
+
+<dialog id="confirm_dialog" class="modal">
+    <div class="modal-box">
+        <h3 class="text-lg font-bold mb-4">Necesita confirmare</h3>
+
+        <p id="confirm_dialog_prompt"></p>
+
+        <div class="modal-action grid grid-cols-2">
+            <button class="btn"
+                    onclick="confirm_dialog.close()">
+                Anulează
+            </button>
+
+            <button id="confirm_dialog_accept" class="btn btn-success">
+                OK
+            </button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+
+<script>
     if (!navigator.serviceWorker.controller) {
-        navigator.serviceWorker.register("/assets/sw.js").then(function(reg) {
+        navigator.serviceWorker.register("/assets/sw.js").then(function (reg) {
             console.log("Service worker has been registered for scope: " + reg.scope);
         });
     }

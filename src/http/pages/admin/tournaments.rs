@@ -72,7 +72,7 @@ struct NewTournament {
     description: Option<String>,
     start_hour: u8,
     duration: u8,
-    capacity: Option<u8>,
+    capacity: Option<String>,
 }
 
 async fn create_tournament(
@@ -85,37 +85,41 @@ async fn create_tournament(
         tournaments: Vec<Tournament>,
     }
 
-    let date = Date::parse(&tournament.date, date_formats::ISO_DATE).ok();
+    let Some(date) = Date::parse(&tournament.date, date_formats::ISO_DATE).ok() else {
+        return error_bubble_response("Data selectată nu este valida");
+    };
     let description = tournament
         .description
         .map(|description| description.trim().to_string())
         .filter(|description| !description.is_empty());
 
-    if let Some(date) = date {
-        if alt_day_exists(&state.read_pool, date).await {
-            return error_bubble_response(format!(
-                "Deja exists o zi libera/turneu pe data de {}",
-                date.format(date_formats::READABLE_DATE).unwrap()
-            ));
-        }
-
-        query!(
-            "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slot_capacity, slots_per_day) VALUES ($1, $2, 'turneu', $3, $4, $5, 1)",
-            date,
-            description,
-            tournament.start_hour,
-            tournament.duration,
-            tournament.capacity
-        )
-            .execute(&state.write_pool)
-            .await
-            .expect("Database error");
-
-        info!(
-            "Add tournament with date: {date} and description {}",
-            description.unwrap_or_default()
-        );
+    if alt_day_exists(&state.read_pool, date).await {
+        return error_bubble_response(format!(
+            "Deja exists o zi libera/turneu pe data de {}",
+            date.format(date_formats::READABLE_DATE).unwrap()
+        ));
     }
+
+    let capacity = tournament
+        .capacity
+        .and_then(|capacity| capacity.parse::<u8>().ok());
+
+    query!(
+        "insert into alternative_days (date, description, type, slots_start_hour, slot_duration, slot_capacity, slots_per_day) VALUES ($1, $2, 'turneu', $3, $4, $5, 1)",
+        date,
+        description,
+        tournament.start_hour,
+        tournament.duration,
+        capacity
+    )
+        .execute(&state.write_pool)
+        .await
+        .expect("Database error");
+
+    info!(
+        "Add tournament with date: {date} and description {}",
+        description.unwrap_or_default()
+    );
 
     TournamentsListTemplate {
         tournaments: tournament_days(&state.read_pool).await,
@@ -123,14 +127,24 @@ async fn create_tournament(
     .into_response()
 }
 
-async fn delete_tournament(
-    State(state): State<AppState>,
-    Path(date): Path<String>,
-) -> impl IntoResponse {
+pub async fn delete_tournament(State(state): State<AppState>, Path(date): Path<String>) {
     let date = Date::parse(&date, date_formats::ISO_DATE).unwrap();
 
-    query!("delete from alternative_days where date = $1", date)
-        .execute(&state.write_pool)
+    let mut tx = state
+        .write_pool
+        .begin()
+        .await
+        .expect("Failed to create transaction");
+
+    query!("delete from reservations where date = $1", date)
+        .execute(tx.as_mut())
         .await
         .expect("Database error");
+
+    query!("delete from alternative_days where date = $1", date)
+        .execute(tx.as_mut())
+        .await
+        .expect("Database error");
+
+    tx.commit().await.expect("Failed to delete alternative day");
 }
