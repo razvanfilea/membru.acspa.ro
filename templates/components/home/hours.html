@@ -36,10 +36,10 @@
 <div id="hours">
     <h4 class="text-xl mb-2">
         {% if let Some(description) = reservation_hours.description %}
-        <span class="underline">{{ description }}</span>
+        <span class="underline">{{ description }} - </span>
         {% endif %}
         {% if let Some(capacity) = reservation_hours.capacity %}
-        <span>- Maxim {{ capacity }}</span>
+        <span>Maxim {{ capacity }}</span>
         {% endif %}
     </h4>
     {% for slot in reservation_hours.hours %}
@@ -72,6 +72,33 @@
         <input name="reservation" type="radio" aria-label="Rezervare" autocomplete="off"
                hx-post="/choose_hour" hx-target="#confirmation" hx-swap="outerHTML show:bottom"
                class="btn btn-md btn-outline btn-accent w-min"/>
+
+        {% if user.admin_panel_access %}
+        <button class="btn btn-md btn-outline btn-info" popovertarget="popover_create_guest_{{ slot.start_hour }}">
+            Adaugă invitat
+        </button>
+
+        <div id="popover_create_guest_{{ slot.start_hour }}" class="rounded-2xl" popover>
+            <form class="p-6 flex flex-col gap-4" hx-params="not selected_date" hx-vals='{"date": "{{ selected_date }}"}'>
+                <p>Adaugă un invitat de la ora <b>{{ slot.start_hour }}</b> pe numele:</p>
+
+                <input id="name" name="name" type="text" class="input input-bordered w-full" required
+                       placeholder="Nume invitat" autocomplete="off"/>
+
+                <label class="label cursor-pointer py-6">
+                    <span class="label-text">Special:</span>
+                    <input name="special" type="checkbox" class="toggle toggle-primary" autocomplete="off" />
+                </label>
+
+                <button class="btn btn-success"
+                        hx-put="/admin/guests"
+                        hx-swap="none">
+                    Adaugă
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
         {% endif %}
 
         {% if !loop.last %}
