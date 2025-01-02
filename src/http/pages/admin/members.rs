@@ -6,7 +6,6 @@ use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use time::Date;
-use tracing::error;
 
 use crate::http::auth::generate_hash_from_password;
 use crate::http::pages::{get_user, AuthSession};
@@ -136,12 +135,13 @@ async fn create_new_user(
         .await
         .expect("Invalid role");
 
+    let user_name = new_user.name.trim();
     let has_key = new_user.has_key.is_some();
     let password_hash = generate_hash_from_password(new_user.password);
     query!(
         "insert into users (email, name, role_id, has_key, password_hash, member_since) VALUES ($1, $2, $3, $4, $5, date('now'))",
         new_user.email,
-        new_user.name,
+        user_name,
         role_id,
         has_key,
         password_hash
@@ -202,6 +202,7 @@ async fn update_user(
     let role_id = get_role_id(&state, updated_user.role.as_str())
         .await
         .expect("Invalid role");
+    let user_name = updated_user.name.trim();
     let has_key = updated_user.has_key.is_some();
     let birthday = parse_date(updated_user.birthday);
     let member_since = parse_date(updated_user.member_since);
@@ -211,7 +212,7 @@ async fn update_user(
         "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8 where id = $1",
         user_id,
         updated_user.email,
-        updated_user.name,
+        user_name,
         role_id,
         has_key,
         birthday,
@@ -260,10 +261,7 @@ async fn delete_user(State(state): State<AppState>, Path(user_id): Path<i64>) ->
     Response::builder()
         .header("HX-Redirect", "/admin/members")
         .body("Utilizatorul a fost șters cu success".to_string())
-        .map_err(|e| {
-            error!("Failed to return headers: {e}");
-            "OOps".to_string() // TODO
-        })
+        .expect("Failed to create response")
 }
 
 #[derive(Deserialize)]

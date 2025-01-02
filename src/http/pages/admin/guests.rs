@@ -39,7 +39,7 @@ async fn get_guests(pool: &SqlitePool) -> Vec<GuestDto> {
         from reservations r
         inner join users u on r.user_id = u.id
         where r.created_for is not null
-        order by date desc, hour, created_at"#
+        order by date desc, hour, created_at desc"#
     )
     .fetch_all(pool)
     .await

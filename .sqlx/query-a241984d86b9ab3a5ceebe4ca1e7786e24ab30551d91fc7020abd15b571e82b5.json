@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select email, name from users",
+  "query": "select email, name from users order by name",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "9d64a891de1a2a9c1f5c52afe5835f5b37705018284ddd9414540abf6cb31c7c"
+  "hash": "a241984d86b9ab3a5ceebe4ca1e7786e24ab30551d91fc7020abd15b571e82b5"
 }

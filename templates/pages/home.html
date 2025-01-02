@@ -28,29 +28,29 @@
     <div class="modal-box">
         <div class="flex flex-col gap-2">
             <p class="text-lg">Cod culori rezervări:</p>
-            <div>
-                <button class="btn btn-sm bg-slate-600 rounded-full text-white">Membru</button>
-            </div>
-            <div>
-                <button class="btn btn-sm bg-slate-600 rounded-full text-white items-center">Deține cheie
-                    <span class="material-symbols-outlined">vpn_key</span>
-                </button>
-            </div>
-            <div>
-                <button class="btn btn-sm bg-fuchsia-600 rounded-full text-white">Invitat special</button>
-            </div>
-            <div>
-                <button class="btn btn-sm bg-sky-500 rounded-full text-white">Invitat antrenament</button>
-            </div>
+            <div class="flex flex-row gap-3 flex-wrap">
+                <div>
+                    <button class="btn btn-sm bg-slate-600 rounded-full text-white">Membru</button>
+                </div>
+                <div>
+                    <button class="btn btn-sm bg-slate-600 rounded-full text-white items-center">Deține cheie
+                        <span class="material-symbols-outlined">vpn_key</span>
+                    </button>
+                </div>
+                <div>
+                    <button class="btn btn-sm bg-fuchsia-600 rounded-full text-white">Invitat special</button>
+                </div>
+                <div>
+                    <button class="btn btn-sm bg-sky-500 rounded-full text-white">Invitat antrenament</button>
+                </div>
 
-            {% for color_code in reservation_color_code %}
-            <div>
+                {% for color_code in reservation_color_code %}
                 <button class="btn btn-sm rounded-full text-white
                     {% call color_mapper::map_rust_color(color_code.color) %}">
                     {{ color_code.name }}
                 </button>
+                {% endfor %}
             </div>
-            {% endfor %}
 
             <p class="text-lg">Prioritate la rezervări:</p>
             <ol class="list-decimal pl-4">
@@ -58,7 +58,7 @@
                 <li>Invitații speciali primesc statut de membri</li>
                 <li>Invitații antrenamente au prioritate în ordinea înscrierilor</li>
                 <li>În cazul în care un membru vrea să participe la sesiunea de antrenament, ultimul invitat
-                    antrenamente va fi scos din lista de rezervări
+                    antrenamente va fi mutat pe lista de așteptare
                 </li>
             </ol>
         </div>

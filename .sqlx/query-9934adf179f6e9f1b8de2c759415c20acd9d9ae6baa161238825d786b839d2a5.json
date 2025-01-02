@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select r._rowid_ as 'rowid!', r.created_for 'name!', r.date, r.hour, r.as_guest, r.created_at, r.user_id as created_by_id, u.name as created_by\n        from reservations r\n        inner join users u on r.user_id = u.id\n        where r.created_for is not null\n        order by date desc, hour, created_at",
+  "query": "select r._rowid_ as 'rowid!', r.created_for 'name!', r.date, r.hour, r.as_guest, r.created_at, r.user_id as created_by_id, u.name as created_by\n        from reservations r\n        inner join users u on r.user_id = u.id\n        where r.created_for is not null\n        order by date desc, hour, created_at desc",
   "describe": {
     "columns": [
       {
@@ -58,5 +58,5 @@
       false
     ]
   },
-  "hash": "d9adba6d3fa34847ad0cc60c9e77cda5d70bb2989d3f0ed97fac380133c23389"
+  "hash": "9934adf179f6e9f1b8de2c759415c20acd9d9ae6baa161238825d786b839d2a5"
 }

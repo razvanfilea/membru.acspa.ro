@@ -42,7 +42,7 @@ async fn members_situation_page(
         members: Vec<SituationMember>,
     }
 
-    let users = query_as!(SituationMember, "select email, name from users")
+    let users = query_as!(SituationMember, "select email, name from users order by name")
         .fetch_all(&state.read_pool)
         .await
         .expect("Database error");
