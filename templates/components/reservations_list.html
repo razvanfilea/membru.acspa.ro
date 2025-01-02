@@ -10,7 +10,7 @@
         {% if reservation.in_waiting %}
         <p class="text-pink-600">În așteptare</p>
         {% endif %}
-        <p class="text-sm">Creat pe: {{ reservation.created_at.format(date_formats::READABLE_DATE_TIME).unwrap()}}</p>
+        <p class="text-sm">Creat pe: {{ date_formats::format_as_local(reservation.created_at) }}</p>
     </div>
 
     {% if reservation.cancelled %}

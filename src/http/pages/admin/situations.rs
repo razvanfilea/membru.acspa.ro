@@ -4,7 +4,7 @@ use crate::http::AppState;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
 use crate::utils::date_formats;
-use crate::utils::date_formats::{ISO_DATE_UNDERLINE, READABLE_DATE_TIME};
+use crate::utils::date_formats::{format_as_local, ISO_DATE_UNDERLINE};
 use crate::utils::local_time;
 use crate::utils::queries::get_user_reservations;
 use askama::Template;
@@ -135,7 +135,7 @@ async fn download_situations(State(state): State<AppState>) -> impl IntoResponse
                 res.as_guest,
                 res.cancelled,
                 res.created_for.unwrap_or_default(),
-                res.created_at.format(READABLE_DATE_TIME).unwrap()
+                format_as_local(&res.created_at)
             )
         })
         .collect();

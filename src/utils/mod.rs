@@ -4,9 +4,8 @@ pub mod date_iter;
 pub mod queries;
 
 pub use color::*;
-use time::{OffsetDateTime, UtcOffset};
+use time::OffsetDateTime;
 
 pub fn local_time() -> OffsetDateTime {
-    let offset = UtcOffset::current_local_offset().expect("Failed to set Soundness to Unsound");
-    OffsetDateTime::now_utc().to_offset(offset)
+    OffsetDateTime::now_local().expect("Failed to determine local offset")
 }

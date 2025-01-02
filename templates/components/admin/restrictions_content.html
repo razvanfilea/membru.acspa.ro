@@ -9,7 +9,7 @@
             {% if let Some(hour) = res.hour %}
             <p>Ora: <b>{{ hour }}</b></p>
             {% endif %}
-            <p class="text-sm">Creat pe {{ res.created_at.format(date_formats::READABLE_DATE_TIME).unwrap() }}</p>
+            <p class="text-sm">Creat pe {{ date_formats::format_as_local(res.created_at) }}</p>
         </div>
 
         <button
