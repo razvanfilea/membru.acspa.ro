@@ -5,14 +5,15 @@ use crate::model::user::User;
 use crate::utils::queries::alt_day_exists;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
-use askama_axum::IntoResponse;
 use axum::extract::{Path, State};
 use axum::routing::{delete, get, put};
 use axum::{Form, Router};
+use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::{query, SqlitePool};
 use time::{Date, OffsetDateTime};
 use tracing::info;
+use template_response::TemplateResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -51,7 +52,7 @@ async fn tournaments_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/tournaments.html")]
     struct TournamentsTemplate {
         user: User,
@@ -79,7 +80,7 @@ async fn create_tournament(
     State(state): State<AppState>,
     Form(tournament): Form<NewTournament>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/admin/tournaments_content.html")]
     struct TournamentsListTemplate {
         tournaments: Vec<Tournament>,

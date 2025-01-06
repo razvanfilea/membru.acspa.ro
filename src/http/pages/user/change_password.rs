@@ -3,15 +3,16 @@ use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
 use askama::Template;
-use askama_axum::{IntoResponse, Response};
 use axum::extract::State;
 use axum::Form;
+use axum::response::{IntoResponse, Response};
 use serde::Deserialize;
 use sqlx::query;
 use tracing::debug;
+use template_response::TemplateResponse;
 
 pub async fn change_password_page(auth_session: AuthSession) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/user/change_password.html")]
     struct ChangePasswordTemplate {
         user: User,
@@ -23,7 +24,7 @@ pub async fn change_password_page(auth_session: AuthSession) -> impl IntoRespons
 }
 
 fn change_password_error(message: impl AsRef<str>) -> Response {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/login_error.html")]
     struct ErrorTemplate<'a> {
         error_message: &'a str,
@@ -46,7 +47,7 @@ pub async fn change_password(
     State(state): State<AppState>,
     auth: AuthSession,
     Form(passwords): Form<ChangePasswordForm>,
-) -> Response {
+) -> impl IntoResponse {
     let user = auth.user.as_ref().unwrap();
 
     if passwords.new != passwords.new_duplicate {

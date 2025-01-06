@@ -9,6 +9,7 @@ use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
+use template_response::TemplateResponse;
 
 mod free_days;
 mod guests;
@@ -32,7 +33,7 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/admin.html")]
     struct HomeTemplate {
         user: User,

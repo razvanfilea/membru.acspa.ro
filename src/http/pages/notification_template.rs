@@ -1,7 +1,8 @@
 use askama::Template;
 use axum::response::{IntoResponse, Response};
+use template_response::TemplateResponse;
 
-#[derive(Template)]
+#[derive(Template, TemplateResponse)]
 #[template(path = "components/bubble/error.html")]
 struct ErrorBubbleTemplate<'a> {
     pub message: &'a str,

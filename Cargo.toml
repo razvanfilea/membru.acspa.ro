@@ -11,9 +11,9 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 axum = { version = "0.7", features = ["ws"] }
 tower = "0.5.1"
 tower-http = { version = "0.6", features = ["trace", "timeout", "fs", "catch-panic"] }
-askama = { version = "0.12.1", features = ["with-axum"] }
-askama_axum = "0.4.0"
+askama = { version = "0.12.1" }
 axum-login = "0.16"
+template_response = { path = "template_response" }
 
 sqlx = { version = "0.8.2", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
 tower-sessions-sqlx-store = { version = "0.14", features = ["sqlite"] }

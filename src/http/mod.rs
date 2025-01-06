@@ -21,6 +21,7 @@ use tower_http::trace;
 use tower_http::trace::TraceLayer;
 use tower_sessions_sqlx_store::SqliteStore;
 use tracing::{info, Level};
+use template_response::TemplateResponse;
 
 mod auth;
 mod pages;
@@ -80,7 +81,7 @@ pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
 }
 
 async fn handler_404() -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/404.html")]
     struct NotFoundTemplate;
 

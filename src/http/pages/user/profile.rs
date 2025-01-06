@@ -7,16 +7,17 @@ use crate::utils::queries::{
 };
 use crate::utils::{date_formats, local_time};
 use askama::Template;
-use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
+use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::query;
+use template_response::TemplateResponse;
 
 pub async fn profile_page(
     auth_session: AuthSession,
     State(state): State<AppState>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/user/profile.html")]
     struct ProfileTemplate {
         user: User,
@@ -64,7 +65,7 @@ pub async fn profile_reservations(
     State(state): State<AppState>,
     Query(query): Query<ReservationsQuery>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/profile_content.html")]
     struct ProfileTemplate {
         reservations: Vec<UserReservation>,

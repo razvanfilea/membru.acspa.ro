@@ -8,14 +8,14 @@ use crate::utils::date_formats::{format_as_local, ISO_DATE_UNDERLINE};
 use crate::utils::local_time;
 use crate::utils::queries::get_user_reservations;
 use askama::Template;
-use askama_axum::IntoResponse;
 use axum::extract::State;
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use time::Date;
+use template_response::TemplateResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -35,7 +35,7 @@ async fn members_situation_page(
         name: String,
     }
 
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/situations/member.html")]
     struct MemberSituationTemplate {
         user: User,
@@ -62,7 +62,7 @@ async fn member_situations(
     State(state): State<AppState>,
     Form(form): Form<MemberSituationQuery>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/reservations_list.html")]
     struct UserReservationsTemplate {
         reservations: Vec<UserReservation>,
@@ -79,7 +79,7 @@ async fn daily_situation_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/situations/daily.html")]
     struct DailySituationTemplate {
         user: User,

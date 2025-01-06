@@ -8,7 +8,6 @@ version = "2.3.3"
 dependencies = [
  "argon2",
  "askama",
- "askama_axum",
  "axum",
  "axum-login",
  "dotenvy",
@@ -18,6 +17,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "strum",
+ "template_response",
  "time",
  "tokio",
  "tower",
@@ -92,17 +92,6 @@ dependencies = [
  "humansize",
  "num-traits",
  "percent-encoding",
-]
-
-[[package]]
-name = "askama_axum"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a41603f7cdbf5ac4af60760f17253eb6adf6ec5b6f14a7ed830cf687d375f163"
-dependencies = [
- "askama",
- "axum-core",
- "http",
 ]
 
 [[package]]
@@ -1979,6 +1968,15 @@ dependencies = [
  "once_cell",
  "rustix",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "template_response"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "synstructure",
 ]
 
 [[package]]

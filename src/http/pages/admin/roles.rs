@@ -5,14 +5,15 @@ use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::utils::CssColor;
 use askama::Template;
-use askama_axum::{IntoResponse, Response};
 use axum::extract::{Path, State};
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use std::str::FromStr;
+use axum::response::{IntoResponse, Response};
 use strum::IntoEnumIterator;
+use template_response::TemplateResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -35,7 +36,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
         pub members_count: i64,
     }
 
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/roles/list.html")]
     struct UsersTemplate {
         user: User,
@@ -61,7 +62,7 @@ struct NewRole {
     color: String,
 }
 
-#[derive(Template)]
+#[derive(Template, TemplateResponse)]
 #[template(path = "pages/admin/roles/new_edit.html")]
 struct NewRoleTemplate {
     user: User,

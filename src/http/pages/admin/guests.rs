@@ -1,13 +1,14 @@
-use askama_axum::{IntoResponse, Template};
 use axum::extract::State;
 use axum::routing::{get, post, put};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
 use std::ops::Not;
+use askama::Template;
+use axum::response::IntoResponse;
 use time::{Date, OffsetDateTime};
 use tracing::{error, info};
-
+use template_response::TemplateResponse;
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::user::User;
@@ -50,7 +51,7 @@ async fn guests_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/guests.html")]
     struct GuestsTemplate {
         user: User,
@@ -74,7 +75,7 @@ async fn select_hour(
     State(state): State<AppState>,
     Form(form): Form<SelectDateForm>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/admin/select_hour.html")]
     struct SelectHourTemplate {
         hours: Vec<u8>,
@@ -103,7 +104,7 @@ async fn create_guest(
     auth_session: AuthSession,
     Form(guest): Form<NewSpecialGuest>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/admin/guests_content.html")]
     struct GuestsListTemplate {
         guests: Vec<GuestDto>,

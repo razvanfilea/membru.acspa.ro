@@ -1,0 +1,12 @@
+[package]
+name = "template_response"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+quote = "1"
+synstructure = "0.13.1"
+proc-macro2 = "1"
+
+[lib]
+proc-macro = true

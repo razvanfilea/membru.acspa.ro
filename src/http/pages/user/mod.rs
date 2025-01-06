@@ -3,6 +3,7 @@ use askama::Template;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::Router;
+use template_response::TemplateResponse;
 
 mod change_password;
 pub mod login;
@@ -20,7 +21,7 @@ pub fn user_router() -> Router<AppState> {
 }
 
 pub async fn forgot_password() -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/forgot_password.html")]
     struct ForgotPassword;
 

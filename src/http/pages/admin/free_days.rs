@@ -7,14 +7,15 @@ use crate::model::user::User;
 use crate::utils::queries::alt_day_exists;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
-use askama_axum::IntoResponse;
 use axum::extract::{Path, State};
 use axum::routing::{delete, get, put};
 use axum::{Form, Router};
+use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::{query, SqlitePool};
 use time::{Date, OffsetDateTime};
 use tracing::info;
+use template_response::TemplateResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -47,7 +48,7 @@ async fn free_days_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/free_days.html")]
     struct FreeDaysTemplate {
         user: User,
@@ -72,7 +73,7 @@ async fn create_free_day(
     State(state): State<AppState>,
     Form(day): Form<NewFreeDay>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/admin/free_days_content.html")]
     struct FreeDaysListTemplate {
         free_days: Vec<FreeDay>,

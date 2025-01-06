@@ -1,12 +1,12 @@
 use askama::Template;
-use askama_axum::{IntoResponse, Response};
 use axum::extract::{Path, State};
 use axum::routing::{get, post};
 use axum::{Form, Router};
+use axum::response::{IntoResponse, Response};
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use time::Date;
-
+use template_response::TemplateResponse;
 use crate::http::auth::generate_hash_from_password;
 use crate::http::pages::{get_user, AuthSession};
 use crate::http::AppState;
@@ -54,7 +54,7 @@ async fn members_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/members/list.html")]
     struct MembersTemplate {
         user: User,
@@ -81,7 +81,7 @@ async fn search_members(
     State(state): State<AppState>,
     Form(search_query): Form<SearchQuery>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/admin/members_content.html")]
     struct MembersListTemplate {
         members: Vec<User>,
@@ -114,7 +114,7 @@ async fn new_member_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/members/new.html")]
     struct NewMemberTemplate {
         user: User,
@@ -161,7 +161,7 @@ async fn edit_member_page(
     auth_session: AuthSession,
     Path(user_id): Path<i64>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/members/edit.html")]
     struct EditMemberTemplate {
         current_date: String,
@@ -234,7 +234,7 @@ async fn change_password_page(
     auth_session: AuthSession,
     Path(user_id): Path<i64>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/members/change_password.html")]
     struct ChangePasswordTemplate {
         user: User,

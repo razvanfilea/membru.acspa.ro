@@ -1,13 +1,13 @@
 use askama::Template;
-use askama_axum::IntoResponse;
 use axum::extract::{Path, Query, State};
 use axum::routing::{delete, get, post, put};
 use axum::{Form, Router};
+use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
 use time::Date;
 use tracing::{error, info};
-
+use template_response::TemplateResponse;
 use crate::http::pages::AuthSession;
 use crate::http::AppState;
 use crate::model::restriction::Restriction;
@@ -37,7 +37,7 @@ async fn restrictions_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/admin/restrictions.html")]
     struct RestrictionsTemplate {
         user: User,
@@ -62,7 +62,7 @@ async fn select_hour(
     State(state): State<AppState>,
     Form(form): Form<SelectDateForm>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/admin/select_hour.html")]
     struct SelectHourTemplate {
         hours: Vec<u8>,
@@ -93,7 +93,7 @@ async fn create_restriction(
     State(state): State<AppState>,
     Form(restriction): Form<NewRestriction>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/admin/restrictions_content.html")]
     struct RestrictionsListTemplate {
         restrictions: Vec<Restriction>,

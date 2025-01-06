@@ -12,7 +12,6 @@ use crate::utils::queries::get_day_structure;
 use crate::utils::CssColor;
 use crate::utils::{date_formats, get_reservation_result_color, local_time};
 use askama::Template;
-use askama_axum::IntoResponse;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::routing::{delete, get, post};
@@ -20,8 +19,10 @@ use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
 use std::str::FromStr;
+use axum::response::IntoResponse;
 use time::Date;
 use tracing::{error, warn};
+use template_response::TemplateResponse;
 
 pub mod reservation_hours;
 pub mod socket;
@@ -45,7 +46,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         color: CssColor,
     }
 
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "pages/home.html")]
     struct HomeTemplate {
         current_date: Date,
@@ -88,7 +89,7 @@ struct HourQuery {
     hour: u8,
 }
 
-#[derive(Template)]
+#[derive(Template, TemplateResponse)]
 #[template(path = "components/home/reservation_confirmed.html")]
 struct ConfirmedTemplate {
     successful: bool,
@@ -101,7 +102,7 @@ async fn hour_picker(
     State(state): State<AppState>,
     Form(query): Form<HourQuery>,
 ) -> impl IntoResponse {
-    #[derive(Template)]
+    #[derive(Template, TemplateResponse)]
     #[template(path = "components/home/reservation_confirm_card.html")]
     struct ConfirmationPromptTemplate<'a> {
         selected_date: Date,
