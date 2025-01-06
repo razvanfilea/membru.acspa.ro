@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use argon2::password_hash::rand_core::SeedableRng;
 use argon2::password_hash::SaltString;
 use argon2::{password_hash, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use axum::async_trait;
+use async_trait::async_trait;
 use axum_login::{AuthnBackend, AuthzBackend, UserId};
 use rand_hc::Hc128Rng;
 use sqlx::{query_as, SqlitePool};

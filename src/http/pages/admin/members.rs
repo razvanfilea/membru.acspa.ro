@@ -19,11 +19,11 @@ pub fn router() -> Router<AppState> {
         .route("/search", post(search_members))
         .route("/new", get(new_member_page))
         .route("/new", post(create_new_user))
-        .route("/edit/:id", get(edit_member_page))
-        .route("/edit/:id", post(update_user))
-        .route("/change_password/:id", get(change_password_page))
-        .route("/change_password/:id", post(update_password))
-        .route("/delete/:id", post(delete_user))
+        .route("/edit/{id}", get(edit_member_page))
+        .route("/edit/{id}", post(update_user))
+        .route("/change_password/{id}", get(change_password_page))
+        .route("/change_password/{id}", post(update_password))
+        .route("/delete/{id}", post(delete_user))
 }
 
 async fn get_all_roles(state: &AppState) -> Vec<String> {

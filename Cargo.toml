@@ -6,17 +6,18 @@ edition = "2021"
 [dependencies]
 # Async
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
+async-trait = "0.1"
 
 # Axum
-axum = { version = "0.7", features = ["ws"] }
+axum = { version = "0.8.1", features = ["ws"] }
 tower = "0.5.1"
 tower-http = { version = "0.6", features = ["trace", "timeout", "fs", "catch-panic"] }
 askama = { version = "0.12.1" }
-axum-login = "0.16"
+axum-login = "0.17.0"
 template_response = { path = "template_response" }
 
-sqlx = { version = "0.8.2", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
-tower-sessions-sqlx-store = { version = "0.14", features = ["sqlite"] }
+sqlx = { version = "0.8.3", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
+tower-sessions-sqlx-store = { version = "0.15.0", features = ["sqlite"] }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

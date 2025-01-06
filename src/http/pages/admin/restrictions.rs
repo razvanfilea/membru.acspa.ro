@@ -20,7 +20,7 @@ pub fn router() -> Router<AppState> {
         .route("/", get(restrictions_page))
         .route("/", put(create_restriction))
         .route("/select_hour", post(select_hour))
-        .route("/:date", delete(delete_restriction))
+        .route("/{date}", delete(delete_restriction))
 }
 
 async fn get_restrictions(pool: &SqlitePool) -> Vec<Restriction> {

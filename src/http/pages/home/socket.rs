@@ -120,7 +120,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
                         NotificationBubbleResponse {
                             message: message.as_str(),
                         }
-                        .to_string(),
+                        .to_string().into(),
                     ))
                     .await;
             }
@@ -172,6 +172,6 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
             }
         };
 
-        socket.send(Message::Text(response)).await.unwrap();
+        socket.send(Message::Text(response.into())).await.unwrap();
     }
 }

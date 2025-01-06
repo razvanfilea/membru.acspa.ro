@@ -21,7 +21,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(free_days_page))
         .route("/", put(create_free_day))
-        .route("/:date", delete(delete_free_day))
+        .route("/{date}", delete(delete_free_day))
 }
 
 struct FreeDay {

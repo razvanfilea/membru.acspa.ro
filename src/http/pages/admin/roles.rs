@@ -20,9 +20,9 @@ pub fn router() -> Router<AppState> {
         .route("/", get(roles_page))
         .route("/new", get(new_role_page))
         .route("/new", post(create_new_role))
-        .route("/edit/:id", get(edit_role_page))
-        .route("/edit/:id", post(update_role))
-        .route("/:id", delete(delete_role))
+        .route("/edit/{id}", get(edit_role_page))
+        .route("/edit/{id}", post(update_role))
+        .route("/{id}", delete(delete_role))
 }
 
 async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {

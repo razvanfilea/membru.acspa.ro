@@ -19,7 +19,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(tournaments_page))
         .route("/", put(create_tournament))
-        .route("/:date", delete(delete_tournament))
+        .route("/{date}", delete(delete_tournament))
 }
 
 struct Tournament {
