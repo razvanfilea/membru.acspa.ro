@@ -34,7 +34,10 @@ pub struct ReservationHours {
     pub capacity: Option<u8>,
 }
 
-pub async fn get_reservation_hours(state: &AppState, date: Date) -> ReservationHours {
+pub async fn get_reservation_hours(
+    state: &AppState,
+    date: Date,
+) -> Result<ReservationHours, sqlx::Error> {
     let day_structure = get_day_structure(state, date).await;
     let restrictions = query_as!(
         Restriction,
@@ -42,13 +45,12 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> ReservationH
         date
     )
     .fetch_all(&state.read_pool)
-    .await
-    .expect("Database error");
+    .await?;
 
     // Check if the whole day is restricted
     // Since it's ordered by hour, a null hour should be first if there is one
     if let Some(restriction) = restrictions.first().filter(|r| r.hour.is_none()) {
-        return ReservationHours {
+        return Ok(ReservationHours {
             hours: day_structure
                 .iter()
                 .map(|hour| ReservationsSlot {
@@ -59,7 +61,7 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> ReservationH
                 .collect(),
             description: day_structure.description,
             capacity: None,
-        };
+        });
     }
 
     let date_reservations = query!(
@@ -72,8 +74,7 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> ReservationH
         date
     )
     .fetch_all(&state.read_pool)
-    .await
-    .expect("Database error");
+    .await?;
 
     let hours = day_structure
         .iter()
@@ -127,9 +128,9 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> ReservationH
         .await
         .and_then(|day| day.slot_capacity.map(|capacity| capacity as u8));
 
-    ReservationHours {
+    Ok(ReservationHours {
         description: day_structure.description,
         hours,
         capacity,
-    }
+    })
 }

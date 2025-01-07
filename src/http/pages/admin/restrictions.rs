@@ -1,19 +1,20 @@
-use askama::Template;
-use axum::extract::{Path, Query, State};
-use axum::routing::{delete, get, post, put};
-use axum::{Form, Router};
-use axum::response::IntoResponse;
-use serde::Deserialize;
-use sqlx::{query, query_as, SqlitePool};
-use time::Date;
-use tracing::{error, info};
-use template_response::TemplateResponse;
+use crate::http::error::HttpResult;
 use crate::http::pages::AuthSession;
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use crate::model::restriction::Restriction;
 use crate::model::user::User;
 use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_time};
+use askama::Template;
+use axum::extract::{Path, Query, State};
+use axum::response::IntoResponse;
+use axum::routing::{delete, get, post, put};
+use axum::{Form, Router};
+use serde::Deserialize;
+use sqlx::{query, query_as, SqlitePool};
+use time::Date;
+use tracing::{error, info};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -37,7 +38,7 @@ async fn restrictions_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/admin/restrictions.html")]
     struct RestrictionsTemplate {
         user: User,
@@ -50,6 +51,7 @@ async fn restrictions_page(
         restrictions: get_restrictions(&state.read_pool).await,
         current_date: local_time().date(),
     }
+    .into_response()
 }
 
 #[derive(Deserialize)]
@@ -62,7 +64,7 @@ async fn select_hour(
     State(state): State<AppState>,
     Form(form): Form<SelectDateForm>,
 ) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "components/admin/select_hour.html")]
     struct SelectHourTemplate {
         hours: Vec<u8>,
@@ -93,7 +95,7 @@ async fn create_restriction(
     State(state): State<AppState>,
     Form(restriction): Form<NewRestriction>,
 ) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "components/admin/restrictions_content.html")]
     struct RestrictionsListTemplate {
         restrictions: Vec<Restriction>,
@@ -107,7 +109,8 @@ async fn create_restriction(
 
             return RestrictionsListTemplate {
                 restrictions: get_restrictions(&state.read_pool).await,
-            };
+            }
+            .into_response();
         }
     }
 
@@ -132,6 +135,7 @@ async fn create_restriction(
     RestrictionsListTemplate {
         restrictions: get_restrictions(&state.read_pool).await,
     }
+    .into_response()
 }
 
 #[derive(Deserialize)]
@@ -143,7 +147,7 @@ async fn delete_restriction(
     State(state): State<AppState>,
     Path(date): Path<String>,
     Query(query): Query<HourQuery>,
-) -> impl IntoResponse {
+) -> HttpResult {
     let date = Date::parse(&date, date_formats::ISO_DATE).unwrap();
 
     if let Some(hour) = query.hour {
@@ -153,12 +157,12 @@ async fn delete_restriction(
             hour
         )
         .execute(&state.write_pool)
-        .await
-        .expect("Database error");
+        .await?;
     } else {
         query!("delete from restrictions where date = $1", date)
             .execute(&state.write_pool)
-            .await
-            .expect("Database error");
+            .await?;
     }
+
+    Ok(().into_response())
 }

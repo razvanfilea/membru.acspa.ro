@@ -1,19 +1,20 @@
+use crate::http::error::HttpResult;
 use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::pages::AuthSession;
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use crate::model::user::User;
 use crate::utils::queries::alt_day_exists;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::{Path, State};
+use axum::response::IntoResponse;
 use axum::routing::{delete, get, put};
 use axum::{Form, Router};
-use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::{query, SqlitePool};
 use time::{Date, OffsetDateTime};
 use tracing::info;
-use template_response::TemplateResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -52,7 +53,7 @@ async fn tournaments_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/admin/tournaments.html")]
     struct TournamentsTemplate {
         user: User,
@@ -65,6 +66,7 @@ async fn tournaments_page(
         tournaments: tournament_days(&state.read_pool).await,
         current_date: local_time().date(),
     }
+    .into_response()
 }
 
 #[derive(Deserialize)]
@@ -79,15 +81,15 @@ struct NewTournament {
 async fn create_tournament(
     State(state): State<AppState>,
     Form(tournament): Form<NewTournament>,
-) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+) -> HttpResult {
+    #[derive(Template)]
     #[template(path = "components/admin/tournaments_content.html")]
     struct TournamentsListTemplate {
         tournaments: Vec<Tournament>,
     }
 
     let Some(date) = Date::parse(&tournament.date, date_formats::ISO_DATE).ok() else {
-        return error_bubble_response("Data selectată nu este valida");
+        return Ok(error_bubble_response("Data selectată nu este valida"));
     };
     let description = tournament
         .description
@@ -95,10 +97,10 @@ async fn create_tournament(
         .filter(|description| !description.is_empty());
 
     if alt_day_exists(&state.read_pool, date).await {
-        return error_bubble_response(format!(
+        return Ok(error_bubble_response(format!(
             "Deja exists o zi libera/turneu pe data de {}",
             date.format(date_formats::READABLE_DATE).unwrap()
-        ));
+        )));
     }
 
     let capacity = tournament
@@ -125,7 +127,7 @@ async fn create_tournament(
     TournamentsListTemplate {
         tournaments: tournament_days(&state.read_pool).await,
     }
-    .into_response()
+    .try_into_response()
 }
 
 pub async fn delete_tournament(State(state): State<AppState>, Path(date): Path<String>) {

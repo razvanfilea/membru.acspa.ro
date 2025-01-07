@@ -1,18 +1,19 @@
 use crate::http::auth::{generate_hash_from_password, validate_credentials};
+use crate::http::error::HttpResult;
 use crate::http::pages::AuthSession;
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use crate::model::user::User;
 use askama::Template;
 use axum::extract::State;
-use axum::Form;
 use axum::response::{IntoResponse, Response};
+use axum::Form;
 use serde::Deserialize;
 use sqlx::query;
 use tracing::debug;
-use template_response::TemplateResponse;
 
 pub async fn change_password_page(auth_session: AuthSession) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/user/change_password.html")]
     struct ChangePasswordTemplate {
         user: User,
@@ -21,10 +22,11 @@ pub async fn change_password_page(auth_session: AuthSession) -> impl IntoRespons
     ChangePasswordTemplate {
         user: auth_session.user.expect("User should be logged in"),
     }
+    .into_response()
 }
 
-fn change_password_error(message: impl AsRef<str>) -> Response {
-    #[derive(Template, TemplateResponse)]
+fn change_password_error(message: impl AsRef<str>) -> HttpResult {
+    #[derive(Template)]
     #[template(path = "components/login_error.html")]
     struct ErrorTemplate<'a> {
         error_message: &'a str,
@@ -33,7 +35,7 @@ fn change_password_error(message: impl AsRef<str>) -> Response {
     ErrorTemplate {
         error_message: message.as_ref(),
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]
@@ -47,7 +49,7 @@ pub async fn change_password(
     State(state): State<AppState>,
     auth: AuthSession,
     Form(passwords): Form<ChangePasswordForm>,
-) -> impl IntoResponse {
+) -> HttpResult {
     let user = auth.user.as_ref().unwrap();
 
     if passwords.new != passwords.new_duplicate {
@@ -65,13 +67,11 @@ pub async fn change_password(
         user.id
     )
     .execute(&state.write_pool)
-    .await
-    .expect("Database error");
+    .await?;
 
     debug!("User has been logged in: {}", user.email);
-    Response::builder()
+    Ok(Response::builder()
         .header("HX-Redirect", "/")
-        .body("Ți-ai schimbat parola cu succes".to_string())
-        .unwrap()
-        .into_response()
+        .body("Ți-ai schimbat parola cu succes".to_string())?
+        .into_response())
 }

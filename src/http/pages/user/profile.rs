@@ -1,4 +1,6 @@
+use crate::http::error::HttpResult;
 use crate::http::pages::AuthSession;
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
@@ -11,13 +13,9 @@ use axum::extract::{Query, State};
 use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::query;
-use template_response::TemplateResponse;
 
-pub async fn profile_page(
-    auth_session: AuthSession,
-    State(state): State<AppState>,
-) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+pub async fn profile_page(auth_session: AuthSession, State(state): State<AppState>) -> HttpResult {
+    #[derive(Template)]
     #[template(path = "pages/user/profile.html")]
     struct ProfileTemplate {
         user: User,
@@ -34,15 +32,12 @@ pub async fn profile_page(
         user.role_id
     )
     .fetch_one(&state.read_pool)
-    .await
-    .expect("Database error");
+    .await?;
 
     let this_weeks_reservations =
-        get_user_weeks_reservations_count(&state.read_pool, &user, local_time().date())
-            .await
-            .expect("Database error");
+        get_user_weeks_reservations_count(&state.read_pool, &user, local_time().date()).await?;
 
-    ProfileTemplate {
+    Ok(ProfileTemplate {
         reservations: get_user_reservations(&state.read_pool, user.email.as_str(), false).await,
         user,
         show_cancelled: false,
@@ -52,7 +47,7 @@ pub async fn profile_page(
             guest: role.guest_reservations,
         },
     }
-    .into_response()
+    .into_response())
 }
 
 #[derive(Deserialize)]
@@ -65,7 +60,7 @@ pub async fn profile_reservations(
     State(state): State<AppState>,
     Query(query): Query<ReservationsQuery>,
 ) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "components/profile_content.html")]
     struct ProfileTemplate {
         reservations: Vec<UserReservation>,

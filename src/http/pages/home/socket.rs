@@ -82,7 +82,9 @@ impl<'a> HoursTemplate<'a> {
         enable_editing: bool,
     ) -> String {
         Self {
-            reservation_hours: get_reservation_hours(state, selected_date).await,
+            reservation_hours: get_reservation_hours(state, selected_date)
+                .await
+                .expect("Database error"),
             selected_date,
             user,
             enable_editing,
@@ -165,7 +167,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
                     current_date,
                     selected_date,
                     days: DateIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
-                    reservation_hours: get_reservation_hours(&state, selected_date).await,
+                    reservation_hours: get_reservation_hours(&state, selected_date).await.expect("Database error"),
                     user: &user
                 }
                 .to_string()

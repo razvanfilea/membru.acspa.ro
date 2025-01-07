@@ -1,19 +1,20 @@
+use crate::http::error::HttpResult;
 use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::pages::AuthSession;
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::utils::CssColor;
 use askama::Template;
 use axum::extract::{Path, State};
+use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use std::str::FromStr;
-use axum::response::{IntoResponse, Response};
 use strum::IntoEnumIterator;
-use template_response::TemplateResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -36,7 +37,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
         pub members_count: i64,
     }
 
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/admin/roles/list.html")]
     struct UsersTemplate {
         user: User,
@@ -52,6 +53,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
         user: auth_session.user.expect("User should be logged in"),
         roles,
     }
+    .into_response()
 }
 
 #[derive(Deserialize)]
@@ -62,7 +64,7 @@ struct NewRole {
     color: String,
 }
 
-#[derive(Template, TemplateResponse)]
+#[derive(Template)]
 #[template(path = "pages/admin/roles/new_edit.html")]
 struct NewRoleTemplate {
     user: User,
@@ -74,12 +76,10 @@ async fn new_role_page(auth_session: AuthSession) -> impl IntoResponse {
         user: auth_session.user.expect("User should be logged in"),
         value: None,
     }
+    .into_response()
 }
 
-async fn create_new_role(
-    State(state): State<AppState>,
-    Form(role): Form<NewRole>,
-) -> impl IntoResponse {
+async fn create_new_role(State(state): State<AppState>, Form(role): Form<NewRole>) -> HttpResult {
     query!(
         "insert into user_roles (name, reservations, guest_reservations) values ($1, $2, $3)",
         role.name,
@@ -87,13 +87,12 @@ async fn create_new_role(
         role.as_guest
     )
     .execute(&state.write_pool)
-    .await
-    .expect("Database error");
+    .await?;
 
-    Response::builder()
+    Ok(Response::builder()
         .header("HX-Redirect", "/admin/roles")
-        .body("Rolul a fost creat cu succes".to_string())
-        .expect("Failed to create headers")
+        .body("Rolul a fost creat cu succes".to_string())?
+        .into_response())
 }
 
 async fn edit_role_page(

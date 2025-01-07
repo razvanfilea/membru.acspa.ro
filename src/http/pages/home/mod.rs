@@ -1,6 +1,8 @@
+use crate::http::error::HttpResult;
 use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationHours};
 use crate::http::pages::home::socket::handle_ws;
 use crate::http::pages::{get_global_vars, AuthSession};
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
@@ -14,15 +16,14 @@ use crate::utils::{date_formats, get_reservation_result_color, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
 use std::str::FromStr;
-use axum::response::IntoResponse;
 use time::Date;
 use tracing::{error, warn};
-use template_response::TemplateResponse;
 
 pub mod reservation_hours;
 pub mod socket;
@@ -46,7 +47,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         color: CssColor,
     }
 
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/home.html")]
     struct HomeTemplate {
         current_date: Date,
@@ -77,10 +78,13 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         selected_date: current_date,
         days: DateIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
         user: auth_session.user.expect("User should be logged in"),
-        reservation_hours: get_reservation_hours(&state, current_date).await,
+        reservation_hours: get_reservation_hours(&state, current_date)
+            .await
+            .expect("Database error"),
         global_vars: get_global_vars(&state).await,
         reservation_color_code,
     }
+    .into_response()
 }
 
 #[derive(Deserialize)]
@@ -89,7 +93,7 @@ struct HourQuery {
     hour: u8,
 }
 
-#[derive(Template, TemplateResponse)]
+#[derive(Template)]
 #[template(path = "components/home/reservation_confirmed.html")]
 struct ConfirmedTemplate {
     successful: bool,
@@ -102,7 +106,7 @@ async fn hour_picker(
     State(state): State<AppState>,
     Form(query): Form<HourQuery>,
 ) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "components/home/reservation_confirm_card.html")]
     struct ConfirmationPromptTemplate<'a> {
         selected_date: Date,
@@ -210,6 +214,7 @@ async fn confirm_reservation(
         message_color: get_reservation_result_color(&result),
         message,
     }
+    .into_response()
 }
 
 #[derive(Deserialize)]
@@ -224,33 +229,31 @@ async fn cancel_reservation(
     auth_session: AuthSession,
     State(state): State<AppState>,
     Query(query): Query<CancelReservationQuery>,
-) -> impl IntoResponse {
+) -> HttpResult {
     let date = Date::parse(&query.date, date_formats::ISO_DATE).unwrap();
     let user = auth_session.user.expect("User should be logged in");
     let user_id = query.user_id.unwrap_or(user.id);
 
     if (user_id != user.id || query.created_for.is_some()) && !user.admin_panel_access {
-        return StatusCode::UNAUTHORIZED.into_response();
+        return Ok(StatusCode::UNAUTHORIZED.into_response());
     }
 
-    let mut tx = state.write_pool.begin().await.expect("Database error");
+    let mut tx = state.write_pool.begin().await?;
     let rows = if let Some(created_for) = query.created_for {
         query!("delete from reservations where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for = $5", 
             date, query.hour, user_id, state.location.id, created_for)
             .execute(tx.as_mut())
-            .await
+            .await?
     } else {
         query!("update reservations set cancelled = true
         where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for is null",
             date, query.hour, user_id, state.location.id)
             .execute(tx.as_mut())
-            .await
-    }
+            .await?
+    }.rows_affected();
 
-        .expect("Database error")
-        .rows_affected();
     if rows != 1 {
-        return StatusCode::BAD_REQUEST.into_response();
+        return Ok(StatusCode::BAD_REQUEST.into_response());
     }
 
     let count = query!(
@@ -261,8 +264,7 @@ async fn cancel_reservation(
         state.location.id
     )
     .fetch_one(tx.as_mut())
-    .await
-    .expect("Database error")
+    .await?
     .count;
 
     if count < state.location.slot_capacity {
@@ -273,13 +275,12 @@ async fn cancel_reservation(
                     order by as_guest, created_at limit 1)",
             date, query.hour, state.location.id)
         .execute(tx.as_mut())
-        .await
-        .expect("Database error");
+        .await?;
     }
 
-    tx.commit().await.expect("Database error");
+    tx.commit().await?;
 
     let _ = state.reservation_notifier.send(());
 
-    ().into_response()
+    Ok(().into_response())
 }

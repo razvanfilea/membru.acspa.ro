@@ -1,5 +1,7 @@
+use crate::http::error::HttpResult;
 use crate::http::pages::home::socket::HoursTemplate;
 use crate::http::pages::AuthSession;
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
@@ -15,7 +17,6 @@ use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
 use time::Date;
-use template_response::TemplateResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -29,28 +30,31 @@ pub fn router() -> Router<AppState> {
 async fn members_situation_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
-) -> impl IntoResponse {
+) -> HttpResult {
     struct SituationMember {
         email: String,
         name: String,
     }
 
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/admin/situations/member.html")]
     struct MemberSituationTemplate {
         user: User,
         members: Vec<SituationMember>,
     }
 
-    let users = query_as!(SituationMember, "select email, name from users order by name")
-        .fetch_all(&state.read_pool)
-        .await
-        .expect("Database error");
+    let users = query_as!(
+        SituationMember,
+        "select email, name from users order by name"
+    )
+    .fetch_all(&state.read_pool)
+    .await?;
 
     MemberSituationTemplate {
         user: auth_session.user.expect("User should be logged in"),
         members: users,
     }
+    .try_into_response()
 }
 
 #[derive(Deserialize)]
@@ -62,7 +66,7 @@ async fn member_situations(
     State(state): State<AppState>,
     Form(form): Form<MemberSituationQuery>,
 ) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "components/reservations_list.html")]
     struct UserReservationsTemplate {
         reservations: Vec<UserReservation>,
@@ -73,13 +77,14 @@ async fn member_situations(
         reservations: get_user_reservations(&state.read_pool, &form.email, false).await,
         allow_reservation_cancellation: false,
     }
+    .into_response()
 }
 
 async fn daily_situation_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
 ) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/admin/situations/daily.html")]
     struct DailySituationTemplate {
         user: User,
@@ -97,6 +102,7 @@ async fn daily_situation_page(
         current_date,
         content: hours,
     }
+    .into_response()
 }
 
 #[derive(Deserialize)]

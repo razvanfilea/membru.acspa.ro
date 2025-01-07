@@ -1,18 +1,18 @@
+use crate::http::pages::AuthSession;
+use crate::http::template_into_response::TemplateIntoResponse;
+use crate::model::user::UserCredentials;
 use askama::Template;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use email_address::EmailAddress;
 use tracing::{debug, error};
-use template_response::TemplateResponse;
-use crate::http::pages::AuthSession;
-use crate::model::user::UserCredentials;
 
 pub async fn login_page(auth_session: AuthSession) -> impl IntoResponse {
     if auth_session.user.is_some() {
         return Redirect::to("/").into_response();
     }
 
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/login.html")]
     struct LoginTemplate;
 
@@ -20,7 +20,7 @@ pub async fn login_page(auth_session: AuthSession) -> impl IntoResponse {
 }
 
 fn login_error(message: impl AsRef<str>) -> Response {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "components/login_error.html")]
     struct ErrorTemplate<'a> {
         error_message: &'a str,

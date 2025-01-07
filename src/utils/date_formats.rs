@@ -12,7 +12,7 @@ pub const READABLE_DATE: &[time::format_description::BorrowedFormatItem] =
 
 pub fn format_as_local(time: &OffsetDateTime) -> String {
     let offset = UtcOffset::current_local_offset().expect("Failed to determine local offset");
-     time.to_offset(offset).format(READABLE_DATE_TIME).unwrap()
+    time.to_offset(offset).format(READABLE_DATE_TIME).unwrap()
 }
 
 pub const READABLE_DATE_TIME: &[time::format_description::BorrowedFormatItem] =

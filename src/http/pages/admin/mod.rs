@@ -1,4 +1,5 @@
 use crate::http::pages::{get_global_vars, AuthSession};
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
@@ -9,7 +10,6 @@ use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
-use template_response::TemplateResponse;
 
 mod free_days;
 mod guests;
@@ -33,7 +33,7 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/admin/admin.html")]
     struct HomeTemplate {
         user: User,
@@ -44,6 +44,7 @@ async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) ->
         user: auth_session.user.expect("User should be logged in"),
         global_vars: get_global_vars(&state).await,
     }
+    .into_response()
 }
 
 #[derive(Deserialize)]

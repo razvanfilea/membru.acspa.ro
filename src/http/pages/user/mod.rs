@@ -1,9 +1,9 @@
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use askama::Template;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::Router;
-use template_response::TemplateResponse;
 
 mod change_password;
 pub mod login;
@@ -21,9 +21,9 @@ pub fn user_router() -> Router<AppState> {
 }
 
 pub async fn forgot_password() -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/forgot_password.html")]
     struct ForgotPassword;
 
-    ForgotPassword
+    ForgotPassword.into_response()
 }

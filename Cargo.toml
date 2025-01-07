@@ -1,6 +1,6 @@
 [package]
 name = "acspa"
-version = "2.3.3"
+version = "2.3.4"
 edition = "2021"
 
 [dependencies]
@@ -14,7 +14,6 @@ tower = "0.5.1"
 tower-http = { version = "0.6", features = ["trace", "timeout", "fs", "catch-panic"] }
 askama = { version = "0.12.1" }
 axum-login = "0.17.0"
-template_response = { path = "template_response" }
 
 sqlx = { version = "0.8.3", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
 tower-sessions-sqlx-store = { version = "0.15.0", features = ["sqlite"] }
@@ -29,6 +28,7 @@ dotenvy = "0.15.7"
 email_address = "0.2.9"
 time = { version = "0.3", features = ["formatting", "macros", "local-offset"] }
 strum = { version = "0.26", features = ["derive"] }
+thiserror = "2.0.9"
 
 # Crypto
 argon2 = { version = "0.5", features = ["std"] }

@@ -1,5 +1,6 @@
 use crate::http::auth::UserAuthenticator;
 use crate::http::pages::notification_template::error_bubble_response;
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::location::Location;
 use crate::utils::local_time;
 use askama::Template;
@@ -20,11 +21,12 @@ use tower_http::timeout::TimeoutLayer;
 use tower_http::trace;
 use tower_http::trace::TraceLayer;
 use tower_sessions_sqlx_store::SqliteStore;
-use tracing::{info, Level};
-use template_response::TemplateResponse;
+use tracing::{error, info, Level};
 
 mod auth;
+mod error;
 mod pages;
+mod template_into_response;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -63,29 +65,34 @@ pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
         let current_date = current_time.date();
         let current_hour = current_time.hour();
 
-        let rows_affected = query!(
+        let query_result = query!(
             "delete from reservations where in_waiting = true and (date < $1 or (date == $1 and hour <= $2))",
                 current_date,
                 current_hour)
             .execute(&pool)
-            .await
-            .expect("Database error")
-            .rows_affected();
+            .await;
 
-        if rows_affected != 0 {
-            info!("Deleted {rows_affected} expired reservations");
+        match query_result {
+            Ok(result) => {
+                let rows_affected = result.rows_affected();
+                if rows_affected != 0 {
+                    info!("Deleted {rows_affected} expired reservations");
+                    let _ = notifier.send(());
+                }
+            }
+            Err(e) => {
+                error!("Failed to delete expired reservations: {e}");
+            }
         }
-
-        let _ = notifier.send(());
     }
 }
 
 async fn handler_404() -> impl IntoResponse {
-    #[derive(Template, TemplateResponse)]
+    #[derive(Template)]
     #[template(path = "pages/404.html")]
     struct NotFoundTemplate;
 
-    NotFoundTemplate
+    NotFoundTemplate.try_into_response()
 }
 
 async fn shutdown_signal() {

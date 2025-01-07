@@ -111,7 +111,7 @@ pub async fn get_user_weeks_reservations_count<'a, E>(
     executor: E,
     user: &User,
     date: Date,
-) -> ReservationResult<ReservationsCount>
+) -> Result<ReservationsCount, sqlx::Error>
 where
     E: Executor<'a, Database = Sqlite>,
 {
