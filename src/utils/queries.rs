@@ -8,21 +8,6 @@ use sqlx::{query, query_as, Executor, Sqlite, SqlitePool};
 use time::{Date, Weekday};
 use tracing::error;
 
-pub async fn alt_day_exists<'a, E>(executor: E, date: Date) -> bool
-where
-    E: Executor<'a, Database = Sqlite>,
-{
-    query!(
-        "select exists (select 1 from alternative_days where date = $1) as 'exists!'",
-        date
-    )
-    .fetch_one(executor)
-    .await
-    .expect("Database error")
-    .exists
-        != 0
-}
-
 pub async fn get_alt_day_structure_for_day<'a, E>(executor: E, date: Date) -> Option<DayStructure>
 where
     E: Executor<'a, Database = Sqlite>,
@@ -74,15 +59,12 @@ pub struct ReservationsCount {
     pub guest: i64,
 }
 
-pub async fn get_current_reservations_count<'a, E>(
-    executor: E,
+pub async fn get_current_reservations_count(
+    executor: impl Executor<'_, Database = Sqlite>,
     location: &Location,
     date: Date,
     hour: u8,
-) -> ReservationResult<ReservationsCount>
-where
-    E: Executor<'a, Database = Sqlite>,
-{
+) -> ReservationResult<ReservationsCount> {
     let counts = query!(
         "select as_guest, count(*) as 'count!: i64' from reservations
         where location = $1 and date = $2 and hour = $3 and cancelled = false and in_waiting = false
@@ -107,13 +89,11 @@ where
     Ok(result)
 }
 
-pub async fn get_user_weeks_reservations_count<'a, E>(
-    executor: E,
+pub async fn get_user_weeks_reservations_count(
+    executor: impl Executor<'_, Database = Sqlite>,
     user: &User,
     date: Date,
 ) -> Result<ReservationsCount, sqlx::Error>
-where
-    E: Executor<'a, Database = Sqlite>,
 {
     let counts = query!(
         "select as_guest, count(*) as 'count! :i64' from reservations

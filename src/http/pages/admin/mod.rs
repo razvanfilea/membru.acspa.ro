@@ -11,13 +11,12 @@ use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
 
-mod free_days;
 mod guests;
 mod members;
 mod restrictions;
 mod roles;
 mod situations;
-mod tournaments;
+mod alternative_days;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -25,11 +24,10 @@ pub fn router() -> Router<AppState> {
         .route("/apply_settings", post(apply_settings))
         .nest("/members", members::router())
         .nest("/roles", roles::router())
-        .nest("/free_days", free_days::router())
-        .nest("/tournaments", tournaments::router())
         .nest("/restrictions", restrictions::router())
         .nest("/guests", guests::router())
         .nest("/situations", situations::router())
+        .merge(alternative_days::router())
 }
 
 async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select date, description, slots_start_hour, slot_duration, slot_capacity, created_at from alternative_days where type = 'turneu' order by date desc, created_at",
+  "query": "select date, COALESCE(description, '') as 'description', slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, created_at\n        from alternative_days where type = $1\n        order by date desc, created_at",
   "describe": {
     "columns": [
       {
@@ -14,12 +14,12 @@
         "type_info": "Text"
       },
       {
-        "name": "slots_start_hour",
+        "name": "start_hour",
         "ordinal": 2,
         "type_info": "Integer"
       },
       {
-        "name": "slot_duration",
+        "name": "duration",
         "ordinal": 3,
         "type_info": "Integer"
       },
@@ -35,16 +35,16 @@
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
       false,
-      true,
+      false,
       false,
       false,
       true,
       false
     ]
   },
-  "hash": "fc143decd0259020950ad6b5ec996c6ee26ec7adaf61976ed6b128b81bbb7304"
+  "hash": "8579c9b7bbe6a7e2fb99a0875084a625753e3b18911d341c8b42eda9add9c259"
 }
