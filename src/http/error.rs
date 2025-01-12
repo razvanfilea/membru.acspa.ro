@@ -11,28 +11,13 @@ pub enum HttpError {
     Database(#[from] sqlx::Error),
     #[error("Failed to generate HTML: `{0}`")]
     Template(#[from] askama::Error),
-    // #[error("invalid header (expected {expected:?}, found {found:?})")]
-    // InvalidHeader {
-    //     expected: String,
-    //     found: String,
-    // },
 }
 
 impl IntoResponse for HttpError {
     fn into_response(self) -> Response {
-        match self {
-            HttpError::Response(e) => error_bubble_response(e.to_string()),
-            HttpError::Database(e) => {
-                let message = e.to_string();
-                error!("{message}");
-                error_bubble_response(message)
-            }
-            HttpError::Template(e) => {
-                let message = e.to_string();
-                error!("{message}");
-                error_bubble_response(message)
-            } // HttpError::InvalidHeader { .. } => {}
-        }
+        let message = self.to_string();
+        error!("{message}");
+        error_bubble_response(message)
     }
 }
 

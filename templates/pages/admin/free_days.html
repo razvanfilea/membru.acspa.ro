@@ -16,7 +16,11 @@
 
 <dialog id="add_modal" class="modal">
     <div class="modal-box">
-        <form class="form-control">
+        <form class="form-control"
+              hx-put="/admin/free_days"
+              hx-swap="outerHTML"
+              hx-target="#list"
+              onsubmit="add_modal.close()">
             <h3 class="text-lg font-bold mb-4">Adaugă zi liberă</h3>
 
             <div class="label">
@@ -33,14 +37,12 @@
 
             <div class="modal-action grid grid-cols-2">
                 <button class="btn"
+                        type="reset"
                         onclick="add_modal.close()">
                     Anulează
                 </button>
 
-                <button class="btn btn-success"
-                        onclick="add_modal.close()"
-                        hx-put="/admin/free_days"
-                        hx-swap="none">
+                <button class="btn btn-success" type="submit">
                     Adaugă
                 </button>
             </div>

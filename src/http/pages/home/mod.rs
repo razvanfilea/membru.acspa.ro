@@ -105,7 +105,7 @@ async fn hour_picker(
     auth_session: AuthSession,
     State(state): State<AppState>,
     Form(query): Form<HourQuery>,
-) -> impl IntoResponse {
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "components/home/reservation_confirm_card.html")]
     struct ConfirmationPromptTemplate<'a> {
@@ -130,8 +130,7 @@ async fn hour_picker(
     let mut tx = state
         .read_pool
         .begin()
-        .await
-        .expect("Failed to create transaction");
+        .await?;
 
     let is_possible = is_reservation_possible(
         tx.as_mut(),
@@ -149,7 +148,7 @@ async fn hour_picker(
             message_color: get_reservation_result_color(&is_possible),
             successful: false,
         }
-        .into_response()
+        .try_into_response()
     } else {
         ConfirmationPromptTemplate {
             selected_date,
@@ -157,7 +156,7 @@ async fn hour_picker(
             end_hour: query.hour + structure.slot_duration as u8,
             location_name: state.location.name.as_ref(),
         }
-        .into_response()
+        .try_into_response()
     }
 }
 

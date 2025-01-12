@@ -121,15 +121,14 @@ async fn daily_situation_choose_date(
     HoursTemplate::create_response(&state, date, &user, false).await
 }
 
-async fn download_situations(State(state): State<AppState>) -> impl IntoResponse {
+async fn download_situations(State(state): State<AppState>) -> HttpResult {
     let current_date = local_time().date().format(ISO_DATE_UNDERLINE).unwrap();
 
     let mut situations: Vec<_> = query!(
         "select r.*, u.name from reservations r join users u on r.user_id = u.id order by date, hour, created_at"
     )
         .fetch_all(&state.read_pool)
-        .await
-        .expect("Database error")
+        .await?
         .into_iter()
         .map(|res| {
             format!(
@@ -153,12 +152,12 @@ async fn download_situations(State(state): State<AppState>) -> impl IntoResponse
 
     let csv = situations.join("\n");
 
-    Response::builder()
+    Ok(Response::builder()
         .header("Content-Type", "text/csv; charset=utf-8")
         .header(
             "Content-Disposition",
             format!("attachment; filename=\"situatie_{current_date}.csv\""),
         )
-        .body(csv)
-        .expect("Failed to create response")
+        .body(csv)?
+        .into_response())
 }

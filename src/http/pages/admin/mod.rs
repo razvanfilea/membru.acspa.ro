@@ -11,12 +11,12 @@ use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
 
+mod alternative_days;
 mod guests;
 mod members;
 mod restrictions;
 mod roles;
 mod situations;
-mod alternative_days;
 
 pub fn router() -> Router<AppState> {
     Router::new()

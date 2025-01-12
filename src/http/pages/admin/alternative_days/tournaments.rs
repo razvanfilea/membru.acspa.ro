@@ -1,5 +1,8 @@
 use crate::http::error::HttpResult;
-use crate::http::pages::admin::alternative_days::{add_alternative_day, alternative_days, delete_alternative_day, AlternativeDay, NewAlternativeDay};
+use crate::http::pages::admin::alternative_days::{
+    add_alternative_day, alternative_days, delete_alternative_day, AlternativeDay,
+    NewAlternativeDay,
+};
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
@@ -11,7 +14,7 @@ use axum::response::IntoResponse;
 use axum::routing::{delete, get, put};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{SqlitePool};
+use sqlx::{Error, SqlitePool};
 use time::Date;
 use tracing::info;
 
@@ -22,7 +25,7 @@ pub fn router() -> Router<AppState> {
         .route("/{date}", delete(delete_tournament))
 }
 
-async fn tournament_days(pool: &SqlitePool) -> Vec<AlternativeDay> {
+async fn tournament_days(pool: &SqlitePool) -> Result<Vec<AlternativeDay>, Error> {
     alternative_days(pool, "turneu").await
 }
 
@@ -40,10 +43,10 @@ async fn tournaments_page(
 
     TournamentsTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        tournaments: tournament_days(&state.read_pool).await,
+        tournaments: tournament_days(&state.read_pool).await?,
         current_date: local_time().date(),
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]
@@ -77,19 +80,19 @@ async fn create_tournament(
         slots_per_day: 1,
         capacity,
     };
-    
+
     if let Some(error_response) = add_alternative_day(state.write_pool, day, "turneu").await? {
         return Ok(error_response);
     }
 
     info!(
         "Added tournament with date: {} and description {}",
-        tournament.date, 
+        tournament.date,
         tournament.description.unwrap_or_default()
     );
 
     TournamentsListTemplate {
-        tournaments: tournament_days(&state.read_pool).await,
+        tournaments: tournament_days(&state.read_pool).await?,
     }
     .try_into_response()
 }

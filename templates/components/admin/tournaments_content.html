@@ -1,9 +1,8 @@
-<div id="list" class="flex flex-col w-full gap-4" hx-swap-oob="outerHTML">
+<div id="list" class="flex flex-col w-full gap-4">
     {% for tournament in tournaments %}
-    {% let id_date = tournament.date.format(date_formats::ISO_DATE_UNDERLINE).unwrap() %}
-    {% let iso_date = tournament.date.format(date_formats::ISO_DATE).unwrap() %}
+    {% let iso_date = tournament.date.to_string() %}
 
-    <div id="tournament_{{ id_date }}" class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between"
+    <div id="tournament_{{ iso_date }}" class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between"
          hx-confirm="Ești sigur ca vrei să ștergi acest turneu? Va șterge și toate rezervările făcute în acea zi">
         <div class="flex flex-col">
             <p>Data: <b>{{ tournament.date.format(date_formats::READABLE_DATE).unwrap() }}</b></p>
@@ -15,20 +14,20 @@
             {% if let Some(capacity) = tournament.slot_capacity %}
             <p>Capacitate: <b>{{ capacity }}</b></p>
             {% endif %}
-            <p class="text-sm">Creat pe: {{ tournament.created_at.format(date_formats::READABLE_DATE_TIME).unwrap() }}</p>
+            <p class="text-sm">Creat pe: {{ tournament.created_at.format(date_formats::READABLE_DATE).unwrap() }}</p>
         </div>
 
         <div class="flex flex-col md:flex-row gap-4">
-            <button title="Duplică turneul"
+            <button title="Editează turneul"
                     class="btn btn-square btn-sm btn-info btn-outline"
                     onclick='copyDateModal("{{ iso_date }}", "{{ tournament.description }}")'>
-                <span class="material-symbols-outlined">tab_duplicate</span>
+                <span class="material-symbols-outlined">edit</span>
             </button>
 
             <button title="Șterge turneul"
                     class="btn btn-square btn-sm btn-error btn-outline"
                     hx-delete='/admin/tournaments/{{ iso_date }}'
-                    hx-target="#tournament_{{ id_date }}"
+                    hx-target="#tournament_{{ iso_date }}"
                     hx-swap="outerHTML">
                 <span class="material-symbols-outlined">delete</span>
             </button>

@@ -61,7 +61,7 @@ async fn add_alternative_day(
     )
         .execute(tx.as_mut())
         .await?;
-    
+
     let deleted_reservations = delete_reservations_on_day(tx.as_mut(), date).await?;
     if deleted_reservations != 0 {
         info!("{deleted_reservations} reservation were deleted when creating alternative day");
@@ -81,13 +81,12 @@ struct AlternativeDay {
     created_at: OffsetDateTime,
 }
 
-async fn alternative_days(pool: &SqlitePool, day_type: &str) -> Vec<AlternativeDay> {
+async fn alternative_days(pool: &SqlitePool, day_type: &str) -> Result<Vec<AlternativeDay>, sqlx::Error> {
     query_as!(AlternativeDay, "select date, COALESCE(description, '') as 'description', slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, created_at
         from alternative_days where type = $1
         order by date desc, created_at", day_type)
         .fetch_all(pool)
         .await
-        .expect("Database error")
 }
 
 async fn delete_alternative_day(state: AppState, date: String) -> HttpResult {

@@ -93,8 +93,7 @@ pub async fn get_user_weeks_reservations_count(
     executor: impl Executor<'_, Database = Sqlite>,
     user: &User,
     date: Date,
-) -> Result<ReservationsCount, sqlx::Error>
-{
+) -> Result<ReservationsCount, sqlx::Error> {
     let counts = query!(
         "select as_guest, count(*) as 'count! :i64' from reservations
         where user_id = $1 and cancelled = false and

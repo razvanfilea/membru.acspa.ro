@@ -16,7 +16,11 @@
 
 <dialog id="add_modal" class="modal">
     <div class="modal-box">
-        <form class="form-control">
+        <form class="form-control"
+              hx-put="/admin/tournaments"
+              hx-swap="outerHTML"
+              hx-target="#list"
+              onsubmit="add_modal.close()">
             <h3 class="text-lg font-bold mb-4">Adaugă turneu</h3>
 
             <div class="label">
@@ -40,25 +44,23 @@
             <div class="label">
                 <label for="duration" class="label-text">Durata:</label>
             </div>
-            <input id="duration" name="duration" type="number" min="1" max="5" class="input input-bordered w-full"
+            <input id="duration" name="duration" type="number" min="1" max="6" class="input input-bordered w-full"
                    placeholder="Durata turneului în ore" required/>
 
             <div class="label">
                 <label for="capacity" class="label-text">Capacitate:</label>
             </div>
-            <input id="capacity" name="capacity" type="number" min="1" max="20" class="input input-bordered w-full"
+            <input id="capacity" name="capacity" type="number" min="1" max="30" class="input input-bordered w-full"
                    placeholder="Capacitate (nu trebuie specificat)"/>
 
             <div class="modal-action grid grid-cols-2">
                 <button class="btn"
+                        type="reset"
                         onclick="add_modal.close()">
                     Anulează
                 </button>
 
-                <button class="btn btn-success"
-                        onclick="add_modal.close()"
-                        hx-put="/admin/tournaments"
-                        hx-swap="none">
+                <button class="btn btn-success" type="submit">
                     Adaugă
                 </button>
             </div>
@@ -70,12 +72,6 @@
 </dialog>
 
 <script>
-    function copyDateModal(isoDate, description) {
-        document.getElementById("date").value = isoDate;
-        document.getElementById("description").value = description;
-        add_modal.showModal()
-    }
-
     function showModalCleared() {
         document.getElementById("date").value = '';
         document.getElementById("description").value = '';

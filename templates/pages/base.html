@@ -80,7 +80,6 @@
         // that triggered the request has a hx-confirm attribute, if not we can return early and let
         // the default behavior happen
         if (!e.detail.target.hasAttribute('hx-confirm')) return
-        console.log("Showing dialog")
 
         e.preventDefault()
 

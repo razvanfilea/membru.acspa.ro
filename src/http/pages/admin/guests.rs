@@ -1,3 +1,5 @@
+use crate::http::error::HttpResult;
+use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
@@ -33,7 +35,7 @@ pub struct GuestDto {
     created_at: OffsetDateTime,
 }
 
-async fn get_guests(pool: &SqlitePool) -> Vec<GuestDto> {
+async fn get_guests(pool: &SqlitePool) -> Result<Vec<GuestDto>, sqlx::Error> {
     query_as!(
         GuestDto,
         r#"select r._rowid_ as 'rowid!', r.created_for 'name!', r.date, r.hour, r.as_guest, r.created_at, r.user_id as created_by_id, u.name as created_by
@@ -44,13 +46,9 @@ async fn get_guests(pool: &SqlitePool) -> Vec<GuestDto> {
     )
     .fetch_all(pool)
     .await
-    .expect("Database error")
 }
 
-async fn guests_page(
-    State(state): State<AppState>,
-    auth_session: AuthSession,
-) -> impl IntoResponse {
+async fn guests_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     #[derive(Template)]
     #[template(path = "pages/admin/guests.html")]
     struct GuestsTemplate {
@@ -61,10 +59,10 @@ async fn guests_page(
 
     GuestsTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        guests: get_guests(&state.read_pool).await,
+        guests: get_guests(&state.read_pool).await?,
         current_date: local_time().date(),
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]
@@ -75,22 +73,23 @@ struct SelectDateForm {
 async fn select_hour(
     State(state): State<AppState>,
     Form(form): Form<SelectDateForm>,
-) -> impl IntoResponse {
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "components/admin/select_hour.html")]
     struct SelectHourTemplate {
         hours: Vec<u8>,
     }
 
-    let date =
-        Date::parse(&form.date, date_formats::ISO_DATE).expect("Data selectata este invalidă");
+    let Ok(date) = Date::parse(&form.date, date_formats::ISO_DATE) else {
+        return Ok(error_bubble_response("Data selectata este invalidă"));
+    };
 
     let day_structure = get_day_structure(&state, date).await;
 
     SelectHourTemplate {
         hours: day_structure.iter().collect(),
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]
@@ -105,7 +104,7 @@ async fn create_guest(
     State(state): State<AppState>,
     auth_session: AuthSession,
     Form(guest): Form<NewSpecialGuest>,
-) -> impl IntoResponse {
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "components/admin/guests_content.html")]
     struct GuestsListTemplate {
@@ -118,9 +117,9 @@ async fn create_guest(
         error!("Invalid hour: {} for date: {}", guest.hour, guest.date);
 
         return GuestsListTemplate {
-            guests: get_guests(&state.read_pool).await,
+            guests: get_guests(&state.read_pool).await?,
         }
-        .into_response();
+        .try_into_response();
     }
 
     let user = auth_session.user.expect("User should be logged in");
@@ -137,8 +136,7 @@ async fn create_guest(
         special
     )
         .execute(&state.write_pool)
-        .await
-        .expect("Database error");
+        .await?;
 
     info!(
         "Add special guest with date: {date} hour: {} and name: {name}",
@@ -148,7 +146,7 @@ async fn create_guest(
     let _ = state.reservation_notifier.send(());
 
     GuestsListTemplate {
-        guests: get_guests(&state.read_pool).await,
+        guests: get_guests(&state.read_pool).await?,
     }
-    .into_response()
+    .try_into_response()
 }

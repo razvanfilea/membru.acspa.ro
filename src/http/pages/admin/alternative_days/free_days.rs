@@ -15,7 +15,7 @@ use axum::response::IntoResponse;
 use axum::routing::{delete, get, put};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::SqlitePool;
+use sqlx::{Error, SqlitePool};
 use time::Date;
 use tracing::info;
 
@@ -26,14 +26,14 @@ pub fn router() -> Router<AppState> {
         .route("/{date}", delete(delete_free_day))
 }
 
-async fn get_free_days(pool: &SqlitePool) -> Vec<AlternativeDay> {
+async fn get_free_days(pool: &SqlitePool) -> Result<Vec<AlternativeDay>, Error> {
     alternative_days(pool, "holiday").await
 }
 
 async fn free_days_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
-) -> impl IntoResponse {
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "pages/admin/free_days.html")]
     struct FreeDaysTemplate {
@@ -44,10 +44,10 @@ async fn free_days_page(
 
     FreeDaysTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        free_days: get_free_days(&state.read_pool).await,
+        free_days: get_free_days(&state.read_pool).await?,
         current_date: local_time().date(),
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]
@@ -82,12 +82,12 @@ async fn create_free_day(
 
     info!(
         "Added free day with date: {} and description {}",
-        new_day.date, 
+        new_day.date,
         new_day.description.unwrap_or_default()
     );
 
     FreeDaysListTemplate {
-        free_days: get_free_days(&state.read_pool).await,
+        free_days: get_free_days(&state.read_pool).await?,
     }
     .try_into_response()
 }

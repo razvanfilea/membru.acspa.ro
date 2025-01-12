@@ -1,18 +1,18 @@
-use crate::http::template_into_response::TemplateIntoResponse;
+use crate::http::template_into_response::{HxSwap, TemplateIntoResponse};
 use askama::Template;
 use axum::response::Response;
 
-#[derive(Template)]
-#[template(path = "components/bubble/error.html")]
-struct ErrorBubbleTemplate<'a> {
-    pub message: &'a str,
-}
-
 pub fn error_bubble_response(message: impl AsRef<str>) -> Response {
+    #[derive(Template)]
+    #[template(path = "components/bubble/error.html")]
+    struct ErrorBubbleTemplate<'a> {
+        pub message: &'a str,
+    }
+
     ErrorBubbleTemplate {
         message: message.as_ref(),
     }
-    .into_response()
+    .into_response_swap(HxSwap::None, None)
 }
 
 #[derive(Template)]
