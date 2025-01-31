@@ -1,6 +1,6 @@
 [package]
 name = "acspa"
-version = "2.3.4"
+version = "2.3.5"
 edition = "2021"
 
 [dependencies]
@@ -14,6 +14,7 @@ tower = "0.5.1"
 tower-http = { version = "0.6", features = ["trace", "timeout", "fs", "catch-panic"] }
 askama = { version = "0.12.1" }
 axum-login = "0.17.0"
+axum-extra = { version = "0.10.0", default-features = false, features = ["form"] }
 
 sqlx = { version = "0.8.3", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
 tower-sessions-sqlx-store = { version = "0.15.0", features = ["sqlite"] }
@@ -31,8 +32,9 @@ strum = { version = "0.26", features = ["derive"] }
 thiserror = "2.0.9"
 
 # Crypto
-argon2 = { version = "0.5", features = ["std"] }
-rand_hc = "0.3.2"
+rand = { version = "0.9.0", default-features = false, features = ["os_rng"] }
+rand_hc = "0.4.0"
+argon2 = { version = "0.6.0-pre.1", features = ["std"] }
 
 [profile.dev.package.askama_derive]
 opt-level = 3

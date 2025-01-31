@@ -11,7 +11,6 @@ use crate::model::user::User;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::response::IntoResponse;
 use axum::routing::{delete, get, put};
 use axum::{Form, Router};
 use serde::Deserialize;

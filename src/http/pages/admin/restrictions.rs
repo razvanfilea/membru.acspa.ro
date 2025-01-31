@@ -14,7 +14,7 @@ use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, SqlitePool};
 use time::Date;
-use tracing::{error, info};
+use tracing::info;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -44,12 +44,17 @@ async fn restrictions_page(
         user: User,
         current_date: Date,
         restrictions: Vec<Restriction>,
+        hours: Vec<u8>,
     }
+
+    let current_date = local_time().date();
+    let day_structure = get_day_structure(&state, current_date).await;
 
     RestrictionsTemplate {
         user: auth_session.user.expect("User should be logged in"),
         restrictions: get_restrictions(&state.read_pool).await,
-        current_date: local_time().date(),
+        current_date,
+        hours: day_structure.iter().collect(),
     }
     .into_response()
 }
@@ -87,55 +92,64 @@ async fn select_hour(
 #[derive(Deserialize)]
 struct NewRestriction {
     date: String,
-    hour: Option<u8>,
+    hour: Option<Vec<u8>>,
     message: String,
 }
 
+use axum_extra::extract::Form as AxumExtraForm;
+
 async fn create_restriction(
     State(state): State<AppState>,
-    Form(restriction): Form<NewRestriction>,
-) -> impl IntoResponse {
+    AxumExtraForm(restriction): AxumExtraForm<NewRestriction>,
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "components/admin/restrictions_content.html")]
     struct RestrictionsListTemplate {
         restrictions: Vec<Restriction>,
     }
 
-    let date = Date::parse(&restriction.date, date_formats::ISO_DATE).unwrap();
-    if let Some(hour) = restriction.hour {
-        let day_structure = get_day_structure(&state, date).await;
-        if !day_structure.is_hour_valid(hour) {
-            error!("Invalid hour: {hour} for date: {}", restriction.date);
-
-            return RestrictionsListTemplate {
-                restrictions: get_restrictions(&state.read_pool).await,
-            }
-            .into_response();
-        }
-    }
-
     let message = restriction.message.trim();
+    let date = Date::parse(&restriction.date, date_formats::ISO_DATE).unwrap();
+    let day_structure = get_day_structure(&state, date).await;
 
-    query!(
-        "insert into restrictions (date, hour, location, message) VALUES ($1, $2, $3, $4)",
-        date,
-        restriction.hour,
-        state.location.id,
-        message,
-    )
-    .execute(&state.write_pool)
-    .await
-    .expect("Database error");
+    let Some(hours) = restriction.hour else {
+        query!(
+            "insert into restrictions (date, location, message) VALUES ($1, $2, $3)",
+            date,
+            state.location.id,
+            message,
+        )
+        .execute(&state.write_pool)
+        .await?;
 
-    info!(
-        "Add restriction with date: {date} hour: {} and message: {message}",
-        restriction.hour.unwrap_or_default()
-    );
+        info!("Add restriction with date: {date}, for the entire day and message: {message}");
+
+        return RestrictionsListTemplate {
+            restrictions: get_restrictions(&state.read_pool).await,
+        }
+        .try_into_response();
+    };
+
+    for hour in hours {
+        if !day_structure.is_hour_valid(hour) {
+            continue;
+        }
+
+        query!(
+            "insert or replace into restrictions (date, hour, location, message) VALUES ($1, $2, $3, $4)",
+            date,
+            hour,
+            state.location.id,
+            message,
+        )
+        .execute(&state.write_pool)
+        .await?;
+    }
 
     RestrictionsListTemplate {
         restrictions: get_restrictions(&state.read_pool).await,
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]

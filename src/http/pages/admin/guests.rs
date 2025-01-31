@@ -8,7 +8,6 @@ use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::State;
-use axum::response::IntoResponse;
 use axum::routing::{get, post, put};
 use axum::{Form, Router};
 use serde::Deserialize;

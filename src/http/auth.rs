@@ -1,11 +1,10 @@
 use std::collections::HashSet;
-use std::time::{SystemTime, UNIX_EPOCH};
 
-use argon2::password_hash::rand_core::SeedableRng;
-use argon2::password_hash::SaltString;
+use argon2::password_hash::{Salt, SaltString};
 use argon2::{password_hash, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use async_trait::async_trait;
 use axum_login::{AuthnBackend, AuthzBackend, UserId};
+use rand::{RngCore, SeedableRng};
 use rand_hc::Hc128Rng;
 use sqlx::{query_as, SqlitePool};
 use tokio::task;
@@ -84,12 +83,13 @@ impl AuthzBackend for UserAuthenticator {
 }
 
 pub fn generate_hash_from_password<T: AsRef<str>>(password: T) -> String {
-    let start = SystemTime::now();
-    let since_the_epoch = start
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
-    let rng = Hc128Rng::seed_from_u64(since_the_epoch.as_millis() as u64);
-    let salt = SaltString::generate(rng);
+    let mut rng = Hc128Rng::from_os_rng();
+    // let salt = SaltString::generate(rng); TODO use when updating argon
+    let salt = {
+        let mut bytes = [0u8; Salt::RECOMMENDED_LENGTH];
+        rng.fill_bytes(&mut bytes);
+        SaltString::encode_b64(&bytes).unwrap()
+    };
 
     Argon2::default()
         .hash_password(password.as_ref().as_bytes(), &salt)

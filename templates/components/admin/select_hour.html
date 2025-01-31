@@ -1,6 +1,6 @@
 {% for hour in hours %}
 <label class="label cursor-pointer gap-3">
-    <input type="radio" name="hour" class="radio" value="{{ hour }}"
+    <input type="checkbox" name="hour" class="checkbox" value="{{ hour }}" autocomplete="off" required
            {% if loop.first %}checked="checked"{% endif %}/>
     <span class="label-text">{{ hour }}</span>
 </label>

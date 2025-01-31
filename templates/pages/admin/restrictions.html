@@ -33,14 +33,16 @@
             <input id="message" name="message" type="text" class="input input-bordered w-full" required
                    placeholder="Motivul pentru care nu se poate face rezervări"/>
 
-            <label class="label cursor-pointer justify-start gap-8">
+            <label class="label cursor-pointer justify-start gap-8 my-2">
                 <span class="label-text">Toată ziua</span>
                 <input name="all_day" type="checkbox" class="checkbox checkbox-primary"
-                       autocomplete="off" checked="checked"
+                       autocomplete="off"
                        hx-post="/admin/restrictions/select_hour"/>
             </label>
 
-            <div id="hour_selector" class="flex flex-row flex-wrap gap-4"></div>
+            <div id="hour_selector" class="flex flex-row flex-wrap gap-4">
+                {% include "components/admin/select_hour.html" %}
+            </div>
 
             <div class="modal-action grid grid-cols-2" hx-disinherit="*">
                 <button class="btn"
