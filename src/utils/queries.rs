@@ -8,10 +8,10 @@ use sqlx::{query, query_as, Executor, Sqlite, SqlitePool};
 use time::{Date, Weekday};
 use tracing::error;
 
-pub async fn get_alt_day_structure_for_day<'a, E>(executor: E, date: Date) -> Option<DayStructure>
-where
-    E: Executor<'a, Database = Sqlite>,
-{
+pub async fn get_alt_day_structure_for_day(
+    executor: impl Executor<'_, Database = Sqlite>,
+    date: Date,
+) -> Option<DayStructure> {
     fn is_weekend(weekday: Weekday) -> bool {
         weekday == Weekday::Saturday || weekday == Weekday::Sunday
     }
@@ -44,7 +44,7 @@ pub async fn get_user_reservations(
 ) -> Vec<UserReservation> {
     query_as!(
         UserReservation,
-        "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = $2 and created_for is null order by date desc, hour asc",
+        "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = $2 and created_for is null order by date desc, hour",
         email,
         cancelled
     ).fetch_all(pool)

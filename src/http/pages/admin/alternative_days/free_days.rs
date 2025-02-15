@@ -1,8 +1,5 @@
 use crate::http::error::HttpResult;
-use crate::http::pages::admin::alternative_days::{
-    add_alternative_day, alternative_days, delete_alternative_day, AlternativeDay,
-    NewAlternativeDay,
-};
+use crate::http::pages::admin::alternative_days::{add_alternative_day, delete_alternative_day, get_alternative_days, AlternativeDay, NewAlternativeDay};
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
@@ -26,7 +23,7 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn get_free_days(pool: &SqlitePool) -> Result<Vec<AlternativeDay>, Error> {
-    alternative_days(pool, "holiday").await
+    get_alternative_days(pool, "holiday").await
 }
 
 async fn free_days_page(

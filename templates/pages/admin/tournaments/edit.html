@@ -1,0 +1,46 @@
+{% extends "../../base.html" %}
+
+{% block page_title %}Editează turneul{% endblock %}
+
+{% block content %}
+
+<form class="form-control p-4 md:p-8 w-full">
+    <div class="label">
+        <label for="date" class="label-text">Data:</label>
+    </div>
+    <input id="date" type="date" class="input input-bordered w-full" required
+           value="{{ current.date }}" autocomplete="off" disabled/>
+
+    <div class="label">
+        <label for="description" class="label-text">Descriere:</label>
+    </div>
+    <input id="description" type="text" class="input input-bordered w-full"
+           value="{{ current.description }}" autocomplete="off" disabled/>
+
+    <div class="label">
+        <label for="start_hour" class="label-text">Ora de început:</label>
+    </div>
+    <input id="start_hour" name="start_hour" type="number" min="1" max="22" class="input input-bordered w-full"
+           placeholder="Ora la care începe turneul" autocomplete="off"
+           value="{{ current.start_hour }}" required/>
+
+    <div class="label">
+        <label for="duration" class="label-text">Durata:</label>
+    </div>
+    <input id="duration" name="duration" type="number" min="1" max="6" class="input input-bordered w-full"
+           placeholder="Durata turneului în ore" autocomplete="off"
+           value="{{ current.duration }}" required/>
+
+    <div class="label">
+        <label for="capacity" class="label-text">Capacitate:</label>
+    </div>
+    <input id="capacity" name="capacity" type="number" min="1" max="30" class="input input-bordered w-full"
+           placeholder="Capacitate" autocomplete="off"
+           {% if let Some(capacity)=current.slot_capacity %}value="{{ capacity }}" {% endif %}/>
+
+    <button class="btn btn-primary mt-6" hx-post="/admin/tournaments/edit/{{ current.date }}">
+        Actualizează utilizatorul
+    </button>
+</form>
+
+{% endblock content %}

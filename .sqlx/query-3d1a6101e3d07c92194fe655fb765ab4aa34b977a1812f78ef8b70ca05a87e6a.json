@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "update reservations set hour = $3 where date = $1 and hour = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "3d1a6101e3d07c92194fe655fb765ab4aa34b977a1812f78ef8b70ca05a87e6a"
+}

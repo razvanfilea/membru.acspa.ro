@@ -183,7 +183,7 @@ async fn edit_member_page(
 }
 
 #[derive(Deserialize, Debug)]
-struct ExistingUser {
+struct UpdatedUser {
     email: String,
     name: String,
     role: String,
@@ -196,7 +196,7 @@ struct ExistingUser {
 async fn update_user(
     State(state): State<AppState>,
     Path(user_id): Path<i64>,
-    Form(updated_user): Form<ExistingUser>,
+    Form(updated_user): Form<UpdatedUser>,
 ) -> HttpResult {
     fn parse_date(date: Option<String>) -> Option<Date> {
         date.filter(|date| !date.is_empty() && date != "yyyy-mm-dd")

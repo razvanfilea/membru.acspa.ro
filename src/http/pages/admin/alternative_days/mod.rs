@@ -81,7 +81,20 @@ struct AlternativeDay {
     created_at: OffsetDateTime,
 }
 
-async fn alternative_days(pool: &SqlitePool, day_type: &str) -> Result<Vec<AlternativeDay>, sqlx::Error> {
+async fn get_alternative_day(
+    executor: impl Executor<'_, Database = Sqlite>,
+    date: Date,
+) -> Result<Option<AlternativeDay>, sqlx::Error> {
+    query_as!(AlternativeDay, "select date, COALESCE(description, '') as 'description!: String', slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, created_at
+        from alternative_days where date = $1", date)
+        .fetch_optional(executor)
+        .await
+}
+
+async fn get_alternative_days(
+    pool: &SqlitePool,
+    day_type: &str,
+) -> Result<Vec<AlternativeDay>, sqlx::Error> {
     query_as!(AlternativeDay, "select date, COALESCE(description, '') as 'description', slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, created_at
         from alternative_days where type = $1
         order by date desc, created_at", day_type)
