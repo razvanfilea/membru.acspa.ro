@@ -6,7 +6,7 @@
 
 <main class="p-4 md:p-8 w-full">
     <div class="flex flex-row justify-end items-center mb-8">
-        <button class="btn btn-circle btn-success" onclick="showModalCleared()">
+        <button class="btn btn-circle btn-lg btn-success" onclick="showModalCleared()">
             <span class="material-symbols-outlined">add</span>
         </button>
     </div>
@@ -15,25 +15,24 @@
 </main>
 
 <dialog id="add_modal" class="modal">
-    <div class="modal-box">
-        <form class="form-control"
-              hx-put="/admin/free_days"
-              hx-swap="outerHTML"
-              hx-target="#list"
-              onsubmit="add_modal.close()">
+    <form class="modal-box">
+        <fieldset class="fieldset gap-6"
+                  hx-put="/admin/free_days"
+                  hx-swap="outerHTML"
+                  hx-target="#list"
+                  onsubmit="add_modal.close()">
             <h3 class="text-lg font-bold mb-4">Adaugă zi liberă</h3>
 
-            <div class="label">
-                <label for="date" class="label-text">Data:</label>
-            </div>
-            <input id="date" name="date" type="date" class="input input-bordered w-full" required
-                   min='{{ current_date.format(date_formats::ISO_DATE).unwrap() }}'/>
+            <label class="floating-label">
+                <span>Data</span>
+                <input name="date" type="date" class="input input-lg input-bordered w-full" required
+                       min='{{ current_date }}'/>
+            </label>
 
-            <div class="label">
-                <label for="description" class="label-text">Descriere:</label>
-            </div>
-            <input id="description" name="description" type="text" class="input input-bordered w-full"
-                   placeholder="Poate lipsi"/>
+            <label class="floating-label">
+                <span>Descriere</span>
+                <input name="description" type="text" class="input input-lg input-bordered w-full"/>
+            </label>
 
             <div class="modal-action grid grid-cols-2">
                 <button class="btn"
@@ -46,8 +45,9 @@
                     Adaugă
                 </button>
             </div>
-        </form>
-    </div>
+        </fieldset>
+    </form>
+
     <form method="dialog" class="modal-backdrop">
         <button>close</button>
     </form>
@@ -61,8 +61,8 @@
     }
 
     function showModalCleared() {
-        document.getElementById("date").value = '';
-        document.getElementById("description").value = '';
+        document.getElementsByName("date").value = '';
+        document.getElementsByName("description").value = '';
         add_modal.showModal();
     }
 </script>

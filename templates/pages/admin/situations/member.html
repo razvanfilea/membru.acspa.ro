@@ -5,13 +5,11 @@
 {% block content %}
 
 <main class="p-4 md:p-8 w-full">
-    <label>
-        <div class="label">
-            <span class="label-text">Alege membrul:</span>
-        </div>
-        <select class="select select-bordered w-full max-w-xs" autocomplete="off" name="email"
+    <label class="select">
+        <span class="label">Membru</span>
+        <select class="w-full max-w-xs" autocomplete="off" name="email"
             hx-target="#reservations" hx-post="member">
-            <option disabled selected>alege un membru</option>
+            <option disabled selected>Alege membrul</option>
             {% for member in members %}
             <option value="{{ member.email }}">{{ member.name }}</option>
             {% endfor %}

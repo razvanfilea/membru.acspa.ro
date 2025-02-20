@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "scripts": {
     "format": "node_modules/.bin/prettier --write --ignore-unknown .",
-    "dev": "npx tailwindcss -i templates/inputs.css -o assets/css/main.css --watch",
-    "prod": "npx tailwindcss -i templates/inputs.css -o assets/css/main.css --minify"
+    "dev": "npx @tailwindcss/cli -i templates/input.css -o assets/css/main.css --watch",
+    "prod": "npx @tailwindcss/cli -i templates/input.css -o assets/css/main.css --minify"
   },
   "devDependencies": {
-    "daisyui": "4.12.22",
+    "daisyui": "5.0.0-beta.8",
     "prettier": "3.4.2",
     "prettier-plugin-tailwindcss": "0.6.11",
-    "tailwindcss": "3.4.17"
+    "@tailwindcss/cli": "4.0.7"
   }
 }

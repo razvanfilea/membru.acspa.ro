@@ -6,7 +6,7 @@
 
 <main class="p-4 md:p-8 w-full">
     <div class="flex flex-row justify-end items-center mb-8">
-        <button class="btn btn-circle btn-success" onclick="showModalCleared()">
+        <button class="btn btn-circle btn-lg btn-success" onclick="add_modal.showModal()">
             <span class="material-symbols-outlined">add</span>
         </button>
     </div>
@@ -15,43 +15,42 @@
 </main>
 
 <dialog id="add_modal" class="modal">
-    <div class="modal-box">
-        <form class="form-control"
-              hx-put="/admin/tournaments"
-              hx-swap="outerHTML"
-              hx-target="#list"
-              onsubmit="add_modal.close()">
+    <form class="modal-box"
+          hx-put="/admin/tournaments"
+          hx-swap="outerHTML"
+          hx-target="#list"
+          onsubmit="add_modal.close()">
+        <fieldset class="fieldset gap-6">
             <h3 class="text-lg font-bold mb-4">Adaugă turneu</h3>
 
-            <div class="label">
-                <label for="date" class="label-text">Data:</label>
-            </div>
-            <input id="date" name="date" type="date" class="input input-bordered w-full" required
-                   min='{{ current_date.format(date_formats::ISO_DATE).unwrap() }}'/>
+            <label class="floating-label">
+                <span>Data</span>
+                <input name="date" type="date" class="input input-lg input-bordered w-full" required
+                       min='{{ current_date.format(date_formats::ISO_DATE).unwrap() }}'/>
+            </label>
 
-            <div class="label">
-                <label for="description" class="label-text">Descriere:</label>
-            </div>
-            <input id="description" name="description" type="text" class="input input-bordered w-full"
-                   placeholder="Descriere (nu trebuie specificat)"/>
+            <label class="floating-label">
+                <span>Descriere</span>
+                <input name="description" type="text" class="input input-lg input-bordered w-full" placeholder=""/>
+            </label>
 
-            <div class="label">
-                <label for="start_hour" class="label-text">Ora de început:</label>
-            </div>
-            <input id="start_hour" name="start_hour" type="number" min="1" max="22" class="input input-bordered w-full"
-                   placeholder="Ora la care începe turneul" required/>
+            <label class="floating-label">
+                <span>Ora de început</span>
+                <input name="start_hour" type="number" min="1" max="22" class="input input-lg input-bordered w-full"
+                       placeholder="" required/>
+            </label>
 
-            <div class="label">
-                <label for="duration" class="label-text">Durata:</label>
-            </div>
-            <input id="duration" name="duration" type="number" min="1" max="6" class="input input-bordered w-full"
-                   placeholder="Durata turneului în ore" required/>
+            <label class="floating-label">
+                <span class="label-text">Durata (în ore)</span>
+                <input name="duration" type="number" min="1" max="6" class="input input-lg input-bordered w-full"
+                       placeholder="Durata turneului în ore" required/>
+            </label>
 
-            <div class="label">
-                <label for="capacity" class="label-text">Capacitate:</label>
-            </div>
-            <input id="capacity" name="capacity" type="number" min="1" max="30" class="input input-bordered w-full"
-                   placeholder="Capacitate (nu trebuie specificat)"/>
+            <label class="floating-label">
+                <span>Capacitate (nu trebuie specificat)</span>
+                <input name="capacity" type="number" min="1" max="30" placeholder=""
+                       class="input input-lg input-bordered w-full"/>
+            </label>
 
             <div class="modal-action grid grid-cols-2">
                 <button class="btn"
@@ -64,19 +63,11 @@
                     Adaugă
                 </button>
             </div>
-        </form>
-    </div>
+        </fieldset>
+    </form>
     <form method="dialog" class="modal-backdrop">
         <button>close</button>
     </form>
 </dialog>
-
-<script>
-    function showModalCleared() {
-        document.getElementById("date").value = '';
-        document.getElementById("description").value = '';
-        add_modal.showModal();
-    }
-</script>
 
 {% endblock %}

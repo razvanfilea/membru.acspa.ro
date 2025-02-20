@@ -70,7 +70,7 @@ async fn select_hour(
     Form(form): Form<SelectDateForm>,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "components/admin/select_hour.html")]
+    #[template(path = "components/admin/restrictions_select_hour.html")]
     struct SelectHourTemplate {
         hours: Vec<u8>,
     }

@@ -1,0 +1,8 @@
+<label class="floating-label">
+    <span>Ora</span>
+    <select name="hour" class="select select-lg input-lg select-bordered">
+        {% for hour in hours %}
+        <option {% if loop.first %}selected{% endif %}>{{ hour }}</option>
+        {% endfor %}
+    </select>
+</label>

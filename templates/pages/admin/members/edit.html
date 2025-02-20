@@ -4,66 +4,71 @@
 
 {% block content %}
 
-<form class="form-control p-4 md:p-8 w-full">
-    <div class="label">
-        <label for="email" class="label-text">Email:</label>
-    </div>
-    <input id="email" name="email" type="email" placeholder="Email" autocomplete="off"
-           value="{{ existing_user.email }}" required
-           class="input input-bordered"/>
+<form>
+    <fieldset class="fieldset p-4 md:p-8 gap-6 w-full">
+        <label class="floating-label">
+            <span>Email</span>
+            <input name="email" type="email" placeholder="Email" autocomplete="off"
+                   value="{{ existing_user.email }}" required
+                   class="input input-lg input-bordered w-full"/>
+        </label>
 
-    <div class="label">
-        <label for="name" class="label-text">Nume:</label>
-    </div>
-    <input id="name" name="name" type="text" placeholder="Nume" autocomplete="off"
-           value="{{ existing_user.name }}" required
-           class="input input-bordered"/>
+        <label class="floating-label">
+            <span>Nume</span>
+            <input name="name" type="text" placeholder="Nume" autocomplete="off"
+                   value="{{ existing_user.name }}" required
+                   class="input input-lg input-bordered w-full"/>
+        </label>
 
-    <div class="label">
-        <label for="role" class="label-text">Rol:</label>
-    </div>
-    <select id="role" name="role" class="select select-bordered" autocomplete="off">
-        {% for role in roles %}
-        <option {% if role == existing_user.role.as_str() %}selected="selected"{% endif %}>{{ role }}</option>
-        {% endfor %}
-    </select>
+        <label class="floating-label">
+            <span>Rol</span>
+            <select id="role" name="role" class="select input-lg select-bordered w-full" autocomplete="off">
+                {% for role in roles %}
+                <option {% if role== existing_user.role.as_str() %}selected="selected" {% endif %}>{{ role }}</option>
+                {% endfor %}
+            </select>
+        </label>
 
-    <label class="label cursor-pointer py-6">
-        <span class="label-text">Are cheie:</span>
-        <input name="has_key" type="checkbox" class="toggle toggle-primary" autocomplete="off"
-            {% if existing_user.has_key %}checked{% endif %}/>
-    </label>
+        <label class="floating-label">
+            <span>Zi de naștere</span>
+            <input name="birthday" type="date" autocomplete="off" max="{{ current_date }}"
+                   {% if let Some(birthday)=existing_user.birthday
+                   %}value="{{ birthday.format(date_formats::ISO_DATE).unwrap() }}" {% endif %}
+                   class="input input-lg input-bordered w-full"/>
+        </label>
 
-    <div class="label">
-        <label for="birthday" class="label-text">Zi de naștere:</label>
-    </div>
-    <input id="birthday" name="birthday" type="date" autocomplete="off" max="{{ current_date }}"
-           {% if let Some(birthday) = existing_user.birthday %}value="{{ birthday.format(date_formats::ISO_DATE).unwrap() }}"{% endif %}
-           class="input input-bordered"/>
+        <label class="floating-label">
+            <span>Membru din</span>
+            <input name="member_since" type="date" autocomplete="off" max="{{ current_date }}"
+                   placeholder="dd-mm-yyyy"
+                   {% if let Some(member_since)=existing_user.member_since
+                   %}value="{{ member_since.format(date_formats::ISO_DATE).unwrap() }}" {% endif %}
+                   class="input input-lg input-bordered w-full"/>
+        </label>
 
-    <div class="label">
-        <label for="member_since" class="label-text">Membru din:</label>
-    </div>
-    <input id="member_since" name="member_since" type="date" autocomplete="off" max="{{ current_date }}" placeholder="dd-mm-yyyy"
-           {% if let Some(member_since) = existing_user.member_since %}value="{{ member_since.format(date_formats::ISO_DATE).unwrap() }}"{% endif %}
-           class="input input-bordered"/>
+        <label class="floating-label">
+            <span>A primit cadou pe</span>
+            <input name="received_gift" type="date" autocomplete="off" max="{{ current_date }}"
+                   {% if let Some(received_gift)=existing_user.received_gift
+                   %}value="{{ received_gift.format(date_formats::ISO_DATE).unwrap() }}" {% endif %}
+                   class="input input-lg input-bordered w-full"/>
+        </label>
 
-    <div class="label">
-        <label for="received_gift" class="label-text">A primit cadou pe:</label>
-    </div>
-    <input id="received_gift" name="received_gift" type="date" autocomplete="off" max="{{ current_date }}"
-           {% if let Some(received_gift) = existing_user.received_gift %}value="{{ received_gift.format(date_formats::ISO_DATE).unwrap() }}"{% endif %}
-           class="input input-bordered"/>
+        <label class="label">
+            <span class="text-lg">Are cheie:</span>
+            <input name="has_key" type="checkbox" class="toggle toggle-lg input-lg toggle-primary" autocomplete="off"
+                   {% if existing_user.has_key %}checked{% endif %}/>
+        </label>
 
-    <button class="btn btn-primary mt-6" hx-post="/admin/members/edit/{{ existing_user.id }}">
-        Actualizează utilizatorul
-    </button>
+        <button class="btn btn-primary mt-6" hx-post="/admin/members/edit/{{ existing_user.id }}">
+            Actualizează utilizatorul
+        </button>
+
+        <button class="btn btn-error mt-6" hx-post="/admin/members/delete/{{ existing_user.id }}"
+                hx-confirm="Ești absolut sigur că vrei să ștergi acest utilizator?">
+            Șterge utilizatorul
+        </button>
+    </fieldset>
 </form>
-
-<div class="w-full p-8 flex">
-    <button class="btn btn-error" hx-post="/admin/members/delete/{{ existing_user.id }}" hx-confirm="Ești absolut sigur că vrei să ștergi acest utilizator?">
-        Șterge utilizatorul
-    </button>
-</div>
 
 {% endblock %}

@@ -6,7 +6,7 @@
 
 <main class="p-4 md:p-8 w-full">
     <div class="flex flex-row justify-end items-center mb-8">
-        <button class="btn btn-circle btn-success" onclick="add_modal.showModal()">
+        <button class="btn btn-circle btn-lg btn-success" onclick="add_modal.showModal()">
             <span class="material-symbols-outlined">add</span>
         </button>
     </div>
@@ -15,31 +15,31 @@
 </main>
 
 <dialog id="add_modal" class="modal">
-    <div class="modal-box">
-        <form class="form-control" hx-target="#hour_selector" hx-trigger="change">
+    <form class="modal-box" onsubmit="add_modal.close()"
+          hx-put="/admin/guests"
+          hx-target="#list"
+          hx-swap="outerHTML">
+        <fieldset class="fieldset gap-6" hx-target="#hour_selector" hx-trigger="change">
             <h3 class="text-lg font-bold mb-4">Adaugă invitat</h3>
 
-            <div class="label">
-                <label for="name" class="label-text">Nume:</label>
-            </div>
-            <input id="name" name="name" type="text" class="input input-bordered w-full" required
-                   placeholder="Nume invitat"/>
+            <label class="floating-label">
+                <span>Nume</span>
+                <input name="name" type="text" class="input input-lg input-bordered w-full" minlength="4" required/>
+            </label>
 
-            <div class="label">
-                <label for="date" class="label-text">Data:</label>
-            </div>
-            <input id="date" name="date" type="date" class="input input-bordered w-full" required
-                   autocomplete="off" hx-post="/admin/guests/select_hour"
-                   min='{{ current_date.format(date_formats::ISO_DATE).unwrap() }}'/>
+            <label class="floating-label">
+                <span>Data:</span>
+                <input name="date" type="date" class="input input-lg input-bordered w-full" required
+                       autocomplete="off" hx-post="/admin/guests/select_hour"
+                       min='{{ current_date.format(date_formats::ISO_DATE).unwrap() }}'/>
+            </label>
 
-            <div class="label">
-                <label class="label-text">Ora:</label>
-            </div>
-            <div id="hour_selector" class="flex flex-row flex-wrap gap-4"></div>
+            <div id="hour_selector"></div>
 
-            <label class="label cursor-pointer py-6">
-                <span class="label-text">Special:</span>
-                <input name="special" type="checkbox" class="toggle toggle-primary" autocomplete="off" />
+            <label class="label">
+                <span class="text-lg">Special:</span>
+                <input name="special" type="checkbox" class="toggle toggle-lg input-lg toggle-primary"
+                       autocomplete="off"/>
             </label>
 
             <div class="modal-action grid grid-cols-2" hx-disinherit="*">
@@ -48,16 +48,12 @@
                     Anulează
                 </button>
 
-                <button class="btn btn-success"
-                        onclick="add_modal.close()"
-                        hx-put="/admin/guests"
-                        hx-target="#list"
-                        hx-swap="outerHTML">
+                <button class="btn btn-success" type="submit">
                     Adaugă
                 </button>
             </div>
-        </form>
-    </div>
+        </fieldset>
+    </form>
 
     <form method="dialog" class="modal-backdrop">
         <button>close</button>

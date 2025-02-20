@@ -4,56 +4,55 @@
 
 {% block content %}
 
-<form class="form-control p-4 md:p-8 w-full">
-    <div class="label">
-        <label for="name" class="label-text">Nume:</label>
-    </div>
-    <input id="name" name="name" type="text" placeholder="Nume" required class="input input-bordered"
-           autocomplete="off"
-           {% if let Some(val) = value %}value="{{ val.name }}"{% endif %}/>
+<form>
+    <fieldset class="fieldset p-4 md:p-8 gap-6 w-full">
+        <label class="floating-label">
+            <span>Nume</span>
+            <input name="name" type="text" placeholder="Nume" required class="input input-lg input-bordered w-full"
+                   autocomplete="off"
+                   {% if let Some(val)=value %}value="{{ val.name }}" {% endif %}/>
+        </label>
 
-    <div class="label">
-        <label for="reservations" class="label-text">Rezervări pe săptămână:</label>
-    </div>
-    <input id="reservations" name="reservations" type="number" required class="input input-bordered"
-           min="0" max="255" autocomplete="off"
-           {% if let Some(val) = value %}value="{{ val.reservations }}"{% else %}value="0"{% endif %}/>
+        <label class="floating-label">
+            <span>Rezervări pe săptămână</span>
+            <input name="reservations" type="number" required class="input input-lg input-bordered w-full"
+                   min="0" max="255" autocomplete="off"
+                   {% if let Some(val)=value %}value="{{ val.reservations }}" {% else %}value="0" {% endif %}/>
+        </label>
 
-    <div class="label">
-        <label for="as_guest" class="label-text">Rezervări ca invitat pe săptămână:</label>
-    </div>
-    <input id="as_guest" name="as_guest" type="number" required class="input input-bordered"
-           min="0" max="255" autocomplete="off"
-           {% if let Some(val) = value %}value="{{ val.guest_reservations }}" {% else %}value="0" {% endif %}/>
+        <label class="floating-label">
+            <span>Rezervări ca invitat pe săptămână</span>
+            <input name="as_guest" type="number" required class="input input-lg input-bordered w-full"
+                   min="0" max="255" autocomplete="off"
+                   {% if let Some(val)=value %}value="{{ val.guest_reservations }}" {% else %}value="0" {% endif %}/>
+        </label>
 
-    <div class="label">
-        <label for="color" class="label-text">Culoare rezervări:</label>
-    </div>
-    <select id="color" name="color" class="select select-bordered">
-        {% for color in CssColor::iter() %}
-        <option {% if let Some(val) = value %}{% if val.color == Some(color.to_string()) %}selected{% endif %}{% endif %}>{{ color }}</option>
-        {% endfor %}
-    </select>
+        <label class="floating-label">
+            <span>Culoare rezervări</span>
+            <select name="color" class="select select-lg select-bordered input-lg w-full">
+                {% for color in CssColor::iter() %}
+                <option {% if let Some(val)=value %}{% if val.color== Some(color.to_string()) %}selected{% endif %}{%
+                        endif %}>{{ color }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
 
-    <label class="label cursor-pointer py-6">
-        <span class="label-text">Access panou administrare:</span>
-        <input type="checkbox" class="toggle toggle-primary" disabled
-           {% if let Some(val) = value %}{% if val.admin_panel_access %} checked {% endif %} {% endif %}/>
-    </label>
+        {% if let Some(val) = value %}
+        <button class="btn btn-primary mt-6" hx-post="/admin/roles/edit/{{ val.id }}">
+            Actualizează
+        </button>
 
-    {% if let Some(val) = value %}
-    <button class="btn btn-primary mt-6" hx-post="/admin/roles/edit/{{ val.id }}">
-        Actualizează
-    </button>
-
-    <button class="btn btn-error mt-6" hx-swap="none" hx-delete="/admin/roles/{{ val.id }}" hx-confirm="Ești absolut sigur că vrei să ștergi acest rol?">
-        Șterge
-    </button>
-    {% else %}
-    <button class="btn btn-primary mt-6" hx-post="/admin/roles/new">
-        Creează un rol nou
-    </button>
-    {% endif %}
+        <button class="btn btn-error mt-6" hx-swap="none" hx-delete="/admin/roles/{{ val.id }}"
+                hx-confirm="Ești absolut sigur că vrei să ștergi acest rol?">
+            Șterge
+        </button>
+        {% else %}
+        <button class="btn btn-primary mt-6" hx-post="/admin/roles/new">
+            Creează un rol nou
+        </button>
+        {% endif %}
+    </fieldset>
 </form>
 
 {% endblock %}

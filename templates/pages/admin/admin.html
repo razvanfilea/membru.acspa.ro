@@ -4,35 +4,30 @@
 
 {% block content %}
 
-<main class="p-2 sm:p-4 md:p-8 w-full">
-    <p>Este necesară discreția utilizatorului: nu toate datele de intrare sunt validate și multe operații pot fi
+<main class="p-2 sm:p-4 md:p-8 w-full" xmlns="http://www.w3.org/1999/html">
+    <p class="text-error">Este necesară discreția utilizatorului: nu toate datele de intrare sunt validate și multe operații pot fi
         destructive</p>
 
     <div class="divider">Setări generale</div>
 
-    <form class="form-control">
-<!--        <label class="label cursor-pointer">-->
-<!--            <span class="label-text text-lg">Mod mentenanță</span>-->
-<!--            <input name="in_maintenance" type="checkbox" class="toggle toggle-error" autocomplete="off"-->
-<!--                   {% if global_vars.in_maintenance %} checked="checked" {% endif %}/>-->
-<!--        </label>-->
+    <fieldset class="fieldset gap-8">
+        <label class="floating-label">
+            <span>Cod intrare</span>
+            <input id="entrance_code" name="entrance_code" type="text"
+                   class="input input-lg input-bordered w-full max-w-xs"
+                   value="{{ global_vars.entrance_code }}"/>
+        </label>
 
-        <div class="label">
-            <label for="entrance_code" class="label-text">Cod intrare:</label>
-        </div>
-        <input id="entrance_code" name="entrance_code" type="text" class="input input-bordered w-full max-w-xs"
-               value="{{ global_vars.entrance_code }}"/>
+        <label class="floating-label">
+            <span>Mesaj pe pagina principală</span>
+            <textarea name="homepage_message" type="text"
+                      class="textarea input-lg textarea-bordered w-full">
+                {{- global_vars.homepage_message -}}
+            </textarea>
+        </label>
 
-        <div class="label">
-            <label for="homepage_message" class="label-text">Mesaj pe pagina principală:</label>
-        </div>
-        <textarea id="homepage_message" name="homepage_message" type="text"
-                  class="textarea textarea-bordered w-full">
-            {{- global_vars.homepage_message -}}
-        </textarea>
-
-        <button class="btn btn-error mt-8 btn-wide" hx-post="/admin/apply_settings">Aplică setările</button>
-    </form>
+        <button class="btn btn-error btn-wide" hx-post="/admin/apply_settings">Aplică setările</button>
+    </fieldset>
 
     <div class="grid grid-cols-2 gap-2 sm:gap-4 md:gap-8">
         <div class="divider mt-8 md:mt-12 col-span-2">Membri</div>

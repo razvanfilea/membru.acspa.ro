@@ -108,7 +108,6 @@ struct NewUser {
     email: String,
     name: String,
     role: String,
-    has_key: Option<String>,
     password: String,
 }
 
@@ -139,14 +138,12 @@ async fn create_new_user(
         .expect("Invalid role");
 
     let user_name = new_user.name.trim();
-    let has_key = new_user.has_key.is_some();
     let password_hash = generate_hash_from_password(new_user.password);
     query!(
-        "insert into users (email, name, role_id, has_key, password_hash, member_since) VALUES ($1, $2, $3, $4, $5, date('now'))",
+        "insert into users (email, name, role_id, password_hash, member_since) VALUES ($1, $2, $3, $4, date('now'))",
         new_user.email,
         user_name,
         role_id,
-        has_key,
         password_hash
     )
         .execute(&state.write_pool)

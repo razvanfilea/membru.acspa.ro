@@ -10,5 +10,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="htmx-ext-ws" level="application" />
   </component>
 </module>
