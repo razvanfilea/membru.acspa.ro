@@ -127,6 +127,7 @@ async fn edit_tournament_page(
 
 #[derive(Deserialize, Debug)]
 struct UpdatedTournament {
+    description: String,
     start_hour: i64,
     duration: i64,
     slot_capacity: Option<i64>,
@@ -146,8 +147,11 @@ async fn update_tournament(
     };
 
     query!(
-        "update alternative_days set slots_start_hour = $2, slot_duration = $3, slot_capacity = $4 where date = $1",
+        "update alternative_days
+          set description = $2, slots_start_hour = $3, slot_duration = $4, slot_capacity = $5
+          where date = $1",
         date,
+        updated.description,
         updated.start_hour,
         updated.duration,
         updated.slot_capacity

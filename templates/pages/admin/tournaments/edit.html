@@ -14,8 +14,8 @@
 
         <label class="floating-label">
             <span>Descriere</span>
-            <input type="text" class="input input-lg input-bordered w-full"
-                   value="{{ current.description }}" autocomplete="off" disabled/>
+            <input name="description" type="text" class="input input-lg input-bordered w-full"
+                   value="{{ current.description }}" autocomplete="off"/>
         </label>
 
         <label class="floating-label">
@@ -27,7 +27,7 @@
 
         <label class="floating-label">
             <span>Durata</span>
-            <input id="duration" name="duration" type="number" min="1" max="6" class="input input-lg input-bordered w-full"
+            <input id="duration" name="duration" type="number" min="1" max="8" class="input input-lg input-bordered w-full"
                    placeholder="Durata turneului în ore" autocomplete="off"
                    value="{{ current.duration }}" required/>
         </label>
@@ -40,7 +40,7 @@
         </label>
 
         <button class="btn btn-primary mt-6" hx-post="/admin/tournaments/edit/{{ current.date }}">
-            Actualizează utilizatorul
+            Actualizează turneul
         </button>
     </fieldset>
 </form>

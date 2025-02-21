@@ -36,7 +36,7 @@
 <div id="hours">
     <h4 class="text-xl mb-2">
         {% if let Some(description) = reservation_hours.description %}
-        <span class="underline">{{ description }}</span>
+        <span class="font-medium underline">{{ description }}</span>
         {% endif %}
         {% if let Some(capacity) = reservation_hours.capacity %}
         <span> - Maxim {{ capacity }}</span>

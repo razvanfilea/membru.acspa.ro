@@ -4,37 +4,39 @@
 
 {% block content %}
 
-<fieldset class="fieldset p-4 md:p-8 gap-6 w-full" hx-post="/admin/members/new">
-    <label class="floating-label">
-        <span>Email</span>
-        <input name="email" type="email" placeholder="Email" required
-               class="input input-lg input-bordered"/>
-    </label>
+<form hx-post="/admin/members/new">
+    <fieldset class="fieldset p-4 md:p-8 gap-6 w-full">
+        <label class="floating-label">
+            <span>Email</span>
+            <input name="email" type="email" placeholder="Email" required
+                   class="input input-lg input-bordered"/>
+        </label>
 
-    <label class="floating-label">
-        <span>Name:</span>
-        <input name="name" type="text" placeholder="Nume" required
-               class="input input-lg input-bordered"/>
-    </label>
+        <label class="floating-label">
+            <span>Name:</span>
+            <input name="name" type="text" placeholder="Nume" minlength="4" required
+                   class="input input-lg input-bordered"/>
+        </label>
 
-    <label class="floating-label">
-        <span>Rol</span>
-        <select name="role" class="select select-lg input-lg select-bordered">
-            {% for role in roles %}
-            <option>{{ role }}</option>
-            {% endfor %}
-        </select>
-    </label>
+        <label class="floating-label">
+            <span>Rol</span>
+            <select name="role" class="select select-lg input-lg select-bordered">
+                {% for role in roles %}
+                <option>{{ role }}</option>
+                {% endfor %}
+            </select>
+        </label>
 
-    <label class="floating-label">
-        <span>Parola:</span>
-        <input name="password" type="text" placeholder="Parola" minlength="8" required autocomplete="off"
-               class="input input-lg input-bordered"/>
-    </label>
+        <label class="floating-label">
+            <span>Parola:</span>
+            <input name="password" type="text" placeholder="Parola" minlength="8" required autocomplete="off"
+                   class="input input-lg input-bordered"/>
+        </label>
 
-    <button class="btn btn-primary mt-6" type="submit">
-        Înregistrează utilizatorul nou
-    </button>
-</fieldset>
+        <button class="btn btn-primary mt-6" type="submit">
+            Înregistrează utilizatorul nou
+        </button>
+    </fieldset>
+</form>
 
 {% endblock %}

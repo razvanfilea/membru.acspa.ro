@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "update alternative_days\n          set description = $2, slots_start_hour = $3, slot_duration = $4, slot_capacity = $5\n          where date = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "b16dd381137e161e68ba37ff9f02a71d9a0914bf0f9258fbf9a079d1850c4147"
+}

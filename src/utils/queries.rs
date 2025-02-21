@@ -4,8 +4,9 @@ use crate::model::location::Location;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
 use crate::reservation::ReservationResult;
+use itertools::Itertools;
 use sqlx::{query, query_as, Executor, Sqlite, SqlitePool};
-use time::{Date, Weekday};
+use time::{Date, Month, Weekday};
 use tracing::error;
 
 pub async fn get_alt_day_structure_for_day(
@@ -37,20 +38,54 @@ pub async fn get_day_structure(state: &AppState, date: Date) -> DayStructure {
         .unwrap_or_else(|| state.location.day_structure())
 }
 
+#[derive(PartialEq, Eq, Hash)]
+pub struct YearMonth {
+    pub year: i32,
+    pub month: Month,
+}
+
+pub struct GroupedUserReservations {
+    pub year: i32,
+    pub month: Month,
+    pub reservations: Vec<UserReservation>,
+}
+
 pub async fn get_user_reservations(
     pool: &SqlitePool,
     email: &str,
     cancelled: bool,
-) -> Vec<UserReservation> {
-    query_as!(
+) -> Vec<GroupedUserReservations> {
+    let reservations = query_as!(
         UserReservation,
-        "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r inner join users on user_id = users.id where email = $1 and cancelled = $2 and created_for is null order by date desc, hour",
+        "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r
+         inner join users on user_id = users.id
+         where email = $1 and cancelled = $2 and created_for is null",
         email,
         cancelled
     ).fetch_all(pool)
         .await
         .inspect_err(|e| error!("Failed querying reservations for user: {e}"))
-        .unwrap_or_default()
+        .unwrap_or_default();
+
+    reservations
+        .into_iter()
+        .into_group_map_by(|res| YearMonth {
+            year: res.date.year(),
+            month: res.date.month(),
+        })
+        .into_iter()
+        .map(|x| GroupedUserReservations {
+            year: x.0.year,
+            month: x.0.month,
+            reservations: x.1,
+        })
+        .sorted_by(|a, b| {
+            a.year
+                .cmp(&b.year)
+                .then((a.month as u8).cmp(&(b.month as u8)))
+                .reverse()
+        })
+        .collect()
 }
 
 #[derive(Debug, Default)]

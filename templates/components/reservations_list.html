@@ -1,27 +1,39 @@
-{% for reservation in reservations %}
-<div id="res_{{ loop.index }}" class="flex flex-row gap-4 justify-between items-center p-4 bg-gray-600 rounded-sm">
-    <div class="flex flex-col gap-1">
-        <p>Pe data de <b>{{ reservation.date.format(date_formats::READABLE_DATE).unwrap() }}</b>
-            de la ora <b>{{ reservation.hour }}:00</b>
-        </p>
-        {% if reservation.as_guest %}
-        <p class="text-blue-300">Ca invitat</p>
+{% for group in reservations %}
+<div class="flex flex-col bg-base-200 p-4 shadow-sm rounded-sm">
+    <p class="text-xl text-white font-medium mb-4">{{ group.month }} {{ group.year }}</p>
+
+    {% for reservation in group.reservations %}
+    <div id="res_{{ loop.index }}" class="flex flex-row justify-between items-center">
+        <div class="flex flex-col gap-1">
+            <p><b>{{ reservation.date.format(date_formats::READABLE_DATE).unwrap() }}</b>
+                 - <b>{{ reservation.hour }}:00</b>
+            </p>
+            {% if reservation.as_guest %}
+            <p class="text-blue-300">Ca invitat</p>
+            {% endif %}
+            {% if reservation.in_waiting %}
+            <p class="text-pink-600">În așteptare</p>
+            {% endif %}
+            <p class="text-sm">Creat pe: {{ date_formats::format_as_local(reservation.created_at) }}</p>
+        </div>
+
+        {% if reservation.cancelled %}
+        <span>Anulată</span>
+        {% else if allow_reservation_cancellation && reservation.is_cancellable() %}
+        <button
+                class="btn btn-outline btn-warning"
+                hx-target="#res_{{ loop.index }}"
+                hx-vals='{"date": "{{ reservation.date.format(date_formats::ISO_DATE).unwrap() }}", "hour": {{ reservation.hour }} }'
+                hx-delete="/reservation">Anulează
+        </button>
         {% endif %}
-        {% if reservation.in_waiting %}
-        <p class="text-pink-600">În așteptare</p>
-        {% endif %}
-        <p class="text-sm">Creat pe: {{ date_formats::format_as_local(reservation.created_at) }}</p>
     </div>
 
-    {% if reservation.cancelled %}
-    <span>Anulată</span>
-    {% else if allow_reservation_cancellation && reservation.is_cancellable() %}
-    <button
-            class="btn btn-outline btn-warning"
-            hx-target="#res_{{ loop.index }}"
-            hx-vals='{"date": "{{ reservation.date.format(date_formats::ISO_DATE).unwrap() }}", "hour": {{ reservation.hour }} }'
-            hx-delete="/reservation">Anulează
-    </button>
+    {% if !loop.last %}
+    <div class="divider"></div>
     {% endif %}
+
+    {% endfor %}
+
 </div>
 {% endfor %}

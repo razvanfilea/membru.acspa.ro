@@ -4,11 +4,10 @@ use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use crate::model::user::User;
-use crate::model::user_reservation::UserReservation;
 use crate::utils::date_formats;
 use crate::utils::date_formats::{format_as_local, ISO_DATE_UNDERLINE};
 use crate::utils::local_time;
-use crate::utils::queries::get_user_reservations;
+use crate::utils::queries::{get_user_reservations, GroupedUserReservations};
 use askama::Template;
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
@@ -69,7 +68,7 @@ async fn member_situations(
     #[derive(Template)]
     #[template(path = "components/reservations_list.html")]
     struct UserReservationsTemplate {
-        reservations: Vec<UserReservation>,
+        reservations: Vec<GroupedUserReservations>,
         allow_reservation_cancellation: bool,
     }
 

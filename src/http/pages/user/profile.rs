@@ -3,10 +3,7 @@ use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
 use crate::model::user::User;
-use crate::model::user_reservation::UserReservation;
-use crate::utils::queries::{
-    get_user_reservations, get_user_weeks_reservations_count, ReservationsCount,
-};
+use crate::utils::queries::{get_user_reservations, get_user_weeks_reservations_count, GroupedUserReservations, ReservationsCount};
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
@@ -19,7 +16,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
     #[template(path = "pages/user/profile.html")]
     struct ProfileTemplate {
         user: User,
-        reservations: Vec<UserReservation>,
+        reservations: Vec<GroupedUserReservations>,
         show_cancelled: bool,
         this_weeks_reservations: ReservationsCount,
         max_reservations: ReservationsCount,
@@ -63,7 +60,7 @@ pub async fn profile_reservations(
     #[derive(Template)]
     #[template(path = "components/profile_content.html")]
     struct ProfileTemplate {
-        reservations: Vec<UserReservation>,
+        reservations: Vec<GroupedUserReservations>,
         show_cancelled: bool,
     }
 
