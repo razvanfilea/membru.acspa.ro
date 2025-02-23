@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block page_title %}{% if current.is_none() %}Adaugă turneu{% else %}Editează turneul{% endif %}{% endblock %}
+
+{% block content %}
+
+<form>
+    <fieldset class="fieldset gap-6 p-4 md:p-8">
+        {% if let Some(val) = current %}
+        <label class="floating-label">
+            <span>Data</span>
+            <input type="date" class="input input-lg input-bordered w-full" required placeholder="Descriere"
+                   value="{{ val.date }}" autocomplete="off" disabled/>
+        </label>
+        {% else %}
+        <label class="floating-label">
+            <span>Data</span>
+            <input name="date" type="date" class="input input-lg input-bordered w-full" required placeholder="Descriere"
+                   min='{{ current_date.format(date_formats::ISO_DATE).unwrap() }}'/>
+        </label>
+        {% endif %}
+
+        <label class="floating-label">
+            <span>Descriere</span>
+            <input name="description" type="text" class="input input-lg input-bordered w-full" autocomplete="off"
+                   {% if let Some(val)=current %} value="{{ val.description }}" {% endif %}/>
+        </label>
+
+        <label class="floating-label">
+            <span>Ora de început</span>
+            <input name="start_hour" type="number" min="1" max="22" class="input input-lg input-bordered w-full"
+                   placeholder="Ora de început" autocomplete="off" required
+                   {% if let Some(val)=current %} value="{{ val.start_hour }}" {% endif %}/>
+        </label>
+
+        <label class="floating-label">
+            <span>Durata (în ore)</span>
+            <input id="duration" name="duration" type="number" min="1" max="8"
+                   class="input input-lg input-bordered w-full"
+                   placeholder="Durata turneului în ore" autocomplete="off" required
+                   {% if let Some(val)=current %} value="{{ val.duration }}" {% endif %}/>
+        </label>
+
+        <label class="floating-label">
+            <span>Capacitate</span>
+            <input name="capacity" type="number" min="1" max="30" class="input input-lg input-bordered w-full"
+                   placeholder="Capacitate" autocomplete="off"
+                   {% if let Some(val)=current %}{% if let Some(capacity)=val.slot_capacity %}
+                   value="{{ capacity }}" {% endif %}{% endif %}/>
+        </label>
+
+        {% if let Some(val) = current %}
+        <button class="btn btn-primary mt-6" hx-post="/admin/tournaments/edit/{{ val.date }}">
+            Actualizează
+        </button>
+        {% else %}
+        <button class="btn btn-primary mt-6" hx-post="/admin/tournaments/new">
+            Creează turneul
+        </button>
+        {% endif %}
+    </fieldset>
+</form>
+{% endblock content %}

@@ -1,4 +1,4 @@
-{% extends "../base.html" %}
+{% extends "base.html" %}
 
 {% block page_title %}Profil{% endblock %}
 
@@ -28,6 +28,6 @@
         Ai rolul de {{ user.role }}. Săptămâna aceasta ai folosit <b>{{ this_weeks_reservations.member }}/{{ max_reservations.member }}</b> rezervări ca membru și <b>{{ this_weeks_reservations.guest }}/{{ max_reservations.guest }}</b> rezervări ca invitat.
     </div>
 
-    {% include "components/profile_content.html" %}
+    {% include "profile_content.html" %}
 </main>
 {% endblock %}

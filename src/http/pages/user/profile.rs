@@ -1,9 +1,12 @@
+use crate::http::AppState;
 use crate::http::error::HttpResult;
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
-use crate::http::AppState;
 use crate::model::user::User;
-use crate::utils::queries::{get_user_reservations, get_user_weeks_reservations_count, GroupedUserReservations, ReservationsCount};
+use crate::utils::queries::{
+    GroupedUserReservations, ReservationsCount, get_user_reservations,
+    get_user_weeks_reservations_count,
+};
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
@@ -13,7 +16,7 @@ use sqlx::query;
 
 pub async fn profile_page(auth_session: AuthSession, State(state): State<AppState>) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "pages/user/profile.html")]
+    #[template(path = "user/profile_page.html")]
     struct ProfileTemplate {
         user: User,
         reservations: Vec<GroupedUserReservations>,
@@ -58,7 +61,7 @@ pub async fn profile_reservations(
     Query(query): Query<ReservationsQuery>,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "components/profile_content.html")]
+    #[template(path = "user/profile_content.html")]
     struct ProfileTemplate {
         reservations: Vec<GroupedUserReservations>,
         show_cancelled: bool,

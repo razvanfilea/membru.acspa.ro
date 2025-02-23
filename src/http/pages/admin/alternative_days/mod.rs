@@ -1,10 +1,10 @@
+use crate::http::AppState;
 use crate::http::error::HttpResult;
 use crate::http::pages::notification_template::error_bubble_response;
-use crate::http::AppState;
 use crate::utils::date_formats;
-use axum::response::{IntoResponse, Response};
 use axum::Router;
-use sqlx::{query, query_as, Executor, Sqlite, SqliteConnection, SqlitePool};
+use axum::response::{IntoResponse, Response};
+use sqlx::{Executor, Sqlite, SqliteConnection, SqlitePool, query, query_as};
 use time::{Date, OffsetDateTime};
 use tracing::info;
 

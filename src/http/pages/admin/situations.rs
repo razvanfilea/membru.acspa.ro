@@ -1,13 +1,13 @@
-use crate::http::error::HttpResult;
-use crate::http::pages::home::socket::HoursTemplate;
-use crate::http::pages::AuthSession;
-use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
+use crate::http::error::HttpResult;
+use crate::http::pages::AuthSession;
+use crate::http::pages::home::socket::HoursTemplate;
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
 use crate::utils::date_formats;
-use crate::utils::date_formats::{format_as_local, ISO_DATE_UNDERLINE};
+use crate::utils::date_formats::{ISO_DATE_UNDERLINE, format_as_local};
 use crate::utils::local_time;
-use crate::utils::queries::{get_user_reservations, GroupedUserReservations};
+use crate::utils::queries::{GroupedUserReservations, get_user_reservations};
 use askama::Template;
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
@@ -36,7 +36,7 @@ async fn members_situation_page(
     }
 
     #[derive(Template)]
-    #[template(path = "pages/admin/situations/member.html")]
+    #[template(path = "admin/situations/member_page.html")]
     struct MemberSituationTemplate {
         user: User,
         members: Vec<SituationMember>,
@@ -84,7 +84,7 @@ async fn daily_situation_page(
     auth_session: AuthSession,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/admin/situations/daily.html")]
+    #[template(path = "admin/situations/daily_page.html")]
     struct DailySituationTemplate {
         user: User,
         current_date: Date,

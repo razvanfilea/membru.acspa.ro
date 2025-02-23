@@ -1,17 +1,17 @@
-use crate::http::error::HttpResult;
-use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationHours};
-use crate::http::pages::home::socket::handle_ws;
-use crate::http::pages::{get_global_vars, AuthSession};
-use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
+use crate::http::error::HttpResult;
+use crate::http::pages::home::reservation_hours::{ReservationHours, get_reservation_hours};
+use crate::http::pages::home::socket::handle_ws;
+use crate::http::pages::{AuthSession, get_global_vars};
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
 use crate::reservation::{
-    create_reservation, is_reservation_possible, ReservationError, ReservationSuccess,
+    ReservationError, ReservationSuccess, create_reservation, is_reservation_possible,
 };
+use crate::utils::CssColor;
 use crate::utils::date_iter::DateIter;
 use crate::utils::queries::get_day_structure;
-use crate::utils::CssColor;
 use crate::utils::{date_formats, get_reservation_result_color, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
@@ -48,7 +48,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
     }
 
     #[derive(Template)]
-    #[template(path = "pages/home.html")]
+    #[template(path = "home/home_page.html")]
     struct HomeTemplate {
         current_date: Date,
         selected_date: Date,
@@ -61,17 +61,18 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
 
     let current_date = local_time().date();
 
-    let reservation_color_code =
-        query!("select color as 'color!', name from user_roles where color is not null and color != 'None'")
-            .fetch_all(&state.read_pool)
-            .await
-            .unwrap_or_default()
-            .into_iter()
-            .map(|color_code| ColorCode {
-                name: color_code.name,
-                color: CssColor::from_str(&color_code.color).unwrap_or(CssColor::None),
-            })
-            .collect();
+    let reservation_color_code = query!(
+        "select color as 'color!', name from user_roles where color is not null and color != 'None'"
+    )
+    .fetch_all(&state.read_pool)
+    .await
+    .unwrap_or_default()
+    .into_iter()
+    .map(|color_code| ColorCode {
+        name: color_code.name,
+        color: CssColor::from_str(&color_code.color).unwrap_or(CssColor::None),
+    })
+    .collect();
 
     HomeTemplate {
         current_date,
@@ -94,7 +95,7 @@ struct HourQuery {
 }
 
 #[derive(Template)]
-#[template(path = "components/home/reservation_confirmed.html")]
+#[template(path = "home/reservation_confirmed.html")]
 struct ConfirmedTemplate {
     successful: bool,
     message_color: CssColor,
@@ -107,7 +108,7 @@ async fn hour_picker(
     Form(query): Form<HourQuery>,
 ) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "components/home/reservation_confirm_card.html")]
+    #[template(path = "home/reservation_confirm_card.html")]
     struct ConfirmationPromptTemplate<'a> {
         selected_date: Date,
         start_hour: u8,
@@ -127,10 +128,7 @@ async fn hour_picker(
 
     let structure = get_day_structure(&state, selected_date).await;
 
-    let mut tx = state
-        .read_pool
-        .begin()
-        .await?;
+    let mut tx = state.read_pool.begin().await?;
 
     let is_possible = is_reservation_possible(
         tx.as_mut(),
@@ -185,7 +183,7 @@ async fn confirm_reservation(
             let _ = state.reservation_notifier.send(());
 
             match success {
-                ReservationSuccess::Reservation{ .. } => format!(
+                ReservationSuccess::Reservation { .. } => format!(
                     "Ai rezervare pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
                     query.selected_date
                 ),
@@ -193,16 +191,19 @@ async fn confirm_reservation(
                     "Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
                     query.selected_date
                 ),
-                ReservationSuccess::InWaiting{as_guest} => format!(
+                ReservationSuccess::InWaiting { as_guest } => format!(
                     "Ești in așteptare{} pentru data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
-                    if *as_guest { " ca și invitat"} else {""},
+                    if *as_guest { " ca și invitat" } else { "" },
                     query.selected_date
                 ),
             }
         }
         Err(e) => {
             if let ReservationError::DatabaseError(e) = &e {
-                error!("Database error when creating reservation on {selected_date} hour {selected_hour} for user {}: {e}", user.email);
+                error!(
+                    "Database error when creating reservation on {selected_date} hour {selected_hour} for user {}: {e}",
+                    user.email
+                );
             }
             e.to_string()
         }

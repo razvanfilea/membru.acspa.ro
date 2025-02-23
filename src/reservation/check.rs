@@ -7,7 +7,7 @@ use crate::utils::queries::{
     get_alt_day_structure_for_day, get_current_reservations_count,
     get_user_weeks_reservations_count,
 };
-use sqlx::{query, query_as, SqliteConnection};
+use sqlx::{SqliteConnection, query, query_as};
 use time::{Date, OffsetDateTime};
 
 fn check_parameters_validity(

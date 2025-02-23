@@ -1,12 +1,12 @@
+use crate::http::AppState;
 use crate::http::auth::UserAuthenticator;
 use crate::http::pages::user::login;
-use crate::http::AppState;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
-use axum::routing::{get, post};
 use axum::Router;
+use axum::routing::{get, post};
 use axum_login::{login_required, permission_required};
-use sqlx::{query_as, SqlitePool};
+use sqlx::{SqlitePool, query_as};
 
 mod admin;
 mod home;

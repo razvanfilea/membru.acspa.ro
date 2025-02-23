@@ -1,14 +1,14 @@
-use crate::http::error::HttpResult;
-use crate::http::pages::notification_template::error_bubble_response;
-use crate::http::pages::AuthSession;
-use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
+use crate::http::error::HttpResult;
+use crate::http::pages::AuthSession;
+use crate::http::pages::notification_template::error_bubble_response;
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::utils::CssColor;
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::response::{IntoResponse, Response};
+use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
@@ -38,7 +38,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
     }
 
     #[derive(Template)]
-    #[template(path = "pages/admin/roles/list.html")]
+    #[template(path = "admin/roles/list_page.html")]
     struct UsersTemplate {
         user: User,
         roles: Vec<UserRoleWithCount>,
@@ -65,16 +65,16 @@ struct NewRole {
 }
 
 #[derive(Template)]
-#[template(path = "pages/admin/roles/new_edit.html")]
-struct NewRoleTemplate {
+#[template(path = "admin/roles/new_edit_page.html")]
+struct NewOrEditRoleTemplate {
     user: User,
-    value: Option<UserRole>,
+    current: Option<UserRole>,
 }
 
 async fn new_role_page(auth_session: AuthSession) -> impl IntoResponse {
-    NewRoleTemplate {
+    NewOrEditRoleTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        value: None,
+        current: None,
     }
     .into_response()
 }
@@ -89,10 +89,7 @@ async fn create_new_role(State(state): State<AppState>, Form(role): Form<NewRole
     .execute(&state.write_pool)
     .await?;
 
-    Ok(Response::builder()
-        .header("HX-Redirect", "/admin/roles")
-        .body("Rolul a fost creat cu succes".to_string())?
-        .into_response())
+    Ok([("HX-Redirect", "/admin/roles")].into_response())
 }
 
 async fn edit_role_page(
@@ -106,16 +103,12 @@ async fn edit_role_page(
         .expect("Database error");
 
     if role.is_none() {
-        return Response::builder()
-            .header("HX-Redirect", "/admin/roles")
-            .body("Rolul nu există".to_string())
-            .expect("Failed to create headers")
-            .into_response();
+        return [("HX-Redirect", "/admin/roles")].into_response();
     }
 
-    NewRoleTemplate {
+    NewOrEditRoleTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        value: role,
+        current: role,
     }
     .into_response()
 }
@@ -139,10 +132,7 @@ async fn update_role(
     .await
     .expect("Database error");
 
-    Response::builder()
-        .header("HX-Redirect", "/admin/roles")
-        .body("Rolul a fost actualizat cu succes".to_string())
-        .expect("Failed to create headers")
+    [("HX-Redirect", "/admin/roles")]
 }
 
 async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) -> impl IntoResponse {
@@ -166,9 +156,5 @@ async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) ->
         .await
         .expect("Database error");
 
-    Response::builder()
-        .header("HX-Redirect", "/admin/roles")
-        .body("Rolul a fost actualizat cu succes".to_string())
-        .expect("Failed to create headers")
-        .into_response()
+    [("HX-Redirect", "/admin/roles")].into_response()
 }

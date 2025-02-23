@@ -7,7 +7,7 @@ use crate::model::location::Location;
 use crate::model::user::User;
 pub use crate::reservation::check::*;
 pub use result::*;
-use sqlx::{query, SqlitePool};
+use sqlx::{SqlitePool, query};
 use time::{Date, OffsetDateTime};
 use tracing::error;
 

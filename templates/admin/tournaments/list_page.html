@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block page_title %}Zile cu turneu{% endblock %}
+
+{% block content %}
+
+<main class="p-4 md:p-8 w-full">
+    <div class="flex flex-row justify-end items-center mb-8">
+        <a href="/admin/tournaments/new">
+            <button class="btn btn-circle btn-lg btn-success">
+                <span class="material-symbols-outlined">add</span>
+            </button>
+        </a>
+    </div>
+
+    {% include "list_content.html" %}
+</main>
+
+{% endblock %}

@@ -1,19 +1,19 @@
-use crate::http::pages::home::reservation_hours::{get_reservation_hours, ReservationHours};
-use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
-use crate::http::pages::notification_template::NotificationBubbleResponse;
-use crate::http::pages::AuthSession;
 use crate::http::AppState;
+use crate::http::pages::AuthSession;
+use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
+use crate::http::pages::home::reservation_hours::{ReservationHours, get_reservation_hours};
+use crate::http::pages::notification_template::NotificationBubbleResponse;
 use crate::model::user::User;
+use crate::utils::CssColor;
 use crate::utils::date_formats::READABLE_DATE;
 use crate::utils::date_iter::DateIter;
-use crate::utils::CssColor;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
 use axum::response::IntoResponse;
-use serde::de::IgnoredAny;
 use serde::Deserialize;
+use serde::de::IgnoredAny;
 use sqlx::query;
 use time::Date;
 use tokio::select;
@@ -56,7 +56,7 @@ impl WsMessage {
 }
 
 #[derive(Template)]
-#[template(path = "components/home/content.html")]
+#[template(path = "home/content.html")]
 struct HomeContentTemplate<'a> {
     current_date: Date,
     selected_date: Date,
@@ -66,7 +66,7 @@ struct HomeContentTemplate<'a> {
 }
 
 #[derive(Template)]
-#[template(path = "components/home/hours.html")]
+#[template(path = "home/hours.html")]
 pub struct HoursTemplate<'a> {
     reservation_hours: ReservationHours,
     selected_date: Date,

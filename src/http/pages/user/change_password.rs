@@ -1,20 +1,20 @@
+use crate::http::AppState;
 use crate::http::auth::{generate_hash_from_password, validate_credentials};
 use crate::http::error::HttpResult;
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
-use crate::http::AppState;
 use crate::model::user::User;
 use askama::Template;
-use axum::extract::State;
-use axum::response::{IntoResponse, Response};
 use axum::Form;
+use axum::extract::State;
+use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::query;
 use tracing::debug;
 
 pub async fn change_password_page(auth_session: AuthSession) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/user/change_password.html")]
+    #[template(path = "user/change_password_page.html")]
     struct ChangePasswordTemplate {
         user: User,
     }
@@ -27,7 +27,7 @@ pub async fn change_password_page(auth_session: AuthSession) -> impl IntoRespons
 
 fn change_password_error(message: impl AsRef<str>) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "components/login_error.html")]
+    #[template(path = "user/login_error.html")]
     struct ErrorTemplate<'a> {
         error_message: &'a str,
     }
@@ -70,8 +70,5 @@ pub async fn change_password(
     .await?;
 
     debug!("User has been logged in: {}", user.email);
-    Ok(Response::builder()
-        .header("HX-Redirect", "/")
-        .body("Ți-ai schimbat parola cu succes".to_string())?
-        .into_response())
+    Ok([("HX-Redirect", "/")].into_response())
 }

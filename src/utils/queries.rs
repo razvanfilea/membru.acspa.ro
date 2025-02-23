@@ -5,7 +5,7 @@ use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
 use crate::reservation::ReservationResult;
 use itertools::Itertools;
-use sqlx::{query, query_as, Executor, Sqlite, SqlitePool};
+use sqlx::{Executor, Sqlite, SqlitePool, query, query_as};
 use time::{Date, Month, Weekday};
 use tracing::error;
 

@@ -1,7 +1,7 @@
+use crate::http::AppState;
 use crate::http::error::HttpResult;
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
-use crate::http::AppState;
 use crate::model::restriction::Restriction;
 use crate::model::user::User;
 use crate::utils::queries::get_day_structure;
@@ -12,7 +12,7 @@ use axum::response::IntoResponse;
 use axum::routing::{delete, get, post, put};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{query, query_as, SqlitePool};
+use sqlx::{SqlitePool, query, query_as};
 use time::Date;
 use tracing::info;
 
@@ -39,7 +39,7 @@ async fn restrictions_page(
     auth_session: AuthSession,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/admin/restrictions.html")]
+    #[template(path = "admin/restrictions/restrictions_page.html")]
     struct RestrictionsTemplate {
         user: User,
         current_date: Date,
@@ -70,7 +70,7 @@ async fn select_hour(
     Form(form): Form<SelectDateForm>,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "components/admin/restrictions_select_hour.html")]
+    #[template(path = "admin/restrictions/select_hour.html")]
     struct SelectHourTemplate {
         hours: Vec<u8>,
     }
@@ -103,7 +103,7 @@ async fn create_restriction(
     AxumExtraForm(restriction): AxumExtraForm<NewRestriction>,
 ) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "components/admin/restrictions_content.html")]
+    #[template(path = "admin/restrictions/list_content.html")]
     struct RestrictionsListTemplate {
         restrictions: Vec<Restriction>,
     }

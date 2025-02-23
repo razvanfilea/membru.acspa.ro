@@ -2,8 +2,8 @@ use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::UserCredentials;
 use askama::Template;
-use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
+use axum::response::{IntoResponse, Redirect, Response};
 use email_address::EmailAddress;
 use tracing::{debug, error};
 
@@ -13,7 +13,7 @@ pub async fn login_page(auth_session: AuthSession) -> impl IntoResponse {
     }
 
     #[derive(Template)]
-    #[template(path = "pages/login.html")]
+    #[template(path = "user/login_page.html")]
     struct LoginTemplate;
 
     LoginTemplate.into_response()
@@ -21,7 +21,7 @@ pub async fn login_page(auth_session: AuthSession) -> impl IntoResponse {
 
 fn login_error(message: impl AsRef<str>) -> Response {
     #[derive(Template)]
-    #[template(path = "components/login_error.html")]
+    #[template(path = "user/login_error.html")]
     struct ErrorTemplate<'a> {
         error_message: &'a str,
     }
@@ -68,12 +68,7 @@ pub async fn login(
     match auth.login(&user).await {
         Ok(()) => {
             debug!("User has been logged in: {}", user.email);
-            Response::builder()
-                .header("HX-Replace-Url", "/")
-                .header("HX-Refresh", "true")
-                .body("Ai fost logat cu succes".to_string())
-                .unwrap()
-                .into_response()
+            [("HX-Refresh", "true"), ("HX-Replace-Url", "/")].into_response()
         }
         Err(e) => {
             error!("Failed to login user {} with error: {}", user.email, e);
@@ -91,8 +86,5 @@ pub async fn logout(mut auth: AuthSession) -> impl IntoResponse {
         }
     }
 
-    Response::builder()
-        .header("HX-Redirect", "/login")
-        .body("Ai fost de-logat cu succes".to_string())
-        .unwrap()
+    [("HX-Redirect", "/admin/login")]
 }

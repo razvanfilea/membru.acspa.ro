@@ -1,12 +1,12 @@
 use std::collections::HashSet;
 
 use argon2::password_hash::{Salt, SaltString};
-use argon2::{password_hash, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash};
 use async_trait::async_trait;
 use axum_login::{AuthnBackend, AuthzBackend, UserId};
 use rand::{RngCore, SeedableRng};
 use rand_hc::Hc128Rng;
-use sqlx::{query_as, SqlitePool};
+use sqlx::{SqlitePool, query_as};
 use tokio::task;
 
 use crate::model::user::{User, UserCredentials};

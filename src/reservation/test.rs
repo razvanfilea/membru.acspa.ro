@@ -1,5 +1,5 @@
 use super::*;
-use sqlx::{query_as, SqlitePool};
+use sqlx::{SqlitePool, query_as};
 use time::macros::{date, datetime};
 
 async fn setup(

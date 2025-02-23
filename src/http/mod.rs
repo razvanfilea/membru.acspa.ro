@@ -4,12 +4,12 @@ use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::location::Location;
 use crate::utils::local_time;
 use askama::Template;
-use axum::response::{IntoResponse, Response};
 use axum::Router;
+use axum::response::{IntoResponse, Response};
+use axum_login::AuthManagerLayerBuilder;
 use axum_login::tower_sessions::cookie::SameSite;
 use axum_login::tower_sessions::{Expiry, SessionManagerLayer};
-use axum_login::AuthManagerLayerBuilder;
-use sqlx::{query, query_as, SqlitePool};
+use sqlx::{SqlitePool, query, query_as};
 use std::any::Any;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -21,7 +21,7 @@ use tower_http::timeout::TimeoutLayer;
 use tower_http::trace;
 use tower_http::trace::TraceLayer;
 use tower_sessions_sqlx_store::SqliteStore;
-use tracing::{error, info, Level};
+use tracing::{Level, error, info};
 
 mod auth;
 mod error;
@@ -89,7 +89,7 @@ pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
 
 async fn handler_404() -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/404.html")]
+    #[template(path = "404.html")]
     struct NotFoundTemplate;
 
     NotFoundTemplate.try_into_response()

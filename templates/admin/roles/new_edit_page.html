@@ -1,6 +1,6 @@
-{% extends "../../base.html" %}
+{% extends "base.html" %}
 
-{% block page_title %}{% if value.is_none() %}Rol nou{% else %}Editează rolul{% endif %}{% endblock %}
+{% block page_title %}{% if current.is_none() %}Rol nou{% else %}Editează rolul{% endif %}{% endblock %}
 
 {% block content %}
 
@@ -10,35 +10,35 @@
             <span>Nume</span>
             <input name="name" type="text" placeholder="Nume" required class="input input-lg input-bordered w-full"
                    autocomplete="off"
-                   {% if let Some(val)=value %}value="{{ val.name }}" {% endif %}/>
+                   {% if let Some(val)=current %}value="{{ val.name }}" {% endif %}/>
         </label>
 
         <label class="floating-label">
             <span>Rezervări pe săptămână</span>
             <input name="reservations" type="number" required class="input input-lg input-bordered w-full"
                    min="0" max="255" autocomplete="off"
-                   {% if let Some(val)=value %}value="{{ val.reservations }}" {% else %}value="0" {% endif %}/>
+                   {% if let Some(val)=current %}value="{{ val.reservations }}" {% else %}value="0" {% endif %}/>
         </label>
 
         <label class="floating-label">
             <span>Rezervări ca invitat pe săptămână</span>
             <input name="as_guest" type="number" required class="input input-lg input-bordered w-full"
                    min="0" max="255" autocomplete="off"
-                   {% if let Some(val)=value %}value="{{ val.guest_reservations }}" {% else %}value="0" {% endif %}/>
+                   {% if let Some(val)=current %}value="{{ val.guest_reservations }}" {% else %}value="0" {% endif %}/>
         </label>
 
         <label class="floating-label">
             <span>Culoare rezervări</span>
             <select name="color" class="select select-lg select-bordered input-lg w-full">
                 {% for color in CssColor::iter() %}
-                <option {% if let Some(val)=value %}{% if val.color== Some(color.to_string()) %}selected{% endif %}{%
+                <option {% if let Some(val)=current %}{% if val.color== Some(color.to_string()) %}selected{% endif %}{%
                         endif %}>{{ color }}
                 </option>
                 {% endfor %}
             </select>
         </label>
 
-        {% if let Some(val) = value %}
+        {% if let Some(val) = current %}
         <button class="btn btn-primary mt-6" hx-post="/admin/roles/edit/{{ val.id }}">
             Actualizează
         </button>

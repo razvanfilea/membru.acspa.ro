@@ -1,6 +1,6 @@
-use crate::http::pages::{get_global_vars, AuthSession};
-use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
+use crate::http::pages::{AuthSession, get_global_vars};
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
 use askama::Template;
@@ -32,7 +32,7 @@ pub fn router() -> Router<AppState> {
 
 async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/admin/admin.html")]
+    #[template(path = "admin/admin_page.html")]
     struct HomeTemplate {
         user: User,
         global_vars: GlobalVars,

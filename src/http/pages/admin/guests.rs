@@ -1,8 +1,8 @@
-use crate::http::error::HttpResult;
-use crate::http::pages::notification_template::error_bubble_response;
-use crate::http::pages::AuthSession;
-use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
+use crate::http::error::HttpResult;
+use crate::http::pages::AuthSession;
+use crate::http::pages::notification_template::error_bubble_response;
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
 use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_time};
@@ -11,7 +11,7 @@ use axum::extract::State;
 use axum::routing::{get, post, put};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{query, query_as, SqlitePool};
+use sqlx::{SqlitePool, query, query_as};
 use std::ops::Not;
 use time::{Date, OffsetDateTime};
 use tracing::{error, info};
@@ -49,7 +49,7 @@ async fn get_guests(pool: &SqlitePool) -> Result<Vec<GuestDto>, sqlx::Error> {
 
 async fn guests_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "pages/admin/guests.html")]
+    #[template(path = "admin/guests/guests_page.html")]
     struct GuestsTemplate {
         user: User,
         current_date: Date,
@@ -74,7 +74,7 @@ async fn select_hour(
     Form(form): Form<SelectDateForm>,
 ) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "components/admin/guest_select_hour.html")]
+    #[template(path = "admin/guests/select_hour.html")]
     struct SelectHourTemplate {
         hours: Vec<u8>,
     }
@@ -105,7 +105,7 @@ async fn create_guest(
     Form(guest): Form<NewSpecialGuest>,
 ) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "components/admin/guests_content.html")]
+    #[template(path = "admin/guests/list_content.html")]
     struct GuestsListTemplate {
         guests: Vec<GuestDto>,
     }

@@ -1,8 +1,11 @@
-use crate::http::error::HttpResult;
-use crate::http::pages::admin::alternative_days::{add_alternative_day, delete_alternative_day, get_alternative_days, AlternativeDay, NewAlternativeDay};
-use crate::http::pages::AuthSession;
-use crate::http::template_into_response::TemplateIntoResponse;
 use crate::http::AppState;
+use crate::http::error::HttpResult;
+use crate::http::pages::AuthSession;
+use crate::http::pages::admin::alternative_days::{
+    AlternativeDay, NewAlternativeDay, add_alternative_day, delete_alternative_day,
+    get_alternative_days,
+};
+use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::HOLIDAY_DAY_STRUCTURE;
 use crate::model::user::User;
 use crate::utils::{date_formats, local_time};
@@ -26,12 +29,9 @@ async fn get_free_days(pool: &SqlitePool) -> Result<Vec<AlternativeDay>, Error> 
     get_alternative_days(pool, "holiday").await
 }
 
-async fn free_days_page(
-    State(state): State<AppState>,
-    auth_session: AuthSession,
-) -> HttpResult {
+async fn free_days_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "pages/admin/free_days.html")]
+    #[template(path = "admin/free_days/free_days_page.html")]
     struct FreeDaysTemplate {
         user: User,
         current_date: Date,
@@ -57,7 +57,7 @@ async fn create_free_day(
     Form(new_day): Form<NewFreeDay>,
 ) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "components/admin/free_days_content.html")]
+    #[template(path = "admin/free_days/list_content.html")]
     struct FreeDaysListTemplate {
         free_days: Vec<AlternativeDay>,
     }

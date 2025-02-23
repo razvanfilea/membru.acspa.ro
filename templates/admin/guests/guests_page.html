@@ -1,4 +1,4 @@
-{% extends "../base.html" %}
+{% extends "base.html" %}
 
 {% block page_title %}Invitați{% endblock %}
 
@@ -11,7 +11,7 @@
         </button>
     </div>
 
-    {% include "components/admin/guests_content.html" %}
+    {% include "list_content.html" %}
 </main>
 
 <dialog id="add_modal" class="modal">

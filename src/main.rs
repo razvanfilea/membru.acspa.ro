@@ -5,11 +5,11 @@ use std::time::Duration;
 use tokio::task;
 use tower_sessions_sqlx_store::SqliteStore;
 use tracing::warn;
+use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
 
-use crate::http::{http_server, periodic_cleanup_of_waiting_reservations, AppState};
+use crate::http::{AppState, http_server, periodic_cleanup_of_waiting_reservations};
 
 mod http;
 mod model;

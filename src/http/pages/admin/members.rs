@@ -1,13 +1,13 @@
+use crate::http::AppState;
 use crate::http::auth::generate_hash_from_password;
 use crate::http::error::HttpResult;
-use crate::http::pages::{get_user, AuthSession};
+use crate::http::pages::{AuthSession, get_user};
 use crate::http::template_into_response::TemplateIntoResponse;
-use crate::http::AppState;
 use crate::model::user::User;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::response::{IntoResponse, Response};
+use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
@@ -56,7 +56,7 @@ async fn members_page(
     auth_session: AuthSession,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/admin/members/list.html")]
+    #[template(path = "admin/members/list_page.html")]
     struct MembersTemplate {
         user: User,
         members: Vec<User>,
@@ -84,7 +84,7 @@ async fn search_members(
     Form(search_query): Form<SearchQuery>,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "components/admin/members_content.html")]
+    #[template(path = "admin/members/list_content.html")]
     struct MembersListTemplate {
         members: Vec<User>,
     }
@@ -116,7 +116,7 @@ async fn new_member_page(
     auth_session: AuthSession,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/admin/members/new.html")]
+    #[template(path = "admin/members/new_page.html")]
     struct NewMemberTemplate {
         user: User,
         roles: Vec<String>,
@@ -150,10 +150,7 @@ async fn create_new_user(
         .await
         .expect("Database error");
 
-    Response::builder()
-        .header("HX-Redirect", "/admin/members")
-        .body("Utilizatorul a fost creat cu success".to_string())
-        .expect("Failed to return headers")
+    [("HX-Redirect", "/admin/members")]
 }
 
 async fn edit_member_page(
@@ -162,7 +159,7 @@ async fn edit_member_page(
     Path(user_id): Path<i64>,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/admin/members/edit.html")]
+    #[template(path = "admin/members/edit_page.html")]
     struct EditMemberTemplate {
         current_date: String,
         user: User,
@@ -223,10 +220,7 @@ async fn update_user(
     .execute(&state.write_pool)
     .await?;
 
-    Ok(Response::builder()
-        .header("HX-Redirect", "/admin/members")
-        .body("Utilizatorul a fost creat cu success".to_string())?
-        .into_response())
+    Ok([("HX-Redirect", "/admin/members")].into_response())
 }
 
 async fn change_password_page(
@@ -235,7 +229,7 @@ async fn change_password_page(
     Path(user_id): Path<i64>,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/admin/members/change_password.html")]
+    #[template(path = "admin/members/change_password.html")]
     struct ChangePasswordTemplate {
         user: User,
         existing_user: User,
@@ -257,10 +251,7 @@ async fn delete_user(State(state): State<AppState>, Path(user_id): Path<i64>) ->
         .execute(&state.write_pool)
         .await?;
 
-    Ok(Response::builder()
-        .header("HX-Redirect", "/admin/members")
-        .body("Utilizatorul a fost șters cu success".to_string())?
-        .into_response())
+    Ok([("HX-Redirect", "/admin/members")].into_response())
 }
 
 #[derive(Deserialize)]
@@ -272,7 +263,7 @@ pub async fn update_password(
     State(state): State<AppState>,
     Path(user_id): Path<i64>,
     Form(passwords): Form<ChangePasswordForm>,
-) -> Response {
+) -> impl IntoResponse {
     let user = get_user(&state.read_pool, user_id).await;
 
     let new_password_hash = generate_hash_from_password(passwords.password);
@@ -285,9 +276,5 @@ pub async fn update_password(
     .await
     .expect("Database error");
 
-    Response::builder()
-        .header("HX-Redirect", "/")
-        .body("Parola a fost schimbata cu succes".to_string())
-        .unwrap()
-        .into_response()
+    [("HX-Redirect", "/admin/")]
 }

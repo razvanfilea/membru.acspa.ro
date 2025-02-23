@@ -1,29 +1,30 @@
+use crate::http::AppState;
 use crate::http::error::HttpResult;
+use crate::http::pages::AuthSession;
 use crate::http::pages::admin::alternative_days::{
-    add_alternative_day, delete_alternative_day, get_alternative_day, get_alternative_days,
-    AlternativeDay, NewAlternativeDay,
+    AlternativeDay, NewAlternativeDay, add_alternative_day, delete_alternative_day,
+    get_alternative_day, get_alternative_days,
 };
 use crate::http::pages::notification_template::error_bubble_response;
-use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
-use crate::http::AppState;
 use crate::model::user::User;
 use crate::utils::date_formats::ISO_DATE;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::response::{IntoResponse, Response};
-use axum::routing::{delete, get, post, put};
+use axum::response::IntoResponse;
+use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{query, Error, SqlitePool};
+use sqlx::{Error, SqlitePool, query};
 use time::Date;
 use tracing::info;
 
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(tournaments_page))
-        .route("/", put(create_tournament))
+        .route("/new", get(new_tournament_page))
+        .route("/new", post(create_tournament))
         .route("/edit/{date}", get(edit_tournament_page))
         .route("/edit/{date}", post(update_tournament))
         .route("/{date}", delete(delete_tournament))
@@ -38,16 +39,31 @@ async fn tournaments_page(
     auth_session: AuthSession,
 ) -> impl IntoResponse {
     #[derive(Template)]
-    #[template(path = "pages/admin/tournaments/list.html")]
+    #[template(path = "admin/tournaments/list_page.html")]
     struct TournamentsTemplate {
         user: User,
-        current_date: Date,
         tournaments: Vec<AlternativeDay>,
     }
 
     TournamentsTemplate {
         user: auth_session.user.expect("User should be logged in"),
         tournaments: tournament_days(&state.read_pool).await?,
+    }
+    .try_into_response()
+}
+
+#[derive(Template)]
+#[template(path = "admin/tournaments/new_edit_page.html")]
+struct NewOrEditTournamentTemplate {
+    user: User,
+    current: Option<AlternativeDay>,
+    current_date: Date,
+}
+
+async fn new_tournament_page(auth_session: AuthSession) -> HttpResult {
+    NewOrEditTournamentTemplate {
+        user: auth_session.user.expect("User should be logged in"),
+        current: None,
         current_date: local_time().date(),
     }
     .try_into_response()
@@ -66,12 +82,6 @@ async fn create_tournament(
     State(state): State<AppState>,
     Form(tournament): Form<NewTournament>,
 ) -> HttpResult {
-    #[derive(Template)]
-    #[template(path = "components/admin/tournaments_content.html")]
-    struct TournamentsListTemplate {
-        tournaments: Vec<AlternativeDay>,
-    }
-
     let capacity = tournament
         .capacity
         .and_then(|capacity| capacity.parse::<u8>().ok());
@@ -95,10 +105,7 @@ async fn create_tournament(
         tournament.description.unwrap_or_default()
     );
 
-    TournamentsListTemplate {
-        tournaments: tournament_days(&state.read_pool).await?,
-    }
-    .try_into_response()
+    Ok([("HX-Redirect", "/admin/tournaments")].into_response())
 }
 
 async fn edit_tournament_page(
@@ -106,21 +113,15 @@ async fn edit_tournament_page(
     auth_session: AuthSession,
     Path(date): Path<String>,
 ) -> HttpResult {
-    #[derive(Template)]
-    #[template(path = "pages/admin/tournaments/edit.html")]
-    struct EditTournamentTemplate {
-        user: User,
-        current: AlternativeDay,
-    }
-
     let date = Date::parse(&date, ISO_DATE).expect("Data este invalida");
     let Some(current) = get_alternative_day(&state.read_pool, date).await? else {
         return Ok(error_bubble_response("Nu exista acest turneu"));
     };
 
-    EditTournamentTemplate {
+    NewOrEditTournamentTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        current,
+        current: Some(current),
+        current_date: local_time().date(),
     }
     .try_into_response()
 }
@@ -156,26 +157,28 @@ async fn update_tournament(
         updated.duration,
         updated.slot_capacity
     )
-        .execute(&mut *tx)
-        .await?;
+    .execute(&mut *tx)
+    .await?;
 
     info!("Tournament at date {date} was updated: {updated:?}");
 
     if current.start_hour != updated.start_hour {
-        let rows_affected = query!("update reservations set hour = $3 where date = $1 and hour = $2", date, current.start_hour, updated.start_hour)
-            .execute(&mut *tx)
-            .await?
-            .rows_affected();
+        let rows_affected = query!(
+            "update reservations set hour = $3 where date = $1 and hour = $2",
+            date,
+            current.start_hour,
+            updated.start_hour
+        )
+        .execute(&mut *tx)
+        .await?
+        .rows_affected();
 
         info!("{rows_affected} reservations were updated when changing tournament start hour");
     }
-    
+
     tx.commit().await?;
 
-    Ok(Response::builder()
-        .header("HX-Redirect", "/admin/tournaments")
-        .body("Utilizatorul a fost creat cu success".to_string())?
-        .into_response())
+    Ok([("HX-Redirect", "/admin/tournaments")].into_response())
 }
 
 pub async fn delete_tournament(
