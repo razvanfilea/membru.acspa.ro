@@ -37,7 +37,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
     let this_weeks_reservations =
         get_user_weeks_reservations_count(&state.read_pool, &user, local_time().date()).await?;
 
-    Ok(ProfileTemplate {
+    ProfileTemplate {
         reservations: get_user_reservations(&state.read_pool, user.email.as_str(), false).await,
         user,
         show_cancelled: false,
@@ -47,7 +47,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
             guest: role.guest_reservations,
         },
     }
-    .into_response())
+    .try_into_response()
 }
 
 #[derive(Deserialize)]

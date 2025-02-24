@@ -70,6 +70,7 @@ async fn create_free_day(
         duration: day_structure.slot_duration as u8,
         capacity: None,
         slots_per_day: day_structure.slots_per_day as u8,
+        consumes_reservation: true,
     };
 
     if let Some(error_response) = add_alternative_day(state.write_pool, day, "holiday").await? {

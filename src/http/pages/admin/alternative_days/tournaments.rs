@@ -76,6 +76,7 @@ struct NewTournament {
     start_hour: u8,
     duration: u8,
     capacity: Option<String>,
+    consumes_reservation: Option<String>,
 }
 
 async fn create_tournament(
@@ -93,6 +94,7 @@ async fn create_tournament(
         duration: tournament.duration,
         slots_per_day: 1,
         capacity,
+        consumes_reservation: tournament.consumes_reservation == Some("on".to_string()),
     };
 
     if let Some(error_response) = add_alternative_day(state.write_pool, day, "turneu").await? {
@@ -132,6 +134,7 @@ struct UpdatedTournament {
     start_hour: i64,
     duration: i64,
     slot_capacity: Option<i64>,
+    consumes_reservation: bool,
 }
 
 async fn update_tournament(
@@ -149,13 +152,14 @@ async fn update_tournament(
 
     query!(
         "update alternative_days
-          set description = $2, slots_start_hour = $3, slot_duration = $4, slot_capacity = $5
+          set description = $2, slots_start_hour = $3, slot_duration = $4, slot_capacity = $5, consumes_reservation = $6
           where date = $1",
         date,
         updated.description,
         updated.start_hour,
         updated.duration,
-        updated.slot_capacity
+        updated.slot_capacity,
+        updated.consumes_reservation
     )
     .execute(&mut *tx)
     .await?;

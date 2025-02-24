@@ -49,6 +49,14 @@
                    value="{{ capacity }}" {% endif %}{% endif %}/>
         </label>
 
+        <label class="label">
+            <span class="text-lg">Consumă rezervarea:</span>
+            <input name="consumes_reservation" type="checkbox" class="toggle toggle-lg input-lg toggle-primary"
+                   autocomplete="off"
+                   {% if let Some(val)=current %} value="{{ val.consumes_reservation }}" {% endif %}/>
+        </label>
+
+
         {% if let Some(val) = current %}
         <button class="btn btn-primary mt-6" hx-post="/admin/tournaments/edit/{{ val.date }}">
             Actualizează

@@ -4,7 +4,7 @@ use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::reservation::{ReservationError, ReservationResult, ReservationSuccess};
 use crate::utils::queries::{
-    get_alt_day_structure_for_day, get_current_reservations_count,
+    get_alt_day_structure_for_day, get_reservations_count_for_slot,
     get_user_weeks_reservations_count,
 };
 use sqlx::{SqliteConnection, query, query_as};
@@ -117,9 +117,9 @@ pub async fn is_reservation_possible(
     .fetch_one(&mut *tx)
     .await?;
 
-    let current_reservations =
-        get_current_reservations_count(&mut *tx, location, selected_date, selected_hour).await?;
-    let total_reservations = current_reservations.member + current_reservations.guest;
+    let slot_reservations =
+        get_reservations_count_for_slot(&mut *tx, location, selected_date, selected_hour).await?;
+    let total_reservations = slot_reservations.member + slot_reservations.guest;
 
     let capacity = day_structure
         .slot_capacity
@@ -134,7 +134,7 @@ pub async fn is_reservation_possible(
             ReservationSuccess::Reservation {
                 deletes_guest: false,
             }
-        } else if current_reservations.member < capacity {
+        } else if slot_reservations.member < capacity {
             ReservationSuccess::Reservation {
                 deletes_guest: true,
             }

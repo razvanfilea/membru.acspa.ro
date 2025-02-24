@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select r.as_guest, count(*) as 'count! :i64' from reservations r\n         left join alternative_days d on r.date = d.date\n         where r.user_id = $1 and r.cancelled = false\n         and (d.consumes_reservation is null or d.consumes_reservation = true)\n         and strftime('%Y%W', r.date) = strftime('%Y%W', $2)\n         group by r.as_guest",
+  "describe": {
+    "columns": [
+      {
+        "name": "as_guest",
+        "ordinal": 0,
+        "type_info": "Bool"
+      },
+      {
+        "name": "count! :i64",
+        "ordinal": 1,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "e54e0e99f1dd3358b1e8b3810bbadbbf1de748939be90713d3b264103c69c872"
+}

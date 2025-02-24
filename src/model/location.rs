@@ -16,6 +16,7 @@ impl Location {
             self.slots_start_hour,
             self.slot_duration,
             self.slots_per_day,
+            true,
         )
     }
 }

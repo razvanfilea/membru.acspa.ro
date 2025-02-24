@@ -19,7 +19,8 @@ pub async fn get_alt_day_structure_for_day(
 
     let day = query_as!(
         DayStructure,
-        "select slots_start_hour, slot_duration, slots_per_day, description, slot_capacity from alternative_days where date = $1",
+        "select slots_start_hour, slot_duration, slots_per_day, description, slot_capacity, consumes_reservation
+         from alternative_days where date = $1",
         date
     ).fetch_optional(executor).await.expect("Database error");
 
@@ -94,7 +95,7 @@ pub struct ReservationsCount {
     pub guest: i64,
 }
 
-pub async fn get_current_reservations_count(
+pub async fn get_reservations_count_for_slot(
     executor: impl Executor<'_, Database = Sqlite>,
     location: &Location,
     date: Date,
@@ -130,10 +131,12 @@ pub async fn get_user_weeks_reservations_count(
     date: Date,
 ) -> Result<ReservationsCount, sqlx::Error> {
     let counts = query!(
-        "select as_guest, count(*) as 'count! :i64' from reservations
-        where user_id = $1 and cancelled = false and
-        strftime('%Y%W', date) = strftime('%Y%W', $2)
-        group by as_guest",
+        "select r.as_guest, count(*) as 'count! :i64' from reservations r
+         left join alternative_days d on r.date = d.date
+         where r.user_id = $1 and r.cancelled = false
+         and (d.consumes_reservation is null or d.consumes_reservation = true)
+         and strftime('%Y%W', r.date) = strftime('%Y%W', $2)
+         group by r.as_guest",
         user.id,
         date
     )

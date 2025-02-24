@@ -29,12 +29,10 @@ pub fn router() -> Router<AppState> {
 
 async fn get_all_roles(state: &AppState) -> Vec<String> {
     query!("select name from user_roles")
+        .map(|record| record.name)
         .fetch_all(&state.read_pool)
         .await
         .expect("Database error")
-        .into_iter()
-        .map(|record| record.name)
-        .collect()
 }
 
 async fn get_role_id(state: &AppState, role: impl AsRef<str>) -> Option<i64> {

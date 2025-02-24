@@ -64,15 +64,13 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
     let reservation_color_code = query!(
         "select color as 'color!', name from user_roles where color is not null and color != 'None'"
     )
-    .fetch_all(&state.read_pool)
-    .await
-    .unwrap_or_default()
-    .into_iter()
     .map(|color_code| ColorCode {
         name: color_code.name,
         color: CssColor::from_str(&color_code.color).unwrap_or(CssColor::None),
     })
-    .collect();
+    .fetch_all(&state.read_pool)
+    .await
+    .unwrap_or_default();
 
     HomeTemplate {
         current_date,

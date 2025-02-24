@@ -5,6 +5,7 @@ pub struct DayStructure {
     pub slots_per_day: i64,
     pub description: Option<String>,
     pub slot_capacity: Option<i64>,
+    pub consumes_reservation: bool,
 }
 
 impl DayStructure {
@@ -12,6 +13,7 @@ impl DayStructure {
         slots_start_hour: i64,
         slot_duration: i64,
         slots_per_day: i64,
+        consumes_reservation: bool,
     ) -> DayStructure {
         DayStructure {
             slots_start_hour,
@@ -19,6 +21,7 @@ impl DayStructure {
             slots_per_day,
             description: None,
             slot_capacity: None,
+            consumes_reservation,
         }
     }
 
@@ -32,4 +35,4 @@ impl DayStructure {
     }
 }
 
-pub const HOLIDAY_DAY_STRUCTURE: DayStructure = DayStructure::new(10, 3, 4);
+pub const HOLIDAY_DAY_STRUCTURE: DayStructure = DayStructure::new(10, 3, 4, true);
