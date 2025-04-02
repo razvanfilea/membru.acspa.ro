@@ -57,7 +57,7 @@ async fn create_free_day(
     Form(new_day): Form<NewFreeDay>,
 ) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "admin/free_days/list_content.html")]
+    #[template(path = "admin/free_days/free_days_page.html", block = "list")]
     struct FreeDaysListTemplate {
         free_days: Vec<AlternativeDay>,
     }

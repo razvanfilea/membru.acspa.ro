@@ -1,4 +1,6 @@
+/target
+/node_modules
+/assets/css/main.css
+
 .env
-node_modules
-target
-Dockerfile
+*.db*

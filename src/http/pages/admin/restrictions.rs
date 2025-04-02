@@ -103,7 +103,7 @@ async fn create_restriction(
     AxumExtraForm(restriction): AxumExtraForm<NewRestriction>,
 ) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "admin/restrictions/list_content.html")]
+    #[template(path = "admin/restrictions/restrictions_page.html", block = "list")]
     struct RestrictionsListTemplate {
         restrictions: Vec<Restriction>,
     }

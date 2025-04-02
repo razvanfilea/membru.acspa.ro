@@ -10,7 +10,8 @@ use crate::utils::local_time;
 use crate::utils::queries::{GroupedUserReservations, get_user_reservations};
 use askama::Template;
 use axum::extract::State;
-use axum::response::{IntoResponse, Response};
+use axum::http::header;
+use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
@@ -123,12 +124,9 @@ async fn daily_situation_choose_date(
 async fn download_situations(State(state): State<AppState>) -> HttpResult {
     let current_date = local_time().date().format(ISO_DATE_UNDERLINE).unwrap();
 
-    let mut situations: Vec<_> = query!(
+    let mut situations = query!(
         "select r.*, u.name from reservations r join users u on r.user_id = u.id order by date, hour, created_at"
     )
-        .fetch_all(&state.read_pool)
-        .await?
-        .into_iter()
         .map(|res| {
             format!(
                 "{}, \"{}\", {}, {}, {}, {}, \"{}\", \"{}\"",
@@ -142,21 +140,24 @@ async fn download_situations(State(state): State<AppState>) -> HttpResult {
                 format_as_local(&res.created_at)
             )
         })
-        .collect();
+        .fetch_all(&state.read_pool)
+        .await?;
 
     situations.insert(
         0,
         "User ID, Nume, Data, Ora, Ca invitat, Anulat, Creat pentru, Creat pe".to_string(),
     );
 
-    let csv = situations.join("\n");
+    let response = (
+        [
+            (header::CONTENT_TYPE, "text/csv; charset=utf-8".to_string()),
+            (
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"situatie_{current_date}.csv\""),
+            ),
+        ],
+        situations.join("\n"),
+    );
 
-    Ok(Response::builder()
-        .header("Content-Type", "text/csv; charset=utf-8")
-        .header(
-            "Content-Disposition",
-            format!("attachment; filename=\"situatie_{current_date}.csv\""),
-        )
-        .body(csv)?
-        .into_response())
+    Ok(response.into_response())
 }
