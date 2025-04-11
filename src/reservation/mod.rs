@@ -7,7 +7,7 @@ use crate::model::location::Location;
 use crate::model::user::User;
 pub use crate::reservation::check::*;
 pub use result::*;
-use sqlx::{SqlitePool, query};
+use sqlx::{Executor, Sqlite, SqlitePool, query};
 use time::{Date, OffsetDateTime};
 use tracing::error;
 
@@ -32,20 +32,8 @@ pub async fn create_reservation(
 
     if let ReservationSuccess::Reservation { deletes_guest } = success {
         if deletes_guest {
-            let rows_affected = query!(
-                "update reservations set in_waiting = true where rowid in
-                (select rowid from reservations
-                where date = $1 and hour = $2 and location = $3 and 
-                    as_guest = true and in_waiting = false and cancelled = false
-                order by created_at desc limit 1)",
-                selected_date,
-                selected_hour,
-                location.id
-            )
-            .execute(tx.as_mut())
-            .await?
-            .rows_affected();
-
+            let rows_affected =
+                reorder_extra_guest(tx.as_mut(), selected_date, selected_hour, location).await?;
             if rows_affected > 1 {
                 error!("Updated more than one guest reservation");
                 return Err(ReservationError::DatabaseError(
@@ -79,4 +67,25 @@ pub async fn create_reservation(
     tx.commit().await?;
 
     Ok(success)
+}
+
+pub async fn reorder_extra_guest(
+    executor: impl Executor<'_, Database = Sqlite>,
+    date: Date,
+    hour: u8,
+    location: &Location,
+) -> sqlx::Result<u64> {
+    query!(
+        "update reservations set in_waiting = true where rowid in
+                (select rowid from reservations
+                where date = $1 and hour = $2 and location = $3 and 
+                    as_guest = true and in_waiting = false and cancelled = false
+                order by created_at desc limit 1)",
+        date,
+        hour,
+        location.id
+    )
+    .execute(executor)
+    .await
+    .map(|result| result.rows_affected())
 }

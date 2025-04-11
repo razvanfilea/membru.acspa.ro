@@ -15,7 +15,8 @@
 </main>
 
 <dialog id="add_modal" class="modal">
-    <form class="modal-box" onsubmit="add_modal.close()"
+    <form class="modal-box"
+          onsubmit="add_modal.close()"
           hx-put="/admin/guests"
           hx-target="#list"
           hx-swap="outerHTML">

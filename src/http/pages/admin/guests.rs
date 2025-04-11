@@ -4,6 +4,7 @@ use crate::http::pages::AuthSession;
 use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
+use crate::reservation::reorder_extra_guest;
 use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
@@ -125,6 +126,8 @@ async fn create_guest(
     let name = guest.name.trim();
     let special = guest.special.is_some().not();
 
+    let mut tx = state.write_pool.begin().await?;
+
     query!(
         "insert into reservations (user_id, date, hour, location, created_for, as_guest) VALUES ($1, $2, $3, $4, $5, $6)",
         user.id,
@@ -134,14 +137,22 @@ async fn create_guest(
         name,
         special
     )
-        .execute(&state.write_pool)
+        .execute(tx.as_mut())
         .await?;
+
+    let rows_affected = reorder_extra_guest(tx.as_mut(), date, guest.hour, &state.location).await?;
+    if rows_affected > 1 {
+        return Ok(error_bubble_response(
+            "Updated more than one guest reservation",
+        ));
+    }
 
     info!(
         "Add special guest with date: {date} hour: {} and name: {name}",
         guest.hour
     );
 
+    tx.commit().await?;
     let _ = state.reservation_notifier.send(());
 
     GuestsListTemplate {

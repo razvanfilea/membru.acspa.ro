@@ -63,8 +63,8 @@ async fn add_alternative_day(
         day.slots_per_day,
         day.consumes_reservation
     )
-        .execute(tx.as_mut())
-        .await?;
+    .execute(tx.as_mut())
+    .await?;
 
     let deleted_reservations = delete_reservations_on_day(tx.as_mut(), date).await?;
     if deleted_reservations != 0 {
