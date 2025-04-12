@@ -69,7 +69,7 @@ pub async fn create_reservation(
     Ok(success)
 }
 
-pub async fn reorder_extra_guest(
+async fn reorder_extra_guest(
     executor: impl Executor<'_, Database = Sqlite>,
     date: Date,
     hour: u8,

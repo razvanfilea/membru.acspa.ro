@@ -3,7 +3,6 @@ use crate::model::day_structure::{DayStructure, HOLIDAY_DAY_STRUCTURE};
 use crate::model::location::Location;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
-use crate::reservation::ReservationResult;
 use itertools::Itertools;
 use sqlx::{Executor, Sqlite, SqlitePool, query, query_as};
 use time::{Date, Month, Weekday};
@@ -39,7 +38,7 @@ pub async fn get_day_structure(state: &AppState, date: Date) -> DayStructure {
         .unwrap_or_else(|| state.location.day_structure())
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct YearMonth {
     pub year: i32,
     pub month: Month,
@@ -75,10 +74,10 @@ pub async fn get_user_reservations(
             month: res.date.month(),
         })
         .into_iter()
-        .map(|x| GroupedUserReservations {
-            year: x.0.year,
-            month: x.0.month,
-            reservations: x.1,
+        .map(|(year_month, reservations)| GroupedUserReservations {
+            year: year_month.year,
+            month: year_month.month,
+            reservations,
         })
         .sorted_by(|a, b| {
             a.year
@@ -100,7 +99,7 @@ pub async fn get_reservations_count_for_slot(
     location: &Location,
     date: Date,
     hour: u8,
-) -> ReservationResult<ReservationsCount> {
+) -> sqlx::Result<ReservationsCount> {
     let counts = query!(
         "select as_guest, count(*) as 'count!: i64' from reservations
         where location = $1 and date = $2 and hour = $3 and cancelled = false and in_waiting = false
@@ -129,7 +128,7 @@ pub async fn get_user_weeks_reservations_count(
     executor: impl Executor<'_, Database = Sqlite>,
     user: &User,
     date: Date,
-) -> Result<ReservationsCount, sqlx::Error> {
+) -> sqlx::Result<ReservationsCount> {
     let counts = query!(
         "select r.as_guest, count(*) as 'count! :i64' from reservations r
          left join alternative_days d on r.date = d.date
