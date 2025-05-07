@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from users_with_role where name like $1 or email like $1 or role like $1 order by name, email, role",
+  "query": "select * from users_with_role where name like $1 or email like $1 or role like $1\n         order by case \n          when $2 = 'name' then name\n          when $2 = 'birthday' then birthday\n          when $2 = 'received_gift' then received_gift\n         end, email, role",
   "describe": {
     "columns": [
       {
@@ -60,7 +60,7 @@
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 2
     },
     "nullable": [
       false,
@@ -76,5 +76,5 @@
       false
     ]
   },
-  "hash": "905f7bc7d65aa46988d9ac08a0d9d5c27e8c1c6e7bb613b7a807c955044e58bc"
+  "hash": "9bcd6056632f78ee0668540bd28f6c123089dea297b05272df02359245462441"
 }

@@ -7,9 +7,9 @@
     "prod": "npx @tailwindcss/cli -i templates/input.css -o assets/css/main.css --minify"
   },
   "devDependencies": {
-    "daisyui": "5.0.18",
+    "daisyui": "5.0.35",
     "prettier": "3.5.3",
     "prettier-plugin-tailwindcss": "0.6.11",
-    "@tailwindcss/cli": "4.1.3"
+    "@tailwindcss/cli": "4.1.5"
   }
 }

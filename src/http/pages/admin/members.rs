@@ -73,14 +73,22 @@ async fn members_page(
 }
 
 #[derive(Deserialize)]
+enum MembersSortOrder {
+    Alphabetical,
+    Birthday,
+    Gift,
+}
+
+#[derive(Deserialize)]
 struct SearchQuery {
     search: String,
+    sort: MembersSortOrder,
 }
 
 async fn search_members(
     State(state): State<AppState>,
     Form(search_query): Form<SearchQuery>,
-) -> impl IntoResponse {
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/members/list_content.html")]
     struct MembersListTemplate {
@@ -88,17 +96,27 @@ async fn search_members(
     }
 
     let query = format!("%{}%", search_query.search);
+    let sort_order = match search_query.sort {
+        MembersSortOrder::Alphabetical => "name",
+        MembersSortOrder::Birthday => "birthday",
+        MembersSortOrder::Gift => "received_gift",
+    };
 
     let members = query_as!(
         User,
-        "select * from users_with_role where name like $1 or email like $1 or role like $1 order by name, email, role",
-        query
+        "select * from users_with_role where name like $1 or email like $1 or role like $1
+         order by case 
+          when $2 = 'name' then name
+          when $2 = 'birthday' then birthday
+          when $2 = 'received_gift' then received_gift
+         end, email, role",
+        query,
+        sort_order
     )
     .fetch_all(&state.read_pool)
-    .await
-    .expect("Database error");
+    .await?;
 
-    MembersListTemplate { members }.into_response()
+    MembersListTemplate { members }.try_into_response()
 }
 
 #[derive(Deserialize)]
