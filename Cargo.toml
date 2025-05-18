@@ -11,7 +11,7 @@ async-trait = "0.1"
 # Axum
 axum = { version = "0.8.1", features = ["ws"] }
 tower-http = { version = "0.6", features = ["trace", "timeout", "fs", "catch-panic"] }
-askama = { version = "0.13.0" }
+askama = { version = "0.14.0" }
 axum-login = "0.17.0"
 axum-extra = { version = "0.10.0", default-features = false, features = ["form"] }
 

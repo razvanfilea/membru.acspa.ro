@@ -5,29 +5,32 @@
 {% block content %}
 
 <main class="p-2 sm:p-4 md:p-8 w-full" xmlns="http://www.w3.org/1999/html">
-    <p class="text-error">Este necesară discreția utilizatorului: nu toate datele de intrare sunt validate și multe operații pot fi
+    <p class="text-error">Este necesară discreția utilizatorului: nu toate datele de intrare sunt validate și multe
+        operații pot fi
         destructive</p>
 
     <div class="divider">Setări generale</div>
 
-    <fieldset class="fieldset gap-8">
-        <label class="floating-label">
-            <span>Cod intrare</span>
-            <input id="entrance_code" name="entrance_code" type="text"
-                   class="input input-lg input-bordered w-full max-w-xs"
-                   value="{{ global_vars.entrance_code }}"/>
-        </label>
+    <form>
+        <fieldset class="fieldset gap-8">
+            <label class="floating-label">
+                <span>Cod intrare</span>
+                <input id="entrance_code" name="entrance_code" type="text"
+                       class="input input-lg input-bordered w-full max-w-xs"
+                       value="{{ global_vars.entrance_code }}"/>
+            </label>
 
-        <label class="floating-label">
-            <span>Mesaj pe pagina principală</span>
-            <textarea name="homepage_message" type="text"
-                      class="textarea input-lg textarea-bordered w-full">
+            <label class="floating-label">
+                <span>Mesaj pe pagina principală</span>
+                <textarea name="homepage_message" type="text"
+                          class="textarea input-lg textarea-bordered w-full">
                 {{- global_vars.homepage_message -}}
             </textarea>
-        </label>
+            </label>
 
-        <button class="btn btn-error btn-wide" hx-post="/admin/apply_settings">Aplică setările</button>
-    </fieldset>
+            <button class="btn btn-error btn-wide" hx-post="/admin/apply_settings">Aplică setările</button>
+        </fieldset>
+    </form>
 
     <div class="grid grid-cols-2 gap-2 sm:gap-4 md:gap-8">
         <div class="divider mt-8 md:mt-12 col-span-2">Membri</div>
