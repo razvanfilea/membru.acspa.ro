@@ -4,8 +4,8 @@
 
 {% block content %}
 
-<main class="p-4 md:p-8 w-full flex flex-col">
-    <div class="flex flex-row justify-between items-center mb-8">
+<main class="p-2 sm:p-4 md:p-8 w-full flex flex-col">
+    <div class="flex flex-row justify-between items-center mb-8 p-2">
         <h1 class="text-2xl">{{ members.len() }} membri</h1>
 
         <a href="/admin/members/new">
@@ -30,13 +30,58 @@
         <select name="sort" class="menu rounded-box w-26 bg-gray-600 shadow-sm" autocomplete="off"
                 hx-trigger="search">
             <option selected value="Alphabetical">Alfabetic</option>
-            <option value="Birthday">Data nastere</option>
+            <option value="Birthday">Data naștere</option>
             <option value="Gift">Data cadou</option>
+            <option value="ClosestBirthday">Aniversare</option>
         </select>
     </form>
 
     <div id="members_list" class="flex flex-col w-full gap-4">
-        {% include "list_content.html" %}
+        {% block list %}
+        {% for user in members %}
+        <div class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
+            <div class="flex flex-col">
+                <div class="flex flex-row items-center gap-4">
+                    <p class="text-white text-lg">{{ user.name }}</p>
+                    {% if user.has_key %}
+                    <span class="material-symbols-outlined">vpn_key</span>
+                    {% endif %}
+                    <p class="text-sm">{{ user.role }}</p>
+                </div>
+                <p class="text-gray-200">{{ user.email }}<br>
+                    Zi de naștere: {{ self::map_date_to_string(user.birthday) }}<br>
+                    {% if user.member_since.is_some() %}
+                    Membru din: {{ self::map_date_to_string(user.member_since) }}<br>
+                    {% endif %}
+                    {% if user.received_gift.is_some() %}
+                    Primit cadou:
+                    <span class="text-red-400">{{ self::map_date_to_string(user.received_gift) }}</span>
+                </p>
+                {% endif %}
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-2 md:gap-4">
+                <a href="mailto:{{ user.email }}?subject=Cotiza%C8%9Bie%20ACSPA&body=Te%20rog%20verific%C4%83%20plata%20cotiza%C8%9Biei%20de%20membru%20ACS%20PA">
+                    <button title="Trimite mail cotizație" class="btn btn-square btn-sm btn-outline">
+                        <span class="material-symbols-outlined">email</span>
+                    </button>
+                </a>
+
+                <a href="/admin/members/edit/{{ user.id }}">
+                    <button title="Editează" class="btn btn-square btn-sm btn-outline">
+                        <span class="material-symbols-outlined">edit</span>
+                    </button>
+                </a>
+
+                <a href="/admin/members/change_password/{{ user.id }}">
+                    <button title="Schimbă parola" class="btn btn-square btn-warning btn-sm btn-outline">
+                        <span class="material-symbols-outlined">password</span>
+                    </button>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+        {% endblock %}
     </div>
 </main>
 

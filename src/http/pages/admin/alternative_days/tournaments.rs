@@ -134,7 +134,7 @@ struct UpdatedTournament {
     start_hour: i64,
     duration: i64,
     slot_capacity: Option<i64>,
-    consumes_reservation: bool,
+    consumes_reservation: Option<String>,
 }
 
 async fn update_tournament(
@@ -150,6 +150,8 @@ async fn update_tournament(
         return Ok(error_bubble_response("Nu exista acest turneu"));
     };
 
+    let consumes_reservation = updated.consumes_reservation == Some("on".to_string());
+
     query!(
         "update alternative_days
           set description = $2, slots_start_hour = $3, slot_duration = $4, slot_capacity = $5, consumes_reservation = $6
@@ -159,7 +161,7 @@ async fn update_tournament(
         updated.start_hour,
         updated.duration,
         updated.slot_capacity,
-        updated.consumes_reservation
+        consumes_reservation
     )
     .execute(&mut *tx)
     .await?;

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from users_with_role where name like $1 or email like $1 or role like $1\n         order by case \n          when $2 = 'name' then name\n          when $2 = 'birthday' then birthday\n          when $2 = 'received_gift' then received_gift\n         end, email, role",
+  "query": "select * from users_with_role where name like $1 or email like $1 or role like $1\n         order by case \n          when $2 = 'Alphabetical' then name\n          when $2 = 'Birthday' then birthday\n          when $2 = 'Gift' then received_gift\n          when $2 = 'ClosestBirthday' then ((strftime('%j', birthday) - strftime('%j', 'now') + 365) % 365)\n         end, email, role",
   "describe": {
     "columns": [
       {
@@ -76,5 +76,5 @@
       false
     ]
   },
-  "hash": "9bcd6056632f78ee0668540bd28f6c123089dea297b05272df02359245462441"
+  "hash": "2582985193ae7171dae034c9cdc93598c556caf20a5636c67474c4352650ae80"
 }

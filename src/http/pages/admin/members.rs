@@ -72,11 +72,12 @@ async fn members_page(
     .into_response()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 enum MembersSortOrder {
     Alphabetical,
     Birthday,
     Gift,
+    ClosestBirthday,
 }
 
 #[derive(Deserialize)]
@@ -90,25 +91,22 @@ async fn search_members(
     Form(search_query): Form<SearchQuery>,
 ) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "admin/members/list_content.html")]
+    #[template(path = "admin/members/list_page.html", block = "list")]
     struct MembersListTemplate {
         members: Vec<User>,
     }
 
     let query = format!("%{}%", search_query.search);
-    let sort_order = match search_query.sort {
-        MembersSortOrder::Alphabetical => "name",
-        MembersSortOrder::Birthday => "birthday",
-        MembersSortOrder::Gift => "received_gift",
-    };
+    let sort_order = format!("{:?}", search_query.sort);
 
     let members = query_as!(
         User,
         "select * from users_with_role where name like $1 or email like $1 or role like $1
          order by case 
-          when $2 = 'name' then name
-          when $2 = 'birthday' then birthday
-          when $2 = 'received_gift' then received_gift
+          when $2 = 'Alphabetical' then name
+          when $2 = 'Birthday' then birthday
+          when $2 = 'Gift' then received_gift
+          when $2 = 'ClosestBirthday' then ((strftime('%j', birthday) - strftime('%j', 'now') + 365) % 365)
          end, email, role",
         query,
         sort_order
