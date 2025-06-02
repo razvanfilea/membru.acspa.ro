@@ -9,15 +9,15 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 async-trait = "0.1"
 
 # Axum
-axum = { version = "0.8.1", features = ["ws"] }
+axum = { version = "0.8", features = ["ws"] }
 tower-http = { version = "0.6", features = ["trace", "timeout", "fs", "catch-panic"] }
-askama = { version = "0.14.0" }
-axum-login = "0.17.0"
-axum-extra = { version = "0.10.0", default-features = false, features = ["form"] }
+askama = { version = "0.14" }
+axum-login = "0.17"
+axum-extra = { version = "0.10", default-features = false, features = ["form"] }
 
 # Database
-sqlx = { version = "0.8.3", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
-tower-sessions-sqlx-store = { version = "0.15.0", features = ["sqlite"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
+tower-sessions-sqlx-store = { version = "0.15", features = ["sqlite"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
@@ -28,17 +28,17 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Utils
-dotenvy = "0.15.7"
+dotenvy = "0.15"
 email_address = "0.2"
 time = { version = "0.3", features = ["formatting", "macros", "local-offset"] }
 strum = { version = "0.27", features = ["derive"] }
 thiserror = "2.0"
-itertools = "0.14.0"
+itertools = "0.14"
 
 # Crypto
-rand = { version = "0.9.0", default-features = false, features = ["os_rng"] }
+rand = { version = "0.9", default-features = false, features = ["os_rng"] }
 rand_hc = "0.4.0"
-argon2 = { version = "0.6.0-pre.1", features = ["std"] }
+argon2 = { version = "=0.6.0-rc.0" }
 
 [profile.dev.package.askama_derive]
 opt-level = 3

@@ -133,7 +133,7 @@ struct UpdatedTournament {
     description: String,
     start_hour: i64,
     duration: i64,
-    slot_capacity: Option<i64>,
+    capacity: Option<String>,
     consumes_reservation: Option<String>,
 }
 
@@ -143,6 +143,10 @@ async fn update_tournament(
     Form(updated): Form<UpdatedTournament>,
 ) -> HttpResult {
     let date = Date::parse(&date, ISO_DATE).expect("Data este invalida");
+    let capacity = updated
+        .capacity
+        .as_ref()
+        .and_then(|capacity| capacity.parse::<u8>().ok());
 
     let mut tx = state.write_pool.begin().await?;
 
@@ -160,7 +164,7 @@ async fn update_tournament(
         updated.description,
         updated.start_hour,
         updated.duration,
-        updated.slot_capacity,
+        capacity,
         consumes_reservation
     )
     .execute(&mut *tx)
