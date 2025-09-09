@@ -2,10 +2,8 @@ use std::collections::HashSet;
 
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash};
-use async_trait::async_trait;
 use axum_login::{AuthnBackend, AuthzBackend, UserId};
-use rand::SeedableRng;
-use rand_hc::Hc128Rng;
+use rand::rngs::OsRng;
 use sqlx::{SqlitePool, query_as};
 use tokio::task;
 
@@ -22,7 +20,6 @@ impl UserAuthenticator {
     }
 }
 
-#[async_trait]
 impl AuthnBackend for UserAuthenticator {
     type User = User;
     type Credentials = UserCredentials;
@@ -63,7 +60,6 @@ impl AuthnBackend for UserAuthenticator {
     }
 }
 
-#[async_trait]
 impl AuthzBackend for UserAuthenticator {
     type Permission = String;
 
@@ -83,8 +79,8 @@ impl AuthzBackend for UserAuthenticator {
 }
 
 pub fn generate_hash_from_password<T: AsRef<str>>(password: T) -> String {
-    let mut rng = Hc128Rng::from_os_rng();
-    let salt = SaltString::from_rng(&mut rng);
+    let mut rng = OsRng;
+    let salt = SaltString::try_from_rng(&mut rng).expect("Failed to generate salt for password");
 
     Argon2::default()
         .hash_password(password.as_ref().as_bytes(), &salt)

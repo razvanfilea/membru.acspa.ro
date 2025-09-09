@@ -6,13 +6,12 @@ edition = "2024"
 [dependencies]
 # Async
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
-async-trait = "0.1"
 
 # Axum
 axum = { version = "0.8", features = ["ws"] }
 tower-http = { version = "0.6", features = ["trace", "timeout", "fs", "catch-panic"] }
 askama = { version = "0.14" }
-axum-login = "0.17"
+axum-login = "0.18"
 axum-extra = { version = "0.10", default-features = false, features = ["form"] }
 
 # Database
@@ -36,9 +35,8 @@ thiserror = "2.0"
 itertools = "0.14"
 
 # Crypto
-rand = { version = "0.9", default-features = false, features = ["os_rng"] }
-rand_hc = "0.4.0"
-argon2 = { version = "=0.6.0-rc.0" }
+rand = { version = "0.9", default-features = false, features = ["std", "os_rng"] }
+argon2 = { version = "=0.6.0-rc.1" }
 
 [profile.dev.package.askama_derive]
 opt-level = 3
