@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block page_title %}Membru: {{ member.name }}{% endblock %}
+
+{% block content %}
+
+<main class="p-4 md:p-8 w-full">
+    <div class="flex flex-col">
+        <div class="flex flex-row items-center gap-4">
+            <p class="text-white text-3xl">{{ member.name }}</p>
+            {% if member.has_key %}
+            <span class="material-symbols-outlined">vpn_key</span>
+            {% endif %}
+            <p class="text-xl">{{ member.role }}</p>
+        </div>
+        <p class="text-gray-200">
+            <span class="text-lg">{{ member.email }}</span><br>
+            Zi de naștere: <span class="font-mono">{{ self::map_date_to_string(member.birthday) }}</span><br>
+            Membru din: <span class="font-mono">{{ self::map_date_to_string(member.member_since) }}</span><br>
+            Primit cadou:
+            <span class="font-mono text-red-400">{{ self::map_date_to_string(member.received_gift) }}</span>
+        </p>
+    </div>
+
+    <div class="flex flex-col p-2 md:flex-row gap-2 md:gap-4">
+        <a href="mailto:{{ member.email }}?subject=Cotiza%C8%9Bie%20ACSPA&body=Te%20rog%20verific%C4%83%20plata%20cotiza%C8%9Biei%20de%20member%20ACS%20PA">
+            <button class="btn btn-outline">
+                Trimite mail cotizație<span class="material-symbols-outlined">email</span>
+            </button>
+        </a>
+
+        <a href="/admin/members/change_password/{{ member.id }}">
+            <button class="btn btn-warning btn-outline">
+                Schimbă parola <span class="material-symbols-outlined">password</span>
+            </button>
+        </a>
+    </div>
+
+    <div id="reservations" class="mt-4 flex flex-col gap-4">
+        <h3 class="text-2xl">Rezervări:</h3>
+        {% include "components/reservations_list.html" %}
+    </div>
+</main>
+
+<div class="fab">
+    <a href="/admin/members/edit/{{ member.id }}">
+        <button title="Editează" class="btn btn-circle btn-lg btn-primary">
+            <span class="material-symbols-outlined">edit</span>
+        </button>
+    </a>
+</div>
+
+{% endblock %}

@@ -1,5 +1,5 @@
 use time::macros::format_description;
-use time::{OffsetDateTime, UtcOffset};
+use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, UtcOffset};
 
 pub const ISO_DATE_UNDERLINE: &[time::format_description::BorrowedFormatItem] =
     format_description!("[year]_[month]_[day]");
@@ -10,10 +10,43 @@ pub const ISO_DATE: &[time::format_description::BorrowedFormatItem] =
 pub const READABLE_DATE: &[time::format_description::BorrowedFormatItem] =
     format_description!("[day].[month].[year]");
 
-pub fn format_as_local(time: &OffsetDateTime) -> String {
+pub const READABLE_DATE_TIME: &[time::format_description::BorrowedFormatItem] =
+    format_description!("[day].[month].[year] [hour]:[minute]");
+
+pub fn as_iso_underline(date: &Date) -> String {
+    date.format(ISO_DATE_UNDERLINE).unwrap()
+}
+
+pub fn as_iso_dash(date: &Date) -> String {
+    date.format(ISO_DATE).unwrap()
+}
+
+pub fn as_readable(date: &Date) -> String {
+    date.format(READABLE_DATE).unwrap()
+}
+
+pub fn as_readable_with_time(date: &PrimitiveDateTime) -> String {
+    date.format(READABLE_DATE_TIME).unwrap()
+}
+
+pub fn as_local(time: &OffsetDateTime) -> String {
     let offset = UtcOffset::current_local_offset().expect("Failed to determine local offset");
     time.to_offset(offset).format(READABLE_DATE_TIME).unwrap()
 }
 
-pub const READABLE_DATE_TIME: &[time::format_description::BorrowedFormatItem] =
-    format_description!("[day].[month].[year] [hour]:[minute]");
+pub fn month_as_str(month: &Month) -> &'static str {
+    match month {
+        Month::January => "Ianuarie",
+        Month::February => "Februarie",
+        Month::March => "Martie",
+        Month::April => "Aprilie",
+        Month::May => "Mai",
+        Month::June => "Iunie",
+        Month::July => "Iulie",
+        Month::August => "August",
+        Month::September => "Septembrie",
+        Month::October => "Octombrie",
+        Month::November => "Noiembrie",
+        Month::December => "Decembrie",
+    }
+}

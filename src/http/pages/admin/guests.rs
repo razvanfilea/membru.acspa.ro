@@ -4,9 +4,7 @@ use crate::http::pages::AuthSession;
 use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
-use crate::utils::queries::{
-    get_day_structure, get_reservations_count_for_slot,
-};
+use crate::utils::queries::{get_day_structure, get_reservations_count_for_slot};
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::State;
@@ -107,7 +105,7 @@ async fn create_guest(
     Form(guest): Form<NewSpecialGuest>,
 ) -> HttpResult {
     #[derive(Template)]
-    #[template(path = "admin/guests/list_content.html")]
+    #[template(path = "admin/guests/guests_page.html", block = "list")]
     struct GuestsListTemplate {
         guests: Vec<GuestDto>,
     }

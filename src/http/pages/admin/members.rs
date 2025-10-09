@@ -4,6 +4,7 @@ use crate::http::error::HttpResult;
 use crate::http::pages::{AuthSession, get_user};
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
+use crate::utils::queries::{GroupedUserReservations, get_user_reservations};
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::{Path, State};
@@ -20,8 +21,9 @@ pub fn router() -> Router<AppState> {
         .route("/search", post(search_members))
         .route("/new", get(new_member_page))
         .route("/new", post(create_new_user))
+        .route("/view/{id}", get(view_member_page))
         .route("/edit/{id}", get(edit_member_page))
-        .route("/edit/{id}", post(update_user))
+        .route("/edit/{id}", post(update_member))
         .route("/change_password/{id}", get(change_password_page))
         .route("/change_password/{id}", post(update_password))
         .route("/delete/{id}", post(delete_user))
@@ -167,6 +169,31 @@ async fn create_new_user(
     [("HX-Redirect", "/admin/members")]
 }
 
+async fn view_member_page(
+    State(state): State<AppState>,
+    auth_session: AuthSession,
+    Path(user_id): Path<i64>,
+) -> impl IntoResponse {
+    #[derive(Template)]
+    #[template(path = "admin/members/view_page.html")]
+    struct ViewMemberTemplate {
+        user: User,
+        member: User,
+        reservations: Vec<GroupedUserReservations>,
+        allow_reservation_cancellation: bool,
+    }
+
+    let member = get_user(&state.read_pool, user_id).await;
+
+    ViewMemberTemplate {
+        user: auth_session.user.expect("User should be logged in"),
+        reservations: get_user_reservations(&state.read_pool, member.id, false).await,
+        member,
+        allow_reservation_cancellation: false,
+    }
+    .into_response()
+}
+
 async fn edit_member_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
@@ -182,7 +209,7 @@ async fn edit_member_page(
     }
 
     EditMemberTemplate {
-        current_date: local_time().date().format(date_formats::ISO_DATE).unwrap(),
+        current_date: date_formats::as_iso_dash(&local_time().date()),
         user: auth_session.user.expect("User should be logged in"),
         roles: get_all_roles(&state).await,
         existing_user: get_user(&state.read_pool, user_id).await,
@@ -201,7 +228,7 @@ struct UpdatedUser {
     received_gift: Option<String>,
 }
 
-async fn update_user(
+async fn update_member(
     State(state): State<AppState>,
     Path(user_id): Path<i64>,
     Form(updated_user): Form<UpdatedUser>,

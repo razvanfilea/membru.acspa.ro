@@ -52,15 +52,14 @@ pub struct GroupedUserReservations {
 
 pub async fn get_user_reservations(
     pool: &SqlitePool,
-    email: &str,
+    user_id: i64,
     cancelled: bool,
 ) -> Vec<GroupedUserReservations> {
     let reservations = query_as!(
         UserReservation,
         "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r
-         inner join users on user_id = users.id
-         where email = $1 and cancelled = $2 and created_for is null",
-        email,
+         where user_id = $1 and cancelled = $2 and created_for is null",
+        user_id,
         cancelled
     ).fetch_all(pool)
         .await
