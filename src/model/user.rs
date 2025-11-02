@@ -2,7 +2,7 @@ use axum_login::AuthUser;
 use serde::Deserialize;
 use time::Date;
 
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(Debug, Clone)]
 pub struct User {
     pub id: i64,
     pub email: String,
@@ -10,10 +10,11 @@ pub struct User {
     pub password_hash: String,
     pub role_id: i64,
     pub role: String,
+    pub is_active: bool,
     pub has_key: bool,
     pub admin_panel_access: bool,
-    pub birthday: Option<Date>,
-    pub member_since: Option<Date>,
+    pub member_since: Date,
+    pub birthday: Date,
     pub received_gift: Option<Date>,
 }
 

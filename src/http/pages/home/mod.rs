@@ -72,14 +72,16 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
     .await
     .unwrap_or_default();
 
+    let reservation_hours = get_reservation_hours(&state, current_date)
+        .await
+        .expect("Database error");
+
     HomeTemplate {
         current_date,
         selected_date: current_date,
         days: DateIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
         user: auth_session.user.expect("User should be logged in"),
-        reservation_hours: get_reservation_hours(&state, current_date)
-            .await
-            .expect("Database error"),
+        reservation_hours,
         global_vars: get_global_vars(&state).await,
         reservation_color_code,
     }

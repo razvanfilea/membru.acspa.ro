@@ -15,8 +15,8 @@
         </div>
         <p class="text-gray-200">
             <span class="text-lg">{{ member.email }}</span><br>
-            Zi de naștere: <span class="font-mono">{{ self::map_date_to_string(member.birthday) }}</span><br>
-            Membru din: <span class="font-mono">{{ self::map_date_to_string(member.member_since) }}</span><br>
+            Zi de naștere: <span class="font-mono">{{ date_formats::as_readable(member.birthday) }}</span><br>
+            Membru din: <span class="font-mono">{{ date_formats::as_readable(member.member_since) }}</span><br>
             Primit cadou:
             <span class="font-mono text-red-400">{{ self::map_date_to_string(member.received_gift) }}</span>
         </p>
@@ -44,8 +44,9 @@
 
 <div class="fab">
     <a href="/admin/members/edit/{{ member.id }}">
-        <button title="Editează" class="btn btn-circle btn-lg btn-primary">
+        <button class="btn btn-md btn-primary rounded-2xl">
             <span class="material-symbols-outlined">edit</span>
+            Editează membru
         </button>
     </a>
 </div>

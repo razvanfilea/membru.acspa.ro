@@ -24,38 +24,43 @@
         "type_info": "Text"
       },
       {
-        "name": "role_id",
+        "name": "is_active",
         "ordinal": 4,
+        "type_info": "Bool"
+      },
+      {
+        "name": "role_id",
+        "ordinal": 5,
         "type_info": "Integer"
       },
       {
         "name": "has_key",
-        "ordinal": 5,
+        "ordinal": 6,
         "type_info": "Bool"
       },
       {
         "name": "birthday",
-        "ordinal": 6,
-        "type_info": "Date"
-      },
-      {
-        "name": "member_since",
         "ordinal": 7,
         "type_info": "Date"
       },
       {
-        "name": "received_gift",
+        "name": "member_since",
         "ordinal": 8,
         "type_info": "Date"
       },
       {
-        "name": "role",
+        "name": "received_gift",
         "ordinal": 9,
+        "type_info": "Date"
+      },
+      {
+        "name": "role",
+        "ordinal": 10,
         "type_info": "Text"
       },
       {
         "name": "admin_panel_access",
-        "ordinal": 10,
+        "ordinal": 11,
         "type_info": "Bool"
       }
     ],
@@ -69,8 +74,9 @@
       false,
       false,
       false,
-      true,
-      true,
+      false,
+      false,
+      false,
       true,
       false,
       false
