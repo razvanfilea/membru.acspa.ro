@@ -11,7 +11,10 @@
             {% if !global_vars.homepage_message.is_empty() %}
             <p class="bg-cyan-600 text-white text-sm mx-2 p-3 rounded-md grow">{{ global_vars.homepage_message }}</p>
             {% endif %}
+
+            {% if user.is_active %}
             <p class="text-nowrap text-lg">Cod intrare: <b>{{ global_vars.entrance_code }}</b></p>
+            {% endif %}
         </div>
 
         {% include "content.html" %}

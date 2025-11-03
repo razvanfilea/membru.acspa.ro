@@ -64,6 +64,7 @@ pub async fn get_reservation_hours(
         });
     }
 
+    // This specifically uses the idx_reservations_date_cancelled index
     let date_reservations = query!(
         r#"select u.name as 'name!', r.user_id, hour, has_key, as_guest, in_waiting, created_for, ur.color as role_color
         from reservations r

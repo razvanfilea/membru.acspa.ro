@@ -53,6 +53,12 @@
         </label>
 
         <label class="label">
+            <span class="text-lg">Activ:</span>
+            <input name="is_active" type="checkbox" class="toggle toggle-lg input-lg toggle-primary" autocomplete="off"
+                   {% if existing_user.is_active %}checked{% endif %}/>
+        </label>
+
+        <label class="label">
             <span class="text-lg">Are cheie:</span>
             <input name="has_key" type="checkbox" class="toggle toggle-lg input-lg toggle-primary" autocomplete="off"
                    {% if existing_user.has_key %}checked{% endif %}/>
@@ -63,7 +69,7 @@
         </button>
 
         <button class="btn btn-error mt-6" hx-post="/admin/members/delete/{{ existing_user.id }}"
-                hx-confirm="Ești absolut sigur că vrei să ștergi acest utilizator?">
+                hx-confirm="Ești absolut sigur că vrei să ștergi utilizatorul `{{ existing_user.name }}`?">
             Șterge utilizatorul
         </button>
     </fieldset>

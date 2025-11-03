@@ -24,7 +24,8 @@
                     class="btn btn-square btn-sm btn-error btn-outline"
                     hx-delete='/admin/restrictions/{{ date_formats::as_iso_dash(res.date) }}{% if let Some(hour) = res.hour %}?hour={{ hour }}{% endif %}'
                     hx-target="#restriction_{{ id_date }}"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-confirm="Ești sigur ca vrei să ștergi restricționarea de '{{ res.message }}'?">
                 <span class="material-symbols-outlined">delete</span>
             </button>
 

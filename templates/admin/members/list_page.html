@@ -5,7 +5,7 @@
 {% block content %}
 
 <main class="p-2 sm:p-4 md:p-8 w-full flex flex-col">
-    <h2 class="text-2xl mb-8">{{ members.len() }} membri</h2>
+    <h2 class="text-2xl mt-2 mb-6">{{ members.len() }} membri</h2>
 
     <form class="flex flex-row items-center gap-2 md:gap-4 mb-6"
           hx-target="#members_list"
@@ -30,25 +30,28 @@
 
     <div id="members_list" class="flex flex-col w-full pb-16">
         {% block list %}
-        {% for user in members %}
-        <a href="/admin/members/view/{{ user.id }}"
+        {% for member in members %}
+        <a href="/admin/members/view/{{ member.id }}"
             class="block rounded-xl p-4 transition
              hover:bg-white/5 active:bg-white/10
             hover:translate-x-0.5
             focus:outline-none focus:ring-1 focus:ring-white/20">
             <div class="flex flex-row items-center gap-4">
-                <p class="text-white text-lg">{{ user.name }}</p>
-                {% if user.has_key %}
-                <span class="material-symbols-outlined text-gray-300 text-base">vpn_key</span>
+                <p class="text-white text-lg">{{ member.name }}</p>
+                {% if member.has_key %}
+                <span class="material-symbols-outlined text-gray-300 text-base" title="Are cheie de la sală">vpn_key</span>
                 {% endif %}
-                <p class="text-sm text-gray-400">{{ user.role }}</p>
+                {% if !member.is_active %}
+                <span class="material-symbols-outlined text-gray-300 text-base" title="Cont inactiv">account_circle_off</span>
+                {% endif %}
+                <p class="text-sm text-gray-400">{{ member.role }}</p>
             </div>
             <p class="text-gray-300 text-sm leading-snug mt-1">
-                <span>{{ user.email }}</span><br>
-                Zi de naștere: <span class="font-mono">{{ date_formats::as_readable(user.birthday) }}</span><br>
-                {% if user.received_gift.is_some() %}
+                <span>{{ member.email }}</span><br>
+                Zi de naștere: <span class="font-mono">{{ date_formats::as_readable(member.birthday) }}</span><br>
+                {% if member.received_gift.is_some() %}
                 Primit cadou:
-                <span class="font-mono text-red-400">{{ self::map_date_to_string(user.received_gift) }}</span>
+                <span class="font-mono text-red-400">{{ self::map_date_to_string(member.received_gift) }}</span>
                 {% endif %}
             </p>
         </a>

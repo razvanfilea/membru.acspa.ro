@@ -1,6 +1,6 @@
 [package]
 name = "acspa"
-version = "2.4.0"
+version = "2.5.0"
 edition = "2024"
 
 [dependencies]
@@ -12,7 +12,7 @@ axum = { version = "0.8", features = ["ws"] }
 tower-http = { version = "0.6", features = ["trace", "timeout", "fs", "catch-panic"] }
 askama = { version = "0.14" }
 axum-login = "0.18"
-axum-extra = { version = "0.10", default-features = false, features = ["form"] }
+axum-extra = { version = "0.12", default-features = false, features = ["form"] }
 
 # Database
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }

@@ -8,9 +8,13 @@
     </div>
 
     <div class="flex flex-col max-w-full grow" hx-vals='{"selected_date": "{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}" }'>
+        {% if user.is_active %}
         {% let enable_editing = true%}
         {% include "hours.html" %}
 
         <div id="confirmation"></div>
+        {% else %}
+        <p class="text-error text-center py-4 text-xl">Contul tău este inactiv, contactează un Fondator</p>
+        {% endif %}
     </div>
 </main>

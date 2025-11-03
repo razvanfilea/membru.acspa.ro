@@ -11,7 +11,7 @@
       {
         "name": "count!: i64",
         "ordinal": 1,
-        "type_info": "Integer"
+        "type_info": "Null"
       }
     ],
     "parameters": {
@@ -19,7 +19,7 @@
     },
     "nullable": [
       false,
-      false
+      null
     ]
   },
   "hash": "f6b2c2e2b592f2d16964627a237014cd55b3514293389196a10d4afd54a3ba9f"

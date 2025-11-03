@@ -8,6 +8,7 @@ use crate::utils::queries::{GroupedUserReservations, get_user_reservations};
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::{Path, State};
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Form, Router};
@@ -222,9 +223,10 @@ struct UpdatedUser {
     email: String,
     name: String,
     role: String,
+    is_active: Option<String>,
     has_key: Option<String>,
-    birthday: Option<String>,
-    member_since: Option<String>,
+    birthday: String,
+    member_since: String,
     received_gift: Option<String>,
 }
 
@@ -242,13 +244,19 @@ async fn update_member(
         .await
         .expect("Invalid role");
     let user_name = updated_user.name.trim();
+    let is_active = updated_user.is_active.is_some();
     let has_key = updated_user.has_key.is_some();
-    let birthday = parse_date(updated_user.birthday);
-    let member_since = parse_date(updated_user.member_since);
+    let Some(birthday) = parse_date(Some(updated_user.birthday)) else {
+        return Ok(StatusCode::UNPROCESSABLE_ENTITY.into_response());
+    };
+    let Some(member_since) = parse_date(Some(updated_user.member_since)) else {
+        return Ok(StatusCode::UNPROCESSABLE_ENTITY.into_response());
+    };
     let received_gift = parse_date(updated_user.received_gift);
 
     query!(
-        "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8 where id = $1",
+        "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, is_active = $9
+         where id = $1",
         user_id,
         updated_user.email,
         user_name,
@@ -256,7 +264,8 @@ async fn update_member(
         has_key,
         birthday,
         member_since,
-        received_gift
+        received_gift,
+        is_active
     )
     .execute(&state.write_pool)
     .await?;

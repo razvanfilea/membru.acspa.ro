@@ -9,8 +9,7 @@
     <div id="list" class="flex flex-col w-full gap-4 pb-16">
         {% for day in free_days %}
         {% let iso_date = day.date.to_string() %}
-        <div id="day_{{ iso_date }}" class="flex flex-row p-4 bg-gray-600 rounded-sm gap-4 items-center justify-between"
-             hx-confirm="Ești sigur ca vrei să ștergi acestă zi liberă? Va șterge și toate rezervările făcute în acea zi">
+        <div id="day_{{ iso_date }}" class="flex flex-row p-4 bg-gray-600 rounded-sm gap-4 items-center justify-between">
 
             <div class="flex flex-col">
                 <p>Data: <b>{{ date_formats::as_readable(day.date) }}</b></p>
@@ -31,7 +30,8 @@
                         class="btn btn-square btn-sm btn-error btn-outline"
                         hx-delete='/admin/free_days/{{ iso_date }}'
                         hx-target="#day_{{ iso_date }}"
-                        hx-swap="outerHTML">
+                        hx-swap="outerHTML"
+                        hx-confirm="Ești sigur ca vrei să ștergi acestă zi liberă? Va șterge și toate rezervările făcute în acea zi">
                     <span class="material-symbols-outlined">delete</span>
                 </button>
             </div>

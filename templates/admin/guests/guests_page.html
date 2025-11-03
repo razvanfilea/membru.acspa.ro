@@ -26,7 +26,8 @@
                     class="btn btn-square btn-sm btn-error btn-outline"
                     hx-delete='/reservation?date={{ selected_date_formatted }}&hour={{ guest.hour }}&user_id={{ guest.created_by_id }}&created_for={{ guest.name }}'
                     hx-target="#guest_{{ guest.rowid }}"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-confirm="Ești sigur ca vrei să ștergi invitatul '{{ guest.name }}'?">
                 <span class="material-symbols-outlined">delete</span>
             </button>
 
