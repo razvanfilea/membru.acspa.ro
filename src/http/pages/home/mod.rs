@@ -9,9 +9,9 @@ use crate::model::user::User;
 use crate::reservation::{
     ReservationError, ReservationSuccess, create_reservation, is_reservation_possible,
 };
-use crate::utils::CssColor;
 use crate::utils::date_iter::DateIter;
 use crate::utils::queries::get_day_structure;
+use crate::utils::{CssColor, local_date};
 use crate::utils::{date_formats, get_reservation_result_color, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
@@ -39,7 +39,7 @@ pub fn router() -> Router<AppState> {
         .route("/reservation", delete(cancel_reservation))
 }
 
-async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
+async fn index(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
 
     struct ColorCode {
@@ -72,9 +72,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
     .await
     .unwrap_or_default();
 
-    let reservation_hours = get_reservation_hours(&state, current_date)
-        .await
-        .expect("Database error");
+    let reservation_hours = get_reservation_hours(&state, current_date).await?;
 
     HomeTemplate {
         current_date,
@@ -85,7 +83,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> impl
         global_vars: get_global_vars(&state).await,
         reservation_color_code,
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]
@@ -123,7 +121,7 @@ async fn hour_picker(
                 "Failed to parse date {} with error: {}",
                 query.selected_date, e
             );
-            local_time().date()
+            local_date()
         });
 
     let structure = get_day_structure(&state, selected_date).await;

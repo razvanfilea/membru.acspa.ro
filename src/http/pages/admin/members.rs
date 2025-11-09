@@ -38,13 +38,11 @@ async fn get_all_roles(state: &AppState) -> Vec<String> {
         .expect("Database error")
 }
 
-async fn get_role_id(state: &AppState, role: impl AsRef<str>) -> Option<i64> {
-    let role = role.as_ref();
+async fn get_role_id(state: &AppState, role: &str) -> sqlx::Result<Option<i64>> {
     query!("select id from user_roles where name = $1", role)
         .fetch_optional(&state.read_pool)
         .await
-        .expect("Database error")
-        .map(|row| row.id)
+        .map(|row| row.map(|r| r.id))
 }
 
 fn map_date_to_string(date: &Option<Date>) -> String {
@@ -52,10 +50,7 @@ fn map_date_to_string(date: &Option<Date>) -> String {
         .unwrap_or_else(|| "?".to_string())
 }
 
-async fn members_page(
-    State(state): State<AppState>,
-    auth_session: AuthSession,
-) -> impl IntoResponse {
+async fn members_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/members/list_page.html")]
     struct MembersTemplate {
@@ -65,14 +60,13 @@ async fn members_page(
 
     let members = query_as!(User, "select * from users_with_role order by name")
         .fetch_all(&state.read_pool)
-        .await
-        .expect("Database error");
+        .await?;
 
     MembersTemplate {
         user: auth_session.user.expect("User should be logged in"),
         members,
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize, Debug)]
@@ -125,6 +119,7 @@ struct NewUser {
     email: String,
     name: String,
     role: String,
+    birthday: Date,
     password: String,
 }
 
@@ -149,25 +144,25 @@ async fn new_member_page(
 async fn create_new_user(
     State(state): State<AppState>,
     Form(new_user): Form<NewUser>,
-) -> impl IntoResponse {
+) -> HttpResult {
     let role_id = get_role_id(&state, new_user.role.as_str())
-        .await
+        .await?
         .expect("Invalid role");
 
     let user_name = new_user.name.trim();
     let password_hash = generate_hash_from_password(new_user.password);
     query!(
-        "insert into users (email, name, role_id, password_hash, member_since) VALUES ($1, $2, $3, $4, date('now'))",
+        "insert into users (email, name, role_id, password_hash, birthday, member_since) VALUES ($1, $2, $3, $4, $5, date('now'))",
         new_user.email,
         user_name,
         role_id,
-        password_hash
+        password_hash,
+        new_user.birthday,
     )
         .execute(&state.write_pool)
-        .await
-        .expect("Database error");
+        .await?;
 
-    [("HX-Redirect", "/admin/members")]
+    Ok([("HX-Redirect", "/admin/members")].into_response())
 }
 
 async fn view_member_page(
@@ -241,7 +236,7 @@ async fn update_member(
     }
 
     let role_id = get_role_id(&state, updated_user.role.as_str())
-        .await
+        .await?
         .expect("Invalid role");
     let user_name = updated_user.name.trim();
     let is_active = updated_user.is_active.is_some();
@@ -293,13 +288,17 @@ async fn change_password_page(
 }
 
 async fn delete_user(State(state): State<AppState>, Path(user_id): Path<i64>) -> HttpResult {
+    let mut tx = state.write_pool.begin().await?;
+
     query!("delete from reservations where user_id = $1", user_id)
-        .execute(&state.write_pool)
+        .execute(tx.as_mut())
         .await?;
 
     query!("delete from users where id = $1", user_id)
-        .execute(&state.write_pool)
+        .execute(tx.as_mut())
         .await?;
+
+    tx.commit().await?;
 
     Ok([("HX-Redirect", "/admin/members")].into_response())
 }
@@ -313,7 +312,7 @@ pub async fn update_password(
     State(state): State<AppState>,
     Path(user_id): Path<i64>,
     Form(passwords): Form<ChangePasswordForm>,
-) -> impl IntoResponse {
+) -> HttpResult {
     let user = get_user(&state.read_pool, user_id).await;
 
     let new_password_hash = generate_hash_from_password(passwords.password);
@@ -323,8 +322,7 @@ pub async fn update_password(
         user.id
     )
     .execute(&state.write_pool)
-    .await
-    .expect("Database error");
+    .await?;
 
-    [("HX-Redirect", "/admin/")]
+    Ok([("HX-Redirect", "/admin/")].into_response())
 }

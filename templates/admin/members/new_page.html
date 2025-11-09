@@ -9,18 +9,18 @@
         <label class="floating-label">
             <span>Email</span>
             <input name="email" type="email" placeholder="Email" required
-                   class="input input-lg input-bordered"/>
+                   class="input input-lg input-bordered w-full"/>
         </label>
 
         <label class="floating-label">
             <span>Name:</span>
             <input name="name" type="text" placeholder="Nume" minlength="4" required
-                   class="input input-lg input-bordered"/>
+                   class="input input-lg input-bordered w-full"/>
         </label>
 
         <label class="floating-label">
             <span>Rol</span>
-            <select name="role" class="select select-lg input-lg select-bordered">
+            <select name="role" class="select select-lg input-lg select-bordered w-full">
                 {% for role in roles %}
                 <option>{{ role }}</option>
                 {% endfor %}
@@ -28,9 +28,15 @@
         </label>
 
         <label class="floating-label">
+            <span>Zi de naștere</span>
+            <input name="birthday" type="date" autocomplete="off" required
+                   class="input input-lg input-bordered w-full"/>
+        </label>
+
+        <label class="floating-label">
             <span>Parola:</span>
             <input name="password" type="text" placeholder="Parola" minlength="8" required autocomplete="off"
-                   class="input input-lg input-bordered"/>
+                   class="input input-lg input-bordered w-full"/>
         </label>
 
         <button class="btn btn-primary mt-6" type="submit">

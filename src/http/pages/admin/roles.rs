@@ -26,7 +26,7 @@ pub fn router() -> Router<AppState> {
         .route("/{id}", delete(delete_role))
 }
 
-async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
+async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     struct UserRoleWithCount {
         pub id: i64,
         pub name: String,
@@ -46,14 +46,13 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
 
     let roles = query_as!(UserRoleWithCount, "select r.*, (select count(*) from users u where u.role_id = r.id) as 'members_count' from user_roles r")
         .fetch_all(&state.read_pool)
-        .await
-        .expect("Database error");
+        .await?;
 
     UsersTemplate {
         user: auth_session.user.expect("User should be logged in"),
         roles,
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]
@@ -96,28 +95,27 @@ async fn edit_role_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
     Path(role_id): Path<i64>,
-) -> impl IntoResponse {
+) -> HttpResult {
     let role = query_as!(UserRole, "select * from user_roles where id = $1", role_id)
         .fetch_optional(&state.read_pool)
-        .await
-        .expect("Database error");
+        .await?;
 
     if role.is_none() {
-        return [("HX-Redirect", "/admin/roles")].into_response();
+        return Ok([("HX-Redirect", "/admin/roles")].into_response());
     }
 
     NewOrEditRoleTemplate {
         user: auth_session.user.expect("User should be logged in"),
         current: role,
     }
-    .into_response()
+    .try_into_response()
 }
 
 async fn update_role(
     State(state): State<AppState>,
     Path(role_id): Path<i64>,
     Form(role): Form<NewRole>,
-) -> impl IntoResponse {
+) -> HttpResult {
     let color = CssColor::from_str(role.color.as_str()).unwrap_or(CssColor::None);
     let color = color.as_ref();
     query!(
@@ -129,32 +127,29 @@ async fn update_role(
         color
     )
     .execute(&state.write_pool)
-    .await
-    .expect("Database error");
+    .await?;
 
-    [("HX-Redirect", "/admin/roles")]
+    Ok([("HX-Redirect", "/admin/roles")].into_response())
 }
 
-async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) -> impl IntoResponse {
+async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) -> HttpResult {
     let users_with_role = query!(
         "select count(*) as 'count!' from users where role_id = $1",
         role_id
     )
     .fetch_one(&state.write_pool)
-    .await
-    .expect("Database error")
+    .await?
     .count;
 
     if users_with_role > 0 {
-        return error_bubble_response(format!(
+        return Ok(error_bubble_response(format!(
             "{users_with_role} utilizatori au acest rol, rolul nu poate fi șters"
-        ));
+        )));
     }
 
     query!("delete from user_roles where id = $1", role_id,)
         .execute(&state.write_pool)
-        .await
-        .expect("Database error");
+        .await?;
 
-    [("HX-Redirect", "/admin/roles")].into_response()
+    Ok([("HX-Redirect", "/admin/roles")].into_response())
 }

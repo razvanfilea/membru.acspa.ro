@@ -24,20 +24,16 @@ pub fn router() -> Router<AppState> {
         .route("/{date}", delete(delete_restriction))
 }
 
-async fn get_restrictions(pool: &SqlitePool) -> Vec<Restriction> {
+async fn get_restrictions(pool: &SqlitePool) -> sqlx::Result<Vec<Restriction>> {
     query_as!(
         Restriction,
         "select date, hour, message, created_at from restrictions order by date desc, hour"
     )
     .fetch_all(pool)
     .await
-    .expect("Database error")
 }
 
-async fn restrictions_page(
-    State(state): State<AppState>,
-    auth_session: AuthSession,
-) -> impl IntoResponse {
+async fn restrictions_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/restrictions/restrictions_page.html")]
     struct RestrictionsTemplate {
@@ -52,11 +48,11 @@ async fn restrictions_page(
 
     RestrictionsTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        restrictions: get_restrictions(&state.read_pool).await,
+        restrictions: get_restrictions(&state.read_pool).await?,
         current_date,
         hours: day_structure.iter().collect(),
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]
@@ -125,7 +121,7 @@ async fn create_restriction(
         info!("Add restriction with date: {date}, for the entire day and message: {message}");
 
         return RestrictionsListTemplate {
-            restrictions: get_restrictions(&state.read_pool).await,
+            restrictions: get_restrictions(&state.read_pool).await?,
         }
         .try_into_response();
     };
@@ -147,7 +143,7 @@ async fn create_restriction(
     }
 
     RestrictionsListTemplate {
-        restrictions: get_restrictions(&state.read_pool).await,
+        restrictions: get_restrictions(&state.read_pool).await?,
     }
     .try_into_response()
 }

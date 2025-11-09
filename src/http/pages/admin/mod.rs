@@ -1,4 +1,5 @@
 use crate::http::AppState;
+use crate::http::error::HttpResult;
 use crate::http::pages::{AuthSession, get_global_vars};
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
@@ -55,7 +56,7 @@ struct NewSettings {
 async fn apply_settings(
     State(state): State<AppState>,
     Form(settings): Form<NewSettings>,
-) -> impl IntoResponse {
+) -> HttpResult {
     let in_maintenance = settings.in_maintenance.is_some();
     query!(
         "update global_vars set in_maintenance = $1, entrance_code = $2, homepage_message = $3",
@@ -64,8 +65,7 @@ async fn apply_settings(
         settings.homepage_message
     )
     .execute(&state.write_pool)
-    .await
-    .expect("Database error");
+    .await?;
 
-    "Setările au fost aplicate"
+    Ok("Setările au fost aplicate".into_response())
 }

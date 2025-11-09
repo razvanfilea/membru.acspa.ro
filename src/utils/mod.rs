@@ -4,8 +4,12 @@ pub mod date_iter;
 pub mod queries;
 
 pub use color::*;
-use time::OffsetDateTime;
+use time::{Date, OffsetDateTime};
 
 pub fn local_time() -> OffsetDateTime {
     OffsetDateTime::now_local().expect("Failed to determine local offset")
+}
+
+pub fn local_date() -> Date {
+    local_time().date()
 }

@@ -45,8 +45,11 @@
             <span>Capacitate</span>
             <input name="capacity" type="number" min="1" max="30" class="input input-lg input-bordered w-full"
                    placeholder="Capacitate" autocomplete="off"
-                   {% if let Some(val)=current %}{% if let Some(capacity)=val.slot_capacity %}
-                   value="{{ capacity }}" {% endif %}{% endif %}/>
+                   {% if let Some(val)=current %}
+                   {% if let Some(capacity)=val.slot_capacity %} value="{{ capacity }}" {% endif %}
+                   {% else %}
+                   value="14"
+                   {% endif %}/>
         </label>
 
         <label class="label">
