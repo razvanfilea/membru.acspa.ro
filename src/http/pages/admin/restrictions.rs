@@ -21,7 +21,7 @@ pub fn router() -> Router<AppState> {
         .route("/", get(restrictions_page))
         .route("/", put(create_restriction))
         .route("/select_hour", post(select_hour))
-        .route("/{date}", delete(delete_restriction))
+        .route("/", delete(delete_restriction))
 }
 
 async fn get_restrictions(pool: &SqlitePool) -> sqlx::Result<Vec<Restriction>> {
@@ -150,16 +150,15 @@ async fn create_restriction(
 
 #[derive(Deserialize)]
 struct HourQuery {
+    date: Date,
     hour: Option<u8>,
 }
 
 async fn delete_restriction(
     State(state): State<AppState>,
-    Path(date): Path<String>,
     Query(query): Query<HourQuery>,
 ) -> HttpResult {
-    let date = Date::parse(&date, date_formats::ISO_DATE).unwrap();
-
+    let date = query.date;
     if let Some(hour) = query.hour {
         query!(
             "delete from restrictions where date = $1 and hour = $2",

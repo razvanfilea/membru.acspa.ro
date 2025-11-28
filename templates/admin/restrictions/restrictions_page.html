@@ -22,10 +22,10 @@
 
             <button
                     class="btn btn-square btn-sm btn-error btn-outline"
-                    hx-delete='/admin/restrictions/{{ date_formats::as_iso_dash(res.date) }}{% if let Some(hour) = res.hour %}?hour={{ hour }}{% endif %}'
+                    hx-delete='/admin/restrictions?date={{ date_formats::as_iso_dash(res.date) }}{% if let Some(hour) = res.hour %}&hour={{ hour }}{% endif %}'
                     hx-target="#restriction_{{ id_date }}"
                     hx-swap="outerHTML"
-                    hx-confirm="Ești sigur ca vrei să ștergi restricționarea de '{{ res.message }}'?">
+                    hx-confirm="Ești sigur ca vrei să ștergi restricționarea '{{ res.message }}' de pe data de {{ date_formats::as_readable(res.date) }}?">
                 <span class="material-symbols-outlined">delete</span>
             </button>
 
