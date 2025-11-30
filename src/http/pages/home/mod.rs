@@ -238,7 +238,7 @@ async fn cancel_reservation(
 
     let mut tx = state.write_pool.begin().await?;
     let rows = if let Some(created_for) = query.created_for {
-        query!("delete from reservations where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for = $5", 
+        query!("delete from reservations where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for = $5",
             date, query.hour, user_id, state.location.id, created_for)
             .execute(tx.as_mut())
             .await?

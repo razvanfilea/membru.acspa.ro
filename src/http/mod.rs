@@ -56,7 +56,7 @@ impl AppState {
 pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
     let notifier = state.reservation_notifier;
     let pool = state.write_pool;
-    let mut interval = interval(std::time::Duration::from_secs(10 * 60));
+    let mut interval = interval(std::time::Duration::from_mins(30));
 
     loop {
         interval.tick().await;

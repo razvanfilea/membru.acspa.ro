@@ -7,7 +7,7 @@ use crate::model::user::User;
 use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::response::IntoResponse;
 use axum::routing::{delete, get, post, put};
 use axum::{Form, Router};

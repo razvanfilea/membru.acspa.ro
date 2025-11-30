@@ -47,7 +47,7 @@
         <div class="flex flex-row flex-wrap gap-1 mb-4 items-center">
             Ora {{ slot.start_hour }} - {{ slot.end_hour }}:
             {% if let Ok(reservations) = slot.reservations %}
-            {% for res in reservations.list %}
+            {% for res in reservations.active %}
             {% call res_btn(loop.index, "reservation", res) %}
             {% endfor %}
             {% endif %}
@@ -60,12 +60,22 @@
         {% if let Ok(reservations) = slot.reservations %}
         {% if !reservations.waiting.is_empty() %}
         <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
-            <p class="text-red-500 font-semibold">În așteptare:</p>
+        <p class="text-red-400 underline">În așteptare:</p>
             {% for res in reservations.waiting %}
             {% call res_btn(loop.index, "waiting", res) %}
             {% endfor %}
         </div>
         {% endif %}
+
+        {% if user.admin_panel_access && !reservations.cancelled.is_empty() %}
+        <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
+            <p class="underline">Retrași:</p>
+            {% for res in reservations.cancelled %}
+            {% call res_btn(loop.index, "cancelled", res) %}
+            {% endfor %}
+        </div>
+        {%endif%}
+
         {% endif %}
 
         {% if enable_editing && slot.reservations.is_ok() %}

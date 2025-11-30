@@ -2,6 +2,7 @@ use crate::http::AppState;
 use crate::model::restriction::Restriction;
 use crate::utils::CssColor;
 use crate::utils::queries::{get_alt_day_structure_for_day, get_day_structure};
+use itertools::{Either, Itertools};
 use sqlx::{query, query_as};
 use std::str::FromStr;
 use time::Date;
@@ -18,8 +19,9 @@ pub struct Reservation {
 }
 
 pub struct Reservations {
-    pub list: Vec<Reservation>,
+    pub active: Vec<Reservation>,
     pub waiting: Vec<Reservation>,
+    pub cancelled: Vec<Reservation>,
 }
 
 pub struct ReservationsSlot {
@@ -66,11 +68,11 @@ pub async fn get_reservation_hours(
 
     // This specifically uses the idx_reservations_date_cancelled index
     let date_reservations = query!(
-        r#"select u.name as 'name!', r.user_id, hour, has_key, as_guest, in_waiting, created_for, ur.color as role_color
+        r#"select u.name as 'name!', r.user_id, hour, has_key, as_guest, in_waiting, created_for, cancelled, ur.color as role_color
         from reservations r
         inner join users u on r.user_id = u.id
         inner join user_roles ur on u.role_id = ur.id
-        where date = $1 and cancelled = false
+        where date = ?1
         order by as_guest, created_at"#,
         date
     )
@@ -93,34 +95,48 @@ pub async fn get_reservation_hours(
                 };
             }
 
-            let (list, waiting) = date_reservations
+            let (list, cancelled): (Vec<_>, Vec<_>) = date_reservations
                 .iter()
                 .filter(|record| record.hour as u8 == hour)
-                .map(|record| Reservation {
-                    name: record
-                        .created_for
-                        .clone()
-                        .unwrap_or_else(|| record.name.clone()),
-                    has_key: record.has_key && record.created_for.is_none(),
-                    has_account: record.created_for.is_none(),
-                    color: if record.as_guest {
-                        CssColor::Blue
-                    } else if record.created_for.is_none() {
-                        CssColor::from_str(record.role_color.as_ref().map_or("", String::as_str))
+                .partition_map(|record| {
+                    let res = Reservation {
+                        name: record
+                            .created_for
+                            .clone()
+                            .unwrap_or_else(|| record.name.clone()),
+                        has_key: record.has_key && record.created_for.is_none(),
+                        has_account: record.created_for.is_none(),
+                        color: if record.as_guest {
+                            CssColor::Blue
+                        } else if record.created_for.is_none() {
+                            CssColor::from_str(
+                                record.role_color.as_ref().map_or("", String::as_str),
+                            )
                             .unwrap_or(CssColor::None)
-                    } else {
-                        CssColor::Pink
-                    },
-                    waiting: record.in_waiting,
-                    user_id: record.user_id,
-                    created_for: record.created_for.clone(),
-                })
-                .partition(|r| !r.waiting);
+                        } else {
+                            CssColor::Pink
+                        },
+                        waiting: record.in_waiting,
+                        user_id: record.user_id,
+                        created_for: record.created_for.clone(),
+                    };
+
+                    match record.cancelled {
+                        false => Either::Left(res),
+                        true => Either::Right(res),
+                    }
+                });
+
+            let (active, waiting) = list.into_iter().partition(|r| !r.waiting);
 
             ReservationsSlot {
                 start_hour: hour,
                 end_hour,
-                reservations: Ok(Reservations { list, waiting }),
+                reservations: Ok(Reservations {
+                    active,
+                    waiting,
+                    cancelled,
+                }),
             }
         })
         .collect();
