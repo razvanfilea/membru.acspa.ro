@@ -8,7 +8,7 @@ pub async fn cancel_reservation(
     date: Date,
     hour: u8,
     user_id: i64,
-    created_for: Option<String>,
+    created_for: Option<&str>,
 ) -> sqlx::Result<bool> {
     let rows = if let Some(created_for) = created_for {
         query!("delete from reservations where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for = $5",

@@ -4,15 +4,15 @@ use crate::http::pages::AuthSession;
 use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
-use crate::utils::queries::{get_day_structure, get_reservations_count_for_slot};
+use crate::reservation;
+use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::State;
 use axum::routing::{get, post, put};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{SqlitePool, query, query_as};
-use std::ops::Not;
+use sqlx::{SqlitePool, query_as};
 use time::{Date, OffsetDateTime};
 use tracing::{error, info};
 
@@ -92,7 +92,7 @@ async fn select_hour(
 }
 
 #[derive(Deserialize)]
-struct NewSpecialGuest {
+struct NewGuestForm {
     name: String,
     date: String,
     hour: u8,
@@ -102,7 +102,7 @@ struct NewSpecialGuest {
 async fn create_guest(
     State(state): State<AppState>,
     auth_session: AuthSession,
-    Form(guest): Form<NewSpecialGuest>,
+    Form(guest): Form<NewGuestForm>,
 ) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/guests/guests_page.html", block = "list")]
@@ -123,34 +123,11 @@ async fn create_guest(
 
     let user = auth_session.user.expect("User should be logged in");
     let name = guest.name.trim();
-    let special = guest.special.is_some().not();
+    let special = guest.special.is_some();
     let hour = guest.hour;
 
-    let mut tx = state.write_pool.begin().await?;
-
-    let day_structure = get_day_structure(&state, date).await;
-
-    let capacity = day_structure
-        .slot_capacity
-        .unwrap_or(state.location.slot_capacity);
-
-    let slot_reservations =
-        get_reservations_count_for_slot(tx.as_mut(), &state.location, date, hour).await?;
-    let total_reservations = slot_reservations.member + slot_reservations.guest;
-
-    let in_waiting = total_reservations >= capacity;
-
-    query!(
-        "insert into reservations (user_id, date, hour, location, created_for, as_guest, in_waiting) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-        user.id,
-        date,
-        hour,
-        state.location.id,
-        name,
-        special,
-        in_waiting,
-    )
-        .execute(tx.as_mut())
+    let tx = state.write_pool.begin().await?;
+    reservation::create_referred_guest(tx, &state.location, date, hour, user.id, special, name)
         .await?;
 
     info!(
@@ -158,7 +135,6 @@ async fn create_guest(
         guest.hour
     );
 
-    tx.commit().await?;
     let _ = state.reservation_notifier.send(());
 
     GuestsListTemplate {

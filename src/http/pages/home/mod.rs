@@ -244,7 +244,7 @@ async fn cancel_reservation(
         date,
         query.hour,
         user_id,
-        query.created_for,
+        query.created_for.as_deref(),
     )
     .await?;
 
