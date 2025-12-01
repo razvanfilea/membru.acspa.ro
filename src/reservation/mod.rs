@@ -1,3 +1,4 @@
+mod cancel;
 mod check;
 mod result;
 #[cfg(test)]
@@ -10,6 +11,8 @@ pub use result::*;
 use sqlx::{Executor, Sqlite, SqlitePool, query};
 use time::{Date, OffsetDateTime};
 use tracing::error;
+
+pub use cancel::cancel_reservation;
 
 pub async fn create_reservation(
     pool: &SqlitePool,
@@ -30,22 +33,22 @@ pub async fn create_reservation(
     )
     .await?;
 
-    if let ReservationSuccess::Reservation { deletes_guest } = success {
-        if deletes_guest {
-            let rows_affected =
-                reorder_extra_guest(tx.as_mut(), selected_date, selected_hour, location).await?;
-            if rows_affected > 1 {
-                error!("Updated more than one guest reservation");
-                return Err(ReservationError::DatabaseError(
-                    "Updated more than one guest reservation".to_string(),
-                ));
-            }
+    if let ReservationSuccess::Reservation { deletes_guest } = success
+        && deletes_guest
+    {
+        let rows_affected =
+            reorder_extra_guest(tx.as_mut(), selected_date, selected_hour, location).await?;
+        if rows_affected > 1 {
+            error!("Updated more than one guest reservation");
+            return Err(ReservationError::DatabaseError(
+                "Updated more than one guest reservation".to_string(),
+            ));
+        }
 
-            if rows_affected == 0 {
-                return Err(ReservationError::DatabaseError(
-                    "Nu s-a putut șterge un invitat".to_string(),
-                ));
-            }
+        if rows_affected == 0 {
+            return Err(ReservationError::DatabaseError(
+                "Nu s-a putut șterge un invitat".to_string(),
+            ));
         }
     }
 

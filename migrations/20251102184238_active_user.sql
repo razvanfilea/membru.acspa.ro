@@ -1,5 +1,8 @@
 PRAGMA defer_foreign_keys = ON;
 
+UPDATE users SET birthday = '1970-01-01' WHERE birthday IS NULL;
+UPDATE users SET member_since = '1970-01-01' WHERE member_since IS NULL;
+
 CREATE TABLE users_new
 (
     id            INTEGER NOT NULL PRIMARY KEY,

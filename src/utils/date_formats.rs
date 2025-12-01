@@ -1,5 +1,5 @@
 use time::macros::format_description;
-use time::{Date, Month, OffsetDateTime, PrimitiveDateTime, UtcOffset};
+use time::{Date, Month, OffsetDateTime, UtcOffset};
 
 pub const ISO_DATE_UNDERLINE: &[time::format_description::BorrowedFormatItem] =
     format_description!("[year]_[month]_[day]");
@@ -25,9 +25,9 @@ pub fn as_readable(date: &Date) -> String {
     date.format(READABLE_DATE).unwrap()
 }
 
-pub fn as_readable_with_time(date: &PrimitiveDateTime) -> String {
+/*pub fn as_readable_with_time(date: &PrimitiveDateTime) -> String {
     date.format(READABLE_DATE_TIME).unwrap()
-}
+}*/
 
 pub fn as_local(time: &OffsetDateTime) -> String {
     let offset = UtcOffset::current_local_offset().expect("Failed to determine local offset");

@@ -10,9 +10,9 @@ async fn setup(
     sqlx::query!(
         r#"
         insert into user_roles VALUES (100, 'Test Role', $1, $2, null, FALSE);
-        insert into users (id, email, name, password_hash, role_id, has_key)
-        VALUES (1000, 'test@test.com', 'Test', '', 100, FALSE),
-        (2000, 'hello@test.com', 'Test', '', 100, FALSE);
+        insert into users (id, email, name, password_hash, role_id, has_key, birthday, member_since)
+        VALUES (1000, 'test@test.com', 'Test', '', 100, FALSE, '2000-01-01', '2000-01-01'),
+        (2000, 'hello@test.com', 'Test', '', 100, FALSE, '2000-01-01', '2000-01-01');
 
         insert into locations (name, slot_capacity, slots_start_hour, slot_duration, slots_per_day)
         VALUES ('test_location', 1, 18, 2, 2);
@@ -32,12 +32,12 @@ async fn setup(
     .await
     .expect("No locations found");
 
-    let user1 = query_as("select * from users_with_role where id = 1000")
+    let user1 = query_as!(User, "select * from users_with_role where id = 1000")
         .fetch_one(pool)
         .await
         .unwrap();
 
-    let user2 = query_as("select * from users_with_role where id = 2000")
+    let user2 = query_as!(User, "select * from users_with_role where id = 2000")
         .fetch_one(pool)
         .await
         .unwrap();
@@ -280,14 +280,14 @@ async fn restrictions(pool: SqlitePool) {
 #[sqlx::test]
 async fn in_waiting(pool: SqlitePool) {
     let (location, user_1, user_2) = setup(&pool, 1, 1).await;
-    query(
-        "insert into users (id, email, name, password_hash, role_id, has_key)
-            VALUES (3000, 'test3@test.com', 'Test3', '', 100, FALSE)",
+    query!(
+        "insert into users (id, email, name, password_hash, role_id, has_key, birthday, member_since)
+            VALUES (3000, 'test3@test.com', 'Test3', '', 100, FALSE, '2000-01-01', '2000-01-01')",
     )
     .execute(&pool)
     .await
     .unwrap();
-    let user_3 = query_as("select * from users_with_role where id = 3000")
+    let user_3 = query_as!(User, "select * from users_with_role where id = 3000")
         .fetch_one(&pool)
         .await
         .unwrap();
@@ -394,4 +394,171 @@ async fn alternative_day_custom_capacity(pool: SqlitePool) {
             deletes_guest: false
         })
     );
+}
+#[sqlx::test]
+async fn cancel_simple(pool: SqlitePool) {
+    let (location, user, _) = setup(&pool, 1, 0).await;
+    let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+    let date = date!(2024 - 07 - 11);
+
+    // 1. Create a reservation
+    assert_eq!(
+        create_reservation(&pool, &location, now, &user, date, 18).await,
+        Ok(ReservationSuccess::Reservation {
+            deletes_guest: false
+        })
+    );
+
+    // 2. Cancel the reservation
+    let tx = pool.begin().await.unwrap();
+    let result = cancel_reservation(tx, &location, date, 18, user.id, None).await;
+    assert!(result.unwrap());
+
+    // 3. Verify it is marked as cancelled in DB
+    let saved = sqlx::query!(
+        "select cancelled from reservations where user_id = $1 and date = $2 and hour = $3",
+        user.id,
+        date,
+        18
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    assert!(saved.cancelled);
+}
+
+#[sqlx::test]
+async fn cancel_non_existent(pool: SqlitePool) {
+    let (location, user, _) = setup(&pool, 1, 0).await;
+    let date = date!(2024 - 07 - 11);
+
+    // Try to cancel a reservation that was never created
+    let tx = pool.begin().await.unwrap();
+    let result = cancel_reservation(tx, &location, date, 18, user.id, None).await;
+
+    // Should return Ok(false) because no rows were affected
+    assert_eq!(result.unwrap(), false);
+}
+
+#[sqlx::test]
+async fn cancel_promotes_waiting_user(pool: SqlitePool) {
+    let (location, user_1, user_2) = setup(&pool, 1, 0).await;
+    let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+    let date = date!(2024 - 07 - 11);
+
+    // 1. User 1 takes the only slot
+    let res = create_reservation(&pool, &location, now, &user_1, date, 18).await;
+    assert_eq!(
+        res,
+        Ok(ReservationSuccess::Reservation {
+            deletes_guest: false
+        })
+    );
+
+    // 2. User 2 goes into waiting
+    let res = create_reservation(&pool, &location, now, &user_2, date, 18).await;
+    assert_eq!(res, Ok(ReservationSuccess::InWaiting { as_guest: false }));
+
+    // 3. User 1 cancels
+    let tx = pool.begin().await.unwrap();
+    let result = cancel_reservation(tx, &location, date, 18, user_1.id, None).await;
+    assert!(result.unwrap());
+
+    // 4. Verify User 2 is no longer in_waiting
+    let user_2_res = sqlx::query!(
+        "select in_waiting from reservations where user_id = $1",
+        user_2.id
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    assert!(!user_2_res.in_waiting);
+}
+
+#[sqlx::test]
+async fn cancel_promotes_priority_order(pool: SqlitePool) {
+    // Setup: Capacity 1. We want to verify Members get promoted before Guests.
+    // We need 3 users: 1 owner, 2 waiters.
+    let (location, user_1, user_2) = setup(&pool, 1, 1).await;
+
+    // Create a third user
+    sqlx::query!(
+        "insert into users (id, email, name, password_hash, role_id, has_key, birthday, member_since)
+         VALUES (3000, 'test3@test.com', 'Test3', '', 100, FALSE, '2000-01-01', '2000-01-01')"
+    )
+        .execute(&pool).await.unwrap();
+
+    let user_3 = sqlx::query_as!(User, "select * from users_with_role where id = 3000")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+    let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+    let date = date!(2024 - 07 - 11);
+
+    // 1. User 1 takes the slot
+    let res = create_reservation(&pool, &location, now, &user_1, date, 18).await;
+    assert_eq!(
+        res,
+        Ok(ReservationSuccess::Reservation {
+            deletes_guest: false
+        })
+    );
+
+    // 2. User 2 uses up his reservation.
+    let res = create_reservation(&pool, &location, now, &user_2, date, 20).await;
+    assert_eq!(
+        res,
+        Ok(ReservationSuccess::Reservation {
+            deletes_guest: false
+        })
+    );
+    // 2. User 2 adds a Guest (In Waiting).
+    let res = create_reservation(&pool, &location, now, &user_2, date, 18).await;
+    assert_eq!(res, Ok(ReservationSuccess::InWaiting { as_guest: true }));
+
+    // 3. User 3 requests a spot (In Waiting).
+    let res = create_reservation(&pool, &location, now, &user_3, date, 18).await;
+    assert_eq!(res, Ok(ReservationSuccess::InWaiting { as_guest: false }));
+
+    // Verify initial state: Both waiting
+    let waiting_count =
+        sqlx::query!("select count(*) as c from reservations where in_waiting = true")
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+            .c;
+    assert_eq!(waiting_count, 2);
+
+    // 4. User 1 cancels the main reservation (opening up 1 spot)
+    let tx = pool.begin().await.unwrap();
+    let res = cancel_reservation(tx, &location, date, 18, user_1.id, None)
+        .await
+        .unwrap();
+    assert!(res);
+
+    // 5. Verify User 2 (Member) got promoted, NOT the Guest
+    let user_2_status = sqlx::query!(
+        "select in_waiting from reservations where user_id = $1",
+        user_2.id
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap()
+    .in_waiting;
+
+    assert_eq!(user_2_status, false, "Member should be promoted");
+
+    // 6. Verify User 3 (Guest) is still waiting
+    let user_3_status = sqlx::query!(
+        "select in_waiting from reservations where user_id = $1",
+        user_2.id
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap()
+    .in_waiting;
+    assert_eq!(user_3_status, false, "User 3 should still be waiting");
 }

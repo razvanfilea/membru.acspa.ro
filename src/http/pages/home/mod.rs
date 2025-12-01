@@ -6,6 +6,7 @@ use crate::http::pages::{AuthSession, get_global_vars};
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
+use crate::reservation;
 use crate::reservation::{
     ReservationError, ReservationSuccess, create_reservation, is_reservation_possible,
 };
@@ -236,47 +237,20 @@ async fn cancel_reservation(
         return Ok(StatusCode::UNAUTHORIZED.into_response());
     }
 
-    let mut tx = state.write_pool.begin().await?;
-    let rows = if let Some(created_for) = query.created_for {
-        query!("delete from reservations where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for = $5",
-            date, query.hour, user_id, state.location.id, created_for)
-            .execute(tx.as_mut())
-            .await?
-    } else {
-        query!("update reservations set cancelled = true
-        where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for is null",
-            date, query.hour, user_id, state.location.id)
-            .execute(tx.as_mut())
-            .await?
-    }.rows_affected();
-
-    if rows != 1 {
-        return Ok(StatusCode::BAD_REQUEST.into_response());
-    }
-
-    let count = query!(
-        "select count(*) as 'count!' from reservations where
-            date = $1 and hour = $2 and location = $3 and cancelled = false and in_waiting = false",
+    let tx = state.write_pool.begin().await?;
+    let reservation_cancelled = reservation::cancel_reservation(
+        tx,
+        &state.location,
         date,
         query.hour,
-        state.location.id
+        user_id,
+        query.created_for,
     )
-    .fetch_one(tx.as_mut())
-    .await?
-    .count;
+    .await?;
 
-    if count < state.location.slot_capacity {
-        query!(
-            "update reservations set in_waiting = false where rowid =
-                (select rowid from reservations where
-                    date = $1 and hour = $2 and location = $3 and cancelled = false and in_waiting = true
-                    order by as_guest, created_at limit 1)",
-            date, query.hour, state.location.id)
-        .execute(tx.as_mut())
-        .await?;
+    if !reservation_cancelled {
+        return Ok(StatusCode::BAD_REQUEST.into_response());
     }
-
-    tx.commit().await?;
 
     let _ = state.reservation_notifier.send(());
 
