@@ -53,9 +53,12 @@ pub async fn create_reservation(
         }
     }
 
-    let as_guest = success == ReservationSuccess::Guest;
+    let as_guest = match success {
+        ReservationSuccess::Guest => true,
+        ReservationSuccess::InWaiting { as_guest } => as_guest,
+        _ => false,
+    };
     let in_waiting = matches!(success, ReservationSuccess::InWaiting { .. });
-    assert!(!(in_waiting && as_guest));
     query!(
         "insert into reservations (user_id, location, date, hour, as_guest, in_waiting) values ($1, $2, $3, $4, $5, $6)",
         user.id,
