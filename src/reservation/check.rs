@@ -2,7 +2,7 @@ use crate::model::day_structure::DayStructure;
 use crate::model::location::Location;
 use crate::model::role::UserRole;
 use crate::model::user::User;
-use crate::reservation::{ReservationError, ReservationResult, ReservationSuccess};
+use crate::reservation::{Referral, ReservationError, ReservationResult, ReservationSuccess};
 use crate::utils::queries::{
     get_alt_day_structure_for_day, get_reservations_count_for_slot,
     get_user_weeks_reservations_count,
@@ -46,14 +46,16 @@ async fn check_reservation_already_exists(
     user: &User,
     date: Date,
     hour: u8,
+    created_for: Option<&str>,
 ) -> ReservationResult<()> {
     let reservation_already_exists = query!(
         "select cancelled from reservations where
-        location = $1 and date = $2 and hour = $3 and user_id = $4 and created_for is null",
+        location = $1 and date = $2 and hour = $3 and user_id = $4 and (created_for = $5 or ($5 is null and created_for is null))",
         location.id,
         date,
         hour,
-        user.id
+        user.id,
+        created_for
     )
     .fetch_optional(&mut *tx)
     .await?;
@@ -97,6 +99,7 @@ pub async fn is_reservation_possible(
     user: &User,
     selected_date: Date,
     selected_hour: u8,
+    referral: Option<Referral<'_>>,
 ) -> ReservationResult {
     let day_structure = get_alt_day_structure_for_day(&mut *tx, selected_date)
         .await
@@ -104,8 +107,15 @@ pub async fn is_reservation_possible(
 
     check_parameters_validity(now, &day_structure, selected_date, selected_hour)?;
 
-    check_reservation_already_exists(&mut *tx, location, user, selected_date, selected_hour)
-        .await?;
+    check_reservation_already_exists(
+        &mut *tx,
+        location,
+        user,
+        selected_date,
+        selected_hour,
+        referral.map(|r| r.created_for),
+    )
+    .await?;
 
     check_restriction(&mut *tx, location, selected_date, selected_hour).await?;
 
@@ -129,7 +139,9 @@ pub async fn is_reservation_possible(
         get_user_weeks_reservations_count(&mut *tx, user, selected_date).await?;
 
     // Attempt to create a normal reservation
-    if user_reservations_count.member < role.reservations {
+    if (referral.is_none() && user_reservations_count.member < role.reservations)
+        || referral.is_some_and(|r| r.is_special)
+    {
         return Ok(if total_reservations < capacity {
             ReservationSuccess::Reservation {
                 deletes_guest: false,
@@ -144,7 +156,9 @@ pub async fn is_reservation_possible(
     }
 
     // Otherwise try to create a guest reservation
-    if user_reservations_count.guest < role.guest_reservations {
+    if (referral.is_none() && user_reservations_count.guest < role.guest_reservations)
+        || referral.is_some_and(|r| !r.is_special)
+    {
         return Ok(if total_reservations < capacity {
             ReservationSuccess::Guest
         } else {

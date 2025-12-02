@@ -8,12 +8,17 @@ use crate::model::location::Location;
 use crate::model::user::User;
 pub use crate::reservation::check::*;
 pub use result::*;
-use sqlx::{Executor, Sqlite, SqlitePool, SqliteTransaction, query};
+use sqlx::{Executor, Sqlite, SqlitePool, query};
 use time::{Date, OffsetDateTime};
 use tracing::error;
 
-use crate::utils::queries::{get_alt_day_structure_for_day, get_reservations_count_for_slot};
 pub use cancel::cancel_reservation;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Referral<'a> {
+    pub is_special: bool,
+    pub created_for: &'a str,
+}
 
 pub async fn create_reservation(
     pool: &SqlitePool,
@@ -22,6 +27,7 @@ pub async fn create_reservation(
     user: &User,
     selected_date: Date,
     selected_hour: u8,
+    referral: Option<Referral<'_>>,
 ) -> ReservationResult {
     let mut tx = pool.begin().await?;
     let success = is_reservation_possible(
@@ -31,6 +37,7 @@ pub async fn create_reservation(
         user,
         selected_date,
         selected_hour,
+        referral,
     )
     .await?;
 
@@ -59,14 +66,16 @@ pub async fn create_reservation(
         _ => false,
     };
     let in_waiting = matches!(success, ReservationSuccess::InWaiting { .. });
+    let created_for = referral.map(|r| r.created_for);
     query!(
-        "insert into reservations (user_id, location, date, hour, as_guest, in_waiting) values ($1, $2, $3, $4, $5, $6)",
+        "insert into reservations (user_id, location, date, hour, as_guest, in_waiting, created_for) values ($1, $2, $3, $4, $5, $6, $7)",
         user.id,
         location.id,
         selected_date,
         selected_hour,
         as_guest,
         in_waiting,
+        created_for
     )
         .execute(tx.as_mut())
         .await?;
@@ -95,46 +104,4 @@ async fn reorder_extra_guest(
     .execute(executor)
     .await
     .map(|result| result.rows_affected())
-}
-
-pub async fn create_referred_guest(
-    mut tx: SqliteTransaction<'_>,
-    location: &Location,
-    date: Date,
-    hour: u8,
-    user_id: i64,
-    special: bool,
-    created_for: &str,
-) -> sqlx::Result<()> {
-    let day_structure = get_alt_day_structure_for_day(tx.as_mut(), date)
-        .await
-        .unwrap_or_else(|| location.day_structure());
-
-    let capacity = day_structure
-        .slot_capacity
-        .unwrap_or(location.slot_capacity);
-
-    let slot_reservations =
-        get_reservations_count_for_slot(tx.as_mut(), location, date, hour).await?;
-    let total_reservations = slot_reservations.member + slot_reservations.guest;
-
-    let in_waiting = total_reservations >= capacity;
-
-    let as_guest = !special;
-    query!(
-        "insert into reservations (user_id, date, hour, location, created_for, as_guest, in_waiting) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-        user_id,
-        date,
-        hour,
-        location.id,
-        created_for,
-        as_guest,
-        in_waiting,
-    )
-        .execute(tx.as_mut())
-        .await?;
-
-    tx.commit().await?;
-
-    Ok(())
 }

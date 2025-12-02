@@ -57,7 +57,16 @@ mod validation {
 
         // 1. Past Date
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date!(2024 - 07 - 10), 18).await,
+            create_reservation(
+                &pool,
+                &location,
+                now,
+                &user,
+                date!(2024 - 07 - 10),
+                18,
+                None
+            )
+            .await,
             Err(ReservationError::Other(
                 "Nu poți face o rezervare pentru o zi din trecut"
             ))
@@ -66,7 +75,7 @@ mod validation {
         // 2. Too Late (Less than 1 hour before)
         let now_too_late = datetime!(2024-07-11 17:00:00 +00:00:00);
         assert_eq!(
-            create_reservation(&pool, &location, now_too_late, &user, target_date, 18).await,
+            create_reservation(&pool, &location, now_too_late, &user, target_date, 18, None).await,
             Err(ReservationError::Other(
                 "Rezervările se fac cu cel putin o oră înainte"
             ))
@@ -74,7 +83,7 @@ mod validation {
 
         // 3. Invalid Hour (e.g., 17:00 when starts at 18:00)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, target_date, 17).await,
+            create_reservation(&pool, &location, now, &user, target_date, 17, None).await,
             Err(ReservationError::Other(
                 "Ora pentru rezervare nu este validă"
             ))
@@ -82,7 +91,7 @@ mod validation {
 
         // 4. Valid Booking
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, target_date, 18).await,
+            create_reservation(&pool, &location, now, &user, target_date, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -104,7 +113,7 @@ mod core_booking {
 
         // 1. Member books successfully
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date_1, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -112,19 +121,19 @@ mod core_booking {
 
         // 2. Duplicate booking fails (soft check)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_1, date_1, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date_1, 18, None).await,
             Err(ReservationError::AlreadyExists { cancelled: false })
         );
 
         // 3. Second user goes to waiting list (Capacity is 1 by default in setup)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_2, date_1, 18).await,
+            create_reservation(&pool, &location, now, &user_2, date_1, 18, None).await,
             Ok(ReservationSuccess::InWaiting { as_guest: false })
         );
 
         // 4. User 1 books another slot (Quota allows 2)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_1, date_1, 20).await,
+            create_reservation(&pool, &location, now, &user_1, date_1, 20, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -132,7 +141,7 @@ mod core_booking {
 
         // 5. User 1 quota exceeded (Try 3rd booking on next day)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_1, date_2, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date_2, 18, None).await,
             Err(ReservationError::NoMoreReservations)
         );
 
@@ -147,7 +156,7 @@ mod core_booking {
 
         // 1. Member Reservation
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date, 18).await,
+            create_reservation(&pool, &location, now, &user, date, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -155,20 +164,20 @@ mod core_booking {
 
         // 2. Guest Reservation (Success)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date, 20).await,
+            create_reservation(&pool, &location, now, &user, date, 20, None).await,
             Ok(ReservationSuccess::Guest)
         );
 
         // 3. Next day guest reservation
         let date_next = date!(2024 - 07 - 12);
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date_next, 18).await,
+            create_reservation(&pool, &location, now, &user, date_next, 18, None).await,
             Ok(ReservationSuccess::Guest)
         );
 
         // 4. Guest quota exceeded
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date_next, 20).await,
+            create_reservation(&pool, &location, now, &user, date_next, 20, None).await,
             Err(ReservationError::NoMoreReservations)
         );
 
@@ -183,13 +192,13 @@ mod core_booking {
 
         // 1. User 1 books as Guest (0 member slots)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_1, date, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date, 18, None).await,
             Ok(ReservationSuccess::Guest)
         );
 
         // 2. User 2 (Guest) goes to Waiting (Capacity 1 full)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_2, date, 18).await,
+            create_reservation(&pool, &location, now, &user_2, date, 18, None).await,
             Ok(ReservationSuccess::InWaiting { as_guest: true })
         );
 
@@ -209,20 +218,20 @@ mod queue_logic {
         // 1. Fill slots: Member at 18:00, Guest at 20:00
         // (Note: Capacity is 1, so these must be different slots)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_member, date, 18).await,
+            create_reservation(&pool, &location, now, &user_member, date, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
         );
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_member, date, 20).await,
+            create_reservation(&pool, &location, now, &user_member, date, 20, None).await,
             Ok(ReservationSuccess::Guest)
         );
 
         // 2. New Member enters at 20:00 -> Should bump the Guest
         // We use user_guest (who has a Member role in setup) to bump user_member's Guest spot
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_guest, date, 20).await,
+            create_reservation(&pool, &location, now, &user_guest, date, 20, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: true
             })
@@ -249,7 +258,7 @@ mod queue_logic {
 
         // 1. User 1 books Guest A (Oldest)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_1, date, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date, 18, None).await,
             Ok(ReservationSuccess::Guest)
         );
 
@@ -263,7 +272,7 @@ mod queue_logic {
 
         // 2. User 2 books Guest B (Newest)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_2, date, 18).await,
+            create_reservation(&pool, &location, now, &user_2, date, 18, None).await,
             Ok(ReservationSuccess::Guest)
         );
 
@@ -276,7 +285,7 @@ mod queue_logic {
 
         // 4. User 3 (Member) joins.
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_3, date, 18).await,
+            create_reservation(&pool, &location, now, &user_3, date, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: true
             })
@@ -317,7 +326,7 @@ mod queue_logic {
 
         // 1. User 1 takes the only slot
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_1, date, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -325,7 +334,7 @@ mod queue_logic {
 
         // 2. User 2 joins waiting list
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_2, date, 18).await,
+            create_reservation(&pool, &location, now, &user_2, date, 18, None).await,
             Ok(ReservationSuccess::InWaiting { as_guest: false })
         );
 
@@ -339,7 +348,7 @@ mod queue_logic {
 
         // 3. User 3 joins waiting list (Newer waiter)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_3, date, 18).await,
+            create_reservation(&pool, &location, now, &user_3, date, 18, None).await,
             Ok(ReservationSuccess::InWaiting { as_guest: false })
         );
 
@@ -376,47 +385,42 @@ mod queue_logic {
     }
 
     #[sqlx::test]
-    async fn referred_guest_bypasses_user_limits(pool: SqlitePool) -> sqlx::Result<()> {
-        let (location, user, _, _) = setup(&pool, 1, 0).await?;
+    async fn referral_should_ignore_user_limits(pool: SqlitePool) -> sqlx::Result<()> {
+        // 1. Setup: User has ABSOLUTELY NO quota (0 member, 0 guest)
+        // This ensures any success is due to the referral logic, not personal limits.
+        let (location, user, _, _) = setup(&pool, 0, 0).await?;
+        let now = datetime!(2024-07-11 10:00:00 +00:00:00);
         let date = date!(2024 - 07 - 11);
+        // 2. Control Check: Verify a regular booking FAILS
+        // If this passes, our test setup is wrong.
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user, date, 18, None).await,
+            Err(ReservationError::NoMoreReservations),
+            "Standard reservation must fail when quota is 0"
+        );
 
-        // 1. Member fills the slot
-        create_reservation(
-            &pool,
-            &location,
-            datetime!(2024-07-11 10:00:00 +00:00:00),
-            &user,
-            date,
-            18,
-        )
-        .await
-        .unwrap();
+        // 3. Action: Create a non-special Referral
+        let name = "Guest Name";
+        let referral = Referral {
+            is_special: false,
+            created_for: name,
+        };
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user, date, 18, Some(referral)).await,
+            Ok(ReservationSuccess::Guest),
+            "Referral should succeed and result in a Guest slot, ignoring the user's 0 quota"
+        );
 
-        // 2. Create a referred guest (Should succeed even if user has 0 guest quota)
-        let name = "Referred Friend";
-        let refer_result = create_referred_guest(
-            pool.begin().await?,
-            &location,
-            date,
-            18,
-            user.id,
-            true,
-            name,
-        )
-        .await;
-
-        assert!(refer_result.is_ok());
-
-        // 3. Verify status (Should be in waiting because slot is full)
-        let saved_guest = query!(
-            "select in_waiting, created_for from reservations where created_for = $1",
-            name
+        // 4. Verify Database State
+        let saved_reservation = query!(
+            "select created_for, as_guest from reservations where user_id = $1",
+            user.id
         )
         .fetch_one(&pool)
         .await?;
 
-        assert!(saved_guest.in_waiting);
-        assert_eq!(saved_guest.created_for, Some(name.to_string()));
+        assert_eq!(saved_reservation.created_for, Some(name.to_string()),);
+        assert!(saved_reservation.as_guest); // Should be a guest reservation
 
         Ok(())
     }
@@ -434,7 +438,7 @@ mod cancellation {
         let date = date!(2024 - 07 - 11);
 
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date, 18).await,
+            create_reservation(&pool, &location, now, &user, date, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -455,14 +459,14 @@ mod cancellation {
 
         // 3. Try to rebook immediately -> Expect Error (AlreadyExists cancelled: true)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date, 18).await,
+            create_reservation(&pool, &location, now, &user, date, 18, None).await,
             Err(ReservationError::AlreadyExists { cancelled: true })
         );
 
         // 4. Try to book another day (Quota should be restored)
         let date_2 = date!(2024 - 07 - 12);
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date_2, 18).await,
+            create_reservation(&pool, &location, now, &user, date_2, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -475,22 +479,24 @@ mod cancellation {
     async fn cancel_hard_deletes_named_guests(pool: SqlitePool) -> sqlx::Result<()> {
         let (location, user, _, _) = setup(&pool, 1, 0).await?;
         let date = date!(2024 - 07 - 11);
+        let now = datetime!(2024-07-11 10:00:00 +00:00:00);
         let name = "External Name";
+        let referral = Referral {
+            is_special: true,
+            created_for: name,
+        };
 
-        create_referred_guest(
-            pool.begin().await?,
-            &location,
-            date,
-            18,
-            user.id,
-            true,
-            name,
-        )
-        .await?;
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user, date, 18, Some(referral)).await,
+            Ok(ReservationSuccess::Reservation {
+                deletes_guest: false
+            })
+        );
 
         // Cancel
         let tx = pool.begin().await?;
-        assert!(cancel_reservation(tx, &location, date, 18, user.id, Some(name)).await?);
+        let res = cancel_reservation(tx, &location, date, 18, user.id, Some(name)).await?;
+        assert!(res);
 
         // Verify Hard Delete (Count should be 0)
         let count = query!(
@@ -512,13 +518,13 @@ mod cancellation {
 
         // Create two reservations (18:00 and 20:00)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date, 18).await,
+            create_reservation(&pool, &location, now, &user, date, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
         );
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date, 20).await,
+            create_reservation(&pool, &location, now, &user, date, 20, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -552,7 +558,7 @@ mod cancellation {
 
         // 1. User 1 takes the slot
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_1, date, 18).await,
+            create_reservation(&pool, &location, now, &user_1, date, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -560,7 +566,7 @@ mod cancellation {
 
         // 2. User 2 (Member) uses their main slot elsewhere (20:00)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_2, date, 20).await,
+            create_reservation(&pool, &location, now, &user_2, date, 20, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -568,13 +574,13 @@ mod cancellation {
 
         // 2b. User 2 joins waiting list at 18:00 (Must be Guest now)
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_2, date, 18).await,
+            create_reservation(&pool, &location, now, &user_2, date, 18, None).await,
             Ok(ReservationSuccess::InWaiting { as_guest: true })
         );
 
         // 3. User 3 (Member) joins waiting list at 18:00
         assert_eq!(
-            create_reservation(&pool, &location, now, &user_3, date, 18).await,
+            create_reservation(&pool, &location, now, &user_3, date, 18, None).await,
             Ok(ReservationSuccess::InWaiting { as_guest: false })
         );
 
@@ -619,19 +625,46 @@ mod constraints_and_schedule {
 
         // Day wide restriction
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date!(2024 - 07 - 11), 18).await,
+            create_reservation(
+                &pool,
+                &location,
+                now,
+                &user,
+                date!(2024 - 07 - 11),
+                18,
+                None
+            )
+            .await,
             Err(ReservationError::Restriction("res1".to_string()))
         );
 
         // Hour specific restriction
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date!(2024 - 07 - 12), 18).await,
+            create_reservation(
+                &pool,
+                &location,
+                now,
+                &user,
+                date!(2024 - 07 - 12),
+                18,
+                None
+            )
+            .await,
             Err(ReservationError::Restriction("res2".to_string()))
         );
 
         // Unrestricted hour
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date!(2024 - 07 - 12), 20).await,
+            create_reservation(
+                &pool,
+                &location,
+                now,
+                &user,
+                date!(2024 - 07 - 12),
+                20,
+                None
+            )
+            .await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -652,7 +685,7 @@ mod constraints_and_schedule {
 
         // 1. Standard hour (18:00) should now be invalid
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date, 18).await,
+            create_reservation(&pool, &location, now, &user, date, 18, None).await,
             Err(ReservationError::Other(
                 "Ora pentru rezervare nu este validă"
             ))
@@ -660,7 +693,7 @@ mod constraints_and_schedule {
 
         // 2. New holiday hour (10:00) should be valid
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date, 10).await,
+            create_reservation(&pool, &location, now, &user, date, 10, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
@@ -678,19 +711,19 @@ mod constraints_and_schedule {
 
         // Normal day
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date, 18).await,
+            create_reservation(&pool, &location, now, &user, date, 18, None).await,
             Ok(ReservationSuccess::Reservation {
                 deletes_guest: false
             })
         );
 
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, date, 20).await,
+            create_reservation(&pool, &location, now, &user, date, 20, None).await,
             Ok(ReservationSuccess::Guest)
         );
 
         assert_eq!(
-            create_reservation(&pool, &location, now, &user, weekend, 10).await,
+            create_reservation(&pool, &location, now, &user, weekend, 10, None).await,
             Err(ReservationError::NoMoreReservations)
         );
 

@@ -122,20 +122,34 @@ async fn create_guest(
     }
 
     let user = auth_session.user.expect("User should be logged in");
-    let name = guest.name.trim();
-    let special = guest.special.is_some();
     let hour = guest.hour;
 
-    let tx = state.write_pool.begin().await?;
-    reservation::create_referred_guest(tx, &state.location, date, hour, user.id, special, name)
-        .await?;
+    let referral = reservation::Referral {
+        is_special: guest.special.is_some(),
+        created_for: guest.name.trim(),
+    };
+    let result = reservation::create_reservation(
+        &state.write_pool,
+        &state.location,
+        local_time(),
+        &user,
+        date,
+        hour,
+        Some(referral),
+    )
+    .await;
 
-    info!(
-        "Add special guest with date: {date} hour: {} and name: {name}",
-        guest.hour
-    );
+    match result {
+        Ok(_) => {
+            info!("Add guest with date: {date}, hour: {hour}: {referral:?}",);
 
-    let _ = state.reservation_notifier.send(());
+            let _ = state.reservation_notifier.send(());
+        }
+        Err(e) => {
+            error!("Failed to create guest reservation: {}", e);
+            return Ok(error_bubble_response("Nu s-a putut crea invitatul: {e}"));
+        }
+    }
 
     GuestsListTemplate {
         guests: get_guests(&state.read_pool).await?,

@@ -136,6 +136,7 @@ async fn hour_picker(
         &user,
         selected_date,
         query.hour,
+        None,
     )
     .await;
 
@@ -174,6 +175,7 @@ async fn confirm_reservation(
         &user,
         selected_date,
         selected_hour,
+        None,
     )
     .await;
 

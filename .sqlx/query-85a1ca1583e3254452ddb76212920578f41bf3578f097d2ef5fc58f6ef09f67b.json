@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select cancelled from reservations where\n        location = $1 and date = $2 and hour = $3 and user_id = $4 and (created_for = $5 or ($5 is null and created_for is null))",
+  "describe": {
+    "columns": [
+      {
+        "name": "cancelled",
+        "ordinal": 0,
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "85a1ca1583e3254452ddb76212920578f41bf3578f097d2ef5fc58f6ef09f67b"
+}
