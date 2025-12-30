@@ -30,8 +30,13 @@ pub fn router() -> Router<AppState> {
         .route("/{date}", delete(delete_tournament))
 }
 
-async fn tournament_days(pool: &SqlitePool) -> Result<Vec<AlternativeDay>, Error> {
-    get_alternative_days(pool, "turneu").await
+async fn tournament_days(
+    pool: &SqlitePool,
+) -> Result<(Vec<AlternativeDay>, Vec<AlternativeDay>), Error> {
+    let today = local_time().date();
+    get_alternative_days(pool, "turneu")
+        .await
+        .map(|vec| vec.into_iter().partition(|t| t.date >= today))
 }
 
 async fn tournaments_page(
@@ -42,12 +47,16 @@ async fn tournaments_page(
     #[template(path = "admin/tournaments/list_page.html")]
     struct TournamentsTemplate {
         user: User,
-        tournaments: Vec<AlternativeDay>,
+        upcoming: Vec<AlternativeDay>,
+        past: Vec<AlternativeDay>,
     }
+
+    let (upcoming, past) = tournament_days(&state.read_pool).await?;
 
     TournamentsTemplate {
         user: auth_session.user.expect("User should be logged in"),
-        tournaments: tournament_days(&state.read_pool).await?,
+        upcoming,
+        past,
     }
     .try_into_response()
 }

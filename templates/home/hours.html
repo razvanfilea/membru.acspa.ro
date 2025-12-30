@@ -67,14 +67,14 @@
         </div>
         {% endif %}
 
-        {% if user.admin_panel_access && !reservations.cancelled.is_empty() %}
+        {% if !reservations.cancelled.is_empty() %}
         <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
             <p class="underline">Retrași:</p>
             {% for res in reservations.cancelled %}
             {% call res_btn(loop.index, "cancelled", res) %}
             {% endfor %}
         </div>
-        {%endif%}
+        {% endif %}
 
         {% endif %}
 
