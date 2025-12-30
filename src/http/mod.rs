@@ -51,6 +51,8 @@ impl AppState {
             reservation_notifier: Arc::new(tx),
         }
     }
+
+    const CSS_VERSION: &str = env!("CSS_VERSION");
 }
 
 pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
