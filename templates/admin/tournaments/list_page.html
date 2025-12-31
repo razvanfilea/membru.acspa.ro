@@ -5,13 +5,14 @@
 {% block content %}
 <main class="p-4 md:p-8 w-full max-w-7xl mx-auto">
     <div role="tablist" class="tabs tabs-border tabs-lg mb-8 grid grid-cols-2">
-        <input type="radio" name="tournament_tabs" role="tab" class="tab" aria-label="Viitoare ({{ upcoming.len() }})" checked />
+        <input type="radio" name="tournament_tabs" role="tab" class="tab" aria-label="Viitoare ({{ upcoming.len() }})"
+               checked/>
         <div role="tabpanel" class="tab-content py-6 col-span-2">
             {% let tournaments = upcoming %}
             {% include "admin/tournaments/grid_partial.html" %}
         </div>
 
-        <input type="radio" name="tournament_tabs" role="tab" class="tab" aria-label="Trecute ({{ past.len() }})" />
+        <input type="radio" name="tournament_tabs" role="tab" class="tab" aria-label="Trecute ({{ past.len() }})"/>
         <div role="tabpanel" class="tab-content py-6 col-span-2">
             {% let tournaments = past %}
             {% include "admin/tournaments/grid_partial.html" %}
@@ -19,12 +20,38 @@
     </div>
 
     <div class="fab">
-        <a href="/admin/tournaments/new">
-            <button class="btn-fab-text shadow-2xl transition-transform hover:scale-105 active:scale-95">
-                <span class="material-symbols-outlined">add</span>
-                Creează turneu
-            </button>
-        </a>
+        <div class="flex flex-col items-end gap-3 z-50">
+            <a href="/admin/tournaments/new?thursday=true">
+                <button class="btn-secondary-fab border border-white/10 backdrop-blur-md bg-secondary/80 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 px-4">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    Creează turneu joia
+                </button>
+            </a>
+            <a href="/admin/tournaments/new">
+                <button class="btn-main-fab group">
+                    <span class="material-symbols-outlined rotate-fab-icon">add</span>
+                    Creează turneu
+                </button>
+            </a>
+        </div>
     </div>
 </main>
+
+<script>
+    function goToNextThursday() {
+        const now = new Date();
+        const today = now.getDay(); // 0 (Sun) - 6 (Sat)
+
+        // Find days until next Thursday (4)
+        // If today is Thursday, (4-4+7)%7 = 0. We force +7 to get NEXT week.
+        let daysUntilThursday = (4 - today + 7) % 7;
+        if (daysUntilThursday === 0) daysUntilThursday = 7;
+
+        now.setDate(now.getDate() + daysUntilThursday);
+
+        // Format to YYYY-MM-DD for the date input
+        const isoDate = now.toISOString().split('T')[0];
+        window.location.href = `/admin/tournaments/new?date=${isoDate}`;
+    }
+</script>
 {% endblock %}

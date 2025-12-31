@@ -23,7 +23,7 @@
         <label class="floating-label">
             <span>Descriere</span>
             <input name="description" type="text" class="input input-lg input-bordered w-full" autocomplete="off"
-                   {% if let Some(val)=current %} value="{{ val.description }}" {% endif %}/>
+                   placeholder="Descriere" {% if let Some(val)=current %} value="{{ val.description }}" {% endif %}/>
         </label>
 
         <label class="floating-label">
@@ -71,4 +71,33 @@
         {% endif %}
     </fieldset>
 </form>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        // Only run the calculation if thursday=true is in the URL
+        if (urlParams.get('thursday') === 'true') {
+            const now = new Date();
+            const today = now.getDay(); // 0 (Sun) to 6 (Sat)
+
+            // Calculate days until next Thursday (Thursday is day 4)
+            // If today is Thursday, this finds the Thursday of next week
+            let daysUntilThursday = (4 - today + 7) % 7;
+            if (daysUntilThursday === 0) daysUntilThursday = 7;
+
+            now.setDate(now.getDate() + daysUntilThursday);
+
+            // Format to YYYY-MM-DD for the HTML5 date input
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+
+            document.querySelector('input[name="date"]').value = formattedDate;
+            document.querySelector('input[name="description"]').value = "Turneu Joi";
+            document.querySelector('input[name="start_hour"]').value = "18";
+            document.querySelector('input[name="duration"]').value = "4";
+        }
+    });
+</script>
 {% endblock content %}

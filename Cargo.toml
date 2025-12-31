@@ -33,10 +33,7 @@ time = { version = "0.3", features = ["formatting", "macros", "local-offset"] }
 strum = { version = "0.27", features = ["derive"] }
 thiserror = "2.0"
 itertools = "0.14"
-
-# Crypto
-rand = { version = "0.9", default-features = false, features = ["std", "os_rng"] }
-argon2 = { version = "=0.6.0-rc.1" }
+argon2 = { version = "=0.6.0-rc.5" }
 
 [profile.dev.package.askama_derive]
 opt-level = 3

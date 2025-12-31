@@ -5,6 +5,7 @@ use crate::model::location::Location;
 use crate::utils::local_time;
 use askama::Template;
 use axum::Router;
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum_login::AuthManagerLayerBuilder;
 use axum_login::tower_sessions::cookie::SameSite;
@@ -151,7 +152,10 @@ pub async fn http_server(app_state: AppState, session_store: SqliteStore, timeta
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
                 .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
-            TimeoutLayer::new(std::time::Duration::from_secs(10)),
+            TimeoutLayer::with_status_code(
+                StatusCode::REQUEST_TIMEOUT,
+                std::time::Duration::from_secs(10),
+            ),
         ))
         .layer(auth_layer);
 

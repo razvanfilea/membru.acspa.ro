@@ -22,8 +22,15 @@
 }
 
 @layer components {
-  /* a reusable preset matching your example */
-  .btn-fab-text {
-    @apply btn btn-md xl:btn-lg btn-primary rounded-2xl;
+  .btn-main-fab {
+    @apply btn btn-md xl:btn-lg btn-primary rounded-2xl shadow-2xl transition-transform hover:scale-105 active:scale-95;
+  }
+
+  .btn-secondary-fab {
+    @apply btn btn-sm xl:btn-md btn-secondary rounded-xl shadow-xl transition-transform hover:scale-105 active:scale-95;
+  }
+
+  .rotate-fab-icon {
+    @apply group-hover:rotate-90 duration-300;
   }
 }

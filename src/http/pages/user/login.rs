@@ -86,5 +86,5 @@ pub async fn logout(mut auth: AuthSession) -> impl IntoResponse {
         }
     }
 
-    [("HX-Redirect", "/admin/login")]
+    [("HX-Redirect", "/")]
 }
