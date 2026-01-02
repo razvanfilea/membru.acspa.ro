@@ -11,7 +11,7 @@ impl Iterator for DateIter {
     type Item = Date;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.from >= self.to {
+        if self.from > self.to {
             return None;
         }
 

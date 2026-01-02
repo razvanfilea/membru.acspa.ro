@@ -153,3 +153,13 @@ pub async fn get_user_weeks_reservations_count(
 
     Ok(result)
 }
+
+pub async fn delete_reservations_on_day(
+    executor: impl Executor<'_, Database = Sqlite>,
+    date: Date,
+) -> Result<u64, sqlx::Error> {
+    query!("delete from reservations where date = $1", date)
+        .execute(executor)
+        .await
+        .map(|result| result.rows_affected())
+}

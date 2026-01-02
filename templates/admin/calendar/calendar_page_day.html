@@ -1,0 +1,26 @@
+{% let is_today = (date == current_date) %}
+{% let is_other_month = (date.month() != selected_date.month()) %}
+
+<button id="day_{{ date }}"
+        hx-get="/admin/calendar/details/{{ date }}"
+        hx-target="#day-details-container"
+        hx-swap-oob="{{ oob_swap }}"
+        class="aspect-square rounded-full border-2 flex flex-col items-center justify-center transition-all relative group
+            {% if is_today %} border-primary/50 {% else %} border-base-200 {% endif %}
+            {% if is_other_month %} opacity-20 grayscale {% endif %}
+            bg-base-100 hover:border-primary/40 shadow-sm overflow-hidden">
+
+    <span class="text-lg font-black">{{ date.day() }}</span>
+
+    <div class="absolute bottom-0 left-0 w-full flex h-1.5 px-2 pb-1 gap-0.5">
+        {% if events.has_holiday %}
+        <div class="flex-1 rounded-full bg-primary"></div>
+        {% endif %}
+        {% if events.has_restriction %}
+        <div class="flex-1 rounded-full bg-red-500"></div>
+        {% endif %}
+        {% if events.has_tournament %}
+        <div class="flex-1 rounded-full bg-orange-500"></div>
+        {% endif %}
+    </div>
+</button>

@@ -680,7 +680,7 @@ mod constraints_and_schedule {
         let date = date!(2024 - 07 - 11);
 
         // Create Holiday with custom capacity of 2 and different start hour (10:00)
-        query!("insert into alternative_days (date, type, slots_start_hour, slot_duration, slots_per_day, slot_capacity) values ('2024-07-11', 'holiday', 10, 3, 4, 2)")
+        query!("insert into schedule_overrides (date, type, slots_start_hour, slot_duration, slots_per_day, slot_capacity) values ('2024-07-11', 'holiday', 10, 3, 4, 2)")
             .execute(&pool).await?;
 
         // 1. Standard hour (18:00) should now be invalid

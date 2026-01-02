@@ -1,24 +1,27 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
-use crate::http::pages::notification_template::error_bubble_response;
+use crate::http::error::{HttpError, HttpResult};
 use crate::utils::date_formats;
+use crate::utils::queries::delete_reservations_on_day;
 use axum::Router;
-use axum::response::{IntoResponse, Response};
 use sqlx::{Executor, Sqlite, SqliteConnection, SqlitePool, query, query_as};
 use time::{Date, OffsetDateTime};
 use tracing::info;
 
-mod free_days;
+mod calendar;
+mod holidays;
+mod restrictions;
 mod tournaments;
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .nest("/free_days", free_days::router())
+        .nest("/calendar", calendar::router())
         .nest("/tournaments", tournaments::router())
+        .nest("/holiday", holidays::router())
+        .nest("/restrictions", restrictions::router())
 }
 
 struct NewAlternativeDay {
-    date: String,
+    date: Date,
     description: Option<String>,
     start_hour: u8,
     start_minute: u8,
@@ -29,23 +32,20 @@ struct NewAlternativeDay {
 }
 
 async fn add_alternative_day(
-    write_pool: SqlitePool,
+    write_pool: &SqlitePool,
     day: NewAlternativeDay,
-    day_type: &str,
-) -> HttpResult<Option<Response>> {
-    let Ok(date) = Date::parse(&day.date, date_formats::ISO_DATE) else {
-        return Ok(Some(error_bubble_response("Data selectată nu este valida")));
-    };
-
+    day_type: AlternativeDayType,
+) -> HttpResult<()> {
     let mut tx = write_pool.begin().await?;
 
-    if alt_day_exists(tx.as_mut(), date).await? {
-        return Ok(Some(error_bubble_response(format!(
+    if alt_day_exists(tx.as_mut(), day.date).await? {
+        return Err(HttpError::Text(format!(
             "Deja exists o zi libera/turneu pe data de {}",
-            date.format(date_formats::READABLE_DATE).unwrap()
-        ))));
+            day.date.format(date_formats::READABLE_DATE).unwrap()
+        )));
     }
 
+    let day_type = day_type.as_ref();
     let description = day
         .description
         .map(|description| description.trim().to_string())
@@ -55,9 +55,9 @@ async fn add_alternative_day(
     query!(
         "insert into alternative_days (type, date, description, slots_start_hour, slots_start_minute,
          slot_duration, slot_capacity, slots_per_day, consumes_reservation)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
         day_type,
-        date,
+        day.date,
         description,
         day.start_hour,
         start_minute,
@@ -69,16 +69,17 @@ async fn add_alternative_day(
     .execute(tx.as_mut())
     .await?;
 
-    let deleted_reservations = delete_reservations_on_day(tx.as_mut(), date).await?;
+    let deleted_reservations = delete_reservations_on_day(tx.as_mut(), day.date).await?;
     if deleted_reservations != 0 {
         info!("{deleted_reservations} reservation were deleted when creating alternative day");
     }
 
     tx.commit().await?;
 
-    Ok(None)
+    Ok(())
 }
 
+#[derive(Clone)]
 struct AlternativeDay {
     date: Date,
     description: String,
@@ -90,32 +91,52 @@ struct AlternativeDay {
     created_at: OffsetDateTime,
 }
 
+#[derive(Clone, Copy)]
+enum AlternativeDayType {
+    Holiday,
+    Tournament,
+}
+
+impl AsRef<str> for AlternativeDayType {
+    fn as_ref(&self) -> &str {
+        match self {
+            AlternativeDayType::Holiday => "holiday",
+            AlternativeDayType::Tournament => "turneu",
+        }
+    }
+}
+
 async fn get_alternative_day(
     executor: impl Executor<'_, Database = Sqlite>,
+    day_type: AlternativeDayType,
     date: Date,
 ) -> Result<Option<AlternativeDay>, sqlx::Error> {
+    let day_type = day_type.as_ref();
     query_as!(AlternativeDay, "select date, COALESCE(description, '') as 'description!: String',
         slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, slots_start_minute as 'start_minute', created_at
-        from alternative_days where date = $1", date)
+        from alternative_days where type = $1 and date = $2", day_type, date)
         .fetch_optional(executor)
         .await
 }
 
 async fn get_alternative_days(
     pool: &SqlitePool,
-    day_type: &str,
+    day_type: AlternativeDayType,
+    month_year: Option<Date>,
 ) -> Result<Vec<AlternativeDay>, sqlx::Error> {
+    let day_type = day_type.as_ref();
     query_as!(AlternativeDay, "select date, COALESCE(description, '') as 'description',
         slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, slots_start_minute as 'start_minute', created_at
         from alternative_days where type = $1
-        order by date desc, created_at", day_type)
+        and strftime('%m%Y', date) = strftime('%m%Y', COALESCE($2, date))
+        order by date desc, created_at", day_type, month_year)
         .fetch_all(pool)
         .await
 }
 
-async fn delete_alternative_day(state: AppState, date: String) -> HttpResult {
+async fn delete_alternative_day(state: &AppState, date: String) -> HttpResult<()> {
     let Ok(date) = Date::parse(&date, date_formats::ISO_DATE) else {
-        return Ok(error_bubble_response("Data selectata e ste invalida"));
+        return Err(HttpError::Text("Data selectata e ste invalida".to_string()));
     };
 
     let mut tx = state.write_pool.begin().await?;
@@ -131,7 +152,7 @@ async fn delete_alternative_day(state: AppState, date: String) -> HttpResult {
 
     tx.commit().await?;
 
-    Ok(().into_response())
+    Ok(())
 }
 
 async fn alt_day_exists(conn: &mut SqliteConnection, date: Date) -> Result<bool, sqlx::Error> {
@@ -143,14 +164,4 @@ async fn alt_day_exists(conn: &mut SqliteConnection, date: Date) -> Result<bool,
     .await?
     .exists
         != 0)
-}
-
-async fn delete_reservations_on_day(
-    executor: impl Executor<'_, Database = Sqlite>,
-    date: Date,
-) -> Result<u64, sqlx::Error> {
-    query!("delete from reservations where date = $1", date)
-        .execute(executor)
-        .await
-        .map(|result| result.rows_affected())
 }

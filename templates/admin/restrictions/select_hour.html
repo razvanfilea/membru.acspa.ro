@@ -1,7 +1,0 @@
-{% for hour in hours %}
-<label class="label gap-3">
-    <input type="checkbox" name="hour" class="checkbox checkbox-lg" value="{{ hour }}" autocomplete="off"
-           {% if loop.first %}checked="checked"{% endif %}/>
-    <span class="text-lg">{{ hour }}</span>
-</label>
-{% endfor %}

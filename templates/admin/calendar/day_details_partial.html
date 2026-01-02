@@ -1,0 +1,150 @@
+<div class="animate-in fade-in slide-in-from-right-4 duration-300 space-y-8">
+    <header>
+        <p class="text-[10px] font-black uppercase tracking-widest text-base-content/40 mb-1">Data
+            selectată</p>
+        <h3 class="text-3xl font-black text-base-content tracking-tighter">{{
+            date_formats::as_readable(selected_date) }}</h3>
+    </header>
+
+    {% if let Some(tournament) = selected_tournament %}
+    <section class="space-y-4">
+        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
+            <h4 class="text-xs font-black uppercase tracking-widest text-orange-500">Turneu
+                Programat</h4>
+            <span class="material-symbols-outlined text-orange-500 text-sm">trophy</span>
+        </div>
+        <div class="p-4 rounded-2xl border border-orange-500/50">
+            <p class="text-lg font-black text-orange-500 leading-tight">{{ tournament.description }}</p>
+            <p class="text-xs font-bold opacity-60 mt-1 uppercase">Start: {{ tournament.start_hour }}:{{
+                tournament.start_minute.unwrap_or_default() }}</p>
+            <a href="/admin/tournaments/edit/{{ date_formats::as_iso_dash(selected_date) }}"
+               class="btn btn-outline mt-3 w-full font-black uppercase tracking-widest">Detalii
+                Turneu</a>
+        </div>
+    </section>
+    {% else %}
+    <section class="space-y-4">
+        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
+            <h4 class="text-xs font-black uppercase tracking-widest text-primary">Zi libera</h4>
+            <span class="material-symbols-outlined text-primary text-sm">clear_day</span>
+        </div>
+
+        {% if let Some(day) = selected_holiday %}
+        <div class="space-y-3">
+            {%if !day.description.is_empty() %}
+            <div class="p-4 pt-2 mb-6 bg-base-100 rounded-2xl border border-base-content/5 shadow-inner">
+                <label class="text-[10px] font-black text-primary uppercase tracking-widest">Descriere</label>
+                <p class="text-xl font-bold mt-2 leading-tight">{{ day.description }}</p>
+            </div>
+            {% endif %}
+
+            <button class="btn btn-error btn-block"
+                    hx-delete="/admin/holiday/{{ date_formats::as_iso_dash(selected_date) }}"
+                    hx-target="#day-details-container"
+                    hx-confirm="Șterge Ziua Liberă?">
+                <span class="material-symbols-outlined">event_busy</span>
+                Șterge Ziua Liberă
+            </button>
+        </div>
+        {% else %}
+        <form hx-put="/admin/holiday"
+              hx-target="#day-details-container"
+              class="space-y-6">
+            <input type="hidden" name="date" value="{{ date_formats::as_iso_dash(selected_date) }}">
+
+            <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-xs uppercase opacity-50">Descriere</span></label>
+                <input name="description" type="text" placeholder="Ex: Paște, Crăciun..."
+                       class="input input-lg input-bordered w-full rounded-xl bg-base-100 focus:input-primary"/>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                <span class="material-symbols-outlined">event_available</span>
+                Marchează ca Zi Liberă
+            </button>
+        </form>
+        {% endif %}
+    </section>
+
+    <section class="space-y-4">
+        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
+            <h4 class="text-xs font-black uppercase tracking-widest text-red-500">Restricții Orare</h4>
+            <span class="material-symbols-outlined text-red-500 text-sm">block</span>
+        </div>
+
+        <div class="space-y-2">
+            {% for res in selected_restrictions %}
+            {% let restriction_date = date_formats::as_iso_dash(selected_date) %}
+            <div class="flex justify-between items-center bg-base-100 p-3 rounded-xl text-sm">
+                <div>
+                    <span class="font-black">{% if let Some(h) = res.hour %}{{ h }}:00{% else %}Toată ziua{% endif %}</span>
+                    {% if !res.message.is_empty() %}
+                    <span class="opacity-70">- {{ res.message }}</span>
+                    {% endif %}
+                </div>
+                <button class="btn btn-ghost btn-xs text-red-500 p-0 h-auto min-h-0"
+                        hx-target="#day-details-container"
+                        hx-delete="/admin/restrictions?date={{ restriction_date }}{% if let Some(h) = res.hour %}&hour={{ h }}{% endif %}">
+                    <span class="material-symbols-outlined text-sm">delete</span>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if can_add_restriction() %}
+        <form hx-put="/admin/restrictions" hx-target="#day-details-container"
+              class="space-y-6">
+            <input type="hidden" name="date" value="{{ date_formats::as_iso_dash(selected_date) }}">
+            <div class="form-control">
+                <label class="label"><span class="label-text font-bold text-xs uppercase opacity-50">Descriere</span></label>
+                <input name="message" type="text" placeholder="Motiv blocaj orar..."
+                       class="input input-lg input-bordered w-full rounded-xl bg-base-100 focus:input-primary"/>
+            </div>
+
+            <label class="label cursor-pointer justify-start gap-3 py-0">
+                <input type="checkbox" id="allDayToggle" name="all_day" class="toggle toggle-red-500"
+                       onchange="toggleHourGrid(this)"/>
+                <span class="label-text font-black uppercase opacity-70">Toată ziua</span>
+            </label>
+
+            <div id="hour_selection_wrapper"
+                 class="flex flex-row flex-nowrap gap-1.5 p-1 border border-base-200 rounded-xl bg-base-200/50">
+                {% for hour in day_structure.iter() %}
+                {% if is_restriction_hour_available(hour.into()) %}
+                <label class="flex flex-col grow items-center justify-center p-1.5 rounded-lg hover:bg-base-300 transition-all cursor-pointer border border-transparent has-[:checked]:bg-red-500 has-[:checked]:text-red-500-content has-[:checked]:border-red-500/20">
+                    <span class="text-sm font-black">{{ hour }}</span>
+                    <input type="checkbox" name="hour" value="{{ hour }}" class="hidden"/>
+                </label>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-error btn-block">
+                <span class="material-symbols-outlined">calendar_lock</span>
+                Blochează Orele
+            </button>
+        </form>
+        {% endif %}
+    </section>
+    {% endif %}
+
+</div>
+
+<script>
+    function toggleHourGrid(toggle) {
+        const wrapper = document.getElementById('hour_selection_wrapper');
+        const hourCheckboxes = wrapper.querySelectorAll('.hour-checkbox');
+
+        if (toggle.checked) {
+            wrapper.style.display = 'none';
+            hourCheckboxes.forEach(cb => {
+                cb.disabled = true;
+                cb.checked = false;
+            });
+        } else {
+            wrapper.style.display = 'flex';
+            hourCheckboxes.forEach(cb => {
+                cb.disabled = false;
+            });
+        }
+    }
+</script>

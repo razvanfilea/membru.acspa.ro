@@ -1,9 +1,9 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
-use crate::http::pages::admin::alternative_days::{
-    AlternativeDay, NewAlternativeDay, add_alternative_day, delete_alternative_day,
-    get_alternative_day, get_alternative_days,
+use crate::http::pages::admin::schedule_overrides::{
+    AlternativeDay, AlternativeDayType, NewAlternativeDay, add_alternative_day,
+    delete_alternative_day, get_alternative_day, get_alternative_days,
 };
 use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::template_into_response::TemplateIntoResponse;
@@ -16,7 +16,7 @@ use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{Error, SqlitePool, query};
+use sqlx::{Error, Executor, Sqlite, SqlitePool, query};
 use time::Date;
 use tracing::info;
 
@@ -30,13 +30,18 @@ pub fn router() -> Router<AppState> {
         .route("/{date}", delete(delete_tournament))
 }
 
-async fn tournament_days(
+pub async fn get_tournament_day(
+    executor: impl Executor<'_, Database = Sqlite>,
+    date: Date,
+) -> Result<Option<AlternativeDay>, Error> {
+    get_alternative_day(executor, AlternativeDayType::Tournament, date).await
+}
+
+pub async fn get_tournament_days(
     pool: &SqlitePool,
-) -> Result<(Vec<AlternativeDay>, Vec<AlternativeDay>), Error> {
-    let today = local_time().date();
-    get_alternative_days(pool, "turneu")
-        .await
-        .map(|vec| vec.into_iter().partition(|t| t.date >= today))
+    year_month: Option<Date>,
+) -> Result<Vec<AlternativeDay>, Error> {
+    get_alternative_days(pool, AlternativeDayType::Tournament, year_month).await
 }
 
 async fn tournaments_page(
@@ -51,7 +56,11 @@ async fn tournaments_page(
         past: Vec<AlternativeDay>,
     }
 
-    let (upcoming, past) = tournament_days(&state.read_pool).await?;
+    let today = local_time().date();
+    let (upcoming, past) = get_tournament_days(&state.read_pool, None)
+        .await?
+        .into_iter()
+        .partition(|t| t.date >= today);
 
     TournamentsTemplate {
         user: auth_session.user.expect("User should be logged in"),
@@ -94,12 +103,16 @@ async fn create_tournament(
     State(state): State<AppState>,
     Form(tournament): Form<NewTournament>,
 ) -> HttpResult {
+    let Ok(date) = Date::parse(&tournament.date, date_formats::ISO_DATE) else {
+        return Err(HttpError::Text("Data selectata nu este validă".to_string()));
+    };
+
     let capacity = tournament
         .capacity
         .and_then(|capacity| capacity.parse::<u8>().ok());
 
     let day = NewAlternativeDay {
-        date: tournament.date.clone(),
+        date,
         description: tournament.description.clone(),
         start_hour: tournament.start_hour,
         start_minute: tournament.start_minute,
@@ -109,9 +122,7 @@ async fn create_tournament(
         consumes_reservation: tournament.consumes_reservation == Some("on".to_string()),
     };
 
-    if let Some(error_response) = add_alternative_day(state.write_pool, day, "turneu").await? {
-        return Ok(error_response);
-    }
+    add_alternative_day(&state.write_pool, day, AlternativeDayType::Tournament).await?;
 
     info!(
         "Added tournament with date: {} and description {}",
@@ -128,7 +139,7 @@ async fn edit_tournament_page(
     Path(date): Path<String>,
 ) -> HttpResult {
     let date = Date::parse(&date, ISO_DATE).expect("Data este invalida");
-    let Some(current) = get_alternative_day(&state.read_pool, date).await? else {
+    let Some(current) = get_tournament_day(&state.read_pool, date).await? else {
         return Ok(error_bubble_response("Nu exista acest turneu"));
     };
 
@@ -164,7 +175,7 @@ async fn update_tournament(
 
     let mut tx = state.write_pool.begin().await?;
 
-    let Some(current) = get_alternative_day(&mut *tx, date).await? else {
+    let Some(current) = get_tournament_day(&mut *tx, date).await? else {
         return Ok(error_bubble_response("Nu exista acest turneu"));
     };
 
@@ -211,5 +222,6 @@ pub async fn delete_tournament(
     State(state): State<AppState>,
     Path(date): Path<String>,
 ) -> HttpResult {
-    delete_alternative_day(state, date).await
+    delete_alternative_day(&state, date).await?;
+    Ok(().into_response())
 }

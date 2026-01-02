@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block page_title %}Gestiune Calendar{% endblock %}
+
+{% block content %}
+<main class="p-2 sm:p-4 md:p-8 w-full max-w-7xl mx-auto">
+    <div class="flex flex-col xl:flex-row gap-8">
+
+        <div class="m-2 flex-1 bg-base-100 md:rounded-3xl md:shadow-xl md:border border-base-200 overflow-hidden">
+            <div class="p-4 md:p-8 border-b border-base-200 flex flex-wrap items-center justify-between gap-4 md:bg-base-200/50">
+                <div>
+                    <h2 class="text-2xl font-black text-primary uppercase tracking-tighter">
+                        {{ date_formats::month_as_str(&selected_date.month()) }} {{ selected_date.year() }}
+                    </h2>
+                    <div class="flex gap-4 mt-2">
+                        <div class="flex items-center gap-1.5 text-xs font-black uppercase">
+                            <div class="w-3 h-1 rounded-full bg-success"></div>
+                            Liber
+                        </div>
+                        <div class="flex items-center gap-1.5 text-xs font-black uppercase">
+                            <div class="w-3 h-1 rounded-full bg-red-500"></div>
+                            Restricții
+                        </div>
+                        <div class="flex items-center gap-1.5 text-xs font-black uppercase">
+                            <div class="w-3 h-1 rounded-full bg-orange-500"></div>
+                            Turnee
+                        </div>
+                    </div>
+                </div>
+
+                <div class="join bg-base-100 border border-base-300 shadow-sm">
+                    <a href="/admin/calendar/{{ prev_month.0 }}/{{ prev_month.1 }}"
+                       class="btn btn-sm join-item btn-ghost">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </a>
+                    <a href="/admin/calendar"
+                       class="btn btn-sm join-item btn-ghost text-xs font-bold px-4 uppercase tracking-widest">Azi</a>
+                    <a href="/admin/calendar/{{ next_month.0 }}/{{ next_month.1 }}"
+                       class="btn btn-sm join-item btn-ghost">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="pt-8 md:p-8">
+                <div class="grid grid-cols-7 mb-4 text-center">
+                    {% for day in ["Lu", "Ma", "Mi", "Jo", "Vi", "Sâ", "Du"] %}
+                    <span class="text-[10px] font-black uppercase tracking-widest text-base-content/40">{{ day }}</span>
+                    {% endfor %}
+                </div>
+
+                {% let oob_swap = "none" %}
+                <div class="grid grid-cols-7 gap-1 md:gap-3">
+                    {% for date in calendar_days %}
+                    {% let events = day_markers.get(date).copied().unwrap_or_default() %}
+                    {% include "calendar_page_day.html" %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div id="day-details-container"
+             class="w-full lg:w-96 bg-base-200 rounded-3xl p-6 md:m-2 md:p-8 shadow-lg border border-base-300 top-8">
+            {% include "day_details_partial.html" %}
+        </div>
+    </div>
+</main>
+
+{% endblock %}
