@@ -21,6 +21,7 @@ struct NewAlternativeDay {
     date: String,
     description: Option<String>,
     start_hour: u8,
+    start_minute: u8,
     duration: u8,
     slots_per_day: u8,
     capacity: Option<u8>,
@@ -49,15 +50,17 @@ async fn add_alternative_day(
         .description
         .map(|description| description.trim().to_string())
         .filter(|description| !description.is_empty());
+    let start_minute = Some(day.start_minute).filter(|minute| *minute > 0 && *minute < 60);
 
     query!(
-        "insert into alternative_days (type, date, description, slots_start_hour,
+        "insert into alternative_days (type, date, description, slots_start_hour, slots_start_minute,
          slot_duration, slot_capacity, slots_per_day, consumes_reservation)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
         day_type,
         date,
         description,
         day.start_hour,
+        start_minute,
         day.duration,
         day.capacity,
         day.slots_per_day,
@@ -80,6 +83,7 @@ struct AlternativeDay {
     date: Date,
     description: String,
     start_hour: i64,
+    start_minute: Option<i64>,
     duration: i64,
     slot_capacity: Option<i64>,
     consumes_reservation: bool,
@@ -91,7 +95,7 @@ async fn get_alternative_day(
     date: Date,
 ) -> Result<Option<AlternativeDay>, sqlx::Error> {
     query_as!(AlternativeDay, "select date, COALESCE(description, '') as 'description!: String',
-        slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, created_at
+        slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, slots_start_minute as 'start_minute', created_at
         from alternative_days where date = $1", date)
         .fetch_optional(executor)
         .await
@@ -102,7 +106,7 @@ async fn get_alternative_days(
     day_type: &str,
 ) -> Result<Vec<AlternativeDay>, sqlx::Error> {
     query_as!(AlternativeDay, "select date, COALESCE(description, '') as 'description',
-        slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, created_at
+        slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, slots_start_minute as 'start_minute', created_at
         from alternative_days where type = $1
         order by date desc, created_at", day_type)
         .fetch_all(pool)

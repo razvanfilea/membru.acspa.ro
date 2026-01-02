@@ -26,12 +26,25 @@
                    placeholder="Descriere" {% if let Some(val)=current %} value="{{ val.description }}" {% endif %}/>
         </label>
 
-        <label class="floating-label">
-            <span>Ora de început</span>
-            <input name="start_hour" type="number" min="1" max="22" class="input input-lg input-bordered w-full"
-                   placeholder="Ora de început" autocomplete="off" required
-                   {% if let Some(val)=current %} value="{{ val.start_hour }}" {% endif %}/>
-        </label>
+        <div class="flex flex-row gap-4">
+            <label class="floating-label grow">
+                <span>Ora de început</span>
+                <input name="start_hour" type="number" min="1" max="22" class="input input-lg input-bordered w-full"
+                       placeholder="Ora de început" autocomplete="off" required
+                       {% if let Some(val)=current %} value="{{ val.start_hour }}" {% endif %}/>
+            </label>
+
+            <label class="floating-label grow">
+                <span>Minut</span>
+                <input name="start_minute" type="number" min="0" max="59" class="input input-lg input-bordered w-full"
+                       placeholder="Minut" autocomplete="off"
+                       {% if let Some(val)=current %}
+                       value="{{ val.start_minute.unwrap_or_default() }}"
+                       {% else %}
+                       value="0"
+                       {% endif %}/>
+            </label>
+        </div>
 
         <label class="floating-label">
             <span>Durata (în ore)</span>
@@ -72,7 +85,7 @@
     </fieldset>
 </form>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         const urlParams = new URLSearchParams(window.location.search);
 
         // Only run the calculation if thursday=true is in the URL
@@ -87,7 +100,6 @@
 
             now.setDate(now.getDate() + daysUntilThursday);
 
-            // Format to YYYY-MM-DD for the HTML5 date input
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');

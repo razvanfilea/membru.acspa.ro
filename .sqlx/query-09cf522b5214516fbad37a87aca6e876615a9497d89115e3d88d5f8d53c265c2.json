@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select date, COALESCE(description, '') as 'description',\n        slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, created_at\n        from alternative_days where type = $1\n        order by date desc, created_at",
+  "query": "select date, COALESCE(description, '') as 'description!: String',\n        slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, slots_start_minute as 'start_minute', created_at\n        from alternative_days where date = $1",
   "describe": {
     "columns": [
       {
@@ -9,9 +9,9 @@
         "type_info": "Date"
       },
       {
-        "name": "description",
+        "name": "description!: String",
         "ordinal": 1,
-        "type_info": "Text"
+        "type_info": "Null"
       },
       {
         "name": "start_hour",
@@ -34,8 +34,13 @@
         "type_info": "Bool"
       },
       {
-        "name": "created_at",
+        "name": "start_minute",
         "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 7,
         "type_info": "Datetime"
       }
     ],
@@ -44,13 +49,14 @@
     },
     "nullable": [
       false,
-      false,
+      null,
       false,
       false,
       true,
       false,
+      true,
       false
     ]
   },
-  "hash": "e2953d15b78a76d38a31ad24ad53ad91189e702a1532a8b2ed4ff3e71a960724"
+  "hash": "09cf522b5214516fbad37a87aca6e876615a9497d89115e3d88d5f8d53c265c2"
 }

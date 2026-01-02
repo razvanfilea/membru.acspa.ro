@@ -35,7 +35,7 @@
             <div class="space-y-2 text-sm grow">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary text-base">schedule</span>
-                    <span>Începe la ora: <b>{{ tournament.start_hour }}:00</b></span>
+                    <span>Începe la ora: <b>{{ tournament.start_hour }}:{{ format!("{:02}", tournament.start_minute.unwrap_or_default()) }}</b></span>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary text-base">timer</span>

@@ -67,6 +67,7 @@ async fn create_free_day(
         date: new_day.date.clone(),
         description: new_day.description.clone(),
         start_hour: day_structure.slots_start_hour as u8,
+        start_minute: 0,
         duration: day_structure.slot_duration as u8,
         capacity: None,
         slots_per_day: day_structure.slots_per_day as u8,

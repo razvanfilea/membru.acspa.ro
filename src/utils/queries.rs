@@ -18,7 +18,7 @@ pub async fn get_alt_day_structure_for_day(
 
     let day = query_as!(
         DayStructure,
-        "select slots_start_hour, slot_duration, slots_per_day, description, slot_capacity, consumes_reservation
+        "select slots_start_hour, slots_start_minute, slot_duration, slots_per_day, description, slot_capacity, consumes_reservation
          from alternative_days where date = $1",
         date
     ).fetch_optional(executor).await.expect("Database error");

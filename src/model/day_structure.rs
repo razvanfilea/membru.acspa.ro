@@ -1,6 +1,7 @@
 #[derive(Clone, PartialEq)]
 pub struct DayStructure {
     pub slots_start_hour: i64,
+    pub slots_start_minute: Option<i64>,
     pub slot_duration: i64,
     pub slots_per_day: i64,
     pub description: Option<String>,
@@ -17,6 +18,7 @@ impl DayStructure {
     ) -> DayStructure {
         DayStructure {
             slots_start_hour,
+            slots_start_minute: None,
             slot_duration,
             slots_per_day,
             description: None,

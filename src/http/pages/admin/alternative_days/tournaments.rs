@@ -83,6 +83,8 @@ struct NewTournament {
     date: String,
     description: Option<String>,
     start_hour: u8,
+    #[serde(default)]
+    start_minute: u8,
     duration: u8,
     capacity: Option<String>,
     consumes_reservation: Option<String>,
@@ -100,6 +102,7 @@ async fn create_tournament(
         date: tournament.date.clone(),
         description: tournament.description.clone(),
         start_hour: tournament.start_hour,
+        start_minute: tournament.start_minute,
         duration: tournament.duration,
         slots_per_day: 1,
         capacity,
@@ -141,7 +144,9 @@ async fn edit_tournament_page(
 struct UpdatedTournament {
     description: String,
     start_hour: i64,
-    duration: i64,
+    #[serde(default)]
+    start_minute: u8,
+    duration: u8,
     capacity: Option<String>,
     consumes_reservation: Option<String>,
 }
@@ -167,11 +172,13 @@ async fn update_tournament(
 
     query!(
         "update alternative_days
-          set description = $2, slots_start_hour = $3, slot_duration = $4, slot_capacity = $5, consumes_reservation = $6
+          set description = $2, slots_start_hour = $3, slots_start_minute = $4, slot_duration = $5,
+           slot_capacity = $6, consumes_reservation = $7
           where date = $1",
         date,
         updated.description,
         updated.start_hour,
+        updated.start_minute,
         updated.duration,
         capacity,
         consumes_reservation

@@ -26,6 +26,7 @@ pub struct Reservations {
 
 pub struct ReservationsSlot {
     pub start_hour: u8,
+    pub minute: Option<u8>,
     pub end_hour: u8,
     pub reservations: Result<Reservations, String>,
 }
@@ -57,6 +58,7 @@ pub async fn get_reservation_hours(
                 .iter()
                 .map(|hour| ReservationsSlot {
                     start_hour: hour,
+                    minute: None,
                     end_hour: hour + day_structure.slot_duration as u8,
                     reservations: Err(restriction.message.clone()),
                 })
@@ -90,6 +92,7 @@ pub async fn get_reservation_hours(
             {
                 return ReservationsSlot {
                     start_hour: hour,
+                    minute: None,
                     end_hour,
                     reservations: Err(restriction.message.clone()),
                 };
@@ -131,6 +134,7 @@ pub async fn get_reservation_hours(
 
             ReservationsSlot {
                 start_hour: hour,
+                minute: day_structure.slots_start_minute.map(|minute| minute as u8),
                 end_hour,
                 reservations: Ok(Reservations {
                     active,

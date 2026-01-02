@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select slots_start_hour, slot_duration, slots_per_day, description, slot_capacity, consumes_reservation\n         from alternative_days where date = $1",
+  "query": "select slots_start_hour, slots_start_minute, slot_duration, slots_per_day, description, slot_capacity, consumes_reservation\n         from alternative_days where date = $1",
   "describe": {
     "columns": [
       {
@@ -9,28 +9,33 @@
         "type_info": "Integer"
       },
       {
-        "name": "slot_duration",
+        "name": "slots_start_minute",
         "ordinal": 1,
         "type_info": "Integer"
       },
       {
-        "name": "slots_per_day",
+        "name": "slot_duration",
         "ordinal": 2,
         "type_info": "Integer"
       },
       {
-        "name": "description",
+        "name": "slots_per_day",
         "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "description",
+        "ordinal": 4,
         "type_info": "Text"
       },
       {
         "name": "slot_capacity",
-        "ordinal": 4,
+        "ordinal": 5,
         "type_info": "Integer"
       },
       {
         "name": "consumes_reservation",
-        "ordinal": 5,
+        "ordinal": 6,
         "type_info": "Bool"
       }
     ],
@@ -39,6 +44,7 @@
     },
     "nullable": [
       false,
+      true,
       false,
       false,
       true,
@@ -46,5 +52,5 @@
       false
     ]
   },
-  "hash": "d40082e81eb4ae09bf4ea6ee81e89f3ec2bf7ec9fc791cf25e3dc0318561a339"
+  "hash": "3905aa730b98bc506174b6bf998ab3ac7cdf7135ca44e4c4c6d8d7c904363e76"
 }
