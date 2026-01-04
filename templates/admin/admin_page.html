@@ -31,25 +31,6 @@
             <button class="btn btn-error btn-wide" hx-post="/admin/apply_settings">Aplică setările</button>
         </fieldset>
     </form>
-
-    <div class="grid grid-cols-2 gap-2 sm:gap-4 md:gap-8">
-        <div class="divider mt-8 md:mt-12 col-span-2">Membri</div>
-        <a href="/admin/members">
-            <button class="btn bg-indigo-700 text-white w-full">Listă membri</button>
-        </a>
-        <a href="/admin/roles">
-            <button class="btn bg-orange-600 text-white w-full">Roluri membri</button>
-        </a>
-
-        <div class="divider mt-8 md:mt-12 col-span-2">Situații</div>
-        <a href="/admin/situations/daily">
-            <button class="btn bg-lime-600 text-white w-full">Situație pe zile</button>
-        </a>
-
-        <a href="/admin/situations/download">
-            <button class="btn text-white w-full">Descarcă situații</button>
-        </a>
-    </div>
 </main>
 
 {% endblock %}

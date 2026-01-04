@@ -18,6 +18,25 @@ pub struct User {
     pub received_gift: Option<Date>,
 }
 
+impl User {
+    pub fn empty() -> Self {
+        Self {
+            id: 0,
+            email: String::new(),
+            name: String::new(),
+            password_hash: String::new(),
+            role_id: 0,
+            role: String::new(),
+            is_active: false,
+            has_key: false,
+            admin_panel_access: false,
+            member_since: Date::MIN,
+            birthday: Date::MIN,
+            received_gift: None,
+        }
+    }
+}
+
 impl AuthUser for User {
     type Id = String;
 

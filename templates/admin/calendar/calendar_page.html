@@ -6,7 +6,7 @@
 <main class="p-2 sm:p-4 md:p-8 w-full max-w-7xl mx-auto">
     <div class="flex flex-col xl:flex-row gap-8">
 
-        <div class="m-2 flex-1 bg-base-100 md:rounded-3xl md:shadow-xl md:border border-base-200 overflow-hidden">
+        <div class="m-2 flex-1 h-fit bg-base-100 md:rounded-3xl md:shadow-xl md:border border-base-200 overflow-hidden">
             <div class="p-4 md:p-8 border-b border-base-200 flex flex-wrap items-center justify-between gap-4 md:bg-base-200/50">
                 <div>
                     <h2 class="text-2xl font-black text-primary uppercase tracking-tighter">
@@ -50,7 +50,7 @@
                 </div>
 
                 {% let oob_swap = "none" %}
-                <div class="grid grid-cols-7 gap-1 md:gap-3">
+                <div class="grid grid-cols-7 gap-1 sm:gap-2 md:gap-3 lg:gap-4">
                     {% for date in calendar_days %}
                     {% let events = day_markers.get(date).copied().unwrap_or_default() %}
                     {% include "calendar_page_day.html" %}
@@ -59,8 +59,14 @@
             </div>
         </div>
 
-        <div id="day-details-container"
-             class="w-full lg:w-96 bg-base-200 rounded-3xl p-6 md:m-2 md:p-8 shadow-lg border border-base-300 top-8">
+        <div id="day_details_loading" class="htmx-indicator absolute inset-0 flex flex-col items-center justify-center bg-base-200/50 z-50 rounded-3xl">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+            <p class="text-xs font-black uppercase tracking-widest mt-2 opacity-50">Se încarcă...</p>
+        </div>
+
+        <div id="day_details_container"
+             class="w-full lg:w-120 bg-base-200 rounded-3xl p-6 md:m-2 md:p-8 shadow-lg border border-base-300 top-8">
+
             {% include "day_details_partial.html" %}
         </div>
     </div>

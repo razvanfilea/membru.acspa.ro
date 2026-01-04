@@ -205,7 +205,7 @@ async fn edit_member_page(
     }
 
     EditMemberTemplate {
-        current_date: date_formats::as_iso_dash(&local_time().date()),
+        current_date: date_formats::as_iso(&local_time().date()),
         user: auth_session.user.expect("User should be logged in"),
         roles: get_all_roles(&state).await,
         existing_user: get_user(&state.read_pool, user_id).await,

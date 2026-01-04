@@ -130,7 +130,7 @@ fn handle_panic(err: Box<dyn Any + Send + 'static>) -> Response {
     error_bubble_response(details)
 }
 
-pub async fn http_server(app_state: AppState, session_store: SqliteStore, timetable_path: String) {
+pub async fn http_server(app_state: AppState, session_store: SqliteStore) {
     let session_layer = SessionManagerLayer::new(session_store)
         .with_expiry(Expiry::OnInactivity(time::Duration::days(60)))
         .with_same_site(SameSite::Lax);
@@ -143,7 +143,6 @@ pub async fn http_server(app_state: AppState, session_store: SqliteStore, timeta
 
     let app = Router::new()
         .nest_service("/assets", tower_http::services::ServeDir::new("assets"))
-        .nest_service("/orar", tower_http::services::ServeDir::new(timetable_path))
         .merge(pages::router())
         .with_state(app_state)
         .fallback(handler_404)

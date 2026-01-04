@@ -46,7 +46,7 @@
     <div hx-vals='{"hour": {{ slot.start_hour }} }'>
         <div class="flex flex-row flex-wrap gap-1 mb-4 items-center">
             {% let minute = format!(":{:02}", slot.minute.unwrap_or_default()) %}
-            Ora {{ slot.start_hour }}{{ minute }} - {{ slot.end_hour }}{{ minute }}
+            Ora {{ slot.start_hour }}{{ minute }} - {{ slot.end_hour }}{{ minute }}:
             {% if let Ok(reservations) = slot.reservations %}
             {% for res in reservations.active %}
             {% call res_btn(loop.index, "reservation", res) %}

@@ -3,11 +3,12 @@
 
 <button id="day_{{ date }}"
         hx-get="/admin/calendar/details/{{ date }}"
-        hx-target="#day-details-container"
+        hx-target="#day_details_container"
+        hx-indicator="#day_details_loading"
         hx-swap-oob="{{ oob_swap }}"
         class="aspect-square rounded-full border-2 flex flex-col items-center justify-center transition-all relative group
-            {% if is_today %} border-primary/50 {% else %} border-base-200 {% endif %}
-            {% if is_other_month %} opacity-20 grayscale {% endif %}
+            {% if is_today %} border-primary/50 {% else %} border-gray-600 {% endif %}
+            {% if is_other_month %} opacity-30 grayscale {% endif %}
             bg-base-100 hover:border-primary/40 shadow-sm overflow-hidden">
 
     <span class="text-lg font-black">{{ date.day() }}</span>

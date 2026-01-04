@@ -32,17 +32,19 @@
         {% block list %}
         {% for member in members %}
         <a href="/admin/members/view/{{ member.id }}"
-            class="block rounded-xl p-4 transition
+           class="block rounded-xl p-4 transition
              hover:bg-white/5 active:bg-white/10
             hover:translate-x-0.5
             focus:outline-none focus:ring-1 focus:ring-white/20">
             <div class="flex flex-row items-center gap-4">
                 <p class="text-white text-lg">{{ member.name }}</p>
                 {% if member.has_key %}
-                <span class="material-symbols-outlined text-gray-300 text-base" title="Are cheie de la sală">vpn_key</span>
+                <span class="material-symbols-outlined text-gray-300 text-base"
+                      title="Are cheie de la sală">vpn_key</span>
                 {% endif %}
                 {% if !member.is_active %}
-                <span class="material-symbols-outlined text-gray-300 text-base" title="Cont inactiv">account_circle_off</span>
+                <span class="material-symbols-outlined text-gray-300 text-base"
+                      title="Cont inactiv">account_circle_off</span>
                 {% endif %}
                 <p class="text-sm text-gray-400">{{ member.role }}</p>
             </div>
@@ -75,4 +77,15 @@
     </div>
 </main>
 
+{% endblock %}
+
+{% block nav_menu %}
+<li>
+    <a href="/admin/roles">
+        <button class="btn btn-wide">
+            <span class="material-symbols-outlined">user_attributes</span>
+            Roluri
+        </button>
+    </a>
+</li>
 {% endblock %}

@@ -68,9 +68,7 @@ async fn main() -> std::io::Result<()> {
 
     task::spawn(periodic_cleanup_of_waiting_reservations(app_state.clone()));
 
-    let timetable_path = std::env::var("TIMETABLE_PATH").expect("Failed to get TIMETABLE_PATH");
-
-    http_server(app_state, session_store, timetable_path).await;
+    http_server(app_state, session_store).await;
 
     Ok(())
 }

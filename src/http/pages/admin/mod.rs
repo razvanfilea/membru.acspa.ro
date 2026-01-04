@@ -16,7 +16,6 @@ mod guests;
 mod members;
 mod roles;
 mod schedule_overrides;
-mod situations;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -25,7 +24,6 @@ pub fn router() -> Router<AppState> {
         .nest("/members", members::router())
         .nest("/roles", roles::router())
         .nest("/guests", guests::router())
-        .nest("/situations", situations::router())
         .merge(schedule_overrides::router())
 }
 

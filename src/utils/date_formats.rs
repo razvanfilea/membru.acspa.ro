@@ -1,9 +1,6 @@
 use time::macros::format_description;
 use time::{Date, Month, OffsetDateTime, UtcOffset};
 
-pub const ISO_DATE_UNDERLINE: &[time::format_description::BorrowedFormatItem] =
-    format_description!("[year]_[month]_[day]");
-
 pub const ISO_DATE: &[time::format_description::BorrowedFormatItem] =
     format_description!("[year]-[month]-[day]");
 
@@ -13,11 +10,7 @@ pub const READABLE_DATE: &[time::format_description::BorrowedFormatItem] =
 pub const READABLE_DATE_TIME: &[time::format_description::BorrowedFormatItem] =
     format_description!("[day].[month].[year] [hour]:[minute]");
 
-pub fn as_iso_underline(date: &Date) -> String {
-    date.format(ISO_DATE_UNDERLINE).unwrap()
-}
-
-pub fn as_iso_dash(date: &Date) -> String {
+pub fn as_iso(date: &Date) -> String {
     date.format(ISO_DATE).unwrap()
 }
 

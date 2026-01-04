@@ -20,7 +20,7 @@
                 <p class="text-sm">Creat de {{ guest.created_by }} pe {{ date_formats::as_local(guest.created_at) }}</p>
             </div>
 
-            {% let selected_date_formatted = date_formats::as_iso_dash(guest.date) %}
+            {% let selected_date_formatted = date_formats::as_iso(guest.date) %}
 
             <button
                     class="btn btn-square btn-sm btn-error btn-outline"
@@ -63,7 +63,7 @@
                 <span>Data:</span>
                 <input name="date" type="date" class="input input-lg input-bordered w-full" required
                        autocomplete="off" hx-post="/admin/guests/select_hour"
-                       min='{{ date_formats::as_iso_dash(current_date) }}'/>
+                       min='{{ date_formats::as_iso(current_date) }}'/>
             </label>
 
             <div id="hour_selector"></div>

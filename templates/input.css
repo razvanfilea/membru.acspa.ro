@@ -1,6 +1,7 @@
 @import 'tailwindcss';
+
 @plugin "daisyui" {
-  themes: dim --default;
+    themes: dim --default;
 }
 
 /*
@@ -12,25 +13,55 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
-  }
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
 }
 
 @layer components {
-  .btn-main-fab {
-    @apply btn btn-md xl:btn-lg btn-primary rounded-2xl shadow-2xl transition-transform hover:scale-105 active:scale-95;
-  }
+    .btn-main-fab {
+        @apply btn btn-md xl:btn-lg btn-primary rounded-2xl shadow-2xl transition-transform hover:scale-105 active:scale-95;
+    }
 
-  .btn-secondary-fab {
-    @apply btn btn-sm xl:btn-md btn-secondary rounded-xl shadow-xl transition-transform hover:scale-105 active:scale-95;
-  }
+    .btn-secondary-fab {
+        @apply btn btn-sm xl:btn-md btn-secondary rounded-xl shadow-xl transition-transform hover:scale-105 active:scale-95;
+    }
 
-  .rotate-fab-icon {
-    @apply group-hover:rotate-90 duration-300;
-  }
+    .rotate-fab-icon {
+        @apply group-hover:rotate-90 duration-300;
+    }
+
+    @keyframes pop-in-centered {
+        0% {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        70% {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .animate-pop {
+        display: inline-block;
+        transform-origin: center;
+        animation: pop-in-centered 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .htmx-indicator {
+        display: none;
+    }
+
+    /* Show indicator when the triggering element (or the indicator itself) has the .htmx-request class */
+    .htmx-request .htmx-indicator,
+    .htmx-request.htmx-indicator {
+        display: flex; /* or block, depending on your layout */
+    }
 }

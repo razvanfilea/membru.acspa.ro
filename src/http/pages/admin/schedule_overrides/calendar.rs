@@ -11,6 +11,7 @@ use crate::http::pages::admin::schedule_overrides::restrictions::{
 use crate::http::pages::admin::schedule_overrides::tournaments::{
     get_tournament_day, get_tournament_days,
 };
+use crate::http::pages::home::socket::HoursTemplate;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
 use crate::model::restriction::Restriction;
@@ -64,6 +65,7 @@ struct CalendarTemplate {
     // Navigation
     prev_month: (i32, u8),
     next_month: (i32, u8),
+    reservations: String,
 }
 
 impl CalendarTemplate {
@@ -86,11 +88,11 @@ async fn calendar_page(
 ) -> HttpResult {
     let today = local_date();
     let month = Month::try_from(month_u8).unwrap_or(today.month());
-    let view_date = Date::from_calendar_date(year, month, 1).expect("Invalid calendar date");
+    let selected_date = Date::from_calendar_date(year, month, 1).expect("Invalid calendar date");
 
-    let holidays = get_holidays_for_month(&state.read_pool, view_date).await?;
-    let tournaments = get_tournament_days(&state.read_pool, Some(view_date)).await?;
-    let restrictions = get_restrictions_for_month(&state.read_pool, view_date).await?;
+    let holidays = get_holidays_for_month(&state.read_pool, selected_date).await?;
+    let tournaments = get_tournament_days(&state.read_pool, Some(selected_date)).await?;
+    let restrictions = get_restrictions_for_month(&state.read_pool, selected_date).await?;
 
     let mut day_markers: HashMap<Date, DayEvents> = HashMap::new();
     for h in &holidays {
@@ -115,10 +117,15 @@ async fn calendar_page(
             .previous_day()
             .unwrap()
     };
-    let calendar_days = DateIter::weeks_in_range(view_date, last_day);
+    let calendar_days = DateIter::weeks_in_range(selected_date, last_day);
+
+    let mut fake_user = User::empty();
+    fake_user.admin_panel_access = true;
+    let reservations =
+        HoursTemplate::create_response(&state, selected_date, &fake_user, false).await;
 
     // Navigation logic
-    let prev_month_date = view_date.previous_day().unwrap();
+    let prev_month_date = selected_date.previous_day().unwrap();
     let next_month_date = last_day.next_day().unwrap();
 
     CalendarTemplate {
@@ -126,7 +133,7 @@ async fn calendar_page(
         current_date: today,
         calendar_days,
         day_markers,
-        selected_date: view_date,
+        selected_date,
         selected_holiday: holidays.into_iter().find(|d| d.date == today),
         selected_tournament: tournaments.into_iter().find(|d| d.date == today),
         selected_restrictions: restrictions
@@ -136,6 +143,7 @@ async fn calendar_page(
         day_structure: get_day_structure(&state, today).await,
         prev_month: (prev_month_date.year(), prev_month_date.month() as u8),
         next_month: (next_month_date.year(), next_month_date.month() as u8),
+        reservations,
     }
     .try_into_response()
 }
@@ -149,32 +157,33 @@ async fn day_details_partial(
     day_details_response(state, date).await
 }
 
+#[derive(Template)]
+#[template(path = "admin/calendar/day_details_response.html")]
+struct DayDetailsTemplate {
+    current_date: Date,
+    selected_date: Date,
+    selected_holiday: Option<AlternativeDay>,
+    selected_tournament: Option<AlternativeDay>,
+    selected_restrictions: Vec<Restriction>,
+    day_structure: DayStructure,
+    events: DayEvents,
+    reservations: String,
+}
+
+impl DayDetailsTemplate {
+    fn can_add_restriction(&self) -> bool {
+        !self.selected_restrictions.iter().any(|r| r.hour.is_none())
+    }
+
+    fn is_restriction_hour_available(&self, hour: i64) -> bool {
+        !self
+            .selected_restrictions
+            .iter()
+            .any(|r| r.hour == Some(hour))
+    }
+}
+
 pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
-    #[derive(Template)]
-    #[template(path = "admin/calendar/day_details_response.html")]
-    struct DayDetailsTemplate {
-        current_date: Date,
-        selected_date: Date,
-        selected_holiday: Option<AlternativeDay>,
-        selected_tournament: Option<AlternativeDay>,
-        selected_restrictions: Vec<Restriction>,
-        day_structure: DayStructure,
-        events: DayEvents,
-    }
-
-    impl DayDetailsTemplate {
-        fn can_add_restriction(&self) -> bool {
-            !self.selected_restrictions.iter().any(|r| r.hour.is_none())
-        }
-
-        fn is_restriction_hour_available(&self, hour: i64) -> bool {
-            !self
-                .selected_restrictions
-                .iter()
-                .any(|r| r.hour == Some(hour))
-        }
-    }
-
     let selected_holiday = get_holiday(&state.read_pool, date).await?;
     let selected_tournament = get_tournament_day(&state.read_pool, date).await?;
     let selected_restrictions = get_restrictions_for_day(&state.read_pool, date).await?;
@@ -184,6 +193,10 @@ pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
         has_restriction: !selected_restrictions.is_empty(),
     };
 
+    let mut fake_user = User::empty();
+    fake_user.admin_panel_access = true;
+    let reservations = HoursTemplate::create_response(&state, date, &fake_user, false).await;
+
     DayDetailsTemplate {
         current_date: local_date(),
         selected_date: date,
@@ -192,6 +205,7 @@ pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
         selected_restrictions,
         day_structure: get_day_structure(&state, date).await,
         events,
+        reservations,
     }
     .try_into_response()
 }
