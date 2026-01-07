@@ -31,8 +31,18 @@ pub struct PaymentWithAllocations {
     pub created_by_name: String,
 }
 
+impl PaymentWithAllocations {
+    pub fn display_amount(&self) -> String {
+        if self.amount % 100 == 0 {
+            (self.amount / 100).to_string()
+        } else {
+            format!("{:.02}", self.amount as f64 / 100.0)
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PaymentAllocation {
     pub year: i32,
-    pub month: i8,
+    pub month: u8,
 }

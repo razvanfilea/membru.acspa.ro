@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into payments (user_id, amount, payment_date, notes, created_by)\n         values ($1, $2, $3, $4, $5) returning id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "46aba3ef742eee1666bc54e65feac7caddc0a8ee519d5e93602908459c05944d"
+}

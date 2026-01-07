@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into payment_breaks (user_id, start_date, end_date, reason, created_by)\n         values ($1, $2, $3, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "e5337ff7bf5d5b0360e5ded9455fd514981dbd66f700af9bd53373b27dd8543d"
+}

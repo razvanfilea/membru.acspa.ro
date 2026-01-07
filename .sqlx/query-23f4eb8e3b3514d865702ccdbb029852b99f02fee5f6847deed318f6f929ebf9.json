@@ -54,13 +54,18 @@
         "type_info": "Date"
       },
       {
-        "name": "role",
+        "name": "is_deleted",
         "ordinal": 10,
+        "type_info": "Bool"
+      },
+      {
+        "name": "role",
+        "ordinal": 11,
         "type_info": "Text"
       },
       {
         "name": "admin_panel_access",
-        "ordinal": 11,
+        "ordinal": 12,
         "type_info": "Bool"
       }
     ],
@@ -78,6 +83,7 @@
       false,
       false,
       true,
+      false,
       false,
       false
     ]
