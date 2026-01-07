@@ -43,8 +43,9 @@
                       title="Are cheie de la sală">vpn_key</span>
                 {% endif %}
                 {% if !member.is_active %}
-                <span class="material-symbols-outlined text-gray-300 text-base"
-                      title="Cont inactiv">account_circle_off</span>
+                <span class="badge badge-error badge-outline gap-1 font-bold">
+                    Inactiv
+                </span>
                 {% endif %}
                 <p class="text-sm text-gray-400">{{ member.role }}</p>
             </div>

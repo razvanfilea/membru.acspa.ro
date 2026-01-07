@@ -27,6 +27,7 @@ pub fn router() -> Router<AppState> {
         .route("/edit/{id}", post(update_member))
         .route("/change_password/{id}", get(change_password_page))
         .route("/change_password/{id}", post(update_password))
+        .route("/toggle_active/{id}", post(toggle_active_user))
         .route("/delete/{id}", post(delete_user))
 }
 
@@ -266,6 +267,17 @@ async fn update_member(
     .await?;
 
     Ok([("HX-Redirect", "/admin/members")].into_response())
+}
+
+async fn toggle_active_user(State(state): State<AppState>, Path(user_id): Path<i64>) -> HttpResult {
+    query!(
+        "update users set is_active = not is_active where id = $1",
+        user_id
+    )
+    .execute(&state.write_pool)
+    .await?;
+
+    Ok([("HX-Refresh", "true")].into_response())
 }
 
 async fn change_password_page(

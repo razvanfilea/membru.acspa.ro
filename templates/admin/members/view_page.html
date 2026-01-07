@@ -11,6 +11,15 @@
             {% if member.has_key %}
             <span class="material-symbols-outlined">vpn_key</span>
             {% endif %}
+
+            <button class="btn btn-sm btn-outline {% if member.is_active %}btn-success{% else %}btn-error{% endif %} gap-2"
+                    hx-post="/admin/members/toggle_active/{{ member.id }}">
+                {% if member.is_active %}
+                Activ <span class="material-symbols-outlined text-sm">check_circle</span>
+                {% else %}
+                Inactiv <span class="material-symbols-outlined text-sm">block</span>
+                {% endif %}
+            </button>
             <p class="text-xl">{{ member.role }}</p>
         </div>
         <p class="text-gray-200">
