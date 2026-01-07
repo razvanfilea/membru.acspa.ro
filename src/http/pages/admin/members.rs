@@ -1,11 +1,13 @@
-mod payment;
+mod breaks;
+mod payments;
 
 use crate::http::AppState;
 use crate::http::auth::generate_hash_from_password;
 use crate::http::error::HttpResult;
-use crate::http::pages::admin::members::payment::{
-    add_break, add_payment, get_user_payment_breaks, get_user_payments,
+use crate::http::pages::admin::members::breaks::{
+    add_break, delete_break, get_user_payment_breaks,
 };
+use crate::http::pages::admin::members::payments::{add_payment, get_user_payments};
 use crate::http::pages::{AuthSession, get_user};
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
@@ -16,11 +18,11 @@ use askama::Template;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
-use time::Date;
+use time::{Date, Month};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -35,8 +37,9 @@ pub fn router() -> Router<AppState> {
         .route("/change_password/{id}", post(update_password))
         .route("/toggle_active/{id}", post(toggle_active_user))
         .route("/delete/{id}", post(delete_user))
-        .route("/payments/add/{id}", post(add_payment))
-        .route("/breaks/add/{id}", post(add_break))
+        .route("/payments/{id}", post(add_payment))
+        .route("/breaks/{id}", post(add_break))
+        .route("/breaks/{id}", delete(delete_break))
 }
 
 async fn get_all_roles(state: &AppState) -> Vec<String> {
@@ -191,6 +194,24 @@ async fn view_member_page(
         current_date: Date,
     }
 
+    impl ViewMemberTemplate {
+        fn can_select_month(&self, year: i32, month: u8) -> bool {
+            let date = Date::from_calendar_date(year, Month::try_from(month).unwrap(), 1).unwrap();
+            let matches_breaks = self
+                .breaks
+                .iter()
+                .any(|br| (br.start_date..=br.end_date).contains(&date));
+
+            let matches_payments = self.payments.iter().any(|p| {
+                p.allocations
+                    .iter()
+                    .any(|alloc| alloc.year == year && alloc.month == month)
+            });
+
+            !matches_breaks && !matches_payments
+        }
+    }
+
     let member = get_user(&state.read_pool, user_id).await;
     let payments = get_user_payments(&state.read_pool, user_id)
         .await
@@ -325,7 +346,7 @@ async fn delete_user(State(state): State<AppState>, Path(user_id): Path<i64>) ->
         .execute(tx.as_mut())
         .await?;
 
-    query!("delete from users where id = $1", user_id)
+    query!("update users set is_deleted = true where id = $1 ", user_id)
         .execute(tx.as_mut())
         .await?;
 

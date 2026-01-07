@@ -16,6 +16,8 @@ pub struct User {
     pub member_since: Date,
     pub birthday: Date,
     pub received_gift: Option<Date>,
+    #[allow(dead_code)]
+    pub is_deleted: bool,
 }
 
 impl User {
@@ -33,6 +35,7 @@ impl User {
             member_since: Date::MIN,
             birthday: Date::MIN,
             received_gift: None,
+            is_deleted: false,
         }
     }
 }

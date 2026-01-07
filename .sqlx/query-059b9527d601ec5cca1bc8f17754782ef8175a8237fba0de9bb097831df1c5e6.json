@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from payment_breaks where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "059b9527d601ec5cca1bc8f17754782ef8175a8237fba0de9bb097831df1c5e6"
+}

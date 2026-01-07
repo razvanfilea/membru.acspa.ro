@@ -6,6 +6,7 @@
 
 {% block content %}
 
+{% let current_year = current_date.year() %}
 <main class="p-4 md:p-8 w-full">
     <div class="flex flex-col">
         <div class="flex flex-row items-center gap-4">
@@ -65,31 +66,28 @@
             </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 md:gap-5">
             {% for payment in payments %}
             <div class="card bg-base-100 shadow-lg border border-base-300 hover:border-primary/50 transition-all duration-300 hover:shadow-xl group h-full">
                 <div class="card-body p-5 flex flex-col h-full">
 
                     <div class="flex justify-between items-start">
                         <div class="flex flex-col gap-0.5">
-                        <span class="text-[10px] font-bold uppercase text-gray-400 tracking-wider flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[14px]">calendar_month</span>
-                            Data Plății
-                        </span>
+                            <span class="text-xs font-bold uppercase text-gray-400 tracking-wider flex items-center">
+                                Data Plății
+                            </span>
                             <span class="font-bold text-xl font-mono text-base-content">
                             {{ date_formats::as_readable(payment.payment_date) }}
                         </span>
                         </div>
 
                         <div class="flex flex-row gap-1 text-xl font-bold text-success font-mono tracking-tight items-center bg-success/5 px-2 py-1 rounded-lg">
-                            {{ payment.amount / 100 }} <span class="text-sm text-success/70">RON</span>
+                            {{ payment.display_amount() }} <span class="text-sm text-success/70">RON</span>
                         </div>
                     </div>
 
-                    <div class="divider my-2 opacity-50"></div>
-
                     <div class="flex flex-col gap-2">
-                        <span class="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Luni Acoperite</span>
+                        <span class="text-xs font-bold uppercase text-gray-400 tracking-wider">Luni Acoperite</span>
                         <div class="flex flex-wrap gap-1.5">
                             {% for alloc in payment.allocations %}
                             <span class="badge badge-sm badge-ghost border-base-300 font-mono text-xs shadow-sm">
@@ -99,7 +97,7 @@
                         </div>
                     </div>
 
-                    <div class="flex-grow min-h-[1rem]"></div>
+                    <div class="grow min-h-1"></div>
 
                     {% if let Some(notes) = payment.notes %}
                     <div class="mb-3">
@@ -110,20 +108,15 @@
                     </div>
                     {% endif %}
 
-                    <div class="pt-2 border-t border-base-100">
-                        <div class="text-right">
-                            <div class="flex items-center justify-end gap-1 text-xs text-gray-500">
-                                <span class="material-symbols-outlined text-[16px]">edit_calendar</span>
-                                <span>{{ date_formats::as_local(payment.created_at) }}</span>
-                            </div>
-                            <div class="text-xs text-gray-400 mt-0.5">
-                                de <a href="/admin/members/view/{{ payment.created_by }}"
-                                      class="hover:text-primary hover:underline transition-colors">{{
-                                payment.created_by_name }}</a>
-                            </div>
+                    <div class="flex flex-row items-center justify-end gap-1 text-xs">
+                        <span class="material-symbols-outlined text-gray-500">edit_calendar</span>
+                        <span class="text-gray-500">{{ date_formats::as_local(payment.created_at) }}</span>
+                        <div class="text-xs text-gray-400">
+                            de <a href="/admin/members/view/{{ payment.created_by }}"
+                                  class="hover:text-primary hover:underline transition-colors">{{
+                            payment.created_by_name }}</a>
                         </div>
                     </div>
-
                 </div>
             </div>
             {% endfor %}
@@ -159,68 +152,61 @@
             </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 md:gap-5">
             {% for br in breaks %}
             <div class="card bg-base-100 shadow-lg border border-base-300 hover:border-warning/50 transition-all duration-300 hover:shadow-xl group">
                 <div class="card-body p-5">
                     <div class="flex justify-between items-start">
-                        <div class="flex flex-col relative pl-6 border-l-2 border-base-200 group-hover:border-base-300 transition-colors">
+                        <div class="flex flex-col relative pl-6 border-l-2 border-gray-500 group-hover:border-warning transition-colors">
 
-                            <div class="relative mb-6">
-                                <span class="absolute -left-8 top-1.5 w-3.5 h-3.5 rounded-full bg-success ring-4 ring-base-100 group-hover:ring-base-100 transition-all"></span>
-                                <span class="text-xs font-bold text-success uppercase tracking-wider">Început</span>
+                            <div class="relative mb-2 md:mb-6">
+                                <span class="absolute -left-7.75 top-1.5 w-3.5 h-3.5 rounded-full bg-success ring-4 ring-base-100"></span>
+                                <span class="text-xs font-bold text-success tracking-wider uppercase">Început</span>
                                 <div class="font-bold text-xl text-base-content mt-0.5">
                                     {{ date_formats::as_month_year(br.start_date) }}
                                 </div>
                             </div>
 
                             <div class="relative">
-                                <span class="absolute -left-8 top-1.5 w-3.5 h-3.5 rounded-full bg-error ring-4 ring-base-100 group-hover:ring-base-100 transition-all"></span>
-                                <span class="text-xs font-bold text-error uppercase tracking-wider">Sfârșit (inclusiv)</span>
+                                <span class="absolute -left-7.75 top-1.5 w-3.5 h-3.5 rounded-full bg-error ring-4 ring-base-100"></span>
+                                <span class="text-xs font-bold text-error tracking-wider uppercase">Sfârșit (inclusiv)</span>
                                 <div class="font-bold text-xl text-base-content mt-0.5">
                                     {{ date_formats::as_month_year(br.end_date) }}
                                 </div>
                             </div>
                         </div>
 
-                        <form hx-delete="/admin/members/breaks/delete/{{ br.id }}"
-                              hx-confirm="Sigur vrei să ștergi această pauză?">
-                            <input type="hidden" name="user_id" value="{{ member.id }}">
-                            <button type="submit"
-                                    class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-error hover:bg-error/10 transition-colors"
+                        <div class="flex flex-col justify-between items-end h-full">
+                            <button hx-delete="/admin/members/breaks/{{ br.id }}"
+                                    hx-confirm="Sigur vrei să ștergi această pauză?"
+                                    class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-error hover:bg-error/20 transition-colors"
                                     aria-label="Șterge">
                                 <span class="material-symbols-outlined">delete</span>
                             </button>
-                        </form>
+
+                            <div class="badge badge-neutral font-mono">
+                                {{ br.months() }} {% if br.months() == 1 %} lună {% else %} luni {% endif %}
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="divider my-2 opacity-50"></div>
+                    <div class="grow min-h-1"></div>
 
-                    <div class="flex flex-col gap-3">
-                        <div class="flex items-center justify-between">
-                            <div class="badge badge-neutral font-mono">
-                                {{ br.months() }} luni
-                            </div>
+                    {% if let Some(reason) = br.reason %}
+                    <div class="bg-base-200/60 items-center rounded-lg p-3 border border-base-200 flex gap-2 mb-2">
+                        <span class="material-symbols-outlined text-gray-400 text-sm mt-0.5 shrink-0">sticky_note_2</span>
+                        <p class="text-sm italic leading-snug wrap-break-word">{{ reason }}</p>
+                    </div>
+                    {% endif %}
 
-                            <div class="text-right">
-                                <div class="flex items-center justify-end gap-1 text-xs text-gray-500">
-                                    <span class="material-symbols-outlined text-[16px]">edit_calendar</span>
-                                    <span>{{ date_formats::as_local(br.created_at) }}</span>
-                                </div>
-                                <div class="text-xs text-gray-400 mt-0.5">
-                                    de <a href="/admin/members/view/{{ br.created_by }}"
-                                          class="hover:text-primary hover:underline transition-colors">{{
-                                    br.created_by_name }}</a>
-                                </div>
-                            </div>
+                    <div class="flex flex-row items-center justify-end gap-1 text-xs">
+                        <span class="material-symbols-outlined text-gray-500">edit_calendar</span>
+                        <span class="text-gray-500">{{ date_formats::as_local(br.created_at) }}</span>
+                        <div class="text-xs text-gray-400">
+                            de <a href="/admin/members/view/{{ br.created_by }}"
+                                  class="hover:text-primary hover:underline transition-colors">{{
+                            br.created_by_name }}</a>
                         </div>
-
-                        {% if let Some(reason) = br.reason %}
-                        <div class="bg-base-200/60 items-center rounded-lg p-3 border border-base-200 flex gap-2">
-                            <span class="material-symbols-outlined text-gray-400 text-sm mt-0.5 shrink-0">sticky_note_2</span>
-                            <p class="text-sm italic leading-snug wrap-break-word">{{ reason }}</p>
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -254,14 +240,115 @@
     </a>
 </div>
 
+<dialog id="payment_modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box w-full sm:w-11/12 max-w-2xl p-0 bg-base-100">
+
+        <div class="flex items-center justify-between px-6 py-3 bg-base-200/50 border-b border-base-300">
+            <h3 class="font-bold text-lg flex items-center gap-2">
+                <span class="material-symbols-outlined">payments</span>
+                Înregistrează Plată
+            </h3>
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost" onclick="payment_modal.close()">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </form>
+        </div>
+
+        <form hx-post="/admin/members/payments/{{ member.id }}" class="flex flex-col">
+            <div class="p-6 flex flex-col gap-5">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <label class="input input-bordered flex items-center gap-2">
+                        Sumă
+                        <input type="number" name="amount" step="0.01" class="grow font-mono font-bold text-right" placeholder="0.00" required />
+                        <span class="text-gray-400 font-bold">RON</span>
+                    </label>
+
+                    <label class="input input-bordered flex items-center gap-2">
+                        Data
+                        <input type="date" name="payment_date" class="grow font-mono text-right" value="{{ current_date }}" required />
+                    </label>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-end">
+                        <span class="font-bold text-sm text-gray-500 uppercase tracking-wide">Luni Acoperite</span>
+                    </div>
+
+                    <div role="tablist" class="tabs tabs-box bg-base-200 rounded-box gap-1">
+                        {% for year in (current_year - 1)..(current_year + 2) %}
+
+                        <input type="radio"
+                               name="year_tab_selection"
+                               role="tab"
+                               class="tab flex-1 transition-all duration-200 checked:text-primary font-bold rounded-btn"
+                               aria-label="{{ year }}"
+                               {% if year == current_year %}checked="checked"{% endif %}
+                               autocomplete="off" />
+
+                        <div role="tabpanel" class="tab-content p-4 w-full">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                {% for month in 1..=12 %}
+
+                                {% let selectable = self.can_select_month(*year, *(month as u8)) %}
+
+                                <label class="relative flex flex-col items-center justify-center py-3 rounded-lg border transition-all duration-200
+                                            {% if selectable %}
+                                                bg-base-100 border-base-300 cursor-pointer hover:border-primary hover:bg-primary/5
+                                            {% else %}
+                                                bg-base-200 border-transparent opacity-50 cursor-not-allowed
+                                            {% endif %}">
+
+                                    <span class="text-sm font-mono font-bold mb-1">{{ month }}. {{ date_formats::month_as_str(&Month::try_from(*month).unwrap()) }}</span>
+
+                                    {% if selectable %}
+                                    <input type="checkbox" name="months" value="{{ month }}-{{ year }}"
+                                           class="checkbox checkbox-xs checkbox-primary rounded-sm" autocomplete="off" />
+                                    {% else %}
+                                    <span class="material-symbols-outlined text-success" style="font-size: 1.25rem;">check_circle</span>
+                                    <input type="checkbox" disabled class="hidden" autocomplete="off" />
+                                    {% endif %}
+                                </label>
+
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="text-xs text-gray-400 px-1">
+                        Lunile marcate cu <span class="material-symbols-outlined align-bottom text-success text-sm">check_circle</span> sunt deja achitate.
+                    </div>
+                </div>
+
+                <label class="input input-bordered flex items-center gap-2 w-full">
+                    Note
+                    <input name="notes" type="text" class="grow" placeholder="Ex: Cash, Revolut..." />
+                    <span class="badge badge-ghost badge-sm">Opțional</span>
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-2 px-6 py-4 bg-base-200/50 border-t border-base-300 rounded-b-xl">
+                <button type="button" class="btn btn-ghost" onclick="payment_modal.close()">Anulează</button>
+                <button type="submit" class="btn btn-primary min-w-24 gap-2">
+                    <span class="material-symbols-outlined">save</span>
+                    Salvează
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
 <dialog id="break_modal" class="modal">
     <div class="modal-box w-11/12 max-w-lg overflow-visible">
         <h3 class="font-bold text-lg mb-4">Adaugă Pauză Abonament</h3>
 
-        <form hx-post="/admin/members/breaks/add/{{ member.id }}" class="flex flex-col gap-4">
+        <form hx-post="/admin/members/breaks/{{ member.id }}" class="flex flex-col gap-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {% call forms::month_year_picker("start", "Luna de început", current_date.year()) %}
-                {% call forms::month_year_picker("end", "Luna de sfârșit (Inclusiv)", current_date.year()) %}
+                {% call forms::month_year_picker("start", "Luna de început", current_year) %}
+                {% call forms::month_year_picker("end", "Luna de sfârșit (Inclusiv)", current_year) %}
             </div>
 
             <label class="input w-full">
@@ -272,77 +359,6 @@
             <div class="modal-action">
                 <button type="button" class="btn btn-ghost" onclick="break_modal.close()">Anulează</button>
                 <button type="submit" class="btn btn-warning">Salvează Pauza</button>
-            </div>
-        </form>
-    </div>
-</dialog>
-
-<dialog id="payment_modal" class="modal">
-    <div class="modal-box w-11/22 max-w-2xl">
-        <h3 class="font-bold text-lg mb-4">Înregistrează Plată Nouă</h3>
-
-        <form hx-post="/admin/members/payments/add/{{ member.id }}" class="flex flex-col gap-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="form-control">
-                    <label class="label"><span class="label-text">Sumă (RON)</span></label>
-                    <input type="number" name="amount" step="0.01" class="input input-bordered" required/>
-                </div>
-                <div class="form-control">
-                    <label class="label"><span class="label-text">Data Plății</span></label>
-                    <input type="date" name="payment_date" class="input input-bordered" value="{{ current_date }}"
-                           required/>
-                </div>
-            </div>
-
-            <div class="form-control">
-                <label class="label">
-                    <span class="label-text text-primary font-bold">Luni Acoperite (Selectare Multiplă)</span>
-                </label>
-
-                <div role="tablist" class="tabs tabs-lift w-full">
-
-                    {% let current_year = current_date.year() %}
-                    {% for year in (current_year - 1)..(current_year + 2) %}
-
-                    <input type="radio"
-                           name="year_tab_selection"
-                           role="tab"
-                           class="tab"
-                           aria-label="{{ year }}"
-                           autocomplete="off"
-                           {% if year== current_year %}checked="checked" {% endif %}/>
-
-                    <div role="tabpanel" class="tab-content border-base-300 p-4">
-                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                            {% for month in 1..13 %}
-                            <label class="label cursor-pointer flex flex-col items-center gap-1 border border-gray-600 rounded p-1 hover:bg-primary/20 transition-colors">
-                                <span class="label-text text-xs font-mono">{{ month }}.{{ year }}</span>
-
-                                <input type="checkbox" name="months" value="{{ month }}-{{ year }}"
-                                       class="checkbox checkbox-primary checkbox-sm" autocomplete="off"/>
-                            </label>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    {% endfor %}
-                </div>
-
-                <label class="label my-2">
-                    <span class="label-text-alt text-gray-500">
-                        * Poți selecta luni din ani diferiți navigând între tab-uri.
-                    </span>
-                </label>
-            </div>
-
-            <label class="input w-full">
-                <span class="label">Note / Observații (opțional)</span>
-                <input name="notes" type="text" placeholder="Ex: Plată cash, Revolut, etc."/>
-            </label>
-
-            <div class="modal-action">
-                <button type="button" class="btn btn-ghost" onclick="payment_modal.close()">Anulează</button>
-                <button type="submit" class="btn btn-primary">Salvează Plata</button>
             </div>
         </form>
     </div>

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into payment_allocations (payment_id, year, month) values ($1, $2, $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "7444e63ce017c50f1520287e5da444f715759e92ee51c20fade2cc8e24a3a930"
+}
