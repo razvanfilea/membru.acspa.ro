@@ -10,6 +10,9 @@ pub const READABLE_DATE: &[time::format_description::BorrowedFormatItem] =
 pub const READABLE_DATE_TIME: &[time::format_description::BorrowedFormatItem] =
     format_description!("[day].[month].[year] [hour]:[minute]");
 
+pub const MONTH_YEAR: &[time::format_description::BorrowedFormatItem] =
+    format_description!("[year].[month]");
+
 pub fn as_iso(date: &Date) -> String {
     date.format(ISO_DATE).unwrap()
 }
@@ -21,6 +24,10 @@ pub fn as_readable(date: &Date) -> String {
 /*pub fn as_readable_with_time(date: &PrimitiveDateTime) -> String {
     date.format(READABLE_DATE_TIME).unwrap()
 }*/
+
+pub fn as_month_year(date: &Date) -> String {
+    date.format(MONTH_YEAR).unwrap()
+}
 
 pub fn as_local(time: &OffsetDateTime) -> String {
     let offset = UtcOffset::current_local_offset().expect("Failed to determine local offset");

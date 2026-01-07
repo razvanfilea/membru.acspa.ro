@@ -1,11 +1,17 @@
+mod payment;
+
 use crate::http::AppState;
 use crate::http::auth::generate_hash_from_password;
 use crate::http::error::HttpResult;
+use crate::http::pages::admin::members::payment::{
+    add_break, add_payment, get_user_payment_breaks, get_user_payments,
+};
 use crate::http::pages::{AuthSession, get_user};
 use crate::http::template_into_response::TemplateIntoResponse;
+use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
 use crate::utils::queries::{GroupedUserReservations, get_user_reservations};
-use crate::utils::{date_formats, local_time};
+use crate::utils::{date_formats, local_date, local_time};
 use askama::Template;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -29,6 +35,8 @@ pub fn router() -> Router<AppState> {
         .route("/change_password/{id}", post(update_password))
         .route("/toggle_active/{id}", post(toggle_active_user))
         .route("/delete/{id}", post(delete_user))
+        .route("/payments/add/{id}", post(add_payment))
+        .route("/breaks/add/{id}", post(add_break))
 }
 
 async fn get_all_roles(state: &AppState) -> Vec<String> {
@@ -153,7 +161,7 @@ async fn create_new_user(
     let user_name = new_user.name.trim();
     let password_hash = generate_hash_from_password(new_user.password);
     query!(
-        "insert into users (email, name, role_id, password_hash, birthday, member_since) VALUES ($1, $2, $3, $4, $5, date('now'))",
+        "insert into users (email, name, role_id, password_hash, birthday, member_since) values ($1, $2, $3, $4, $5, date('now'))",
         new_user.email,
         user_name,
         role_id,
@@ -170,7 +178,7 @@ async fn view_member_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
     Path(user_id): Path<i64>,
-) -> impl IntoResponse {
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/members/view_page.html")]
     struct ViewMemberTemplate {
@@ -178,17 +186,28 @@ async fn view_member_page(
         member: User,
         reservations: Vec<GroupedUserReservations>,
         allow_reservation_cancellation: bool,
+        payments: Vec<PaymentWithAllocations>,
+        breaks: Vec<PaymentBreak>,
+        current_date: Date,
     }
 
     let member = get_user(&state.read_pool, user_id).await;
+    let payments = get_user_payments(&state.read_pool, user_id)
+        .await
+        .unwrap_or_default();
+
+    let breaks = get_user_payment_breaks(&state.read_pool, user_id).await?;
 
     ViewMemberTemplate {
         user: auth_session.user.expect("User should be logged in"),
         reservations: get_user_reservations(&state.read_pool, member.id, false).await,
         member,
         allow_reservation_cancellation: false,
+        payments,
+        breaks,
+        current_date: local_date(),
     }
-    .into_response()
+    .try_into_response()
 }
 
 async fn edit_member_page(
@@ -336,5 +355,5 @@ pub async fn update_password(
     .execute(&state.write_pool)
     .await?;
 
-    Ok([("HX-Redirect", "/admin/")].into_response())
+    Ok([("HX-Redirect", format!("/admin/members/view/{user_id}"))].into_response())
 }
