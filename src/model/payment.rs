@@ -3,6 +3,7 @@ use time::{Date, OffsetDateTime};
 #[derive(Debug, Clone)]
 pub struct PaymentBreak {
     pub id: i64,
+    #[allow(dead_code)]
     pub user_id: i64,
     pub start_date: Date,
     pub end_date: Date,

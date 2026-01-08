@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into restrictions (date, location, message) values ($1, $2, $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "85a0d6e5c9d4d3a2e0401788af8f0e9d521f447c525543f530bd03015c8b350c"
+}

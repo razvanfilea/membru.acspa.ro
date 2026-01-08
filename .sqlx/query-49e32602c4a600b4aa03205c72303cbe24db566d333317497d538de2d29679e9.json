@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from reservations where date = $1 and ($2 is null or hour = $2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "49e32602c4a600b4aa03205c72303cbe24db566d333317497d538de2d29679e9"
+}

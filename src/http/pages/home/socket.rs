@@ -1,4 +1,5 @@
 use crate::http::AppState;
+use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
 use crate::http::pages::home::reservation_hours::{ReservationHours, get_reservation_hours};
@@ -11,7 +12,6 @@ use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
-use axum::response::IntoResponse;
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 use sqlx::query;
@@ -23,9 +23,9 @@ pub async fn handle_ws(
     State(state): State<AppState>,
     auth_session: AuthSession,
     ws: WebSocketUpgrade,
-) -> impl IntoResponse {
-    let user = auth_session.user.expect("User should be logged in");
-    ws.on_upgrade(move |socket| handle_socket(socket, state, user))
+) -> HttpResult {
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    Ok(ws.on_upgrade(move |socket| handle_socket(socket, state, user)))
 }
 
 #[derive(Deserialize)]

@@ -1,9 +1,10 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
-use crate::http::pages::{AuthSession, get_global_vars};
+use crate::http::error::{HttpError, HttpResult};
+use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
+use crate::utils::queries::get_global_vars;
 use askama::Template;
 use axum::extract::State;
 use axum::response::IntoResponse;
@@ -27,7 +28,7 @@ pub fn router() -> Router<AppState> {
         .merge(schedule_overrides::router())
 }
 
-async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) -> impl IntoResponse {
+async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/admin_page.html")]
     struct HomeTemplate {
@@ -36,10 +37,10 @@ async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) ->
     }
 
     HomeTemplate {
-        user: auth_session.user.expect("User should be logged in"),
-        global_vars: get_global_vars(&state).await,
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        global_vars: get_global_vars(&state.read_pool).await?,
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]

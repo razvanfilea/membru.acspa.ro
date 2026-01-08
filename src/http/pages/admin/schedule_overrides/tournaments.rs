@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult};
+use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::schedule_overrides::{
     AlternativeDay, AlternativeDayType, NewAlternativeDay, add_alternative_day,
@@ -63,7 +63,7 @@ async fn tournaments_page(
         .partition(|t| t.date >= today);
 
     TournamentsTemplate {
-        user: auth_session.user.expect("User should be logged in"),
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         upcoming,
         past,
     }
@@ -80,7 +80,7 @@ struct NewOrEditTournamentTemplate {
 
 async fn new_tournament_page(auth_session: AuthSession) -> HttpResult {
     NewOrEditTournamentTemplate {
-        user: auth_session.user.expect("User should be logged in"),
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         current: None,
         current_date: local_time().date(),
     }
@@ -104,7 +104,9 @@ async fn create_tournament(
     Form(tournament): Form<NewTournament>,
 ) -> HttpResult {
     let Ok(date) = Date::parse(&tournament.date, date_formats::ISO_DATE) else {
-        return Err(HttpError::Text("Data selectata nu este validă".to_string()));
+        return Err(HttpError::Message(
+            "Data selectata nu este validă".to_string(),
+        ));
     };
 
     let capacity = tournament
@@ -138,13 +140,13 @@ async fn edit_tournament_page(
     auth_session: AuthSession,
     Path(date): Path<String>,
 ) -> HttpResult {
-    let date = Date::parse(&date, ISO_DATE).expect("Data este invalida");
+    let date = Date::parse(&date, ISO_DATE).or_bail("Data este invalida")?;
     let Some(current) = get_tournament_day(&state.read_pool, date).await? else {
         return Ok(error_bubble_response("Nu exista acest turneu"));
     };
 
     NewOrEditTournamentTemplate {
-        user: auth_session.user.expect("User should be logged in"),
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         current: Some(current),
         current_date: local_time().date(),
     }
@@ -167,7 +169,7 @@ async fn update_tournament(
     Path(date): Path<String>,
     Form(updated): Form<UpdatedTournament>,
 ) -> HttpResult {
-    let date = Date::parse(&date, ISO_DATE).expect("Data este invalida");
+    let date = Date::parse(&date, ISO_DATE).or_bail("Data este invalida")?;
     let capacity = updated
         .capacity
         .as_ref()

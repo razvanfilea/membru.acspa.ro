@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
@@ -10,7 +10,6 @@ use crate::utils::queries::{
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
-use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::query;
 
@@ -25,7 +24,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         max_reservations: ReservationsCount,
     }
 
-    let user = auth_session.user.expect("User should be logged in");
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
 
     let role = query!(
         "select reservations, guest_reservations from user_roles where id = $1",
@@ -59,7 +58,7 @@ pub async fn profile_reservations(
     auth_session: AuthSession,
     State(state): State<AppState>,
     Query(query): Query<ReservationsQuery>,
-) -> impl IntoResponse {
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "user/profile_content.html")]
     struct ProfileTemplate {
@@ -67,11 +66,11 @@ pub async fn profile_reservations(
         show_cancelled: bool,
     }
 
-    let user = auth_session.user.expect("User should be logged in");
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
 
     ProfileTemplate {
         reservations: get_user_reservations(&state.read_pool, user.id, query.show_cancelled).await,
         show_cancelled: query.show_cancelled,
     }
-    .into_response()
+    .try_into_response()
 }

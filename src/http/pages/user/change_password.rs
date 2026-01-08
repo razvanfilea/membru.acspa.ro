@@ -1,6 +1,6 @@
 use crate::http::AppState;
 use crate::http::auth::{generate_hash_from_password, validate_credentials};
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
@@ -12,7 +12,7 @@ use serde::Deserialize;
 use sqlx::query;
 use tracing::debug;
 
-pub async fn change_password_page(auth_session: AuthSession) -> impl IntoResponse {
+pub async fn change_password_page(auth_session: AuthSession) -> HttpResult {
     #[derive(Template)]
     #[template(path = "user/change_password_page.html")]
     struct ChangePasswordTemplate {
@@ -20,9 +20,9 @@ pub async fn change_password_page(auth_session: AuthSession) -> impl IntoRespons
     }
 
     ChangePasswordTemplate {
-        user: auth_session.user.expect("User should be logged in"),
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
     }
-    .into_response()
+    .try_into_response()
 }
 
 fn change_password_error(message: impl AsRef<str>) -> HttpResult {
@@ -50,7 +50,7 @@ pub async fn change_password(
     auth: AuthSession,
     Form(passwords): Form<ChangePasswordForm>,
 ) -> HttpResult {
-    let user = auth.user.as_ref().unwrap();
+    let user = auth.user.as_ref().ok_or(HttpError::Unauthorized)?;
 
     if passwords.new != passwords.new_duplicate {
         return change_password_error("Cele 2 parole nu sunt identice");

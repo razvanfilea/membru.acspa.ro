@@ -1,8 +1,8 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpError, HttpResult, OrBail};
+use crate::http::pages::AuthSession;
 use crate::http::pages::home::reservation_hours::{ReservationHours, get_reservation_hours};
 use crate::http::pages::home::socket::handle_ws;
-use crate::http::pages::{AuthSession, get_global_vars};
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
@@ -11,7 +11,7 @@ use crate::reservation::{
     ReservationError, ReservationSuccess, create_reservation, is_reservation_possible,
 };
 use crate::utils::date_iter::DateIter;
-use crate::utils::queries::get_day_structure;
+use crate::utils::queries::{get_day_structure, get_global_vars};
 use crate::utils::{CssColor, local_date};
 use crate::utils::{date_formats, get_reservation_result_color, local_time};
 use askama::Template;
@@ -79,9 +79,9 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
         current_date,
         selected_date: current_date,
         days: DateIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
-        user: auth_session.user.expect("User should be logged in"),
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         reservation_hours,
-        global_vars: get_global_vars(&state).await,
+        global_vars: get_global_vars(&state.read_pool).await?,
         reservation_color_code,
     }
     .try_into_response()
@@ -115,7 +115,7 @@ async fn hour_picker(
         location_name: &'a str,
     }
 
-    let user = auth_session.user.expect("User should be logged in");
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
     let selected_date = Date::parse(&query.selected_date, date_formats::READABLE_DATE)
         .unwrap_or_else(|e| {
             warn!(
@@ -162,10 +162,10 @@ async fn confirm_reservation(
     auth_session: AuthSession,
     State(state): State<AppState>,
     Form(query): Form<HourQuery>,
-) -> impl IntoResponse {
-    let user = auth_session.user.expect("User should be logged in");
-    let selected_date =
-        Date::parse(&query.selected_date, date_formats::READABLE_DATE).expect("Invalid date");
+) -> HttpResult {
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let selected_date = Date::parse(&query.selected_date, date_formats::READABLE_DATE)
+        .or_bail("Data este invalida")?;
     let selected_hour = query.hour;
 
     let result = create_reservation(
@@ -215,7 +215,7 @@ async fn confirm_reservation(
         message_color: get_reservation_result_color(&result),
         message,
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize)]
@@ -232,7 +232,7 @@ async fn cancel_reservation(
     Query(query): Query<CancelReservationQuery>,
 ) -> HttpResult {
     let date = Date::parse(&query.date, date_formats::ISO_DATE).unwrap();
-    let user = auth_session.user.expect("User should be logged in");
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
     let user_id = query.user_id.unwrap_or(user.id);
 
     if (user_id != user.id || query.created_for.is_some()) && !user.admin_panel_access {

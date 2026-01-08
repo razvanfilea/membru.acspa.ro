@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::schedule_overrides::AlternativeDay;
 use crate::http::pages::admin::schedule_overrides::holidays::{
@@ -88,7 +88,7 @@ async fn calendar_page(
 ) -> HttpResult {
     let today = local_date();
     let month = Month::try_from(month_u8).unwrap_or(today.month());
-    let selected_date = Date::from_calendar_date(year, month, 1).expect("Invalid calendar date");
+    let selected_date = Date::from_calendar_date(year, month, 1).or_bail("Data este invalida")?;
 
     let holidays = get_holidays_for_month(&state.read_pool, selected_date).await?;
     let tournaments = get_tournament_days(&state.read_pool, Some(selected_date)).await?;
@@ -129,7 +129,7 @@ async fn calendar_page(
     let next_month_date = last_day.next_day().unwrap();
 
     CalendarTemplate {
-        user: auth_session.user.expect("User should be logged in"),
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         current_date: today,
         calendar_days,
         day_markers,
@@ -152,7 +152,7 @@ async fn day_details_partial(
     State(state): State<AppState>,
     Path(date_str): Path<String>,
 ) -> HttpResult {
-    let date = Date::parse(&date_str, date_formats::ISO_DATE).expect("Invalid date");
+    let date = Date::parse(&date_str, date_formats::ISO_DATE).or_bail("Data este invalida")?;
 
     day_details_response(state, date).await
 }

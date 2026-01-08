@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::template_into_response::TemplateIntoResponse;
@@ -57,7 +57,7 @@ async fn guests_page(State(state): State<AppState>, auth_session: AuthSession) -
     }
 
     GuestsTemplate {
-        user: auth_session.user.expect("User should be logged in"),
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         guests: get_guests(&state.read_pool).await?,
         current_date: local_time().date(),
     }
@@ -121,7 +121,7 @@ async fn create_guest(
         .try_into_response();
     }
 
-    let user = auth_session.user.expect("User should be logged in");
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
     let hour = guest.hour;
 
     let referral = reservation::Referral {

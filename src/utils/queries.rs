@@ -1,5 +1,6 @@
 use crate::http::AppState;
 use crate::model::day_structure::{DayStructure, HOLIDAY_DAY_STRUCTURE};
+use crate::model::global_vars::GlobalVars;
 use crate::model::location::Location;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
@@ -7,6 +8,21 @@ use itertools::Itertools;
 use sqlx::{Executor, Sqlite, SqlitePool, query, query_as};
 use time::{Date, Month, Weekday};
 use tracing::error;
+
+pub async fn get_global_vars(pool: &SqlitePool) -> sqlx::Result<GlobalVars> {
+    query_as!(
+        GlobalVars,
+        "select in_maintenance, entrance_code, homepage_message from global_vars"
+    )
+    .fetch_one(pool)
+    .await
+}
+
+pub async fn get_user(pool: &SqlitePool, id: i64) -> sqlx::Result<User> {
+    query_as!(User, "select * from users_with_role where id = $1", id)
+        .fetch_one(pool)
+        .await
+}
 
 pub async fn get_alt_day_structure_for_day(
     executor: impl Executor<'_, Database = Sqlite>,
@@ -157,9 +173,14 @@ pub async fn get_user_weeks_reservations_count(
 pub async fn delete_reservations_on_day(
     executor: impl Executor<'_, Database = Sqlite>,
     date: Date,
+    hour: Option<u8>,
 ) -> Result<u64, sqlx::Error> {
-    query!("delete from reservations where date = $1", date)
-        .execute(executor)
-        .await
-        .map(|result| result.rows_affected())
+    query!(
+        "delete from reservations where date = $1 and ($2 is null or hour = $2)",
+        date,
+        hour
+    )
+    .execute(executor)
+    .await
+    .map(|result| result.rows_affected())
 }
