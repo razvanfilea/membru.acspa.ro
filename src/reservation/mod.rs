@@ -8,7 +8,7 @@ use crate::model::location::Location;
 use crate::model::user::User;
 pub use crate::reservation::check::*;
 pub use result::*;
-use sqlx::{Executor, Sqlite, SqlitePool, query};
+use sqlx::{SqliteExecutor, SqlitePool, query};
 use time::{Date, OffsetDateTime};
 use tracing::error;
 
@@ -86,7 +86,7 @@ pub async fn create_reservation(
 }
 
 async fn reorder_extra_guest(
-    executor: impl Executor<'_, Database = Sqlite>,
+    executor: impl SqliteExecutor<'_>,
     date: Date,
     hour: u8,
     location: &Location,

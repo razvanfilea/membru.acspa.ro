@@ -1,3 +1,4 @@
+use crate::utils::queries::YearMonth;
 use time::{Date, OffsetDateTime};
 
 #[derive(Debug, Clone)]
@@ -26,7 +27,7 @@ pub struct PaymentWithAllocations {
     pub amount: i64,
     pub payment_date: Date,
     pub notes: Option<String>,
-    pub allocations: Vec<PaymentAllocation>,
+    pub allocations: Vec<YearMonth>,
     pub created_at: OffsetDateTime,
     pub created_by: i64,
     pub created_by_name: String,
@@ -40,10 +41,4 @@ impl PaymentWithAllocations {
             format!("{:.02}", self.amount as f64 / 100.0)
         }
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct PaymentAllocation {
-    pub year: i32,
-    pub month: u8,
 }

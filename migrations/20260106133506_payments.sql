@@ -15,7 +15,7 @@ CREATE TABLE payments
 CREATE TABLE payment_allocations
 (
     payment_id INTEGER NOT NULL,
-    year       INTEGER NOT NULL,
+    year       INTEGER NOT NULL CHECK (year > -9999 AND year < 9999),
     month      TINYINT NOT NULL CHECK (month >= 1 AND month <= 12),
 
     PRIMARY KEY (payment_id, year, month),
@@ -58,5 +58,6 @@ BEGIN
                     AND pa.month = NEW.month);
 END;
 
+CREATE INDEX idx_payment_allocations_year_month ON payment_allocations (year, month);
 CREATE INDEX idx_payments_user_id ON payments (user_id);
 CREATE INDEX idx_payment_breaks_user_id ON payment_breaks (user_id);

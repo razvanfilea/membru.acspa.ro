@@ -34,7 +34,7 @@ pub struct GuestDto {
     created_at: OffsetDateTime,
 }
 
-async fn get_guests(pool: &SqlitePool) -> Result<Vec<GuestDto>, sqlx::Error> {
+async fn get_guests(pool: &SqlitePool) -> sqlx::Result<Vec<GuestDto>> {
     query_as!(
         GuestDto,
         r#"select r._rowid_ as 'rowid!', r.created_for 'name!', r.date, r.hour, r.as_guest, r.created_at, r.user_id as created_by_id, u.name as created_by

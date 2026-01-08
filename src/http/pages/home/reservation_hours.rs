@@ -37,10 +37,7 @@ pub struct ReservationHours {
     pub capacity: Option<u8>,
 }
 
-pub async fn get_reservation_hours(
-    state: &AppState,
-    date: Date,
-) -> Result<ReservationHours, sqlx::Error> {
+pub async fn get_reservation_hours(state: &AppState, date: Date) -> sqlx::Result<ReservationHours> {
     let day_structure = get_day_structure(state, date).await;
     let restrictions = query_as!(
         Restriction,

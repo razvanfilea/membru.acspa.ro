@@ -291,7 +291,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2" id="month_grid">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2" id="month_grid">
                         {% for m in 1..=12 %}
                         {% let month_name = date_formats::month_as_str(&Month::try_from(*m).unwrap()) %}
                         <button type="button"

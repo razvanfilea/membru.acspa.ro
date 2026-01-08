@@ -3,7 +3,7 @@ use crate::http::error::{HttpError, HttpResult};
 use crate::utils::date_formats;
 use crate::utils::queries::delete_reservations_on_day;
 use axum::Router;
-use sqlx::{Executor, Sqlite, SqliteConnection, SqlitePool, query, query_as};
+use sqlx::{SqliteConnection, SqliteExecutor, SqlitePool, query, query_as};
 use time::{Date, OffsetDateTime};
 use tracing::info;
 
@@ -107,10 +107,10 @@ impl AsRef<str> for AlternativeDayType {
 }
 
 async fn get_alternative_day(
-    executor: impl Executor<'_, Database = Sqlite>,
+    executor: impl SqliteExecutor<'_>,
     day_type: AlternativeDayType,
     date: Date,
-) -> Result<Option<AlternativeDay>, sqlx::Error> {
+) -> sqlx::Result<Option<AlternativeDay>> {
     let day_type = day_type.as_ref();
     query_as!(AlternativeDay, "select date, COALESCE(description, '') as 'description!: String',
         slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, slots_start_minute as 'start_minute', created_at
@@ -123,7 +123,7 @@ async fn get_alternative_days(
     pool: &SqlitePool,
     day_type: AlternativeDayType,
     month_year: Option<Date>,
-) -> Result<Vec<AlternativeDay>, sqlx::Error> {
+) -> sqlx::Result<Vec<AlternativeDay>> {
     let day_type = day_type.as_ref();
     query_as!(AlternativeDay, "select date, COALESCE(description, '') as 'description',
         slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, slots_start_minute as 'start_minute', created_at
@@ -157,7 +157,7 @@ async fn delete_alternative_day(state: &AppState, date: String) -> HttpResult<()
     Ok(())
 }
 
-async fn alt_day_exists(conn: &mut SqliteConnection, date: Date) -> Result<bool, sqlx::Error> {
+async fn alt_day_exists(conn: &mut SqliteConnection, date: Date) -> sqlx::Result<bool> {
     Ok(query!(
         "select exists (select 1 from alternative_days where date = $1) as 'exists!'",
         date
