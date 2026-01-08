@@ -5,7 +5,7 @@ use crate::model::location::Location;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
 use itertools::Itertools;
-use sqlx::{Executor, Sqlite, SqlitePool, query, query_as};
+use sqlx::{SqliteExecutor, SqlitePool, query, query_as};
 use time::{Date, Month, Weekday};
 use tracing::error;
 
@@ -25,7 +25,7 @@ pub async fn get_user(pool: &SqlitePool, id: i64) -> sqlx::Result<User> {
 }
 
 pub async fn get_alt_day_structure_for_day(
-    executor: impl Executor<'_, Database = Sqlite>,
+    executor: impl SqliteExecutor<'_>,
     date: Date,
 ) -> Option<DayStructure> {
     fn is_weekend(weekday: Weekday) -> bool {
@@ -54,10 +54,16 @@ pub async fn get_day_structure(state: &AppState, date: Date) -> DayStructure {
         .unwrap_or_else(|| state.location.day_structure())
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct YearMonth {
     pub year: i32,
     pub month: Month,
+}
+
+impl YearMonth {
+    pub fn new(year: i32, month: Month) -> Self {
+        Self { year, month }
+    }
 }
 
 pub struct GroupedUserReservations {
@@ -110,7 +116,7 @@ pub struct ReservationsCount {
 }
 
 pub async fn get_reservations_count_for_slot(
-    executor: impl Executor<'_, Database = Sqlite>,
+    executor: impl SqliteExecutor<'_>,
     location: &Location,
     date: Date,
     hour: u8,
@@ -140,7 +146,7 @@ pub async fn get_reservations_count_for_slot(
 }
 
 pub async fn get_user_weeks_reservations_count(
-    executor: impl Executor<'_, Database = Sqlite>,
+    executor: impl SqliteExecutor<'_>,
     user: &User,
     date: Date,
 ) -> sqlx::Result<ReservationsCount> {
@@ -171,10 +177,10 @@ pub async fn get_user_weeks_reservations_count(
 }
 
 pub async fn delete_reservations_on_day(
-    executor: impl Executor<'_, Database = Sqlite>,
+    executor: impl SqliteExecutor<'_>,
     date: Date,
     hour: Option<u8>,
-) -> Result<u64, sqlx::Error> {
+) -> sqlx::Result<u64> {
     query!(
         "delete from reservations where date = $1 and ($2 is null or hour = $2)",
         date,

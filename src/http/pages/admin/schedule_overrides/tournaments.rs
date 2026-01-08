@@ -16,7 +16,7 @@ use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{Error, Executor, Sqlite, SqlitePool, query};
+use sqlx::{Error, SqliteExecutor, SqlitePool, query};
 use time::Date;
 use tracing::info;
 
@@ -31,7 +31,7 @@ pub fn router() -> Router<AppState> {
 }
 
 pub async fn get_tournament_day(
-    executor: impl Executor<'_, Database = Sqlite>,
+    executor: impl SqliteExecutor<'_>,
     date: Date,
 ) -> Result<Option<AlternativeDay>, Error> {
     get_alternative_day(executor, AlternativeDayType::Tournament, date).await

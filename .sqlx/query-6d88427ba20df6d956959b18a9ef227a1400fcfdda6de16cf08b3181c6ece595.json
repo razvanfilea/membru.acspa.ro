@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select year, month from payment_allocations where payment_id in (select id from payments where user_id = ?)",
+  "describe": {
+    "columns": [
+      {
+        "name": "year",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "month",
+        "ordinal": 1,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "6d88427ba20df6d956959b18a9ef227a1400fcfdda6de16cf08b3181c6ece595"
+}
