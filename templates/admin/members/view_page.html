@@ -48,6 +48,25 @@
         </a>
     </div>
 
+    <div class="mt-8 flex flex-col gap-6">
+        <div class="flex flex-row justify-between items-center bg-base-200/50 p-4 rounded-2xl border border-base-300">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 flex items-center justify-center bg-secondary/10 text-secondary rounded-full shrink-0">
+                    <span class="material-symbols-outlined text-2xl">summarize</span>
+                </div>
+                <div>
+                    <h3 class="text-lg md:text-xl font-bold leading-tight">Situație anuală cotizații</h3>
+                    <p class="text-xs text-gray-500 hidden sm:block">Rezumat anual al plaților</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-base-100 rounded-2xl shadow-sm border border-base-300 p-4 md:p-6">
+            {% let selected_year = current_year %}
+            {% include "admin/members/status_grid_partial.html" %}
+        </div>
+    </div>
+
     {% block payments %}
     <div id="payments" class="mt-8 flex flex-col gap-6">
         <div class="flex flex-row justify-between items-center bg-base-200/50 p-4 rounded-2xl border border-base-300">
