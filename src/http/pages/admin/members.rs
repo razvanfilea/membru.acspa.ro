@@ -22,6 +22,7 @@ use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as};
+use std::collections::HashSet;
 use time::{Date, Month};
 
 pub fn router() -> Router<AppState> {
@@ -120,8 +121,8 @@ async fn search_members(
         query,
         sort_order
     )
-    .fetch_all(&state.read_pool)
-    .await?;
+        .fetch_all(&state.read_pool)
+        .await?;
 
     MembersListTemplate { members }.try_into_response()
 }
@@ -195,20 +196,18 @@ async fn view_member_page(
     }
 
     impl ViewMemberTemplate {
-        fn can_select_month(&self, year: i32, month: u8) -> bool {
-            let date = Date::from_calendar_date(year, Month::try_from(month).unwrap(), 1).unwrap();
-            let matches_breaks = self
-                .breaks
+        pub fn get_paid_months_json(&self) -> String {
+            let months: HashSet<String> = self
+                .payments
                 .iter()
-                .any(|br| (br.start_date..=br.end_date).contains(&date));
+                .flat_map(|p| p.allocations.iter())
+                .map(|alloc| {
+                    // Formats as M-YYYY
+                    format!("{}-{:04}", alloc.month, alloc.year)
+                })
+                .collect();
 
-            let matches_payments = self.payments.iter().any(|p| {
-                p.allocations
-                    .iter()
-                    .any(|alloc| alloc.year == year && alloc.month == month)
-            });
-
-            !matches_breaks && !matches_payments
+            serde_json::to_string(&months).expect("Failed to serialize")
         }
     }
 
@@ -217,7 +216,9 @@ async fn view_member_page(
         .await
         .unwrap_or_default();
 
-    let breaks = get_user_payment_breaks(&state.read_pool, user_id).await?;
+    let breaks = get_user_payment_breaks(&state.read_pool, user_id)
+        .await
+        .unwrap_or_default();
 
     ViewMemberTemplate {
         user: auth_session.user.expect("User should be logged in"),
@@ -303,8 +304,8 @@ async fn update_member(
         received_gift,
         is_active
     )
-    .execute(&state.write_pool)
-    .await?;
+        .execute(&state.write_pool)
+        .await?;
 
     Ok([("HX-Redirect", "/admin/members")].into_response())
 }

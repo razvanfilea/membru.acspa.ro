@@ -241,29 +241,28 @@
 </div>
 
 <dialog id="payment_modal" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box w-full sm:w-11/12 max-w-2xl p-0 bg-base-100">
+    <div class="modal-box w-full sm:w-11/12 max-w-2xl p-0 bg-base-100 overflow-hidden flex flex-col">
 
-        <div class="flex items-center justify-between px-6 py-3 bg-base-200/50 border-b border-base-300">
+        <div class="flex items-center justify-between px-6 py-4 bg-base-200 border-b border-base-300">
             <h3 class="font-bold text-lg flex items-center gap-2">
                 <span class="material-symbols-outlined">payments</span>
                 Înregistrează Plată
             </h3>
             <form method="dialog">
-                <button class="btn btn-sm btn-circle btn-ghost" onclick="payment_modal.close()">
+                <button class="btn btn-sm btn-circle btn-ghost">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </form>
         </div>
 
         <form hx-post="/admin/members/payments/{{ member.id }}" class="flex flex-col">
-            <div class="p-6 flex flex-col gap-5">
+            <div class="p-6 flex flex-col gap-6">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
                     <label class="input input-bordered flex items-center gap-2">
                         Sumă
                         <input type="number" name="amount" step="0.01" class="grow font-mono font-bold text-right" placeholder="0.00" required />
-                        <span class="text-gray-400 font-bold">RON</span>
+                        <span class="badge badge-neutral badge-sm uppercase">Ron</span>
                     </label>
 
                     <label class="input input-bordered flex items-center gap-2">
@@ -272,55 +271,46 @@
                     </label>
                 </div>
 
-                <div class="flex flex-col gap-2">
-                    <div class="flex justify-between items-end">
-                        <span class="font-bold text-sm text-gray-500 uppercase tracking-wide">Luni Acoperite</span>
+                <div class="flex flex-col gap-4">
+                    <div class="flex justify-between items-center px-1">
+                        <span class="font-bold text-sm text-gray-500 uppercase tracking-widest">Selectare Perioadă</span>
+                        <div id="selection_counter" class="badge badge-primary badge-sm hidden">0 selectate</div>
                     </div>
 
-                    <div role="tablist" class="tabs tabs-box bg-base-200 rounded-box gap-1">
-                        {% for year in (current_year - 1)..(current_year + 2) %}
-
-                        <input type="radio"
-                               name="year_tab_selection"
-                               role="tab"
-                               class="tab flex-1 transition-all duration-200 checked:text-primary font-bold rounded-btn"
-                               aria-label="{{ year }}"
-                               {% if year == current_year %}checked="checked"{% endif %}
-                               autocomplete="off" />
-
-                        <div role="tabpanel" class="tab-content p-4 w-full">
-                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                                {% for month in 1..=12 %}
-
-                                {% let selectable = self.can_select_month(*year, *(month as u8)) %}
-
-                                <label class="relative flex flex-col items-center justify-center py-3 rounded-lg border transition-all duration-200
-                                            {% if selectable %}
-                                                bg-base-100 border-base-300 cursor-pointer hover:border-primary hover:bg-primary/5
-                                            {% else %}
-                                                bg-base-200 border-transparent opacity-50 cursor-not-allowed
-                                            {% endif %}">
-
-                                    <span class="text-sm font-mono font-bold mb-1">{{ month }}. {{ date_formats::month_as_str(&Month::try_from(*month).unwrap()) }}</span>
-
-                                    {% if selectable %}
-                                    <input type="checkbox" name="months" value="{{ month }}-{{ year }}"
-                                           class="checkbox checkbox-xs checkbox-primary rounded-sm" autocomplete="off" />
-                                    {% else %}
-                                    <span class="material-symbols-outlined text-success" style="font-size: 1.25rem;">check_circle</span>
-                                    <input type="checkbox" disabled class="hidden" autocomplete="off" />
-                                    {% endif %}
-                                </label>
-
-                                {% endfor %}
-                            </div>
+                    <div class="relative w-full">
+                        <div id="year_scroll_container" class="flex flex-row gap-2 overflow-x-auto pb-2 no-scrollbar snap-x">
+                            {% let start_year = member.member_since.year() %}
+                            {% let end_year = current_year + 1 %}
+                            {% for year in start_year..=end_year %}
+                            <button type="button"
+                                    class="year-btn btn btn-sm btn-ghost border-base-300 snap-center {% if year == current_year %}btn-active btn-primary{% endif %}"
+                                    onclick="switchYear({{ year }}, this)">
+                                {{ year }}
+                            </button>
+                            {% endfor %}
                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2" id="month_grid">
+                        {% for m in 1..=12 %}
+                        {% let month_name = date_formats::month_as_str(&Month::try_from(*m).unwrap()) %}
+                        <button type="button"
+                                id="m-btn-{{ m }}"
+                                class="month-btn flex flex-col items-center justify-center py-3 rounded-lg border border-base-300 bg-base-100 hover:border-primary hover:bg-primary/5 transition-all"
+                                onclick="toggleMonth({{ m }})">
+                            <span class="text-xs font-mono uppercase font-bold">{{ m }}. {{ month_name }}</span>
+                            <div class="paid-marker hidden mt-1">
+                                <span class="material-symbols-outlined text-success text-sm">check_circle</span>
+                            </div>
+                        </button>
                         {% endfor %}
                     </div>
 
                     <div class="text-xs text-gray-400 px-1">
                         Lunile marcate cu <span class="material-symbols-outlined align-bottom text-success text-sm">check_circle</span> sunt deja achitate.
                     </div>
+
+                    <input type="hidden" name="months" id="months_payload" autocomplete="off" />
                 </div>
 
                 <label class="input input-bordered flex items-center gap-2 w-full">
@@ -330,7 +320,7 @@
                 </label>
             </div>
 
-            <div class="flex justify-end gap-2 px-6 py-4 bg-base-200/50 border-t border-base-300 rounded-b-xl">
+            <div class="flex justify-end gap-2 px-6 py-4 bg-base-200 border-t border-base-300">
                 <button type="button" class="btn btn-ghost" onclick="payment_modal.close()">Anulează</button>
                 <button type="submit" class="btn btn-primary min-w-24 gap-2">
                     <span class="material-symbols-outlined">save</span>
@@ -370,7 +360,7 @@
         const year = document.getElementById(prefix + '_year_select').value;
         const finalInput = document.getElementById(prefix + '_final_input');
 
-        // Constructs "YYYY-MM" format expected by Rust backend
+        // Constructs "YYYY-MM" format
         finalInput.value = `${year}-${month}`;
     }
 
@@ -379,6 +369,84 @@
         updateHiddenDate('start');
         updateHiddenDate('end');
     });
+
+    let selectedMonths = []; // Array of "M-YYYY"
+    let currentActiveYear = {{ current_year }};
+    const paidMonths = {{ get_paid_months_json() | safe }};
+
+    function switchYear(year, btn) {
+        currentActiveYear = year;
+
+        // Year Buttons
+        document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('btn-primary', 'btn-active'));
+        btn.classList.add('btn-primary', 'btn-active');
+
+        updateMonthGrid();
+    }
+
+    function updateMonthGrid() {
+        for (let m = 1; m <= 12; m++) {
+            const btn = document.getElementById(`m-btn-${m}`);
+            const marker = btn.querySelector('.paid-marker');
+            const key = `${m}-${currentActiveYear}`;
+
+            // Reset state
+            btn.classList.remove('border-primary', 'bg-primary/10', 'opacity-50', 'cursor-not-allowed', 'bg-base-200');
+            marker.classList.add('hidden');
+            btn.disabled = false;
+
+            if (paidMonths.includes(key)) {
+                // Already paid
+                btn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-base-200');
+                marker.classList.remove('hidden');
+                btn.disabled = true;
+            } else if (selectedMonths.includes(key)) {
+                // Selected but not saved yet
+                btn.classList.add('border-primary', 'bg-primary/10');
+            }
+        }
+    }
+
+    function toggleMonth(m) {
+        const key = `${m}-${currentActiveYear}`;
+        const idx = selectedMonths.indexOf(key);
+
+        if (idx > -1) {
+            selectedMonths.splice(idx, 1);
+        } else {
+            selectedMonths.push(key);
+        }
+
+        // Sync to hidden input for form submission
+        document.getElementById('months_payload').value = selectedMonths.join(',');
+
+        // Update counter UI
+        const counter = document.getElementById('selection_counter');
+        counter.innerText = `${selectedMonths.length} selectate`;
+        counter.classList.toggle('hidden', selectedMonths.length === 0);
+
+        updateMonthGrid();
+    }
+
+    function initYearScroll() {
+        const container = document.getElementById('year_scroll_container');
+        const active = container.querySelector('.btn-active');
+        if (active) {
+            container.scrollLeft = active.offsetLeft - (container.clientWidth / 2) + (active.clientWidth / 2);
+        }
+    }
+
+    // Trigger scroll when modal opens
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'open' && payment_modal.open) {
+                initYearScroll();
+                document.getElementById('months_payload').value = "";
+                updateMonthGrid();
+            }
+        });
+    });
+    observer.observe(payment_modal, { attributes: true });
 </script>
 
 {% endblock %}
