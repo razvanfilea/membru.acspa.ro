@@ -1,5 +1,6 @@
 mod breaks;
 mod payments;
+mod payments_summary;
 
 use crate::http::AppState;
 use crate::http::auth::generate_hash_from_password;
@@ -9,6 +10,10 @@ use crate::http::pages::admin::members::breaks::{
     add_break, delete_break, get_user_payment_breaks,
 };
 use crate::http::pages::admin::members::payments::{add_payment, get_user_payments};
+use crate::http::pages::admin::members::payments_summary::MonthStatus;
+use crate::http::pages::admin::members::payments_summary::{
+    MonthStatusView, calculate_year_status, payments_status_partial,
+};
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
@@ -41,6 +46,7 @@ pub fn router() -> Router<AppState> {
         .route("/payments/{id}", post(add_payment))
         .route("/breaks/{id}", post(add_break))
         .route("/breaks/{id}", delete(delete_break))
+        .route("/payment_status/{id}/{year}", get(payments_status_partial))
 }
 
 async fn get_all_roles(state: &AppState) -> sqlx::Result<Vec<String>> {
@@ -184,11 +190,12 @@ async fn view_member_page(
     struct ViewMemberTemplate {
         user: User,
         member: User,
+        current_date: Date,
         reservations: Vec<GroupedUserReservations>,
         allow_reservation_cancellation: bool,
         payments: Vec<PaymentWithAllocations>,
         breaks: Vec<PaymentBreak>,
-        current_date: Date,
+        months_status_view: Vec<MonthStatusView>,
     }
 
     impl ViewMemberTemplate {
@@ -207,6 +214,7 @@ async fn view_member_page(
         }
     }
 
+    let current_date = local_date();
     let member = get_user(&state.read_pool, user_id).await?;
     let payments = get_user_payments(&state.read_pool, user_id)
         .await
@@ -215,15 +223,18 @@ async fn view_member_page(
     let breaks = get_user_payment_breaks(&state.read_pool, user_id)
         .await
         .unwrap_or_default();
+    let months_status_view =
+        calculate_year_status(current_date.year(), &member, &payments, &breaks);
 
     ViewMemberTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         reservations: get_user_reservations(&state.read_pool, member.id, false).await,
+        current_date,
         member,
         allow_reservation_cancellation: false,
         payments,
         breaks,
-        current_date: local_date(),
+        months_status_view,
     }
     .try_into_response()
 }

@@ -52,6 +52,7 @@
             <p class="text-gray-300 text-sm leading-snug mt-1">
                 <span>{{ member.email }}</span><br>
                 Zi de naștere: <span class="font-mono">{{ date_formats::as_readable(member.birthday) }}</span><br>
+                Membru din: <span class="font-mono">{{ date_formats::as_readable(member.member_since) }}</span><br>
                 {% if member.received_gift.is_some() %}
                 Primit cadou:
                 <span class="font-mono text-red-400">{{ self::map_date_to_string(member.received_gift) }}</span>
