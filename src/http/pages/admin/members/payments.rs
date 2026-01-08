@@ -1,12 +1,15 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
-use crate::http::pages::AuthSession;
+use crate::http::error::{HttpError, HttpResult};
+use crate::http::pages::{AuthSession, get_user};
 use crate::model::payment::{PaymentAllocation, PaymentWithAllocations};
+use crate::utils::local_date;
+use axum::Form;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::{SqlitePool, query};
-use time::Date;
+use time::{Date, Month};
+use tracing::{info, warn};
 
 pub async fn get_user_payments(
     pool: &SqlitePool,
@@ -55,9 +58,9 @@ pub async fn get_user_payments(
 
 #[derive(Deserialize, Debug)]
 pub struct NewPayment {
-    amount: f64,         // From input type="number" step="0.01"
-    payment_date: Date,  // From input type="date"
-    months: Vec<String>, // From checkboxes (format: "M-YYYY")
+    amount: f64,        // From input type="number" step="0.01"
+    payment_date: Date, // From input type="date"
+    months: String,     // From checkboxes (format: "M-YYYY")
     notes: Option<String>,
 }
 
@@ -65,9 +68,14 @@ pub async fn add_payment(
     State(state): State<AppState>,
     Path(user_id): Path<i64>,
     auth_session: AuthSession,
-    axum_extra::extract::Form(form): axum_extra::extract::Form<NewPayment>,
+    Form(form): Form<NewPayment>,
 ) -> HttpResult {
     let user = auth_session.user.expect("User should be logged in");
+    let member = get_user(&state.read_pool, user_id).await;
+
+    let current_year = local_date().year();
+    let valid_year_range = member.member_since.year()..=current_year + 1;
+
     let mut tx = state.write_pool.begin().await?;
 
     // Convert amount to cents (integer) for storage
@@ -87,12 +95,28 @@ pub async fn add_payment(
     .await?
     .id;
 
-    for month_year in form.months {
-        // Parse "6-2024" format
+    info!("Months: {}", form.months);
+    let mut allocations_count = 0;
+    for month_year in form.months.split(',') {
         let parts: Vec<&str> = month_year.split('-').collect();
         if parts.len() == 2 {
-            let month = parts[0].parse::<i8>().unwrap_or(0);
-            let year = parts[1].parse::<i32>().unwrap_or(0);
+            let Some(month) = parts[0]
+                .parse::<u8>()
+                .ok()
+                .and_then(|month| Month::try_from(month).ok())
+                .map(|month| month as u8)
+            else {
+                warn!("Failed to parse invalid month: {}", parts[0]);
+                continue;
+            };
+            let Some(year) = parts[1]
+                .parse::<i32>()
+                .ok()
+                .filter(|year| valid_year_range.contains(year))
+            else {
+                warn!("Failed to parse invalid year: {}", parts[1]);
+                continue;
+            };
 
             query!(
                 "insert into payment_allocations (payment_id, year, month) values ($1, $2, $3)",
@@ -102,7 +126,14 @@ pub async fn add_payment(
             )
             .execute(tx.as_mut())
             .await?;
+            allocations_count += 1;
         }
+    }
+
+    if allocations_count == 0 {
+        return Err(HttpError::Text(
+            "O plată trebuie să acopere cel puțin o lună".into(),
+        ));
     }
 
     tx.commit().await?;

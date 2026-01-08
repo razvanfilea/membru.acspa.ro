@@ -11,7 +11,7 @@ pub enum HttpError {
     Database(#[from] sqlx::Error),
     #[error("Failed to generate HTML: `{0}`")]
     Template(#[from] askama::Error),
-    #[error("`{0}`")]
+    #[error("{0}")]
     Text(String),
 }
 
