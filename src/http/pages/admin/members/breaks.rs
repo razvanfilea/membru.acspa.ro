@@ -1,11 +1,10 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
 use crate::model::payment::PaymentBreak;
 use crate::utils::date_formats;
 use axum::Form;
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::{SqlitePool, query, query_as};
@@ -44,12 +43,12 @@ pub async fn add_break(
         Date::parse(&date_str, date_formats::ISO_DATE).ok()
     }
 
-    let created_by = auth_session.user.expect("User should be logged in");
-    let start_date = parse_month_input(&form.start_month).expect("Invalid start month");
-    let end_date = parse_month_input(&form.end_month).expect("Invalid end month");
+    let created_by = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let start_date = parse_month_input(&form.start_month).or_bail("Început de lună invalid")?;
+    let end_date = parse_month_input(&form.end_month).or_bail("Sfârșit de lună invalid")?;
 
     if end_date < start_date {
-        return Ok(StatusCode::BAD_REQUEST.into_response());
+        return Err(HttpError::Message("Data selectată este invalidă".into()));
     }
 
     query!(

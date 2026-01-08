@@ -1,8 +1,9 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
-use crate::http::pages::{AuthSession, get_user};
+use crate::http::pages::AuthSession;
 use crate::model::payment::{PaymentAllocation, PaymentWithAllocations};
 use crate::utils::local_date;
+use crate::utils::queries::get_user;
 use axum::Form;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
@@ -70,8 +71,8 @@ pub async fn add_payment(
     auth_session: AuthSession,
     Form(form): Form<NewPayment>,
 ) -> HttpResult {
-    let user = auth_session.user.expect("User should be logged in");
-    let member = get_user(&state.read_pool, user_id).await;
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let member = get_user(&state.read_pool, user_id).await?;
 
     let current_year = local_date().year();
     let valid_year_range = member.member_since.year()..=current_year + 1;
@@ -131,7 +132,7 @@ pub async fn add_payment(
     }
 
     if allocations_count == 0 {
-        return Err(HttpError::Text(
+        return Err(HttpError::Message(
             "O plată trebuie să acopere cel puțin o lună".into(),
         ));
     }

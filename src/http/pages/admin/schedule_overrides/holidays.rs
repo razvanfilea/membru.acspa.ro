@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpResult, OrBail};
 use crate::http::pages::admin::schedule_overrides::calendar::day_details_response;
 use crate::http::pages::admin::schedule_overrides::{
     AlternativeDay, AlternativeDayType, NewAlternativeDay, add_alternative_day,
@@ -41,7 +41,7 @@ async fn create_holiday(
     State(state): State<AppState>,
     Form(new_day): Form<NewHoliday>,
 ) -> HttpResult {
-    let date = Date::parse(&new_day.date, date_formats::ISO_DATE).expect("Invalid date");
+    let date = Date::parse(&new_day.date, date_formats::ISO_DATE).or_bail("Data este invalida")?;
 
     let day_structure = &HOLIDAY_DAY_STRUCTURE;
     let day = NewAlternativeDay {
@@ -67,7 +67,7 @@ async fn create_holiday(
 }
 
 async fn delete_holiday(State(state): State<AppState>, Path(date_str): Path<String>) -> HttpResult {
-    let date = Date::parse(&date_str, date_formats::ISO_DATE).expect("Invalid date");
+    let date = Date::parse(&date_str, date_formats::ISO_DATE).or_bail("Data este invalida")?;
     delete_alternative_day(&state, date_str).await?;
     day_details_response(state, date).await
 }

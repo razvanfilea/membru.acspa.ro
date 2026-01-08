@@ -39,7 +39,7 @@ async fn add_alternative_day(
     let mut tx = write_pool.begin().await?;
 
     if alt_day_exists(tx.as_mut(), day.date).await? {
-        return Err(HttpError::Text(format!(
+        return Err(HttpError::Message(format!(
             "Deja exists o zi libera/turneu pe data de {}",
             day.date.format(date_formats::READABLE_DATE).unwrap()
         )));
@@ -69,7 +69,7 @@ async fn add_alternative_day(
     .execute(tx.as_mut())
     .await?;
 
-    let deleted_reservations = delete_reservations_on_day(tx.as_mut(), day.date).await?;
+    let deleted_reservations = delete_reservations_on_day(tx.as_mut(), day.date, None).await?;
     if deleted_reservations != 0 {
         info!("{deleted_reservations} reservation were deleted when creating alternative day");
     }
@@ -136,12 +136,14 @@ async fn get_alternative_days(
 
 async fn delete_alternative_day(state: &AppState, date: String) -> HttpResult<()> {
     let Ok(date) = Date::parse(&date, date_formats::ISO_DATE) else {
-        return Err(HttpError::Text("Data selectata e ste invalida".to_string()));
+        return Err(HttpError::Message(
+            "Data selectata e ste invalida".to_string(),
+        ));
     };
 
     let mut tx = state.write_pool.begin().await?;
 
-    let deleted_reservations = delete_reservations_on_day(tx.as_mut(), date).await?;
+    let deleted_reservations = delete_reservations_on_day(tx.as_mut(), date, None).await?;
     if deleted_reservations != 0 {
         info!("{deleted_reservations} reservation were deleted when deleting alternative day");
     }

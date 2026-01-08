@@ -1,11 +1,13 @@
 use crate::http::AppState;
 use crate::http::error::HttpResult;
+use crate::http::pages::admin::schedule_overrides::calendar::day_details_response;
 use crate::model::restriction::Restriction;
 use crate::utils::date_formats;
-use crate::utils::queries::get_day_structure;
+use crate::utils::queries::{delete_reservations_on_day, get_day_structure};
 use axum::Router;
 use axum::extract::{Query, State};
 use axum::routing::{delete, put};
+use axum_extra::extract::Form as AxumExtraForm;
 use serde::Deserialize;
 use sqlx::{Error, SqlitePool, query, query_as};
 use time::Date;
@@ -52,9 +54,6 @@ struct NewRestriction {
     message: String,
 }
 
-use crate::http::pages::admin::schedule_overrides::calendar::day_details_response;
-use axum_extra::extract::Form as AxumExtraForm;
-
 async fn create_restriction(
     State(state): State<AppState>,
     AxumExtraForm(restriction): AxumExtraForm<NewRestriction>,
@@ -70,8 +69,10 @@ async fn create_restriction(
                 continue;
             }
 
+            delete_reservations_on_day(tx.as_mut(), date, Some(hour)).await?;
+
             query!(
-                "insert or replace into restrictions (date, hour, location, message) VALUES ($1, $2, $3, $4)",
+                "insert or replace into restrictions (date, hour, location, message) values ($1, $2, $3, $4)",
                 date,
                 hour,
                 state.location.id,
@@ -81,8 +82,10 @@ async fn create_restriction(
                 .await?;
         }
     } else {
+        delete_reservations_on_day(tx.as_mut(), date, None).await?;
+
         query!(
-            "insert into restrictions (date, location, message) VALUES ($1, $2, $3)",
+            "insert into restrictions (date, location, message) values ($1, $2, $3)",
             date,
             state.location.id,
             message,

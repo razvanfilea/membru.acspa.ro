@@ -3,17 +3,17 @@ mod payments;
 
 use crate::http::AppState;
 use crate::http::auth::generate_hash_from_password;
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpError, HttpResult, OrBail};
+use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::breaks::{
     add_break, delete_break, get_user_payment_breaks,
 };
 use crate::http::pages::admin::members::payments::{add_payment, get_user_payments};
-use crate::http::pages::{AuthSession, get_user};
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
-use crate::utils::queries::{GroupedUserReservations, get_user_reservations};
-use crate::utils::{date_formats, local_date, local_time};
+use crate::utils::queries::{GroupedUserReservations, get_user, get_user_reservations};
+use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -43,12 +43,11 @@ pub fn router() -> Router<AppState> {
         .route("/breaks/{id}", delete(delete_break))
 }
 
-async fn get_all_roles(state: &AppState) -> Vec<String> {
+async fn get_all_roles(state: &AppState) -> sqlx::Result<Vec<String>> {
     query!("select name from user_roles")
         .map(|record| record.name)
         .fetch_all(&state.read_pool)
         .await
-        .expect("Database error")
 }
 
 async fn get_role_id(state: &AppState, role: &str) -> sqlx::Result<Option<i64>> {
@@ -76,7 +75,7 @@ async fn members_page(State(state): State<AppState>, auth_session: AuthSession) 
         .await?;
 
     MembersTemplate {
-        user: auth_session.user.expect("User should be logged in"),
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         members,
     }
     .try_into_response()
@@ -136,10 +135,7 @@ struct NewUser {
     password: String,
 }
 
-async fn new_member_page(
-    State(state): State<AppState>,
-    auth_session: AuthSession,
-) -> impl IntoResponse {
+async fn new_member_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/members/new_page.html")]
     struct NewMemberTemplate {
@@ -148,10 +144,10 @@ async fn new_member_page(
     }
 
     NewMemberTemplate {
-        user: auth_session.user.expect("User should be logged in"),
-        roles: get_all_roles(&state).await,
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        roles: get_all_roles(&state).await?,
     }
-    .into_response()
+    .try_into_response()
 }
 
 async fn create_new_user(
@@ -211,7 +207,7 @@ async fn view_member_page(
         }
     }
 
-    let member = get_user(&state.read_pool, user_id).await;
+    let member = get_user(&state.read_pool, user_id).await?;
     let payments = get_user_payments(&state.read_pool, user_id)
         .await
         .unwrap_or_default();
@@ -221,7 +217,7 @@ async fn view_member_page(
         .unwrap_or_default();
 
     ViewMemberTemplate {
-        user: auth_session.user.expect("User should be logged in"),
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         reservations: get_user_reservations(&state.read_pool, member.id, false).await,
         member,
         allow_reservation_cancellation: false,
@@ -236,7 +232,7 @@ async fn edit_member_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
     Path(user_id): Path<i64>,
-) -> impl IntoResponse {
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/members/edit_page.html")]
     struct EditMemberTemplate {
@@ -247,12 +243,12 @@ async fn edit_member_page(
     }
 
     EditMemberTemplate {
-        current_date: date_formats::as_iso(&local_time().date()),
-        user: auth_session.user.expect("User should be logged in"),
-        roles: get_all_roles(&state).await,
-        existing_user: get_user(&state.read_pool, user_id).await,
+        current_date: date_formats::as_iso(&local_date()),
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        roles: get_all_roles(&state).await?,
+        existing_user: get_user(&state.read_pool, user_id).await?,
     }
-    .into_response()
+    .try_into_response()
 }
 
 #[derive(Deserialize, Debug)]
@@ -279,7 +275,7 @@ async fn update_member(
 
     let role_id = get_role_id(&state, updated_user.role.as_str())
         .await?
-        .expect("Invalid role");
+        .or_bail("Rolul selectat nu există")?;
     let user_name = updated_user.name.trim();
     let is_active = updated_user.is_active.is_some();
     let has_key = updated_user.has_key.is_some();
@@ -325,7 +321,7 @@ async fn change_password_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
     Path(user_id): Path<i64>,
-) -> impl IntoResponse {
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/members/change_password.html")]
     struct ChangePasswordTemplate {
@@ -334,10 +330,10 @@ async fn change_password_page(
     }
 
     ChangePasswordTemplate {
-        user: auth_session.user.expect("User should be logged in"),
-        existing_user: get_user(&state.read_pool, user_id).await,
+        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        existing_user: get_user(&state.read_pool, user_id).await?,
     }
-    .into_response()
+    .try_into_response()
 }
 
 async fn delete_user(State(state): State<AppState>, Path(user_id): Path<i64>) -> HttpResult {
@@ -366,7 +362,7 @@ pub async fn update_password(
     Path(user_id): Path<i64>,
     Form(passwords): Form<ChangePasswordForm>,
 ) -> HttpResult {
-    let user = get_user(&state.read_pool, user_id).await;
+    let user = get_user(&state.read_pool, user_id).await?;
 
     let new_password_hash = generate_hash_from_password(passwords.password);
     query!(

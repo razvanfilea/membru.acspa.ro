@@ -12,7 +12,27 @@ pub enum HttpError {
     #[error("Failed to generate HTML: `{0}`")]
     Template(#[from] askama::Error),
     #[error("{0}")]
-    Text(String),
+    Message(String),
+    #[error("User not logged in")]
+    Unauthorized,
+}
+
+pub trait OrBail<T> {
+    fn or_bail(self, msg: impl Into<String>) -> Result<T, HttpError>;
+}
+
+// Implementation for Option
+impl<T> OrBail<T> for Option<T> {
+    fn or_bail(self, msg: impl Into<String>) -> Result<T, HttpError> {
+        self.ok_or_else(|| HttpError::Message(msg.into()))
+    }
+}
+
+// Implementation for Result
+impl<T, E> OrBail<T> for Result<T, E> {
+    fn or_bail(self, msg: impl Into<String>) -> Result<T, HttpError> {
+        self.map_err(|_| HttpError::Message(msg.into()))
+    }
 }
 
 impl IntoResponse for HttpError {
