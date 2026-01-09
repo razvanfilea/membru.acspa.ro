@@ -27,6 +27,16 @@
     </footer>
 </div>
 
+{% if global_vars.in_maintenance %}
+<div class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-base-100/90 backdrop-blur-sm text-center p-4">
+    <span class="material-symbols-outlined text-8xl text-warning mb-6">engineering</span>
+    <h1 class="text-4xl font-bold mb-2">Mentenanță</h1>
+    <p class="text-xl opacity-80 max-w-lg">
+        Site-ul este momentan în lucru. Vă rugăm să reveniți mai târziu.
+    </p>
+</div>
+{% endif %}
+
 <dialog id="help_modal" class="modal">
     <div class="modal-box">
         <div class="flex flex-col gap-2">
