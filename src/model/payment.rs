@@ -17,7 +17,7 @@ pub struct PaymentBreak {
 impl PaymentBreak {
     pub fn months(&self) -> i32 {
         (self.end_date.year() - self.start_date.year()) * 12
-            + (self.end_date.month() as u8 - self.start_date.month() as u8) as i32
+            + (self.end_date.month() as u8 as i32 - self.start_date.month() as u8 as i32)
             + 1
     }
 }

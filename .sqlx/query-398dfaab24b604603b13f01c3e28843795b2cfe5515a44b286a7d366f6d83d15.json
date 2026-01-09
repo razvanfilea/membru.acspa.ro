@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "select user_id, start_date, end_date from payment_breaks where start_date <= $2 and end_date >= $1",
+  "describe": {
+    "columns": [
+      {
+        "name": "user_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "start_date",
+        "ordinal": 1,
+        "type_info": "Date"
+      },
+      {
+        "name": "end_date",
+        "ordinal": 2,
+        "type_info": "Date"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "398dfaab24b604603b13f01c3e28843795b2cfe5515a44b286a7d366f6d83d15"
+}

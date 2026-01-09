@@ -1,0 +1,92 @@
+{
+  "db_name": "SQLite",
+  "query": "select * from users_with_role where is_active = true order by name",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "email",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "password_hash",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "is_active",
+        "ordinal": 4,
+        "type_info": "Bool"
+      },
+      {
+        "name": "role_id",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "has_key",
+        "ordinal": 6,
+        "type_info": "Bool"
+      },
+      {
+        "name": "birthday",
+        "ordinal": 7,
+        "type_info": "Date"
+      },
+      {
+        "name": "member_since",
+        "ordinal": 8,
+        "type_info": "Date"
+      },
+      {
+        "name": "received_gift",
+        "ordinal": 9,
+        "type_info": "Date"
+      },
+      {
+        "name": "is_deleted",
+        "ordinal": 10,
+        "type_info": "Bool"
+      },
+      {
+        "name": "role",
+        "ordinal": 11,
+        "type_info": "Text"
+      },
+      {
+        "name": "admin_panel_access",
+        "ordinal": 12,
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "fd052ebbc77ed71e412a90af4dcbbeb208548a5a287877957b5efded35e0468d"
+}

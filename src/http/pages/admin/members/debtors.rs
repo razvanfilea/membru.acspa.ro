@@ -53,7 +53,7 @@ pub async fn compute_debtors(
     }
     let breaks_lookup = query_as!(
         BreakRow,
-        "SELECT user_id, start_date, end_date FROM payment_breaks WHERE start_date <= $2 AND end_date >= $1",
+        "select user_id, start_date, end_date from payment_breaks where start_date <= $2 and end_date >= $1",
         year_start, year_end
     )
         .fetch_all(conn.as_mut())
