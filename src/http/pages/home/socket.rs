@@ -130,9 +130,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
         }
     }
 
-    let has_paid = check_user_has_paid(&state.read_pool, user.id)
-        .await
-        .unwrap();
+    let has_paid = check_user_has_paid(&state.read_pool, &user).await.unwrap();
 
     loop {
         let reservations_task = reservations_changed.changed();

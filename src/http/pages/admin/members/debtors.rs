@@ -19,7 +19,7 @@ pub async fn compute_debtors(
     let current_date = local_date();
     let users = query_as!(
         User,
-        "select * from users_with_role where is_active = true order by name"
+        "select * from users_with_role where is_active = true and admin_panel_access = false order by name"
     )
     .fetch_all(conn.as_mut())
     .await?;

@@ -76,7 +76,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
 
     let reservation_hours = get_reservation_hours(&state, current_date).await?;
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
-    let has_paid = check_user_has_paid(&state.read_pool, user.id).await?;
+    let has_paid = check_user_has_paid(&state.read_pool, &user).await?;
 
     HomeTemplate {
         current_date,
