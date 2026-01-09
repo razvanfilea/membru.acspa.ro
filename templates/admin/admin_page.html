@@ -1,10 +1,9 @@
 {% extends "base.html" %}
 
-{% block page_title %}Panou Administrare{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-
-<main class="p-2 sm:p-4 md:p-8 w-full" xmlns="http://www.w3.org/1999/html">
+<main class="p-4 md:p-8 w-full flex flex-col gap-8">
     <div class="divider">Setări generale</div>
 
     <form>
@@ -24,9 +23,77 @@
             </textarea>
             </label>
 
-            <button class="btn btn-error btn-wide" hx-post="/admin/apply_settings">Aplică setările</button>
+            <button class="btn btn-primary btn-wide" hx-post="/admin/apply_settings">Aplică setările</button>
         </fieldset>
     </form>
-</main>
 
+    <div class="divider">Rezumat cotizații</div>
+
+    <div class="flex flex-col gap-4">
+        <div class="flex flex-row justify-between items-center bg-base-200/50 p-4 rounded-2xl border border-base-300">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 flex items-center justify-center bg-error/10 text-error rounded-full shrink-0">
+                    <span class="material-symbols-outlined text-2xl">money_off</span>
+                </div>
+                <div>
+                    <h3 class="text-lg md:text-xl font-bold leading-tight">Restanțieri</h3>
+                    <p class="text-xs text-gray-500 hidden sm:block">Membri cu plăți lipsă în {{ selected_year }}</p>
+                </div>
+            </div>
+
+            <div class="join shadow-sm">
+                <a href="?year={{ selected_year - 1 }}" class="btn btn-sm join-item bg-base-100 border-base-300">«</a>
+                <button class="btn btn-sm join-item btn-active pointer-events-none font-mono text-xs">{{ selected_year }}</button>
+                <a href="?year={{ selected_year + 1 }}" class="btn btn-sm join-item bg-base-100 border-base-300">»</a>
+            </div>
+        </div>
+
+        <div class="bg-base-100 rounded-2xl shadow-lg border border-base-300 overflow-hidden">
+            {% if debtors.is_empty() %}
+            <div class="flex flex-col items-center justify-center py-12 text-gray-400">
+                <span class="material-symbols-outlined text-5xl opacity-20 mb-2">check_circle</span>
+                <p class="font-semibold">Nicio restanță!</p>
+                <p class="text-xs">Toți membrii sunt la zi pe anul {{ selected_year }}.</p>
+            </div>
+            {% else %}
+
+            <div class="p-4 bg-base-200/30 max-h-200 overflow-y-auto custom-scrollbar">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {% for item in debtors %}
+                    <div class="card bg-base-100 shadow-sm border border-base-300 hover:border-error/50 hover:shadow-md transition-all duration-200 group h-full">
+                        <div class="card-body p-4 gap-2">
+                            <div class="flex justify-between items-start gap-2">
+                                <a href="/admin/members/view/{{ item.member.id }}"
+                                   class="font-bold text-base line-clamp-1 hover:text-primary hover:underline transition-colors"
+                                   title="{{ item.member.name }}">
+                                    {{ item.member.name }}
+                                </a>
+                                <span class="badge badge-error font-bold shadow-sm shrink-0">
+                                    {{ item.unpaid_months.len() }} {% if item.unpaid_months.len() == 1 %} lună {% else %} luni {% endif %}
+                                </span>
+                            </div>
+
+                            <div class="divider my-0 opacity-50"></div>
+
+                            <div class="flex flex-wrap gap-1.5 grow content-start">
+                                {% for m in item.unpaid_months %}
+                                <span class="badge badge-sm badge-outline badge-error font-mono uppercase font-bold tracking-wide">
+                                    {{ m }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-base-200/30 p-2 text-center text-xs text-gray-500 border-t border-base-200">
+                Total: {{ debtors.len() }} membri cu restanțe
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</main>
 {% endblock %}
