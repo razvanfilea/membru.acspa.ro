@@ -1,4 +1,4 @@
-{% macro month_year_picker(prefix, label, current_year) %}
+{% macro month_year_picker(prefix, label, current_year, min_year, max_year) %}
 <div class="form-control">
     <label class="label"><span class="label-text">{{ label }}</span></label>
     <div class="join w-full">
@@ -22,7 +22,7 @@
         <select id="{{ prefix }}_year_select" class="select select-bordered join-item w-2/5"
                 autocomplete="off"
                 onchange="updateHiddenDate('{{ prefix }}')">
-            {% for year in (current_year - 4)..(current_year + 4) %}
+            {% for year in min_year..=max_year %}
             <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
             {% endfor %}
         </select>

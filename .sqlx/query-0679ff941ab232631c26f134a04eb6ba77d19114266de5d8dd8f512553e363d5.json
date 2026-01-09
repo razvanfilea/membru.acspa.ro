@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select p.user_id, pa.month as \"month!: u8\"\n           from payment_allocations pa\n           join payments p on p.id = pa.payment_id\n           where pa.year = $1",
+  "describe": {
+    "columns": [
+      {
+        "name": "user_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "month!: u8",
+        "ordinal": 1,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "0679ff941ab232631c26f134a04eb6ba77d19114266de5d8dd8f512553e363d5"
+}
