@@ -8,13 +8,15 @@
     </div>
 
     <div class="flex flex-col max-w-full grow" hx-vals='{"selected_date": "{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}" }'>
-        {% if user.is_active %}
+        {% if user.is_active && has_paid %}
         {% let enable_editing = true%}
         {% include "hours.html" %}
 
         <div id="confirmation"></div>
+        {% else if has_paid %}
+        <p class="text-error text-center py-4 text-xl">Contul tău este inactiv, contactează un Fondator!</p>
         {% else %}
-        <p class="text-error text-center py-4 text-xl">Contul tău este inactiv, contactează un Fondator</p>
+        <p class="text-error text-center py-4 text-xl">Ultimele 3 luni nu au fost plătite, verifică plata cotizației de membru, apoi ia legătura cu un membru fondator!</p>
         {% endif %}
     </div>
 </main>
