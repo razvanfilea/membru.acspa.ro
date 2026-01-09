@@ -31,12 +31,12 @@ pub fn router() -> Router<AppState> {
 async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/admin_page.html")]
-    struct HomeTemplate {
+    struct AdminTemplate {
         user: User,
         global_vars: GlobalVars,
     }
 
-    HomeTemplate {
+    AdminTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         global_vars: get_global_vars(&state.read_pool).await?,
     }

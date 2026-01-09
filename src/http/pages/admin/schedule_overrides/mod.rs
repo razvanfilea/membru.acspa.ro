@@ -3,7 +3,7 @@ use crate::http::error::{HttpError, HttpResult};
 use crate::utils::date_formats;
 use crate::utils::queries::delete_reservations_on_day;
 use axum::Router;
-use sqlx::{SqliteConnection, SqliteExecutor, SqlitePool, query, query_as};
+use sqlx::{SqliteConnection, SqliteExecutor, SqlitePool, query, query_as, query_scalar};
 use time::{Date, OffsetDateTime};
 use tracing::info;
 
@@ -158,12 +158,11 @@ async fn delete_alternative_day(state: &AppState, date: String) -> HttpResult<()
 }
 
 async fn alt_day_exists(conn: &mut SqliteConnection, date: Date) -> sqlx::Result<bool> {
-    Ok(query!(
+    Ok(query_scalar!(
         "select exists (select 1 from alternative_days where date = $1) as 'exists!'",
         date
     )
     .fetch_one(conn)
     .await?
-    .exists
         != 0)
 }

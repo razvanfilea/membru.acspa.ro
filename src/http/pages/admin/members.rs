@@ -26,7 +26,7 @@ use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{query, query_as};
+use sqlx::{query, query_as, query_scalar};
 use std::collections::HashSet;
 use time::{Date, Month};
 
@@ -50,21 +50,19 @@ pub fn router() -> Router<AppState> {
 }
 
 async fn get_all_roles(state: &AppState) -> sqlx::Result<Vec<String>> {
-    query!("select name from user_roles")
-        .map(|record| record.name)
+    query_scalar!("select name from user_roles")
         .fetch_all(&state.read_pool)
         .await
 }
 
 async fn get_role_id(state: &AppState, role: &str) -> sqlx::Result<Option<i64>> {
-    query!("select id from user_roles where name = $1", role)
+    query_scalar!("select id from user_roles where name = $1", role)
         .fetch_optional(&state.read_pool)
         .await
-        .map(|row| row.map(|r| r.id))
 }
 
 fn map_date_to_string(date: &Option<Date>) -> String {
-    date.map(|date| date.format(date_formats::READABLE_DATE).unwrap())
+    date.map(|date| date_formats::as_readable(&date))
         .unwrap_or_else(|| "?".to_string())
 }
 

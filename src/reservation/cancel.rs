@@ -1,5 +1,5 @@
 use crate::model::location::Location;
-use sqlx::{SqliteTransaction, query};
+use sqlx::{SqliteTransaction, query, query_scalar};
 use time::Date;
 
 pub async fn cancel_reservation(
@@ -27,7 +27,7 @@ pub async fn cancel_reservation(
         return Ok(false);
     }
 
-    let count = query!(
+    let count = query_scalar!(
         "select count(*) as 'count!' from reservations where
             date = $1 and hour = $2 and location = $3 and cancelled = false and in_waiting = false",
         date,
@@ -35,8 +35,7 @@ pub async fn cancel_reservation(
         location.id
     )
     .fetch_one(tx.as_mut())
-    .await?
-    .count;
+    .await?;
 
     if count < location.slot_capacity {
         query!(
