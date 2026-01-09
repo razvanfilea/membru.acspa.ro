@@ -4,7 +4,7 @@ use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::payments::get_payment_allocations;
 use crate::model::payment::PaymentBreak;
 use crate::utils::date_formats;
-use crate::utils::queries::get_user;
+use crate::utils::queries::{YearMonth, get_user};
 use axum::Form;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
@@ -57,9 +57,7 @@ pub async fn add_break(
     }
 
     // Validate that break is not before membership
-    let member_join_month =
-        Date::from_calendar_date(member.member_since.year(), member.member_since.month(), 1)
-            .unwrap_or(member.member_since);
+    let member_join_month = YearMonth::from(member.member_since).to_date();
 
     if start_date < member_join_month {
         return Err(HttpError::Message(
@@ -81,7 +79,7 @@ pub async fn add_break(
     }
 
     for payment in existing_allocations {
-        let pay_date = Date::from_calendar_date(payment.year, payment.month, 1).unwrap();
+        let pay_date = payment.to_date();
 
         if pay_date >= start_date && pay_date <= end_date {
             return Err(HttpError::Message(

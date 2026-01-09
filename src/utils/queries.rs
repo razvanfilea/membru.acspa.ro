@@ -65,6 +65,17 @@ impl YearMonth {
     pub fn new(year: i32, month: Month) -> Self {
         Self { year, month }
     }
+
+    pub fn to_date(self) -> Date {
+        Date::from_calendar_date(self.year, self.month, 1)
+            .expect("The first of the month is always valid")
+    }
+}
+
+impl From<Date> for YearMonth {
+    fn from(date: Date) -> Self {
+        Self::new(date.year(), date.month())
+    }
 }
 
 pub struct GroupedUserReservations {

@@ -1,12 +1,14 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
+use crate::http::pages::admin::members::debtors::{DebtorItem, compute_debtors};
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
+use crate::utils::local_date;
 use crate::utils::queries::get_global_vars;
 use askama::Template;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Form, Router};
@@ -28,17 +30,33 @@ pub fn router() -> Router<AppState> {
         .merge(schedule_overrides::router())
 }
 
-async fn admin_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
+#[derive(Deserialize)]
+struct AdminQuery {
+    year: Option<i32>,
+}
+
+async fn admin_page(
+    State(state): State<AppState>,
+    auth_session: AuthSession,
+    Query(query): Query<AdminQuery>,
+) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/admin_page.html")]
     struct AdminTemplate {
         user: User,
         global_vars: GlobalVars,
+        selected_year: i32,
+        debtors: Vec<DebtorItem>,
     }
+
+    let selected_year = query.year.unwrap_or_else(|| local_date().year());
+    let debtors = compute_debtors(&state.read_pool, selected_year).await?;
 
     AdminTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         global_vars: get_global_vars(&state.read_pool).await?,
+        selected_year,
+        debtors,
     }
     .try_into_response()
 }
