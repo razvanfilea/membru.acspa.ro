@@ -242,7 +242,10 @@ async fn is_month_covered(
     Ok(count > 0)
 }
 
-pub async fn check_user_has_paid(pool: &SqlitePool, user_id: i64) -> sqlx::Result<bool> {
+pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result<bool> {
+    if user.admin_panel_access {
+        return Ok(true);
+    }
     let current_date = local_time().date();
 
     let mut year = current_date.year();
@@ -250,7 +253,7 @@ pub async fn check_user_has_paid(pool: &SqlitePool, user_id: i64) -> sqlx::Resul
 
     // Check current month + previous 2 months (Total 3)
     for _ in 0..3 {
-        if is_month_covered(pool, user_id, year, month).await? {
+        if is_month_covered(pool, user.id, year, month).await? {
             return Ok(true);
         }
 
