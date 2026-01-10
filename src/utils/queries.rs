@@ -4,7 +4,6 @@ use crate::model::global_vars::GlobalVars;
 use crate::model::location::Location;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
-use crate::utils::local_time;
 use itertools::Itertools;
 use sqlx::{SqliteExecutor, SqlitePool, query, query_as};
 use time::{Date, Month, Weekday};
@@ -201,68 +200,4 @@ pub async fn delete_reservations_on_day(
     .execute(executor)
     .await
     .map(|result| result.rows_affected())
-}
-
-/// Checks if a user has a valid payment allocation or break for a specific year/month.
-async fn is_month_covered(
-    executor: impl SqliteExecutor<'_>,
-    user_id: i64,
-    year: i32,
-    month: Month,
-) -> sqlx::Result<bool> {
-    // We construct the 1st of the month to check against break ranges
-    let first_of_month = Date::from_calendar_date(year, month, 1).unwrap();
-
-    let month = month as u8;
-    let count = sqlx::query_scalar!(
-        r#"
-        SELECT count(*) FROM (
-            -- Check for Payment Allocation
-            SELECT 1 FROM payment_allocations pa
-            JOIN payments p ON pa.payment_id = p.id
-            WHERE p.user_id = $1 AND pa.year = $2 AND pa.month = $3
-
-            UNION
-
-            -- Check for Payment Break
-            -- Breaks store start/end as dates (1st of month).
-            -- A break covers this month if the 1st of the month is within the range.
-            SELECT 1 FROM payment_breaks pb
-            WHERE pb.user_id = $1 AND pb.start_date <= $4 AND pb.end_date >= $4
-        )
-        "#,
-        user_id,
-        year,
-        month,
-        first_of_month
-    )
-    .fetch_one(executor)
-    .await?;
-
-    Ok(count > 0)
-}
-
-pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result<bool> {
-    if user.admin_panel_access {
-        return Ok(true);
-    }
-    let current_date = local_time().date();
-
-    let mut year = current_date.year();
-    let mut month = current_date.month();
-
-    // Check current month + previous 2 months (Total 3)
-    for _ in 0..3 {
-        if is_month_covered(pool, user.id, year, month).await? {
-            return Ok(true);
-        }
-
-        // Move to previous month
-        month = month.previous();
-        if month == Month::December {
-            year -= 1;
-        }
-    }
-
-    Ok(false)
 }

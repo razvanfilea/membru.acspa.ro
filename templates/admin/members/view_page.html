@@ -85,68 +85,75 @@
             </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 md:gap-5">
+        <div class="grid grid-cols-1 mdl:grid-cols-2 2xl:grid-cols-3 gap-2 md:gap-3 lg:gap-5">
             {% for payment in payments %}
-            <div class="card bg-base-100 shadow-lg border border-base-300 hover:border-primary/50 transition-all duration-300 hover:shadow-xl group h-full">
-                <div class="card-body p-5 flex flex-col h-full">
+            <div class="group relative flex flex-col md:flex-row md:items-center justify-between bg-base-100 border border-base-300 rounded-xl p-3 hover:border-primary/50 transition-all shadow-sm">
 
-                    <div class="flex justify-between items-start">
-                        <div class="flex flex-col gap-0.5">
-                            <span class="text-xs font-bold uppercase text-gray-400 tracking-wider flex items-center">
-                                Data Plății
-                            </span>
-                            <span class="font-bold text-xl font-mono text-base-content">
-                            {{ date_formats::as_readable(payment.payment_date) }}
-                        </span>
-                        </div>
+                {# Mobile only button #}
+                <button
+                        hx-delete="/admin/members/payments/{{ payment.id }}"
+                        hx-confirm="Sigur vrei să ștergi această plată?"
+                        class="md:hidden m-4 absolute top-1 right-1 btn btn-ghost btn-circle text-gray-400 hover:text-error transition-colors z-10"
+                        title="Șterge plata">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
 
-                        <div class="flex flex-row gap-1 text-xl font-bold text-success font-mono tracking-tight items-center bg-success/5 px-2 py-1 rounded-lg">
-                            {{ payment.display_amount() }} <span class="text-sm text-success/70">RON</span>
+                <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 min-w-0 pr-8 md:pr-0">
+
+                    <div class="flex items-center gap-3 shrink-0 min-w-20">
+                        <div class="flex flex-col items-start text-left md:text-center">
+                    <span class="font-mono font-bold text-lg leading-none text-success">
+                        {{ payment.display_amount() }} <span class="text-xs font-sans text-success/70">RON</span>
+                    </span>
+                            <span class="text-sm text-gray-400 font-mono uppercase tracking-wider mt-0.5">
+                        {{ date_formats::as_readable(payment.payment_date) }}
+                    </span>
                         </div>
                     </div>
 
-                    <div class="flex flex-col gap-2">
-                        <span class="text-xs font-bold uppercase text-gray-400 tracking-wider">Luni Acoperite</span>
-                        <div class="flex flex-wrap gap-1.5">
+                    <div class="hidden md:block w-px h-8 bg-gray-600"></div>
+
+                    <div class="flex flex-col justify-center gap-1.5">
+                        <div class="flex flex-wrap gap-1">
                             {% for alloc in payment.allocations %}
-                            <span class="badge badge-sm badge-ghost border-base-300 font-mono text-xs shadow-sm">
-                            {{ alloc.month }} / {{ alloc.year }}
-                        </span>
+                            <span class="badge badge-sm badge-ghost h-auto py-0.5 border-base-200 text-gray-400 font-mono text-[10px] md:text-xs whitespace-nowrap">
+                        {{ date_formats::month_as_str(alloc.month) }} {{ alloc.year }}
+                    </span>
                             {% endfor %}
                         </div>
-                    </div>
 
-                    <div class="grow min-h-1"></div>
-
-                    {% if let Some(notes) = payment.notes %}
-                    <div class="mb-3">
-                        <div class="bg-base-200/60 items-center rounded-lg p-3 border border-base-200 flex gap-2">
-                            <span class="material-symbols-outlined text-gray-400 text-sm mt-0.5 shrink-0">sticky_note_2</span>
-                            <p class="text-sm italic leading-snug wrap-break-word">{{ notes }}</p>
+                        {% if let Some(notes) = payment.notes %}
+                        <div class="flex items-center gap-1.5 text-xs text-gray-500 italic">
+                            <span class="material-symbols-outlined text-[14px]">sticky_note_2</span>
+                            {{ notes }}
                         </div>
-                    </div>
-                    {% endif %}
-
-                    <div class="flex flex-row items-center justify-end gap-1 text-xs">
-                        <span class="material-symbols-outlined text-gray-500">edit_calendar</span>
-                        <span class="text-gray-500">{{ date_formats::as_local(payment.created_at) }}</span>
-                        <div class="text-xs text-gray-400">
-                            de <a href="/admin/members/view/{{ payment.created_by }}"
-                                  class="hover:text-primary hover:underline transition-colors">{{
-                            payment.created_by_name }}</a>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
+
+                <div class="hidden md:flex items-center justify-end gap-3 pl-4 ml-auto">
+
+                    <div class="hidden xl:flex flex-col text-[10px] text-gray-400 text-right leading-tight">
+                        <span>{{ date_formats::as_local(payment.created_at) }}</span>
+                        <span>de {{ payment.created_by_name }}</span>
+                    </div>
+
+                    <button
+                            hx-delete="/admin/members/payments/{{ payment.id }}"
+                            hx-confirm="Sigur vrei să ștergi această plată?"
+                            class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-error hover:bg-error/10 transition-colors"
+                            title="Șterge plata">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+                </div>
+
             </div>
             {% endfor %}
 
             {% if payments.is_empty() %}
-            <div class="col-span-full py-12 flex flex-col items-center justify-center text-gray-400 bg-base-100 rounded-2xl border-2 border-dashed border-base-300">
-                <div class="p-4 bg-base-200 rounded-full mb-3">
-                    <span class="material-symbols-outlined text-4xl opacity-50">account_balance_wallet</span>
-                </div>
-                <p class="text-base font-semibold">Nu există plăți înregistrate</p>
-                <p class="text-xs text-gray-500 mt-1">Folosește butonul de sus pentru a adăuga o cotizație.</p>
+            <div class="col-span-full py-8 flex flex-col items-center justify-center text-gray-400 bg-base-100/50 rounded-xl border-2 border-dashed border-base-300">
+                <span class="material-symbols-outlined text-3xl opacity-50 mb-1">account_balance_wallet</span>
+                <p class="text-sm font-semibold">Nu există plăți înregistrate</p>
             </div>
             {% endif %}
         </div>
@@ -358,8 +365,18 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {% let min_year = member.member_since.year() %}
                 {% let max_year = current_year + 4 %}
-                {% call forms::month_year_picker("start", "Luna de început", current_year, min_year, max_year) %}
-                {% call forms::month_year_picker("end", "Luna de sfârșit (Inclusiv)", current_year, min_year, max_year) %}
+
+                <div class="flex flex-col">
+                    {% call forms::month_year_picker("start", "Luna de început", current_year, min_year, max_year) %}
+                    <label class="label cursor-pointer justify-start gap-3 mt-3 px-1">
+                        <input type="checkbox" id="one_month_toggle" name="one_month" class="checkbox checkbox checkbox-warning" autocomplete="off" />
+                        <span class="label-text text-sm">O singură lună</span>
+                    </label>
+                </div>
+
+                <div id="end_date_wrapper">
+                    {% call forms::month_year_picker("end", "Luna de sfârșit (Inclusiv)", current_year, min_year, max_year) %}
+                </div>
             </div>
 
             <label class="input w-full">
@@ -389,7 +406,87 @@
     document.addEventListener("DOMContentLoaded", () => {
         updateHiddenDate('start');
         updateHiddenDate('end');
+        initBreakModalLogic();
     });
+
+    function initBreakModalLogic() {
+        const toggle = document.getElementById('one_month_toggle');
+        const endWrapper = document.getElementById('end_date_wrapper');
+
+        const sY = document.getElementById('start_year_select');
+        const sM = document.getElementById('start_month_select');
+        const eY = document.getElementById('end_year_select');
+        const eM = document.getElementById('end_month_select');
+
+        function syncEndToStart() {
+            eY.value = sY.value;
+            eM.value = sM.value;
+            updateHiddenDate('end');
+        }
+
+        function updateEndYearOptions() {
+            const startYear = parseInt(sY.value);
+
+            // Disable years before start year
+            Array.from(eY.options).forEach(opt => {
+                opt.disabled = parseInt(opt.value) < startYear;
+            });
+
+            // If current selection is invalid, bump it up
+            if (parseInt(eY.value) < startYear) {
+                eY.value = startYear;
+            }
+        }
+
+        function updateEndMonthOptions() {
+            const startYear = parseInt(sY.value);
+            const endYear = parseInt(eY.value);
+            const startMonth = parseInt(sM.value);
+
+            // Disable months before start month IF we are in the same year
+            Array.from(eM.options).forEach(opt => {
+                if (endYear > startYear) {
+                    opt.disabled = false;
+                } else {
+                    opt.disabled = parseInt(opt.value) < startMonth;
+                }
+            });
+
+            // If current selection is invalid (same year, earlier month), bump it up
+            const currentMonth = parseInt(eM.value);
+            if (endYear === startYear && (isNaN(currentMonth) || currentMonth < startMonth)) {
+                eM.value = sM.value;
+            }
+            updateHiddenDate('end');
+        }
+
+        function handleStateChange() {
+            if (toggle.checked) {
+                syncEndToStart();
+                // Disable End UI
+                endWrapper.classList.add('opacity-40', 'pointer-events-none');
+                endWrapper.querySelectorAll('select').forEach(s => s.disabled = true);
+            } else {
+                // Enable End UI
+                endWrapper.classList.remove('opacity-40', 'pointer-events-none');
+                endWrapper.querySelectorAll('select').forEach(s => s.disabled = false);
+
+                // Enforce Logic constraints
+                updateEndYearOptions();
+                updateEndMonthOptions();
+            }
+        }
+
+        // Event Listeners
+        toggle.addEventListener('change', handleStateChange);
+
+        [sY, sM].forEach(el => el.addEventListener('change', handleStateChange));
+
+        eY.addEventListener('change', updateEndMonthOptions);
+
+        // Run once on init
+        handleStateChange();
+    }
 
     let selectedMonths = []; // Array of "M-YYYY"
     let currentActiveYear = {{ current_year }};

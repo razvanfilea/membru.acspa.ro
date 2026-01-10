@@ -30,8 +30,8 @@ pub async fn get_user_payment_breaks(
 
 #[derive(Deserialize, Debug)]
 pub struct NewBreak {
-    start_month: String, // Format "2024-06"
-    end_month: String,   // Format "2024-08"
+    start_month: String,       // Format "2024-06"
+    end_month: Option<String>, // Format "2024-08"
     reason: Option<String>,
 }
 
@@ -50,7 +50,8 @@ pub async fn add_break(
 
     let member = get_user(&state.read_pool, member_id).await?;
     let start_date = parse_month_input(&form.start_month).or_bail("Început de lună invalid")?;
-    let end_date = parse_month_input(&form.end_month).or_bail("Sfârșit de lună invalid")?;
+    let end_date = parse_month_input(&form.end_month.unwrap_or(form.start_month))
+        .or_bail("Sfârșit de lună invalid")?;
 
     if end_date < start_date {
         return Err(HttpError::Message("Data selectată este invalidă".into()));

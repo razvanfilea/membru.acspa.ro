@@ -147,7 +147,9 @@ async fn create_guest(
         }
         Err(e) => {
             error!("Failed to create guest reservation: {}", e);
-            return Ok(error_bubble_response("Nu s-a putut crea invitatul: {e}"));
+            return Ok(error_bubble_response(format!(
+                "Nu s-a putut crea invitatul: {e}"
+            )));
         }
     }
 

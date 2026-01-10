@@ -24,6 +24,7 @@ impl PaymentBreak {
 
 #[derive(Debug, Clone)]
 pub struct PaymentWithAllocations {
+    pub id: i64,
     pub amount: i64,
     pub payment_date: Date,
     pub notes: Option<String>,

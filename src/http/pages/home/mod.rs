@@ -1,6 +1,7 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
+use crate::http::pages::admin::members::debtors::check_user_has_paid;
 use crate::http::pages::home::reservation_hours::{ReservationHours, get_reservation_hours};
 use crate::http::pages::home::socket::handle_ws;
 use crate::http::template_into_response::TemplateIntoResponse;
@@ -11,7 +12,7 @@ use crate::reservation::{
     ReservationError, ReservationSuccess, create_reservation, is_reservation_possible,
 };
 use crate::utils::date_iter::DateIter;
-use crate::utils::queries::{check_user_has_paid, get_day_structure, get_global_vars};
+use crate::utils::queries::{get_day_structure, get_global_vars};
 use crate::utils::{CssColor, local_date};
 use crate::utils::{date_formats, get_reservation_result_color, local_time};
 use askama::Template;

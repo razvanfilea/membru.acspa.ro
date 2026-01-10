@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        select count(*) from (\n            -- check for payment allocation\n            select 1 from payment_allocations pa\n            join payments p on pa.payment_id = p.id\n            where p.user_id = $1 and pa.year = $2 and pa.month = $3\n\n            union\n\n            -- check for payment break\n            -- breaks store start/end as dates (1st of month).\n            -- a break covers this month if the 1st of the month is within the range.\n            select 1 from payment_breaks pb\n            where pb.user_id = $1 and pb.start_date <= $4 and pb.end_date >= $4\n        )\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "count(*)",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c395e3b607c3ea23ac854677d7dba1b56192c2219ca85ffa9e951b3ba3d1bac6"
+}

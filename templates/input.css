@@ -22,6 +22,10 @@
     }
 }
 
+@theme {
+    --breakpoint-mdl: 56rem;
+}
+
 @layer components {
     .btn-main-fab {
         @apply btn btn-md xl:btn-lg btn-primary rounded-2xl shadow-2xl transition-transform hover:scale-105 active:scale-95;
