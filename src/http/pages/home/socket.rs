@@ -1,8 +1,8 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
+use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
 use crate::http::pages::home::reservation_hours::{ReservationHours, get_reservation_hours};
-use crate::http::pages::home::{DAYS_AHEAD_ALLOWED, check_user_has_paid};
 use crate::http::pages::notification_template::NotificationBubbleResponse;
 use crate::model::user::User;
 use crate::utils::CssColor;
@@ -130,8 +130,6 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
         }
     }
 
-    let has_paid = check_user_has_paid(&state.read_pool, &user).await.unwrap();
-
     loop {
         let reservations_task = reservations_changed.changed();
         let recv_task = socket.recv();
@@ -172,7 +170,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
                     days: DateIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
                     reservation_hours: get_reservation_hours(&state, selected_date).await.expect("Database error"),
                     user: &user,
-                    has_paid,
+                    has_paid: true,
                 }
                 .to_string()
             }

@@ -1,10 +1,12 @@
 use crate::model::user::User;
 use crate::utils::queries::YearMonth;
-use crate::utils::{date_formats, local_date};
+use crate::utils::{date_formats, local_date, local_time};
 use itertools::Itertools;
-use sqlx::{SqlitePool, query_as};
+use sqlx::{SqliteExecutor, SqlitePool, query_as};
 use std::collections::HashSet;
 use time::{Date, Month};
+
+const USER_ROLLS_TO_SKIP: &[i64] = &[1, 2, 5, 7];
 
 pub struct DebtorItem {
     pub member: User,
@@ -72,6 +74,7 @@ pub async fn compute_debtors(
 
     let debtors = users
         .into_iter()
+        .filter(|member| !USER_ROLLS_TO_SKIP.contains(&member.role_id))
         .filter_map(|member| {
             // We assume member_since implies they owe for that month.
             let join_month_start = member.member_since.replace_day(1).ok()?;
@@ -124,4 +127,69 @@ pub async fn compute_debtors(
         .collect();
 
     Ok(debtors)
+}
+
+/// Checks if a user has a valid payment allocation or break for a specific year/month.
+async fn is_month_covered(
+    executor: impl SqliteExecutor<'_>,
+    user_id: i64,
+    year: i32,
+    month: Month,
+) -> sqlx::Result<bool> {
+    // We construct the 1st of the month to check against break ranges
+    let first_of_month = Date::from_calendar_date(year, month, 1).unwrap();
+
+    let month = month as u8;
+    let count = sqlx::query_scalar!(
+        r#"
+        select count(*) from (
+            -- check for payment allocation
+            select 1 from payment_allocations pa
+            join payments p on pa.payment_id = p.id
+            where p.user_id = $1 and pa.year = $2 and pa.month = $3
+
+            union
+
+            -- check for payment break
+            -- breaks store start/end as dates (1st of month).
+            -- a break covers this month if the 1st of the month is within the range.
+            select 1 from payment_breaks pb
+            where pb.user_id = $1 and pb.start_date <= $4 and pb.end_date >= $4
+        )
+        "#,
+        user_id,
+        year,
+        month,
+        first_of_month
+    )
+    .fetch_one(executor)
+    .await?;
+
+    Ok(count > 0)
+}
+
+pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result<bool> {
+    return Ok(true);
+    if user.admin_panel_access || USER_ROLLS_TO_SKIP.contains(&user.role_id) {
+        return Ok(true);
+    }
+    let current_date = local_time().date();
+
+    let mut year = current_date.year();
+    let mut month = current_date.month();
+
+    // Check current month + previous 2 months (Total 3)
+    for _ in 0..3 {
+        if is_month_covered(pool, user.id, year, month).await? {
+            return Ok(true);
+        }
+
+        // Move to previous month
+        month = month.previous();
+        if month == Month::December {
+            year -= 1;
+        }
+    }
+
+    Ok(false)
 }

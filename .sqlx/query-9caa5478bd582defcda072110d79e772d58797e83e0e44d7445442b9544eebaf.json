@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into users (email, name, role_id, password_hash, birthday, member_since) values ($1, $2, $3, $4, $5, date('now')) returning id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "9caa5478bd582defcda072110d79e772d58797e83e0e44d7445442b9544eebaf"
+}

@@ -16,7 +16,7 @@ use serde::Deserialize;
 use sqlx::query;
 
 mod guests;
-mod members;
+pub mod members;
 mod roles;
 mod schedule_overrides;
 

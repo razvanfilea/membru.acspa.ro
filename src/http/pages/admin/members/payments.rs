@@ -48,9 +48,10 @@ pub async fn get_user_payments(
                 .collect();
 
             PaymentWithAllocations {
+                id: p.id,
                 amount: p.amount,
                 payment_date: p.payment_date,
-                notes: p.notes,
+                notes: p.notes.filter(|notes| !notes.is_empty()),
                 created_at: p.created_at,
                 created_by: p.created_by,
                 created_by_name: p.created_by_name,
@@ -206,6 +207,17 @@ pub async fn add_payment(
     }
 
     tx.commit().await?;
+
+    Ok([("HX-Refresh", "true")].into_response())
+}
+
+pub async fn delete_payment(
+    State(state): State<AppState>,
+    Path(payment_id): Path<i64>,
+) -> HttpResult {
+    query!("delete from payments where id = $1", payment_id)
+        .execute(&state.write_pool)
+        .await?;
 
     Ok([("HX-Refresh", "true")].into_response())
 }

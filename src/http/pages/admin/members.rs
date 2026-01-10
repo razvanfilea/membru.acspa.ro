@@ -10,7 +10,9 @@ use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::breaks::{
     add_break, delete_break, get_user_payment_breaks,
 };
-use crate::http::pages::admin::members::payments::{add_payment, get_user_payments};
+use crate::http::pages::admin::members::payments::{
+    add_payment, delete_payment, get_user_payments,
+};
 use crate::http::pages::admin::members::payments_summary::MonthStatus;
 use crate::http::pages::admin::members::payments_summary::{
     MonthStatusView, calculate_year_status, payments_status_partial,
@@ -36,15 +38,16 @@ pub fn router() -> Router<AppState> {
         .route("/", get(members_page))
         .route("/search", post(search_members))
         .route("/new", get(new_member_page))
-        .route("/new", post(create_new_user))
+        .route("/new", post(create_new_member))
         .route("/view/{id}", get(view_member_page))
         .route("/edit/{id}", get(edit_member_page))
         .route("/edit/{id}", post(update_member))
         .route("/change_password/{id}", get(change_password_page))
-        .route("/change_password/{id}", post(update_password))
+        .route("/change_password/{id}", post(update_member_password))
         .route("/toggle_active/{id}", post(toggle_active_user))
-        .route("/delete/{id}", post(delete_user))
+        .route("/delete/{id}", post(delete_member))
         .route("/payments/{id}", post(add_payment))
+        .route("/payments/{id}", delete(delete_payment))
         .route("/breaks/{id}", post(add_break))
         .route("/breaks/{id}", delete(delete_break))
         .route("/payment_status/{id}/{year}", get(payments_status_partial))
@@ -132,7 +135,7 @@ async fn search_members(
 }
 
 #[derive(Deserialize)]
-struct NewUser {
+struct NewMember {
     email: String,
     name: String,
     role: String,
@@ -155,34 +158,38 @@ async fn new_member_page(State(state): State<AppState>, auth_session: AuthSessio
     .try_into_response()
 }
 
-async fn create_new_user(
+async fn create_new_member(
     State(state): State<AppState>,
-    Form(new_user): Form<NewUser>,
+    Form(new_member): Form<NewMember>,
 ) -> HttpResult {
-    let role_id = get_role_id(&state, new_user.role.as_str())
+    let role_id = get_role_id(&state, new_member.role.as_str())
         .await?
         .expect("Invalid role");
 
-    let user_name = new_user.name.trim();
-    let password_hash = generate_hash_from_password(new_user.password);
-    query!(
-        "insert into users (email, name, role_id, password_hash, birthday, member_since) values ($1, $2, $3, $4, $5, date('now'))",
-        new_user.email,
+    let user_name = new_member.name.trim();
+    let password_hash = generate_hash_from_password(new_member.password);
+    let new_member_id = query_scalar!(
+        "insert into users (email, name, role_id, password_hash, birthday, member_since) values ($1, $2, $3, $4, $5, date('now')) returning id",
+        new_member.email,
         user_name,
         role_id,
         password_hash,
-        new_user.birthday,
+        new_member.birthday,
     )
-        .execute(&state.write_pool)
+        .fetch_one(&state.write_pool)
         .await?;
 
-    Ok([("HX-Redirect", "/admin/members")].into_response())
+    Ok([(
+        "HX-Redirect",
+        format!("/admin/members/view/{new_member_id}"),
+    )]
+    .into_response())
 }
 
 async fn view_member_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
-    Path(user_id): Path<i64>,
+    Path(member_id): Path<i64>,
 ) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/members/view_page.html")]
@@ -214,12 +221,12 @@ async fn view_member_page(
     }
 
     let current_date = local_date();
-    let member = get_user(&state.read_pool, user_id).await?;
-    let payments = get_user_payments(&state.read_pool, user_id)
+    let member = get_user(&state.read_pool, member_id).await?;
+    let payments = get_user_payments(&state.read_pool, member_id)
         .await
         .unwrap_or_default();
 
-    let breaks = get_user_payment_breaks(&state.read_pool, user_id)
+    let breaks = get_user_payment_breaks(&state.read_pool, member_id)
         .await
         .unwrap_or_default();
     let months_status_view =
@@ -241,7 +248,7 @@ async fn view_member_page(
 async fn edit_member_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
-    Path(user_id): Path<i64>,
+    Path(member_id): Path<i64>,
 ) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/members/edit_page.html")]
@@ -256,7 +263,7 @@ async fn edit_member_page(
         current_date: date_formats::as_iso(&local_date()),
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         roles: get_all_roles(&state).await?,
-        existing_user: get_user(&state.read_pool, user_id).await?,
+        existing_user: get_user(&state.read_pool, member_id).await?,
     }
     .try_into_response()
 }
@@ -275,7 +282,7 @@ struct UpdatedUser {
 
 async fn update_member(
     State(state): State<AppState>,
-    Path(user_id): Path<i64>,
+    Path(member_id): Path<i64>,
     Form(updated_user): Form<UpdatedUser>,
 ) -> HttpResult {
     fn parse_date(date: Option<String>) -> Option<Date> {
@@ -300,7 +307,7 @@ async fn update_member(
     query!(
         "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, is_active = $9
          where id = $1",
-        user_id,
+        member_id,
         updated_user.email,
         user_name,
         role_id,
@@ -313,13 +320,16 @@ async fn update_member(
         .execute(&state.write_pool)
         .await?;
 
-    Ok([("HX-Redirect", "/admin/members")].into_response())
+    Ok([("HX-Redirect", format!("/admin/members/view/{member_id}"))].into_response())
 }
 
-async fn toggle_active_user(State(state): State<AppState>, Path(user_id): Path<i64>) -> HttpResult {
+async fn toggle_active_user(
+    State(state): State<AppState>,
+    Path(member_id): Path<i64>,
+) -> HttpResult {
     query!(
         "update users set is_active = not is_active where id = $1",
-        user_id
+        member_id
     )
     .execute(&state.write_pool)
     .await?;
@@ -330,7 +340,7 @@ async fn toggle_active_user(State(state): State<AppState>, Path(user_id): Path<i
 async fn change_password_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
-    Path(user_id): Path<i64>,
+    Path(member_id): Path<i64>,
 ) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/members/change_password.html")]
@@ -341,21 +351,24 @@ async fn change_password_page(
 
     ChangePasswordTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
-        existing_user: get_user(&state.read_pool, user_id).await?,
+        existing_user: get_user(&state.read_pool, member_id).await?,
     }
     .try_into_response()
 }
 
-async fn delete_user(State(state): State<AppState>, Path(user_id): Path<i64>) -> HttpResult {
+async fn delete_member(State(state): State<AppState>, Path(member_id): Path<i64>) -> HttpResult {
     let mut tx = state.write_pool.begin().await?;
 
-    query!("delete from reservations where user_id = $1", user_id)
+    query!("delete from reservations where user_id = $1", member_id)
         .execute(tx.as_mut())
         .await?;
 
-    query!("update users set is_deleted = true where id = $1 ", user_id)
-        .execute(tx.as_mut())
-        .await?;
+    query!(
+        "update users set is_deleted = true where id = $1 ",
+        member_id
+    )
+    .execute(tx.as_mut())
+    .await?;
 
     tx.commit().await?;
 
@@ -367,12 +380,12 @@ pub struct ChangePasswordForm {
     password: String,
 }
 
-pub async fn update_password(
+pub async fn update_member_password(
     State(state): State<AppState>,
-    Path(user_id): Path<i64>,
+    Path(member_id): Path<i64>,
     Form(passwords): Form<ChangePasswordForm>,
 ) -> HttpResult {
-    let user = get_user(&state.read_pool, user_id).await?;
+    let user = get_user(&state.read_pool, member_id).await?;
 
     let new_password_hash = generate_hash_from_password(passwords.password);
     query!(
@@ -383,5 +396,5 @@ pub async fn update_password(
     .execute(&state.write_pool)
     .await?;
 
-    Ok([("HX-Redirect", format!("/admin/members/view/{user_id}"))].into_response())
+    Ok([("HX-Redirect", format!("/admin/members/view/{member_id}"))].into_response())
 }
