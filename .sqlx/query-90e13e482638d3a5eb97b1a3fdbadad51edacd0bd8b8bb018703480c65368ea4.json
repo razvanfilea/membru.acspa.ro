@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select in_maintenance, entrance_code, homepage_message from global_vars",
+  "query": "select in_maintenance, check_payments, entrance_code, homepage_message from global_vars",
   "describe": {
     "columns": [
       {
@@ -9,13 +9,18 @@
         "type_info": "Bool"
       },
       {
-        "name": "entrance_code",
+        "name": "check_payments",
         "ordinal": 1,
+        "type_info": "Bool"
+      },
+      {
+        "name": "entrance_code",
+        "ordinal": 2,
         "type_info": "Text"
       },
       {
         "name": "homepage_message",
-        "ordinal": 2,
+        "ordinal": 3,
         "type_info": "Text"
       }
     ],
@@ -25,8 +30,9 @@
     "nullable": [
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "6dea44b5373446537347bd75935c56c61f86873f601c6d97957ba463ae67b773"
+  "hash": "90e13e482638d3a5eb97b1a3fdbadad51edacd0bd8b8bb018703480c65368ea4"
 }

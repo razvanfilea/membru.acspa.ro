@@ -15,6 +15,12 @@
                        value="{{ global_vars.entrance_code }}"/>
             </label>
 
+            <label class="label">
+                <input type="checkbox" name="check_payments" autocomplete="off" class="toggle toggle-warning"
+                       {% if global_vars.check_payments %} checked="checked" {% endif %} />
+                Permite accesul doar celor care au plătit
+            </label>
+
             <label class="floating-label">
                 <span>Mesaj pe pagina principală</span>
                 <textarea name="homepage_message" type="text"

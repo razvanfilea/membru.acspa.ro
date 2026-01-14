@@ -39,12 +39,13 @@ pub struct ReservationHours {
 
 pub async fn get_reservation_hours(state: &AppState, date: Date) -> sqlx::Result<ReservationHours> {
     let day_structure = get_day_structure(state, date).await;
+    let mut tx = state.read_pool.begin().await?;
     let restrictions = query_as!(
         Restriction,
         "select date, hour, message, created_at from restrictions where date = $1 order by hour",
         date
     )
-    .fetch_all(&state.read_pool)
+    .fetch_all(tx.as_mut())
     .await?;
 
     // Check if the whole day is restricted
@@ -65,17 +66,18 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> sqlx::Result
         });
     }
 
-    // This specifically uses the idx_reservations_date_cancelled index
+    // This specifically uses the idx_reservations_location_date_guest index
     let date_reservations = query!(
         r#"select u.name as 'name!', r.user_id, hour, has_key, as_guest, in_waiting, created_for, cancelled, ur.color as role_color
         from reservations r
         inner join users u on r.user_id = u.id
         inner join user_roles ur on u.role_id = ur.id
-        where date = ?1
+        where date = $1 and location = $2
         order by as_guest, created_at"#,
-        date
+        date,
+        state.location.id
     )
-    .fetch_all(&state.read_pool)
+    .fetch_all(tx.as_mut())
     .await?;
 
     let hours = day_structure
@@ -142,7 +144,7 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> sqlx::Result
         })
         .collect();
 
-    let capacity = get_alt_day_structure_for_day(&state.read_pool, date)
+    let capacity = get_alt_day_structure_for_day(tx.as_mut(), date)
         .await
         .and_then(|day| day.slot_capacity.map(|capacity| capacity as u8));
 

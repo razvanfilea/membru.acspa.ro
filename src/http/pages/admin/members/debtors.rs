@@ -1,5 +1,5 @@
 use crate::model::user::User;
-use crate::utils::queries::YearMonth;
+use crate::utils::queries::{YearMonth, get_global_vars};
 use crate::utils::{date_formats, local_date, local_time};
 use itertools::Itertools;
 use sqlx::{SqliteExecutor, SqlitePool, query_as};
@@ -169,10 +169,15 @@ async fn is_month_covered(
 }
 
 pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result<bool> {
-    return Ok(true);
     if user.admin_panel_access || USER_ROLLS_TO_SKIP.contains(&user.role_id) {
         return Ok(true);
     }
+    let mut tx = pool.begin().await?;
+    let global_vars = get_global_vars(tx.as_mut()).await?;
+    if !global_vars.check_payments {
+        return Ok(true);
+    }
+
     let current_date = local_time().date();
 
     let mut year = current_date.year();
@@ -180,7 +185,7 @@ pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result
 
     // Check current month + previous 2 months (Total 3)
     for _ in 0..3 {
-        if is_month_covered(pool, user.id, year, month).await? {
+        if is_month_covered(tx.as_mut(), user.id, year, month).await? {
             return Ok(true);
         }
 

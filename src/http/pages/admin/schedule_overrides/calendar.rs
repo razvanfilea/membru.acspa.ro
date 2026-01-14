@@ -119,7 +119,7 @@ async fn calendar_page(
     };
     let calendar_days = DateIter::weeks_in_range(selected_date, last_day);
 
-    let mut fake_user = User::empty();
+    let mut fake_user = User::default();
     fake_user.admin_panel_access = true;
     let reservations =
         HoursTemplate::create_response(&state, selected_date, &fake_user, false).await;
@@ -193,7 +193,7 @@ pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
         has_restriction: !selected_restrictions.is_empty(),
     };
 
-    let mut fake_user = User::empty();
+    let mut fake_user = User::default();
     fake_user.admin_panel_access = true;
     let reservations = HoursTemplate::create_response(&state, date, &fake_user, false).await;
 

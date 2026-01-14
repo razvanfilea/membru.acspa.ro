@@ -9,12 +9,12 @@ use sqlx::{SqliteExecutor, SqlitePool, query, query_as};
 use time::{Date, Month, Weekday};
 use tracing::error;
 
-pub async fn get_global_vars(pool: &SqlitePool) -> sqlx::Result<GlobalVars> {
+pub async fn get_global_vars(executor: impl SqliteExecutor<'_>) -> sqlx::Result<GlobalVars> {
     query_as!(
         GlobalVars,
-        "select in_maintenance, entrance_code, homepage_message from global_vars"
+        "select in_maintenance, check_payments, entrance_code, homepage_message from global_vars"
     )
-    .fetch_one(pool)
+    .fetch_one(executor)
     .await
 }
 

@@ -20,8 +20,8 @@ pub struct User {
     pub is_deleted: bool,
 }
 
-impl User {
-    pub fn empty() -> Self {
+impl Default for User {
+    fn default() -> Self {
         Self {
             id: 0,
             email: String::new(),

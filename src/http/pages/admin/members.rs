@@ -89,12 +89,23 @@ async fn members_page(State(state): State<AppState>, auth_session: AuthSession) 
     .try_into_response()
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Copy, Deserialize)]
 enum MembersSortOrder {
     Alphabetical,
     Birthday,
     Gift,
     ClosestBirthday,
+}
+
+impl MembersSortOrder {
+    fn to_sql_index(self) -> u8 {
+        match self {
+            MembersSortOrder::Alphabetical => 0,
+            MembersSortOrder::Birthday => 1,
+            MembersSortOrder::Gift => 2,
+            MembersSortOrder::ClosestBirthday => 3,
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -114,22 +125,22 @@ async fn search_members(
     }
 
     let query = format!("%{}%", search_query.search);
-    let sort_order = format!("{:?}", search_query.sort);
+    let sort_order = search_query.sort.to_sql_index();
 
     let members = query_as!(
         User,
         "select * from users_with_role where name like $1 or email like $1 or role like $1
          order by case 
-          when $2 = 'Alphabetical' then name
-          when $2 = 'Birthday' then birthday
-          when $2 = 'Gift' then received_gift
-          when $2 = 'ClosestBirthday' then ((strftime('%j', birthday) - strftime('%j', 'now') + 365) % 365)
+          when $2 = 0 then name
+          when $2 = 1 then birthday
+          when $2 = 2 then received_gift
+          when $2 = 3 then ((strftime('%j', birthday) - strftime('%j', 'now') + 365) % 365)
          end, email, role",
         query,
         sort_order
     )
-        .fetch_all(&state.read_pool)
-        .await?;
+    .fetch_all(&state.read_pool)
+    .await?;
 
     MembersListTemplate { members }.try_into_response()
 }
