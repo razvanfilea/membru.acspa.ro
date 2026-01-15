@@ -680,7 +680,7 @@ mod constraints_and_schedule {
         let date = date!(2024 - 07 - 11);
 
         // Create Holiday with custom capacity of 2 and different start hour (10:00)
-        query!("insert into schedule_overrides (date, type, slots_start_hour, slot_duration, slots_per_day, slot_capacity) values ('2024-07-11', 'holiday', 10, 3, 4, 2)")
+        query!("insert into alternative_days (date, type, slots_start_hour, slot_duration, slots_per_day, slot_capacity) values ('2024-07-11', 'holiday', 10, 3, 4, 2)")
             .execute(&pool).await?;
 
         // 1. Standard hour (18:00) should now be invalid
@@ -725,6 +725,78 @@ mod constraints_and_schedule {
         assert_eq!(
             create_reservation(&pool, &location, now, &user, weekend, 10, None).await,
             Err(ReservationError::NoMoreReservations)
+        );
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn cancel_should_respect_tournament_capacity(pool: SqlitePool) -> sqlx::Result<()> {
+        let (location, user_1, user_2, user_3) = setup(&pool, 1, 0).await?;
+
+        let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+        let date = date!(2024 - 07 - 11);
+        let hour = 18;
+
+        // 1. Create a "Tournament" override for this date with Capacity = 2
+        query!(
+            "insert into alternative_days (
+                type, date, description, slots_start_hour,
+                slot_duration, slot_capacity, slots_per_day, consumes_reservation
+            ) values (
+                'turneu', $1, 'Tournament', $2,
+                2, 2, 1, true
+            )",
+            date,
+            hour
+        )
+        .execute(&pool)
+        .await?;
+
+        // 2. User 1 reserves (Active: 1/2)
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_1, date, hour, None).await,
+            Ok(ReservationSuccess::Reservation {
+                deletes_guest: false
+            }),
+        );
+
+        // 3. User 2 reserves (Active: 2/2)
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_2, date, hour, None).await,
+            Ok(ReservationSuccess::Reservation {
+                deletes_guest: false
+            }),
+        );
+
+        // 4. User 3 reserves (Waiting List)
+        // Capacity is full (2/2), so they go to waiting
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_3, date, hour, None).await,
+            Ok(ReservationSuccess::InWaiting { as_guest: false }),
+        );
+
+        // 5. User 1 Cancels
+        // This reduces active count to 1.
+        // Current Bug Logic: 1 (active) is NOT < 1 (location default capacity), so no promotion happens.
+        // Correct Logic: 1 (active) IS < 2 (tournament capacity), so promotion happens.
+        let tx = pool.begin().await?;
+        let result = cancel_reservation(tx, &location, date, hour, user_1.id, None).await?;
+        assert!(result, "Cancellation should succeed");
+
+        // 6. Verify User 3 status
+        let user_3_status = query!(
+            "select in_waiting from reservations where user_id = $1",
+            user_3.id
+        )
+        .fetch_one(&pool)
+        .await?;
+
+        assert!(
+            !user_3_status.in_waiting,
+            "FAILURE: User 3 should have been promoted to active, but is still in waiting.
+             This indicates the cancellation logic used the default location capacity (1)
+             instead of the tournament capacity (2)."
         );
 
         Ok(())

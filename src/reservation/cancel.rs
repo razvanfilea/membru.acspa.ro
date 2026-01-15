@@ -1,4 +1,5 @@
 use crate::model::location::Location;
+use crate::utils::queries::get_alt_day_structure_for_day;
 use sqlx::{SqliteTransaction, query, query_scalar};
 use time::Date;
 
@@ -37,7 +38,15 @@ pub async fn cancel_reservation(
     .fetch_one(tx.as_mut())
     .await?;
 
-    if count < location.slot_capacity {
+    let day_structure = get_alt_day_structure_for_day(&mut *tx, date)
+        .await
+        .unwrap_or_else(|| location.day_structure());
+
+    let effective_capacity = day_structure
+        .slot_capacity
+        .unwrap_or(location.slot_capacity);
+
+    if count < effective_capacity {
         query!(
             "update reservations set in_waiting = false where rowid =
                 (select rowid from reservations where
