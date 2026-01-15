@@ -5,18 +5,9 @@
         <select id="{{ prefix }}_month_select" class="select select-bordered join-item w-3/5"
                 autocomplete="off"
                 onchange="updateHiddenDate('{{ prefix }}')">
-            <option value="01">Ianuarie</option>
-            <option value="02">Februarie</option>
-            <option value="03">Martie</option>
-            <option value="04">Aprilie</option>
-            <option value="05">Mai</option>
-            <option value="06">Iunie</option>
-            <option value="07">Iulie</option>
-            <option value="08">August</option>
-            <option value="09">Septembrie</option>
-            <option value="10">Octombrie</option>
-            <option value="11">Noiembrie</option>
-            <option value="12">Decembrie</option>
+            {% for month in MonthIter::default() %}
+            <option value='{{ format!("{:02}", month as u8) }}'>{{ date_formats::month_as_str(month) }}</option>
+            {% endfor %}
         </select>
 
         <select id="{{ prefix }}_year_select" class="select select-bordered join-item w-2/5"

@@ -1,4 +1,4 @@
-use crate::utils::queries::YearMonth;
+use crate::utils::dates::YearMonth;
 use time::{Date, OffsetDateTime};
 
 #[derive(Debug, Clone)]

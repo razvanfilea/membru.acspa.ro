@@ -16,7 +16,7 @@ use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
 use crate::model::restriction::Restriction;
 use crate::model::user::User;
-use crate::utils::date_iter::DateIter;
+use crate::utils::dates::DateRangeIter;
 use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_date};
 use askama::Template;
@@ -55,7 +55,7 @@ struct DayEvents {
 struct CalendarTemplate {
     user: User,
     current_date: Date,
-    calendar_days: DateIter,
+    calendar_days: DateRangeIter,
     day_markers: HashMap<Date, DayEvents>, // Markers for the calendar grid
     selected_date: Date,
     selected_holiday: Option<AlternativeDay>,
@@ -117,7 +117,7 @@ async fn calendar_page(
             .previous_day()
             .unwrap()
     };
-    let calendar_days = DateIter::weeks_in_range(selected_date, last_day);
+    let calendar_days = DateRangeIter::weeks_in_range(selected_date, last_day);
 
     let mut fake_user = User::default();
     fake_user.admin_panel_access = true;

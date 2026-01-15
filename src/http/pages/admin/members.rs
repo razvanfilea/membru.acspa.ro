@@ -20,6 +20,8 @@ use crate::http::pages::admin::members::payments_summary::{
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
+use crate::utils::dates::YearMonthIter;
+use crate::utils::dates::{MonthIter, YearMonth};
 use crate::utils::queries::{GroupedUserReservations, get_user, get_user_reservations};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
@@ -31,7 +33,7 @@ use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, query_scalar};
 use std::collections::HashSet;
-use time::{Date, Month};
+use time::Date;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -217,15 +219,24 @@ async fn view_member_page(
 
     impl ViewMemberTemplate {
         pub fn get_paid_months_json(&self) -> String {
-            let months: HashSet<String> = self
+            let mut months: HashSet<String> = self
                 .payments
                 .iter()
                 .flat_map(|p| p.allocations.iter())
                 .map(|alloc| {
                     // Formats as M-YYYY
-                    format!("{}-{:04}", alloc.month, alloc.year)
+                    format!("{}-{:04}", alloc.month as u8, alloc.year)
                 })
                 .collect();
+
+            for br in &self.breaks {
+                let start = YearMonth::from(br.start_date);
+                let end = YearMonth::from(br.end_date);
+
+                for ym in YearMonthIter::new(start, end) {
+                    months.insert(format!("{}-{:04}", ym.month as u8, ym.year));
+                }
+            }
 
             serde_json::to_string(&months).expect("Failed to serialize")
         }

@@ -1,5 +1,6 @@
 use crate::model::user::User;
-use crate::utils::queries::{YearMonth, get_global_vars};
+use crate::utils::dates::{YearMonth, YearMonthIter};
+use crate::utils::queries::get_global_vars;
 use crate::utils::{date_formats, local_date, local_time};
 use itertools::Itertools;
 use sqlx::{SqliteExecutor, SqlitePool, query_as};
@@ -65,12 +66,7 @@ pub async fn compute_debtors(
 
     // D. Calculate Unpaid Months
     let current_month_start = YearMonth::from(current_date).to_date();
-    let year_months: Vec<_> = (1..=12)
-        .map(|m| {
-            let month = Month::try_from(m).unwrap();
-            YearMonth::new(selected_year, month).to_date()
-        })
-        .collect();
+    let year_months = YearMonthIter::for_year(selected_year);
 
     let debtors = users
         .into_iter()
@@ -85,9 +81,9 @@ pub async fn compute_debtors(
                 .unwrap_or(&[]);
 
             let unpaid_months: Vec<&'static str> = year_months
-                .iter()
-                .filter(|date| {
-                    let date = **date;
+                .clone()
+                .filter(|year_month| {
+                    let date = year_month.to_date();
                     // Filter out Future and Pre-Join dates
                     if date > current_month_start || date < join_month_start {
                         return false;
@@ -111,7 +107,7 @@ pub async fn compute_debtors(
 
                     true
                 })
-                .map(|date| date_formats::month_as_str(&date.month()))
+                .map(|date| date_formats::month_as_str(&date.month))
                 .collect();
 
             if !unpaid_months.is_empty() {

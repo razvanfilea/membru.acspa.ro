@@ -7,7 +7,7 @@ use crate::http::pages::notification_template::NotificationBubbleResponse;
 use crate::model::user::User;
 use crate::utils::CssColor;
 use crate::utils::date_formats::READABLE_DATE;
-use crate::utils::date_iter::DateIter;
+use crate::utils::dates::DateRangeIter;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::ws::{Message, WebSocket};
@@ -60,7 +60,7 @@ impl WsMessage {
 struct HomeContentTemplate<'a> {
     current_date: Date,
     selected_date: Date,
-    days: DateIter,
+    days: DateRangeIter,
     reservation_hours: ReservationHours,
     user: &'a User,
     has_paid: bool,
@@ -167,7 +167,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
                 HomeContentTemplate {
                     current_date,
                     selected_date,
-                    days: DateIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
+                    days: DateRangeIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
                     reservation_hours: get_reservation_hours(&state, selected_date).await.expect("Database error"),
                     user: &user,
                     has_paid: true,

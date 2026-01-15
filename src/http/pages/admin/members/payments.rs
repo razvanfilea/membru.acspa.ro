@@ -3,8 +3,9 @@ use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::breaks::get_user_payment_breaks;
 use crate::model::payment::PaymentWithAllocations;
+use crate::utils::dates::YearMonth;
 use crate::utils::local_date;
-use crate::utils::queries::{YearMonth, get_user};
+use crate::utils::queries::get_user;
 use axum::Form;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
@@ -119,19 +120,10 @@ pub async fn add_payment(
                 .ok()
                 .filter(|y| valid_year_range.contains(y))?;
 
-            let joining_month = Date::from_calendar_date(
-                member.member_since.year(),
-                member.member_since.month(),
-                1,
-            )
-            .ok()?;
+            let joining_month = YearMonth::from(member.member_since);
 
-            if Date::from_calendar_date(year, month, 1).ok()? < joining_month {
-                // Skip months before they joined
-                return None;
-            }
-
-            Some(YearMonth::new(year, month))
+            // Skip months before they joined
+            Some(YearMonth::new(year, month)).filter(|parsed| parsed >= &joining_month)
         })
         .collect();
 

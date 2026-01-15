@@ -4,6 +4,7 @@ use crate::model::global_vars::GlobalVars;
 use crate::model::location::Location;
 use crate::model::user::User;
 use crate::model::user_reservation::UserReservation;
+use crate::utils::dates::YearMonth;
 use itertools::Itertools;
 use sqlx::{SqliteExecutor, SqlitePool, query, query_as};
 use time::{Date, Month, Weekday};
@@ -52,29 +53,6 @@ pub async fn get_day_structure(state: &AppState, date: Date) -> DayStructure {
     get_alt_day_structure_for_day(&state.read_pool, date)
         .await
         .unwrap_or_else(|| state.location.day_structure())
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct YearMonth {
-    pub year: i32,
-    pub month: Month,
-}
-
-impl YearMonth {
-    pub fn new(year: i32, month: Month) -> Self {
-        Self { year, month }
-    }
-
-    pub fn to_date(self) -> Date {
-        Date::from_calendar_date(self.year, self.month, 1)
-            .expect("The first of the month is always valid")
-    }
-}
-
-impl From<Date> for YearMonth {
-    fn from(date: Date) -> Self {
-        Self::new(date.year(), date.month())
-    }
 }
 
 pub struct GroupedUserReservations {

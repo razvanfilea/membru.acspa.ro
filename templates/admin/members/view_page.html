@@ -318,8 +318,9 @@
                     </div>
 
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2" id="month_grid">
-                        {% for m in 1..=12 %}
-                        {% let month_name = date_formats::month_as_str(&Month::try_from(*m).unwrap()) %}
+                        {% for month in MonthIter::default() %}
+                        {% let month_name = date_formats::month_as_str(month) %}
+                        {% let m = format!("{}", month.clone() as u8) %}
                         <button type="button"
                                 id="m-btn-{{ m }}"
                                 class="month-btn flex flex-col items-center justify-center py-3 rounded-lg border border-base-300 bg-base-100 hover:border-primary hover:bg-primary/5 transition-all"

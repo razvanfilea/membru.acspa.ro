@@ -5,11 +5,12 @@ use crate::http::pages::admin::members::payments::get_user_payments;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
+use crate::utils::dates::{YearMonth, YearMonthIter};
 use crate::utils::queries::get_user;
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
-use time::{Date, Month};
+use time::Date;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MonthStatus {
@@ -34,19 +35,13 @@ pub fn calculate_year_status(
 ) -> Vec<MonthStatusView> {
     let current_date = local_date();
 
-    (1..=12)
-        .map(|m| {
-            let month = Month::try_from(m).unwrap();
-            let month_start = Date::from_calendar_date(year, month, 1).unwrap();
-            let month_name = date_formats::month_as_str(&month);
+    YearMonthIter::for_year(year)
+        .map(|year_month| {
+            let month_start = year_month.to_date();
+            let month_name = date_formats::month_as_str(&year_month.month);
 
             // 1. Check if before member joined (approximate to month)
-            let member_start_month = Date::from_calendar_date(
-                member.member_since.year(),
-                member.member_since.month(),
-                1,
-            )
-            .unwrap();
+            let member_start_month = YearMonth::from(member.member_since).to_date();
 
             if month_start < member_start_month {
                 return MonthStatusView {
@@ -59,7 +54,7 @@ pub fn calculate_year_status(
             let is_paid = payments.iter().find(|p| {
                 p.allocations
                     .iter()
-                    .any(|a| a.year == year && a.month == month)
+                    .any(|a| a.year == year && a.month == year_month.month)
             });
 
             if let Some(paid) = is_paid {

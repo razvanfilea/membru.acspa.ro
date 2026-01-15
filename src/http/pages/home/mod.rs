@@ -11,7 +11,7 @@ use crate::reservation;
 use crate::reservation::{
     ReservationError, ReservationSuccess, create_reservation, is_reservation_possible,
 };
-use crate::utils::date_iter::DateIter;
+use crate::utils::dates::DateRangeIter;
 use crate::utils::queries::{get_day_structure, get_global_vars};
 use crate::utils::{CssColor, local_date};
 use crate::utils::{date_formats, get_reservation_result_color, local_time};
@@ -54,7 +54,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
     struct HomeTemplate {
         current_date: Date,
         selected_date: Date,
-        days: DateIter,
+        days: DateRangeIter,
         user: User,
         reservation_hours: ReservationHours,
         global_vars: GlobalVars,
@@ -82,7 +82,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
     HomeTemplate {
         current_date,
         selected_date: current_date,
-        days: DateIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
+        days: DateRangeIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
         user,
         reservation_hours,
         global_vars: get_global_vars(&state.read_pool).await?,
