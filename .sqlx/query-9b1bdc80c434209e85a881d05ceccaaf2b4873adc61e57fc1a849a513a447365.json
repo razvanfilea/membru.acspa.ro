@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "update global_vars set in_maintenance = $1, entrance_code = $2, homepage_message = $3, check_payments = $4",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "9b1bdc80c434209e85a881d05ceccaaf2b4873adc61e57fc1a849a513a447365"
+}

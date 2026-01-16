@@ -5,6 +5,7 @@ use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
 use crate::reservation;
+use crate::utils::date_formats::DateFormatExt;
 use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_time};
 use askama::Template;

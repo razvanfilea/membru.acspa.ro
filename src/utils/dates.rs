@@ -23,6 +23,14 @@ impl YearMonth {
         Date::from_calendar_date(self.year, self.month, 1)
             .expect("The first of the month is always valid")
     }
+
+    pub fn prev(self) -> Self {
+        if self.month == Month::January {
+            Self::new(self.year - 1, Month::December)
+        } else {
+            Self::new(self.year, self.month.previous())
+        }
+    }
 }
 
 impl From<Date> for YearMonth {
@@ -31,7 +39,7 @@ impl From<Date> for YearMonth {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct DateRangeIter {
     from: Date,
     to: Date,

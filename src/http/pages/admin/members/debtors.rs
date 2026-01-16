@@ -1,7 +1,7 @@
 use crate::model::user::User;
 use crate::utils::dates::{YearMonth, YearMonthIter};
 use crate::utils::queries::get_global_vars;
-use crate::utils::{date_formats, local_date, local_time};
+use crate::utils::{date_formats, local_date};
 use itertools::Itertools;
 use sqlx::{SqliteExecutor, SqlitePool, query_as};
 use std::collections::HashSet;
@@ -174,21 +174,13 @@ pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result
         return Ok(true);
     }
 
-    let current_date = local_time().date();
+    let current_ym = YearMonth::from(local_date());
+    let start_ym = current_ym.prev().prev();
 
-    let mut year = current_date.year();
-    let mut month = current_date.month();
-
-    // Check current month + previous 2 months (Total 3)
-    for _ in 0..3 {
-        if is_month_covered(tx.as_mut(), user.id, year, month).await? {
+    // Check current month + previous 2 months
+    for ym in YearMonthIter::new(start_ym, current_ym) {
+        if is_month_covered(tx.as_mut(), user.id, ym.year, ym.month).await? {
             return Ok(true);
-        }
-
-        // Move to previous month
-        month = month.previous();
-        if month == Month::December {
-            year -= 1;
         }
     }
 

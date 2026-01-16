@@ -3,7 +3,7 @@
         <p class="text-xs font-black uppercase tracking-widest text-base-content/40 mb-1">Data
             selectată</p>
         <h3 class="text-3xl font-black text-base-content tracking-tighter animate-pop">{{
-            date_formats::as_readable(selected_date) }}</h3>
+            selected_date.to_readable() }}</h3>
     </header>
 
     {% if let Some(tournament) = selected_tournament %}
@@ -17,7 +17,7 @@
             <p class="text-lg font-black text-orange-500 leading-tight">{{ tournament.description }}</p>
             <p class="text-xs font-bold opacity-60 mt-1 uppercase">Start: {{ tournament.start_hour }}:{{
                 tournament.start_minute.unwrap_or_default() }}</p>
-            <a href="/admin/tournaments/edit/{{ date_formats::as_iso(selected_date) }}"
+            <a href="/admin/tournaments/edit/{{ selected_date.to_iso() }}"
                class="btn btn-outline mt-3 w-full font-black uppercase tracking-widest">Detalii
                 Turneu</a>
         </div>
@@ -39,7 +39,7 @@
             {% endif %}
 
             <button class="btn btn-error btn-block"
-                    hx-delete="/admin/holiday/{{ date_formats::as_iso(selected_date) }}"
+                    hx-delete="/admin/holiday/{{ selected_date.to_iso() }}"
                     hx-target="#day_details_container"
                     hx-confirm="Șterge Ziua Liberă?">
                 <span class="material-symbols-outlined">event_busy</span>
@@ -51,7 +51,7 @@
               hx-target="#day_details_container"
               hx-confirm="Ești sigur că vrei să marchezi ca zi liberă? Asta va șterge rezervările existente"
               class="space-y-6">
-            <input type="hidden" name="date" value="{{ date_formats::as_iso(selected_date) }}">
+            <input type="hidden" name="date" value="{{ selected_date.to_iso() }}">
 
             <div class="form-control">
                 <label class="label"><span class="label-text font-bold text-xs uppercase opacity-50">Descriere</span></label>
@@ -75,7 +75,7 @@
 
         <div class="space-y-2">
             {% for res in selected_restrictions %}
-            {% let restriction_date = date_formats::as_iso(selected_date) %}
+            {% let restriction_date = selected_date.to_iso() %}
             <div class="flex justify-between items-center bg-base-100 p-3 rounded-xl text-sm">
                 <div>
                     <span class="font-black">{% if let Some(h) = res.hour %}{{ h }}:00{% else %}Toată ziua{% endif %}</span>
@@ -96,7 +96,7 @@
         <form hx-put="/admin/restrictions" hx-target="#day_details_container"
               hx-confirm="Ești sigur că vrei să blochezi orele? Asta va șterge rezervările existente"
               class="space-y-6">
-            <input type="hidden" name="date" value="{{ date_formats::as_iso(selected_date) }}">
+            <input type="hidden" name="date" value="{{ selected_date.to_iso() }}">
             <div class="form-control">
                 <label class="label"><span class="label-text font-bold text-xs uppercase opacity-50">Descriere</span></label>
                 <input name="message" type="text" placeholder="Motiv blocaj orar..."

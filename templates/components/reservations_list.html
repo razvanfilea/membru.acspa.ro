@@ -5,7 +5,7 @@
     {% for reservation in group.reservations %}
     <div id="res_{{ loop.index }}" class="flex flex-row justify-between items-center">
         <div class="flex flex-col gap-1">
-            <p class="text-white">{{ date_formats::as_readable(reservation.date) }} - {{ reservation.hour }}:00
+            <p class="text-white">{{ reservation.date.to_readable() }} - {{ reservation.hour }}:00
             </p>
             {% if reservation.as_guest %}
             <p class="text-blue-300">Ca invitat</p>
@@ -22,7 +22,7 @@
         <button
                 class="btn btn-outline btn-warning"
                 hx-target="#res_{{ loop.index }}"
-                hx-vals='{"date": "{{ date_formats::as_readable(reservation.date) }}", "hour": {{ reservation.hour }} }'
+                hx-vals='{"date": "{{ reservation.date.to_iso() }}", "hour": {{ reservation.hour }} }'
                 hx-delete="/reservation">Anulează
         </button>
         {% endif %}

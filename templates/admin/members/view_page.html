@@ -27,15 +27,15 @@
         </div>
         <p class="text-gray-200">
             <span class="text-lg">{{ member.email }}</span><br>
-            Zi de naștere: <span class="font-mono">{{ date_formats::as_readable(member.birthday) }}</span><br>
-            Membru din: <span class="font-mono">{{ date_formats::as_readable(member.member_since) }}</span><br>
+            Zi de naștere: <span class="font-mono">{{ member.birthday.to_readable() }}</span><br>
+            Membru din: <span class="font-mono">{{ member.member_since.to_readable() }}</span><br>
             Primit cadou:
-            <span class="font-mono text-red-400">{{ self::map_date_to_string(member.received_gift) }}</span>
+            <span class="font-mono text-red-400">{{ member.received_gift.to_readable() }}</span>
         </p>
     </div>
 
     <div class="flex flex-col p-2 md:flex-row gap-2 md:gap-4">
-        <a href="mailto:{{ member.email }}?subject=Cotiza%C8%9Bie%20ACSPA&body=Te%20rog%20verific%C4%83%20plata%20cotiza%C8%9Biei%20de%20member%20ACS%20PA">
+        <a href="mailto:{{ member.email }}?subject=Cotiza%C8%9Bie%20ACSPA&body=Bun%C4%83%20ziua%2C%0A%0AV%C4%83%20reamintim%20c%C4%83%20ave%C8%9Bi%20de%20plat%C4%83%20cotiza%C8%9Bia%20lunar%C4%83%20de%20membru%20al%20clubului%20ACS%20Perpetuum%20Activ.%0A%0AV%C4%83%20mul%C8%9Bumim%20pentru%20sprijin%20%C8%99i%20implicare.%0A%0ACu%20stim%C4%83%2C%0AACS%20Perpetuum%20Activ">
             <button class="btn btn-outline">
                 Trimite mail cotizație<span class="material-symbols-outlined">email</span>
             </button>
@@ -106,7 +106,7 @@
                         {{ payment.display_amount() }} <span class="text-xs font-sans text-success/70">RON</span>
                     </span>
                             <span class="text-sm text-gray-400 font-mono uppercase tracking-wider mt-0.5">
-                        {{ date_formats::as_readable(payment.payment_date) }}
+                        {{ payment.payment_date.to_readable() }}
                     </span>
                         </div>
                     </div>
@@ -189,7 +189,7 @@
                                 <span class="absolute -left-7.75 top-1.5 w-3.5 h-3.5 rounded-full bg-success ring-4 ring-base-100"></span>
                                 <span class="text-xs font-bold text-success tracking-wider uppercase">Început</span>
                                 <div class="font-bold text-xl text-base-content mt-0.5">
-                                    {{ date_formats::as_month_year(br.start_date) }}
+                                    {{ br.start_date.to_month_year() }}
                                 </div>
                             </div>
 
@@ -197,7 +197,7 @@
                                 <span class="absolute -left-7.75 top-1.5 w-3.5 h-3.5 rounded-full bg-error ring-4 ring-base-100"></span>
                                 <span class="text-xs font-bold text-error tracking-wider uppercase">Sfârșit (inclusiv)</span>
                                 <div class="font-bold text-xl text-base-content mt-0.5">
-                                    {{ date_formats::as_month_year(br.end_date) }}
+                                    {{ br.end_date.to_month_year() }}
                                 </div>
                             </div>
                         </div>

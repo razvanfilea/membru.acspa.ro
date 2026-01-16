@@ -20,6 +20,7 @@ use crate::http::pages::admin::members::payments_summary::{
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
+use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::YearMonthIter;
 use crate::utils::dates::{MonthIter, YearMonth};
 use crate::utils::queries::{GroupedUserReservations, get_user, get_user_reservations};
@@ -65,11 +66,6 @@ async fn get_role_id(state: &AppState, role: &str) -> sqlx::Result<Option<i64>> 
     query_scalar!("select id from user_roles where name = $1", role)
         .fetch_optional(&state.read_pool)
         .await
-}
-
-fn map_date_to_string(date: &Option<Date>) -> String {
-    date.map(|date| date_formats::as_readable(&date))
-        .unwrap_or_else(|| "?".to_string())
 }
 
 async fn members_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
@@ -282,7 +278,7 @@ async fn edit_member_page(
     }
 
     EditMemberTemplate {
-        current_date: date_formats::as_iso(&local_date()),
+        current_date: local_date().to_iso(),
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         roles: get_all_roles(&state).await?,
         existing_user: get_user(&state.read_pool, member_id).await?,

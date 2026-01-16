@@ -32,7 +32,7 @@
         <label class="floating-label">
             <span>Zi de naștere</span>
             <input name="birthday" type="date" autocomplete="off" max="{{ current_date }}"
-                   value="{{ date_formats::as_iso(existing_user.birthday) }}"
+                   value="{{ existing_user.birthday.to_iso() }}"
                    class="input input-lg input-bordered w-full"/>
         </label>
 
@@ -40,7 +40,7 @@
             <span>Membru din</span>
             <input name="member_since" type="date" autocomplete="off" max="{{ current_date }}"
                    placeholder="dd-mm-yyyy"
-                   value="{{ date_formats::as_iso(existing_user.member_since) }}"
+                   value="{{ existing_user.member_since.to_iso() }}"
                    class="input input-lg input-bordered w-full"/>
         </label>
 

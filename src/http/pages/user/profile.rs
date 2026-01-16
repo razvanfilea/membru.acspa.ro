@@ -3,6 +3,7 @@ use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
+use crate::utils::date_formats::DateFormatExt;
 use crate::utils::queries::{
     GroupedUserReservations, ReservationsCount, get_user_reservations,
     get_user_weeks_reservations_count,

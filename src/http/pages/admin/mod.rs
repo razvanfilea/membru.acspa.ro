@@ -64,6 +64,7 @@ async fn admin_page(
 #[derive(Deserialize)]
 struct NewSettings {
     in_maintenance: Option<String>,
+    check_payments: Option<String>,
     entrance_code: String,
     homepage_message: String,
 }
@@ -73,11 +74,13 @@ async fn apply_settings(
     Form(settings): Form<NewSettings>,
 ) -> HttpResult {
     let in_maintenance = settings.in_maintenance.is_some();
+    let check_payments = settings.check_payments.is_some();
     query!(
-        "update global_vars set in_maintenance = $1, entrance_code = $2, homepage_message = $3",
+        "update global_vars set in_maintenance = $1, entrance_code = $2, homepage_message = $3, check_payments = $4",
         in_maintenance,
         settings.entrance_code,
-        settings.homepage_message
+        settings.homepage_message,
+        check_payments
     )
     .execute(&state.write_pool)
     .await?;

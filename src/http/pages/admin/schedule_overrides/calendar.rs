@@ -16,6 +16,7 @@ use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
 use crate::model::restriction::Restriction;
 use crate::model::user::User;
+use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::DateRangeIter;
 use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_date};
