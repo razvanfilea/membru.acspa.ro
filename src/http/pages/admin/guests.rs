@@ -1,7 +1,6 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult};
+use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
-use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
 use crate::model::user::User;
@@ -80,9 +79,7 @@ async fn select_hour(
         hours: Vec<u8>,
     }
 
-    let Ok(date) = Date::parse(&form.date, date_formats::ISO_DATE) else {
-        return Ok(error_bubble_response("Data selectata este invalidă"));
-    };
+    let date = Date::parse(&form.date, date_formats::ISO_DATE).or_bail("Data este invalida")?;
 
     let day_structure =
         DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
@@ -142,19 +139,16 @@ async fn create_guest(
     )
     .await;
 
-    match result {
-        Ok(_) => {
-            info!("Add guest with date: {date}, hour: {hour}: {referral:?}",);
-
-            let _ = state.reservation_notifier.send(());
-        }
-        Err(e) => {
-            error!("Failed to create guest reservation: {}", e);
-            return Ok(error_bubble_response(format!(
-                "Nu s-a putut crea invitatul: {e}"
-            )));
-        }
+    if let Err(e) = result {
+        error!("Failed to create guest reservation: {e}");
+        return Err(HttpError::Message(format!(
+            "Nu s-a putut crea invitatul: {e}"
+        )));
     }
+
+    info!("Add guest with date: {date}, hour: {hour}: {referral:?}",);
+
+    let _ = state.reservation_notifier.send(());
 
     GuestsListTemplate {
         guests: get_guests(&state.read_pool).await?,

@@ -14,6 +14,10 @@ pub fn user_router() -> Router<AppState> {
         .route("/profile", get(profile::profile_page))
         .route("/profile/reservations", post(profile::profile_reservations))
         .route(
+            "/profile/payment_status/{year}",
+            get(profile::payment_status_partial),
+        )
+        .route(
             "/change_password",
             get(change_password::change_password_page),
         )

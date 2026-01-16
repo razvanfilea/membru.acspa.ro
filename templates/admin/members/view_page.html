@@ -63,7 +63,7 @@
 
         <div class="bg-base-100 rounded-2xl shadow-sm border border-base-300 p-4 md:p-6">
             {% let selected_year = current_year %}
-            {% include "admin/members/status_grid_partial.html" %}
+            {% include "components/payments_status_grid.html" %}
         </div>
     </div>
 
@@ -211,7 +211,7 @@
                             </button>
 
                             <div class="badge badge-neutral font-mono">
-                                {{ br.months() }} {% if br.months() == 1 %} lună {% else %} luni {% endif %}
+                                {{ br.length_in_months() }} {% if br.length_in_months() == 1 %} lună {% else %} luni {% endif %}
                             </div>
                         </div>
                     </div>

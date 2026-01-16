@@ -1,7 +1,7 @@
-mod breaks;
+pub mod breaks;
 pub mod debtors;
-mod payments;
-mod payments_summary;
+pub mod payments;
+pub mod payments_summary;
 
 use crate::http::AppState;
 use crate::http::auth::generate_hash_from_password;
@@ -23,8 +23,7 @@ use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::model::user_reservation::GroupedUserReservations;
 use crate::utils::date_formats::DateFormatExt;
-use crate::utils::dates::YearMonthIter;
-use crate::utils::dates::{MonthIter, YearMonth};
+use crate::utils::dates::{MonthIter, YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
@@ -115,7 +114,7 @@ async fn search_members(
     let members = query_as!(
         User,
         "select * from users_with_role where name like $1 or email like $1 or role like $1
-         order by case 
+         order by case
           when $2 = 0 then name
           when $2 = 1 then birthday
           when $2 = 2 then received_gift

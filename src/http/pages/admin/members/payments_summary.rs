@@ -1,5 +1,6 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpError, HttpResult};
+use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::breaks::get_user_payment_breaks;
 use crate::http::pages::admin::members::payments::get_user_payments;
 use crate::http::template_into_response::TemplateIntoResponse;
@@ -9,6 +10,7 @@ use crate::utils::dates::{YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
+use sqlx::SqlitePool;
 use time::Date;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,6 +26,37 @@ pub enum MonthStatus {
 pub struct MonthStatusView {
     pub month_name: &'static str,
     pub status: MonthStatus,
+}
+
+#[derive(Template)]
+#[template(path = "components/payments_status_grid.html")]
+pub struct StatusGridTemplate {
+    pub user: User,
+    pub member: User,
+    pub current_year: i32,
+    pub selected_year: i32,
+    pub months_status_view: Vec<MonthStatusView>,
+}
+
+pub async fn build_status_grid_response(
+    pool: &SqlitePool,
+    user: User,
+    member: User,
+    year: i32,
+) -> HttpResult {
+    let payments = get_user_payments(pool, member.id).await?;
+    let breaks = get_user_payment_breaks(pool, member.id).await?;
+    let current_year = local_date().year();
+    let months_status_view = calculate_year_status(year, &member, &payments, &breaks);
+
+    StatusGridTemplate {
+        user,
+        member,
+        current_year,
+        selected_year: year,
+        months_status_view,
+    }
+    .try_into_response()
 }
 
 pub fn calculate_year_status(
@@ -98,31 +131,11 @@ pub fn calculate_year_status(
 }
 
 pub async fn payments_status_partial(
+    auth_session: AuthSession,
     State(state): State<AppState>,
     Path((user_id, year)): Path<(i64, i32)>,
 ) -> HttpResult {
-    #[derive(Template)]
-    #[template(path = "admin/members/status_grid_partial.html")]
-    struct StatusGridTemplate {
-        member: User,
-        current_year: i32,
-        selected_year: i32,
-        months_status_view: Vec<MonthStatusView>,
-    }
-
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
     let member = User::fetch(&state.read_pool, user_id).await?;
-    let payments = get_user_payments(&state.read_pool, user_id).await?;
-    let breaks = get_user_payment_breaks(&state.read_pool, user_id).await?;
-
-    let current_year = local_date().year();
-
-    let months = calculate_year_status(year, &member, &payments, &breaks);
-
-    StatusGridTemplate {
-        member,
-        current_year,
-        selected_year: year,
-        months_status_view: months,
-    }
-    .try_into_response()
+    build_status_grid_response(&state.read_pool, user, member, year).await
 }

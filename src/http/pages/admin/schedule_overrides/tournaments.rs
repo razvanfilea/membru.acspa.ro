@@ -5,7 +5,6 @@ use crate::http::pages::admin::schedule_overrides::{
     AlternativeDay, AlternativeDayType, NewAlternativeDay, add_alternative_day,
     delete_alternative_day, get_alternative_day, get_alternative_days,
 };
-use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
 use crate::utils::date_formats::ISO_DATE;
@@ -141,9 +140,9 @@ async fn edit_tournament_page(
     Path(date): Path<String>,
 ) -> HttpResult {
     let date = Date::parse(&date, ISO_DATE).or_bail("Data este invalida")?;
-    let Some(current) = get_tournament_day(&state.read_pool, date).await? else {
-        return Ok(error_bubble_response("Nu exista acest turneu"));
-    };
+    let current = get_tournament_day(&state.read_pool, date)
+        .await?
+        .or_bail("Nu exista acest turneu")?;
 
     NewOrEditTournamentTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
@@ -177,9 +176,9 @@ async fn update_tournament(
 
     let mut tx = state.write_pool.begin().await?;
 
-    let Some(current) = get_tournament_day(&mut *tx, date).await? else {
-        return Ok(error_bubble_response("Nu exista acest turneu"));
-    };
+    let current = get_tournament_day(&state.read_pool, date)
+        .await?
+        .or_bail("Nu exista acest turneu")?;
 
     let consumes_reservation = updated.consumes_reservation == Some("on".to_string());
 
