@@ -19,11 +19,12 @@ use crate::http::pages::admin::members::payments_summary::{
 };
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
+use crate::model::role::UserRole;
 use crate::model::user::User;
+use crate::model::user_reservation::GroupedUserReservations;
 use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::YearMonthIter;
 use crate::utils::dates::{MonthIter, YearMonth};
-use crate::utils::queries::{GroupedUserReservations, get_user, get_user_reservations};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
@@ -56,18 +57,6 @@ pub fn router() -> Router<AppState> {
         .route("/payment_status/{id}/{year}", get(payments_status_partial))
 }
 
-async fn get_all_roles(state: &AppState) -> sqlx::Result<Vec<String>> {
-    query_scalar!("select name from user_roles")
-        .fetch_all(&state.read_pool)
-        .await
-}
-
-async fn get_role_id(state: &AppState, role: &str) -> sqlx::Result<Option<i64>> {
-    query_scalar!("select id from user_roles where name = $1", role)
-        .fetch_optional(&state.read_pool)
-        .await
-}
-
 async fn members_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
     #[derive(Template)]
     #[template(path = "admin/members/list_page.html")]
@@ -76,9 +65,7 @@ async fn members_page(State(state): State<AppState>, auth_session: AuthSession) 
         members: Vec<User>,
     }
 
-    let members = query_as!(User, "select * from users_with_role order by name")
-        .fetch_all(&state.read_pool)
-        .await?;
+    let members = User::fetch_all(&state.read_pool).await?;
 
     MembersTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
@@ -162,7 +149,7 @@ async fn new_member_page(State(state): State<AppState>, auth_session: AuthSessio
 
     NewMemberTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
-        roles: get_all_roles(&state).await?,
+        roles: UserRole::fetch_all_names(&state.read_pool).await?,
     }
     .try_into_response()
 }
@@ -171,7 +158,7 @@ async fn create_new_member(
     State(state): State<AppState>,
     Form(new_member): Form<NewMember>,
 ) -> HttpResult {
-    let role_id = get_role_id(&state, new_member.role.as_str())
+    let role_id = UserRole::fetch_id_by_name(&state.read_pool, new_member.role.as_str())
         .await?
         .expect("Invalid role");
 
@@ -239,7 +226,7 @@ async fn view_member_page(
     }
 
     let current_date = local_date();
-    let member = get_user(&state.read_pool, member_id).await?;
+    let member = User::fetch(&state.read_pool, member_id).await?;
     let payments = get_user_payments(&state.read_pool, member_id)
         .await
         .unwrap_or_default();
@@ -252,7 +239,8 @@ async fn view_member_page(
 
     ViewMemberTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
-        reservations: get_user_reservations(&state.read_pool, member.id, false).await,
+        reservations: GroupedUserReservations::fetch_for_user(&state.read_pool, member.id, false)
+            .await?,
         current_date,
         member,
         allow_reservation_cancellation: false,
@@ -280,8 +268,8 @@ async fn edit_member_page(
     EditMemberTemplate {
         current_date: local_date().to_iso(),
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
-        roles: get_all_roles(&state).await?,
-        existing_user: get_user(&state.read_pool, member_id).await?,
+        roles: UserRole::fetch_all_names(&state.read_pool).await?,
+        existing_user: User::fetch(&state.read_pool, member_id).await?,
     }
     .try_into_response()
 }
@@ -308,7 +296,7 @@ async fn update_member(
             .and_then(|date| Date::parse(date.as_str(), date_formats::ISO_DATE).ok())
     }
 
-    let role_id = get_role_id(&state, updated_user.role.as_str())
+    let role_id = UserRole::fetch_id_by_name(&state.read_pool, updated_user.role.as_str())
         .await?
         .or_bail("Rolul selectat nu există")?;
     let user_name = updated_user.name.trim();
@@ -369,7 +357,7 @@ async fn change_password_page(
 
     ChangePasswordTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
-        existing_user: get_user(&state.read_pool, member_id).await?,
+        existing_user: User::fetch(&state.read_pool, member_id).await?,
     }
     .try_into_response()
 }
@@ -403,7 +391,7 @@ pub async fn update_member_password(
     Path(member_id): Path<i64>,
     Form(passwords): Form<ChangePasswordForm>,
 ) -> HttpResult {
-    let user = get_user(&state.read_pool, member_id).await?;
+    let user = User::fetch(&state.read_pool, member_id).await?;
 
     let new_password_hash = generate_hash_from_password(passwords.password);
     query!(

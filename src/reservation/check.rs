@@ -2,12 +2,9 @@ use crate::model::day_structure::DayStructure;
 use crate::model::location::Location;
 use crate::model::role::UserRole;
 use crate::model::user::User;
+use crate::model::user_reservation::ReservationsCount;
 use crate::reservation::{Referral, ReservationError, ReservationResult, ReservationSuccess};
-use crate::utils::queries::{
-    get_alt_day_structure_for_day, get_reservations_count_for_slot,
-    get_user_weeks_reservations_count,
-};
-use sqlx::{SqliteConnection, query, query_as};
+use sqlx::{SqliteConnection, query};
 use time::{Date, OffsetDateTime};
 
 fn check_parameters_validity(
@@ -101,9 +98,7 @@ pub async fn is_reservation_possible(
     selected_hour: u8,
     referral: Option<Referral<'_>>,
 ) -> ReservationResult {
-    let day_structure = get_alt_day_structure_for_day(&mut *tx, selected_date)
-        .await
-        .unwrap_or_else(|| location.day_structure());
+    let day_structure = DayStructure::fetch_or_default(&mut *tx, selected_date, location).await?;
 
     check_parameters_validity(now, &day_structure, selected_date, selected_hour)?;
 
@@ -119,16 +114,10 @@ pub async fn is_reservation_possible(
 
     check_restriction(&mut *tx, location, selected_date, selected_hour).await?;
 
-    let role = query_as!(
-        UserRole,
-        "select * from user_roles where id = $1",
-        user.role_id
-    )
-    .fetch_one(&mut *tx)
-    .await?;
+    let role = UserRole::fetch(&mut *tx, user.role_id).await?;
 
     let slot_reservations =
-        get_reservations_count_for_slot(&mut *tx, location, selected_date, selected_hour).await?;
+        ReservationsCount::fetch_for_slot(&mut *tx, location, selected_date, selected_hour).await?;
     let total_reservations = slot_reservations.member + slot_reservations.guest;
 
     let capacity = day_structure
@@ -136,7 +125,7 @@ pub async fn is_reservation_possible(
         .unwrap_or(location.slot_capacity);
 
     let user_reservations_count =
-        get_user_weeks_reservations_count(&mut *tx, user, selected_date).await?;
+        ReservationsCount::fetch_user_week(&mut *tx, user, selected_date).await?;
 
     // Attempt to create a normal reservation
     if (referral.is_none() && user_reservations_count.member < role.reservations)

@@ -1,6 +1,6 @@
+use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
 use crate::utils::dates::{YearMonth, YearMonthIter};
-use crate::utils::queries::get_global_vars;
 use crate::utils::{date_formats, local_date};
 use itertools::Itertools;
 use sqlx::{SqliteExecutor, SqlitePool, query_as};
@@ -169,7 +169,7 @@ pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result
         return Ok(true);
     }
     let mut tx = pool.begin().await?;
-    let global_vars = get_global_vars(tx.as_mut()).await?;
+    let global_vars = GlobalVars::fetch(tx.as_mut()).await?;
     if !global_vars.check_payments {
         return Ok(true);
     }

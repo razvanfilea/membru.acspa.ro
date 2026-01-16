@@ -6,7 +6,6 @@ use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
 use crate::utils::dates::{YearMonth, YearMonthIter};
-use crate::utils::queries::get_user;
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
@@ -111,7 +110,7 @@ pub async fn payments_status_partial(
         months_status_view: Vec<MonthStatusView>,
     }
 
-    let member = get_user(&state.read_pool, user_id).await?;
+    let member = User::fetch(&state.read_pool, user_id).await?;
     let payments = get_user_payments(&state.read_pool, user_id).await?;
     let breaks = get_user_payment_breaks(&state.read_pool, user_id).await?;
 

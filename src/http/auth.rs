@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use argon2::password_hash::phc::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash};
 use axum_login::{AuthnBackend, AuthzBackend, UserId};
-use sqlx::{SqlitePool, query_as};
+use sqlx::SqlitePool;
 use tokio::task;
 
 use crate::model::user::{User, UserCredentials};
@@ -48,14 +48,9 @@ impl AuthnBackend for UserAuthenticator {
     }
 
     async fn get_user(&self, user_id: &UserId<Self>) -> Result<Option<Self::User>, Self::Error> {
-        query_as!(
-            User,
-            r#"select * from users_with_role where email = $1"#,
-            user_id
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(std::io::Error::other)
+        User::fetch_by_email(&self.pool, user_id)
+            .await
+            .map_err(std::io::Error::other)
     }
 }
 

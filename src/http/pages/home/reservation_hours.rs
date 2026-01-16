@@ -1,7 +1,7 @@
 use crate::http::AppState;
+use crate::model::day_structure::DayStructure;
 use crate::model::restriction::Restriction;
 use crate::utils::CssColor;
-use crate::utils::queries::{get_alt_day_structure_for_day, get_day_structure};
 use itertools::{Either, Itertools};
 use sqlx::{query, query_as};
 use std::str::FromStr;
@@ -38,7 +38,8 @@ pub struct ReservationHours {
 }
 
 pub async fn get_reservation_hours(state: &AppState, date: Date) -> sqlx::Result<ReservationHours> {
-    let day_structure = get_day_structure(state, date).await;
+    let day_structure =
+        DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
     let mut tx = state.read_pool.begin().await?;
     let restrictions = query_as!(
         Restriction,
@@ -144,8 +145,8 @@ pub async fn get_reservation_hours(state: &AppState, date: Date) -> sqlx::Result
         })
         .collect();
 
-    let capacity = get_alt_day_structure_for_day(tx.as_mut(), date)
-        .await
+    let capacity = DayStructure::fetch_for_date(tx.as_mut(), date)
+        .await?
         .and_then(|day| day.slot_capacity.map(|capacity| capacity as u8));
 
     Ok(ReservationHours {

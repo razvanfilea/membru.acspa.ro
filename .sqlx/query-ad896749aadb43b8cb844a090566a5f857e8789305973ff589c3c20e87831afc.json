@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select as_guest, count(*) as 'count!: i64' from reservations\n        where location = $1 and date = $2 and hour = $3 and cancelled = false and in_waiting = false\n        group by as_guest",
+  "query": "select as_guest, count(*) as 'count!: i64' from reservations\n            where location = $1 and date = $2 and hour = $3 and cancelled = false and in_waiting = false\n            group by as_guest",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       null
     ]
   },
-  "hash": "f6b2c2e2b592f2d16964627a237014cd55b3514293389196a10d4afd54a3ba9f"
+  "hash": "ad896749aadb43b8cb844a090566a5f857e8789305973ff589c3c20e87831afc"
 }

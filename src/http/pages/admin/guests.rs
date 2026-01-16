@@ -3,10 +3,10 @@ use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::template_into_response::TemplateIntoResponse;
+use crate::model::day_structure::DayStructure;
 use crate::model::user::User;
 use crate::reservation;
 use crate::utils::date_formats::DateFormatExt;
-use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::State;
@@ -84,7 +84,8 @@ async fn select_hour(
         return Ok(error_bubble_response("Data selectata este invalidă"));
     };
 
-    let day_structure = get_day_structure(&state, date).await;
+    let day_structure =
+        DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
 
     SelectHourTemplate {
         hours: day_structure.iter().collect(),
@@ -112,7 +113,8 @@ async fn create_guest(
     }
 
     let date = Date::parse(&guest.date, date_formats::ISO_DATE).unwrap();
-    let day_structure = get_day_structure(&state, date).await;
+    let day_structure =
+        DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
     if !day_structure.is_hour_valid(guest.hour) {
         error!("Invalid hour: {} for date: {}", guest.hour, guest.date);
 

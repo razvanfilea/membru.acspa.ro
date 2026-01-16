@@ -1,5 +1,5 @@
+use crate::model::day_structure::DayStructure;
 use crate::model::location::Location;
-use crate::utils::queries::get_alt_day_structure_for_day;
 use sqlx::{SqliteTransaction, query, query_scalar};
 use time::Date;
 
@@ -38,9 +38,7 @@ pub async fn cancel_reservation(
     .fetch_one(tx.as_mut())
     .await?;
 
-    let day_structure = get_alt_day_structure_for_day(&mut *tx, date)
-        .await
-        .unwrap_or_else(|| location.day_structure());
+    let day_structure = DayStructure::fetch_or_default(&mut *tx, date, location).await?;
 
     let effective_capacity = day_structure
         .slot_capacity

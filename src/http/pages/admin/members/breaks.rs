@@ -3,9 +3,9 @@ use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::payments::get_payment_allocations;
 use crate::model::payment::PaymentBreak;
+use crate::model::user::User;
 use crate::utils::date_formats;
 use crate::utils::dates::YearMonth;
-use crate::utils::queries::get_user;
 use axum::Form;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
@@ -49,7 +49,7 @@ pub async fn add_break(
 
     let created_by = auth_session.user.ok_or(HttpError::Unauthorized)?;
 
-    let member = get_user(&state.read_pool, member_id).await?;
+    let member = User::fetch(&state.read_pool, member_id).await?;
     let start_date = parse_month_input(&form.start_month).or_bail("Început de lună invalid")?;
     let end_date = parse_month_input(&form.end_month.unwrap_or(form.start_month))
         .or_bail("Sfârșit de lună invalid")?;

@@ -3,11 +3,8 @@ use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
+use crate::model::user_reservation::{GroupedUserReservations, ReservationsCount};
 use crate::utils::date_formats::DateFormatExt;
-use crate::utils::queries::{
-    GroupedUserReservations, ReservationsCount, get_user_reservations,
-    get_user_weeks_reservations_count,
-};
 use crate::utils::{date_formats, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
@@ -35,10 +32,11 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
     .await?;
 
     let this_weeks_reservations =
-        get_user_weeks_reservations_count(&state.read_pool, &user, local_time().date()).await?;
+        ReservationsCount::fetch_user_week(&state.read_pool, &user, local_time().date()).await?;
 
     ProfileTemplate {
-        reservations: get_user_reservations(&state.read_pool, user.id, false).await,
+        reservations: GroupedUserReservations::fetch_for_user(&state.read_pool, user.id, false)
+            .await?,
         user,
         show_cancelled: false,
         this_weeks_reservations,
@@ -70,7 +68,12 @@ pub async fn profile_reservations(
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
 
     ProfileTemplate {
-        reservations: get_user_reservations(&state.read_pool, user.id, query.show_cancelled).await,
+        reservations: GroupedUserReservations::fetch_for_user(
+            &state.read_pool,
+            user.id,
+            query.show_cancelled,
+        )
+        .await?,
         show_cancelled: query.show_cancelled,
     }
     .try_into_response()

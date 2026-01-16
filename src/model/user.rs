@@ -1,5 +1,6 @@
 use axum_login::AuthUser;
 use serde::Deserialize;
+use sqlx::{SqliteExecutor, query_as};
 use time::Date;
 
 #[derive(Debug, Clone)]
@@ -49,6 +50,33 @@ impl AuthUser for User {
 
     fn session_auth_hash(&self) -> &[u8] {
         self.password_hash.as_bytes()
+    }
+}
+
+impl User {
+    pub async fn fetch(executor: impl SqliteExecutor<'_>, id: i64) -> sqlx::Result<Self> {
+        query_as!(Self, "select * from users_with_role where id = $1", id)
+            .fetch_one(executor)
+            .await
+    }
+
+    pub async fn fetch_by_email(
+        executor: impl SqliteExecutor<'_>,
+        email: &str,
+    ) -> sqlx::Result<Option<Self>> {
+        query_as!(
+            Self,
+            "select * from users_with_role where email = $1",
+            email
+        )
+        .fetch_optional(executor)
+        .await
+    }
+
+    pub async fn fetch_all(executor: impl SqliteExecutor<'_>) -> sqlx::Result<Vec<Self>> {
+        query_as!(Self, "select * from users_with_role order by name")
+            .fetch_all(executor)
+            .await
     }
 }
 

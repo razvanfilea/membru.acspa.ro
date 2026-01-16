@@ -6,7 +6,6 @@ use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
 use crate::utils::local_date;
-use crate::utils::queries::get_global_vars;
 use askama::Template;
 use axum::extract::{Query, State};
 use axum::response::IntoResponse;
@@ -54,7 +53,7 @@ async fn admin_page(
 
     AdminTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
-        global_vars: get_global_vars(&state.read_pool).await?,
+        global_vars: GlobalVars::fetch(&state.read_pool).await?,
         selected_year,
         debtors,
     }

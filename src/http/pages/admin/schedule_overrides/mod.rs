@@ -1,7 +1,7 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
+use crate::model::user_reservation::UserReservation;
 use crate::utils::date_formats;
-use crate::utils::queries::delete_reservations_on_day;
 use axum::Router;
 use sqlx::{SqliteConnection, SqliteExecutor, SqlitePool, query, query_as, query_scalar};
 use time::{Date, OffsetDateTime};
@@ -69,7 +69,7 @@ async fn add_alternative_day(
     .execute(tx.as_mut())
     .await?;
 
-    let deleted_reservations = delete_reservations_on_day(tx.as_mut(), day.date, None).await?;
+    let deleted_reservations = UserReservation::delete_on_day(tx.as_mut(), day.date, None).await?;
     if deleted_reservations != 0 {
         info!("{deleted_reservations} reservation were deleted when creating alternative day");
     }
@@ -143,7 +143,7 @@ async fn delete_alternative_day(state: &AppState, date: String) -> HttpResult<()
 
     let mut tx = state.write_pool.begin().await?;
 
-    let deleted_reservations = delete_reservations_on_day(tx.as_mut(), date, None).await?;
+    let deleted_reservations = UserReservation::delete_on_day(tx.as_mut(), date, None).await?;
     if deleted_reservations != 0 {
         info!("{deleted_reservations} reservation were deleted when deleting alternative day");
     }

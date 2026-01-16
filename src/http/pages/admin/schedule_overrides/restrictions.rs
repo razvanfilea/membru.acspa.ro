@@ -1,9 +1,10 @@
 use crate::http::AppState;
 use crate::http::error::HttpResult;
 use crate::http::pages::admin::schedule_overrides::calendar::day_details_response;
+use crate::model::day_structure::DayStructure;
 use crate::model::restriction::Restriction;
+use crate::model::user_reservation::UserReservation;
 use crate::utils::date_formats;
-use crate::utils::queries::{delete_reservations_on_day, get_day_structure};
 use axum::Router;
 use axum::extract::{Query, State};
 use axum::routing::{delete, put};
@@ -60,7 +61,8 @@ async fn create_restriction(
 ) -> HttpResult {
     let message = restriction.message.trim();
     let date = Date::parse(&restriction.date, date_formats::ISO_DATE).unwrap();
-    let day_structure = get_day_structure(&state, date).await;
+    let day_structure =
+        DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
     let mut tx = state.write_pool.begin().await?;
 
     if let Some(hours) = restriction.hour {
@@ -69,7 +71,7 @@ async fn create_restriction(
                 continue;
             }
 
-            delete_reservations_on_day(tx.as_mut(), date, Some(hour)).await?;
+            UserReservation::delete_on_day(tx.as_mut(), date, Some(hour)).await?;
 
             query!(
                 "insert or replace into restrictions (date, hour, location, message) values ($1, $2, $3, $4)",
@@ -82,7 +84,7 @@ async fn create_restriction(
                 .await?;
         }
     } else {
-        delete_reservations_on_day(tx.as_mut(), date, None).await?;
+        UserReservation::delete_on_day(tx.as_mut(), date, None).await?;
 
         query!(
             "insert into restrictions (date, location, message) values ($1, $2, $3)",

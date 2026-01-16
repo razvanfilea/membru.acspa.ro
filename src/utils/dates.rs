@@ -39,7 +39,7 @@ impl From<Date> for YearMonth {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct DateRangeIter {
     from: Date,
     to: Date,

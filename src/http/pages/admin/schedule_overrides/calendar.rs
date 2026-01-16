@@ -18,7 +18,6 @@ use crate::model::restriction::Restriction;
 use crate::model::user::User;
 use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::DateRangeIter;
-use crate::utils::queries::get_day_structure;
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::Router;
@@ -141,7 +140,8 @@ async fn calendar_page(
             .into_iter()
             .filter(|r| r.date == today)
             .collect(),
-        day_structure: get_day_structure(&state, today).await,
+        day_structure: DayStructure::fetch_or_default(&state.read_pool, today, &state.location)
+            .await?,
         prev_month: (prev_month_date.year(), prev_month_date.month() as u8),
         next_month: (next_month_date.year(), next_month_date.month() as u8),
         reservations,
@@ -204,7 +204,8 @@ pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
         selected_holiday,
         selected_tournament,
         selected_restrictions,
-        day_structure: get_day_structure(&state, date).await,
+        day_structure: DayStructure::fetch_or_default(&state.read_pool, date, &state.location)
+            .await?,
         events,
         reservations,
     }
