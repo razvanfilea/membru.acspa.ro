@@ -186,3 +186,258 @@ pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result
 
     Ok(false)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sqlx::{SqlitePool, query};
+
+    async fn setup_test_data(pool: &SqlitePool) -> sqlx::Result<()> {
+        // Create test role for regular members (role 1 'Admin' already exists from migrations)
+        // Role 100: Regular member (should be checked for debtors)
+        query!(
+            r#"
+            INSERT INTO user_roles (id, name, reservations, guest_reservations, admin_panel_access)
+            VALUES (100, 'Member', 1, 0, FALSE)
+            "#
+        )
+        .execute(pool)
+        .await?;
+
+        Ok(())
+    }
+
+    async fn insert_user(
+        pool: &SqlitePool,
+        id: i64,
+        name: &str,
+        role_id: i64,
+        member_since: &str,
+    ) -> sqlx::Result<()> {
+        let email = format!("{}@test.com", name);
+        query!(
+            r#"
+            INSERT INTO users (id, email, name, password_hash, role_id, has_key, birthday, member_since, is_active)
+            VALUES ($1, $2, $3, '', $4, FALSE, '2000-01-01', $5, TRUE)
+            "#,
+            id,
+            email,
+            name,
+            role_id,
+            member_since
+        )
+        .execute(pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn insert_payment(
+        pool: &SqlitePool,
+        user_id: i64,
+        year: i32,
+        months: &[u8],
+    ) -> sqlx::Result<()> {
+        // Insert payment
+        let payment_id = query!(
+            r#"
+            INSERT INTO payments (user_id, amount, payment_date, created_by)
+            VALUES ($1, 5000, '2020-01-15', $1)
+            RETURNING id
+            "#,
+            user_id
+        )
+        .fetch_one(pool)
+        .await?
+        .id;
+
+        // Insert allocations
+        for &month in months {
+            query!(
+                "INSERT INTO payment_allocations (payment_id, year, month) VALUES ($1, $2, $3)",
+                payment_id,
+                year,
+                month
+            )
+            .execute(pool)
+            .await?;
+        }
+        Ok(())
+    }
+
+    async fn insert_break(
+        pool: &SqlitePool,
+        user_id: i64,
+        start: &str,
+        end: &str,
+    ) -> sqlx::Result<()> {
+        query!(
+            r#"
+            INSERT INTO payment_breaks (user_id, start_date, end_date, created_by)
+            VALUES ($1, $2, $3, $1)
+            "#,
+            user_id,
+            start,
+            end
+        )
+        .execute(pool)
+        .await?;
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn returns_empty_when_all_users_paid(pool: SqlitePool) -> sqlx::Result<()> {
+        setup_test_data(&pool).await?;
+        // User joined Jan 2020, paid all months
+        insert_user(&pool, 1, "Paid User", 100, "2020-01-01").await?;
+        insert_payment(&pool, 1, 2020, &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).await?;
+
+        let debtors = compute_debtors(&pool, 2020).await?;
+        assert!(debtors.is_empty());
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn returns_users_with_unpaid_months_sorted_by_count(
+        pool: SqlitePool,
+    ) -> sqlx::Result<()> {
+        setup_test_data(&pool).await?;
+
+        // User A: joined Jan 2020, paid 6 months (6 unpaid)
+        insert_user(&pool, 1, "A User", 100, "2020-01-01").await?;
+        insert_payment(&pool, 1, 2020, &[1, 2, 3, 4, 5, 6]).await?;
+
+        // User B: joined Jan 2020, paid 9 months (3 unpaid)
+        insert_user(&pool, 2, "B User", 100, "2020-01-01").await?;
+        insert_payment(&pool, 2, 2020, &[1, 2, 3, 4, 5, 6, 7, 8, 9]).await?;
+
+        let debtors = compute_debtors(&pool, 2020).await?;
+        assert_eq!(debtors.len(), 2);
+
+        // Should be sorted by unpaid count (descending)
+        assert_eq!(debtors[0].member.name, "A User");
+        assert_eq!(debtors[0].unpaid_months.len(), 6);
+        assert_eq!(debtors[1].member.name, "B User");
+        assert_eq!(debtors[1].unpaid_months.len(), 3);
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn skips_roles_in_user_rolls_to_skip(pool: SqlitePool) -> sqlx::Result<()> {
+        // Create a role that's in USER_ROLLS_TO_SKIP but has admin_panel_access = FALSE
+        // This ensures we're testing the USER_ROLLS_TO_SKIP logic, not the SQL filter
+        query!(
+            r#"
+            INSERT INTO user_roles (id, name, reservations, guest_reservations, admin_panel_access)
+            VALUES (100, 'Member', 1, 0, FALSE),
+                   (5, 'SkippedRole', 1, 0, FALSE)
+            "#
+        )
+        .execute(&pool)
+        .await?;
+
+        // Regular member with unpaid months
+        insert_user(&pool, 1, "Regular", 100, "2020-01-01").await?;
+
+        // User with role 5 (in USER_ROLLS_TO_SKIP) but NOT admin - tests the actual skip logic
+        insert_user(&pool, 2, "SkippedUser", 5, "2020-01-01").await?;
+
+        let debtors = compute_debtors(&pool, 2020).await?;
+
+        // Only the regular member should appear (role 5 is skipped by USER_ROLLS_TO_SKIP)
+        assert_eq!(debtors.len(), 1);
+        assert_eq!(debtors[0].member.name, "Regular");
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn respects_member_since_date(pool: SqlitePool) -> sqlx::Result<()> {
+        setup_test_data(&pool).await?;
+
+        // User joined in July 2020
+        insert_user(&pool, 1, "Late Joiner", 100, "2020-07-01").await?;
+
+        let debtors = compute_debtors(&pool, 2020).await?;
+        assert_eq!(debtors.len(), 1);
+
+        // Should only owe for Jul-Dec (6 months), not Jan-Jun
+        assert_eq!(debtors[0].unpaid_months.len(), 6);
+
+        // Verify the months are correct (Romanian names)
+        assert!(debtors[0].unpaid_months.contains(&"Iulie"));
+        assert!(debtors[0].unpaid_months.contains(&"Decembrie"));
+        assert!(!debtors[0].unpaid_months.contains(&"Ianuarie"));
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn respects_payment_breaks(pool: SqlitePool) -> sqlx::Result<()> {
+        setup_test_data(&pool).await?;
+
+        // User joined Jan 2020, has break Mar-May
+        insert_user(&pool, 1, "Break User", 100, "2020-01-01").await?;
+        insert_break(&pool, 1, "2020-03-01", "2020-05-01").await?;
+
+        // Pay Jan-Feb only
+        insert_payment(&pool, 1, 2020, &[1, 2]).await?;
+
+        let debtors = compute_debtors(&pool, 2020).await?;
+        assert_eq!(debtors.len(), 1);
+
+        // Should owe for Jun-Dec (7 months), not Jan-Feb (paid) or Mar-May (break)
+        assert_eq!(debtors[0].unpaid_months.len(), 7);
+        assert!(debtors[0].unpaid_months.contains(&"Iunie"));
+        assert!(!debtors[0].unpaid_months.contains(&"Martie"));
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn handles_user_with_no_payments(pool: SqlitePool) -> sqlx::Result<()> {
+        setup_test_data(&pool).await?;
+
+        // User joined Jan 2020, no payments
+        insert_user(&pool, 1, "No Payments", 100, "2020-01-01").await?;
+
+        let debtors = compute_debtors(&pool, 2020).await?;
+        assert_eq!(debtors.len(), 1);
+
+        // Should owe for all 12 months
+        assert_eq!(debtors[0].unpaid_months.len(), 12);
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn user_joined_in_selected_year(pool: SqlitePool) -> sqlx::Result<()> {
+        setup_test_data(&pool).await?;
+
+        // User joined Oct 2020
+        insert_user(&pool, 1, "Oct Joiner", 100, "2020-10-15").await?;
+
+        let debtors = compute_debtors(&pool, 2020).await?;
+        assert_eq!(debtors.len(), 1);
+
+        // Should owe for Oct-Dec (3 months)
+        assert_eq!(debtors[0].unpaid_months.len(), 3);
+        assert!(debtors[0].unpaid_months.contains(&"Octombrie"));
+        assert!(debtors[0].unpaid_months.contains(&"Noiembrie"));
+        assert!(debtors[0].unpaid_months.contains(&"Decembrie"));
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn break_spanning_multiple_months(pool: SqlitePool) -> sqlx::Result<()> {
+        setup_test_data(&pool).await?;
+
+        // User with 6-month break
+        insert_user(&pool, 1, "Long Break", 100, "2020-01-01").await?;
+        insert_break(&pool, 1, "2020-01-01", "2020-06-01").await?;
+
+        let debtors = compute_debtors(&pool, 2020).await?;
+        assert_eq!(debtors.len(), 1);
+
+        // Should owe for Jul-Dec only (6 months)
+        assert_eq!(debtors[0].unpaid_months.len(), 6);
+        assert!(debtors[0].unpaid_months.contains(&"Iulie"));
+        assert!(!debtors[0].unpaid_months.contains(&"Ianuarie"));
+        Ok(())
+    }
+}

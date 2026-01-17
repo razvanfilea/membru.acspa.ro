@@ -30,6 +30,7 @@ pub struct PaymentWithAllocations {
     pub notes: Option<String>,
     pub allocations: Vec<YearMonth>,
     pub created_at: OffsetDateTime,
+    #[allow(dead_code)]
     pub created_by: i64,
     pub created_by_name: String,
 }
