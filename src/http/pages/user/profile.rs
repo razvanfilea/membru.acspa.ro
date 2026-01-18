@@ -1,13 +1,12 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
-use crate::http::pages::admin::members::breaks::get_user_payment_breaks;
-use crate::http::pages::admin::members::payments::get_user_payments;
 use crate::http::pages::admin::members::payments_summary::MonthStatus;
 use crate::http::pages::admin::members::payments_summary::{
     MonthStatusView, build_status_grid_response, calculate_year_status,
 };
 use crate::http::template_into_response::TemplateIntoResponse;
+use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
 use crate::model::user_reservation::{GroupedUserReservations, ReservationsCount};
 use crate::utils::date_formats::DateFormatExt;
@@ -44,8 +43,8 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         ReservationsCount::fetch_user_week(&state.read_pool, &user, local_time().date()).await?;
 
     let current_year = local_date().year();
-    let payments = get_user_payments(&state.read_pool, user.id).await?;
-    let breaks = get_user_payment_breaks(&state.read_pool, user.id).await?;
+    let payments = PaymentWithAllocations::fetch_for_user(&state.read_pool, user.id).await?;
+    let breaks = PaymentBreak::fetch_for_user(&state.read_pool, user.id).await?;
     let months_status_view = calculate_year_status(current_year, &user, &payments, &breaks);
 
     ProfileTemplate {

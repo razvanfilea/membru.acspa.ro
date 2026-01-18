@@ -7,12 +7,8 @@ use crate::http::AppState;
 use crate::http::auth::generate_hash_from_password;
 use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
-use crate::http::pages::admin::members::breaks::{
-    add_break, delete_break, get_user_payment_breaks,
-};
-use crate::http::pages::admin::members::payments::{
-    add_payment, delete_payment, get_user_payments,
-};
+use crate::http::pages::admin::members::breaks::{add_break, delete_break};
+use crate::http::pages::admin::members::payments::{add_payment, delete_payment};
 use crate::http::pages::admin::members::payments_summary::MonthStatus;
 use crate::http::pages::admin::members::payments_summary::{
     MonthStatusView, calculate_year_status, payments_status_partial,
@@ -226,11 +222,11 @@ async fn view_member_page(
 
     let current_date = local_date();
     let member = User::fetch(&state.read_pool, member_id).await?;
-    let payments = get_user_payments(&state.read_pool, member_id)
+    let payments = PaymentWithAllocations::fetch_for_user(&state.read_pool, member_id)
         .await
         .unwrap_or_default();
 
-    let breaks = get_user_payment_breaks(&state.read_pool, member_id)
+    let breaks = PaymentBreak::fetch_for_user(&state.read_pool, member_id)
         .await
         .unwrap_or_default();
     let months_status_view =

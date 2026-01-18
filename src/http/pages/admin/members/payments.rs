@@ -1,8 +1,7 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
-use crate::http::pages::admin::members::breaks::get_user_payment_breaks;
-use crate::model::payment::PaymentWithAllocations;
+use crate::model::payment_context::PaymentContext;
 use crate::model::user::User;
 use crate::utils::dates::YearMonth;
 use crate::utils::local_date;
@@ -10,74 +9,10 @@ use axum::Form;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use serde::Deserialize;
-use sqlx::{SqliteExecutor, SqlitePool, query};
+use sqlx::query;
+use std::fmt;
 use time::{Date, Month};
 use tracing::info;
-
-pub async fn get_user_payments(
-    pool: &SqlitePool,
-    user_id: i64,
-) -> sqlx::Result<Vec<PaymentWithAllocations>> {
-    let payments = query!(
-        "select p.id, amount, payment_date, notes, created_at, created_by, u.name as created_by_name from payments p
-         join users u on u.id = p.created_by
-         where user_id = $1 order by payment_date desc",
-        user_id
-    )
-        .fetch_all(pool)
-        .await?;
-
-    let all_allocations = query!(
-        "select payment_id, year, month from payment_allocations where payment_id in (select id from payments where user_id = ?) order by year desc, month desc",
-        user_id
-    )
-        .fetch_all(pool)
-        .await?;
-
-    Ok(payments
-        .into_iter()
-        .map(|p| {
-            let allocations = all_allocations
-                .iter()
-                .filter(|a| a.payment_id == p.id)
-                .filter_map(|a| {
-                    Some(YearMonth::new(
-                        a.year as i32,
-                        Month::try_from(a.month as u8).ok()?,
-                    ))
-                })
-                .collect();
-
-            PaymentWithAllocations {
-                id: p.id,
-                amount: p.amount,
-                payment_date: p.payment_date,
-                notes: p.notes.filter(|notes| !notes.is_empty()),
-                created_at: p.created_at,
-                created_by: p.created_by,
-                created_by_name: p.created_by_name,
-                allocations,
-            }
-        })
-        .collect())
-}
-
-pub async fn get_payment_allocations(
-    executor: impl SqliteExecutor<'_>,
-    user_id: i64,
-) -> sqlx::Result<Vec<YearMonth>> {
-    query!(
-        "select year, month from payment_allocations where payment_id in (select id from payments where user_id = ?)",
-        user_id
-    )
-        .fetch_all(executor)
-        .await
-        .map(|vec| vec
-            .into_iter()
-            .filter_map(|record| Some(YearMonth::new(record.year as i32, Month::try_from(record.month as u8).ok()?)))
-            .collect()
-        )
-}
 
 #[derive(Deserialize, Debug)]
 pub struct NewPayment {
@@ -87,25 +22,47 @@ pub struct NewPayment {
     notes: Option<String>,
 }
 
-pub async fn add_payment(
-    State(state): State<AppState>,
-    Path(member_id): Path<i64>,
-    auth_session: AuthSession,
-    Form(form): Form<NewPayment>,
-) -> HttpResult {
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
-    let member = User::fetch(&state.read_pool, member_id).await?;
+#[derive(Debug, PartialEq)]
+pub enum PaymentValidationError {
+    InvalidAmount,
+    NoValidMonths,
+    MonthAlreadyPaid(YearMonth),
+    MonthInBreak(YearMonth),
+}
 
-    if form.amount <= 0.0 {
-        return Err(HttpError::Message("Suma trebuie să fie pozitivă".into()));
+impl fmt::Display for PaymentValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidAmount => write!(f, "Suma trebuie să fie pozitivă"),
+            Self::NoValidMonths => {
+                write!(f, "O plată trebuie să acopere cel puțin o lună validă")
+            }
+            Self::MonthAlreadyPaid(m) => {
+                write!(f, "Luna {}-{} este deja plătită", m.month as u8, m.year)
+            }
+            Self::MonthInBreak(m) => {
+                write!(f, "Luna {}-{} este marcată ca pauză", m.month as u8, m.year)
+            }
+        }
     }
+}
 
-    let current_year = local_date().year();
-    let valid_year_range = member.member_since.year()..=current_year + 1;
+fn validate_and_convert_amount(amount: f64) -> Result<i64, PaymentValidationError> {
+    if amount <= 0.0 {
+        return Err(PaymentValidationError::InvalidAmount);
+    }
+    Ok((amount * 100.0).round() as i64)
+}
 
-    // Parse requested months first
-    let requested_allocations: Vec<_> = form
-        .months
+fn parse_month_allocations(
+    months_str: &str,
+    member_since: Date,
+    current_year: i32,
+) -> Result<Vec<YearMonth>, PaymentValidationError> {
+    let valid_year_range = member_since.year()..=current_year + 1;
+    let joining_month = YearMonth::from(member_since);
+
+    let allocations: Vec<_> = months_str
         .split(',')
         .filter_map(|s| {
             let (month_str, year_str) = s.trim().split_once('-')?;
@@ -120,49 +77,55 @@ pub async fn add_payment(
                 .ok()
                 .filter(|y| valid_year_range.contains(y))?;
 
-            let joining_month = YearMonth::from(member.member_since);
-
-            // Skip months before they joined
             Some(YearMonth::new(year, month)).filter(|parsed| parsed >= &joining_month)
         })
         .collect();
 
-    if requested_allocations.is_empty() {
-        return Err(HttpError::Message(
-            "O plată trebuie să acopere cel puțin o lună validă".into(),
-        ));
+    if allocations.is_empty() {
+        return Err(PaymentValidationError::NoValidMonths);
     }
+
+    Ok(allocations)
+}
+
+fn validate_allocations(
+    requested: &[YearMonth],
+    ctx: &PaymentContext,
+) -> Result<(), PaymentValidationError> {
+    for &month in requested {
+        if ctx.is_month_paid(month) {
+            return Err(PaymentValidationError::MonthAlreadyPaid(month));
+        }
+        if ctx.is_month_in_break(month) {
+            return Err(PaymentValidationError::MonthInBreak(month));
+        }
+    }
+    Ok(())
+}
+
+pub async fn add_payment(
+    State(state): State<AppState>,
+    Path(member_id): Path<i64>,
+    auth_session: AuthSession,
+    Form(form): Form<NewPayment>,
+) -> HttpResult {
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let member = User::fetch(&state.read_pool, member_id).await?;
+
+    let amount_cents =
+        validate_and_convert_amount(form.amount).map_err(|e| HttpError::Message(e.to_string()))?;
+
+    let current_year = local_date().year();
+    let requested_allocations =
+        parse_month_allocations(&form.months, member.member_since, current_year)
+            .map_err(|e| HttpError::Message(e.to_string()))?;
 
     let mut tx = state.write_pool.begin().await?;
 
-    let existing_allocations = get_payment_allocations(tx.as_mut(), member_id).await?;
-    let existing_breaks = get_user_payment_breaks(tx.as_mut(), member_id).await?;
+    let ctx = PaymentContext::fetch(tx.as_mut(), member_id).await?;
 
-    for requested in &requested_allocations {
-        if existing_allocations.contains(requested) {
-            return Err(HttpError::Message(format!(
-                "Luna {}-{} este deja plătită",
-                requested.month, requested.year
-            )));
-        }
-
-        // Check for breaks
-        let req_date = Date::from_calendar_date(requested.year, requested.month, 1).unwrap();
-
-        let is_break = existing_breaks
-            .iter()
-            .any(|b| (b.start_date..=b.end_date).contains(&req_date));
-
-        if is_break {
-            return Err(HttpError::Message(format!(
-                "Luna {}-{} este marcată ca pauză",
-                requested.month as u8, requested.year
-            )));
-        }
-    }
-
-    // Convert amount to cents (integer) for storage
-    let amount_cents = (form.amount * 100.0).round() as i64;
+    validate_allocations(&requested_allocations, &ctx)
+        .map_err(|e| HttpError::Message(e.to_string()))?;
 
     let notes = form.notes.filter(|notes| !notes.is_empty());
     let payment_id = query!(
@@ -212,4 +175,127 @@ pub async fn delete_payment(
         .await?;
 
     Ok([("HX-Refresh", "true")].into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::payment::PaymentBreak;
+    use time::macros::date;
+
+    #[test]
+    fn test_validate_and_convert_amount() {
+        assert_eq!(validate_and_convert_amount(100.50), Ok(10050));
+        assert_eq!(
+            validate_and_convert_amount(0.0),
+            Err(PaymentValidationError::InvalidAmount)
+        );
+        assert_eq!(
+            validate_and_convert_amount(-50.0),
+            Err(PaymentValidationError::InvalidAmount)
+        );
+        assert_eq!(validate_and_convert_amount(0.01), Ok(1));
+        assert_eq!(validate_and_convert_amount(0.99), Ok(99));
+        assert_eq!(validate_and_convert_amount(999999.99), Ok(99999999));
+    }
+
+    #[test]
+    fn test_parse_month_allocations() {
+        // Valid single month
+        assert_eq!(
+            parse_month_allocations("3-2024", date!(2020 - 01 - 01), 2024),
+            Ok(vec![YearMonth::new(2024, Month::March)])
+        );
+
+        // Valid multiple months
+        assert_eq!(
+            parse_month_allocations("1-2024,2-2024,3-2024", date!(2020 - 01 - 01), 2024),
+            Ok(vec![
+                YearMonth::new(2024, Month::January),
+                YearMonth::new(2024, Month::February),
+                YearMonth::new(2024, Month::March),
+            ])
+        );
+
+        // Invalid month format is skipped
+        assert_eq!(
+            parse_month_allocations("invalid,3-2024", date!(2020 - 01 - 01), 2024),
+            Ok(vec![YearMonth::new(2024, Month::March)])
+        );
+
+        // Month before member_since is skipped
+        assert_eq!(
+            parse_month_allocations("1-2020,6-2020", date!(2020 - 03 - 15), 2024),
+            Ok(vec![YearMonth::new(2020, Month::June)])
+        );
+
+        // Year outside valid range is skipped (member_since 2020, current_year 2024, range 2020-2025)
+        assert_eq!(
+            parse_month_allocations("1-2019,3-2024,1-2027", date!(2020 - 01 - 01), 2024),
+            Ok(vec![YearMonth::new(2024, Month::March)])
+        );
+
+        // Empty string returns error
+        assert_eq!(
+            parse_month_allocations("", date!(2020 - 01 - 01), 2024),
+            Err(PaymentValidationError::NoValidMonths)
+        );
+
+        // All invalid months returns error
+        assert_eq!(
+            parse_month_allocations("invalid,bad,nope", date!(2020 - 01 - 01), 2024),
+            Err(PaymentValidationError::NoValidMonths)
+        );
+    }
+
+    #[test]
+    fn test_validate_allocations() {
+        // All months valid returns Ok
+        let ctx = PaymentContext::new(vec![], vec![]);
+        let months = vec![
+            YearMonth::new(2024, Month::January),
+            YearMonth::new(2024, Month::February),
+        ];
+        assert_eq!(validate_allocations(&months, &ctx), Ok(()));
+
+        // Already paid month returns error
+        let paid_month = YearMonth::new(2024, Month::January);
+        let ctx = PaymentContext::new(vec![paid_month], vec![]);
+        let months = vec![paid_month, YearMonth::new(2024, Month::February)];
+        assert_eq!(
+            validate_allocations(&months, &ctx),
+            Err(PaymentValidationError::MonthAlreadyPaid(paid_month))
+        );
+
+        // Month in break returns error
+        let ctx = PaymentContext::new(
+            vec![],
+            vec![PaymentBreak::make_break(
+                date!(2024 - 03 - 01),
+                date!(2024 - 05 - 01),
+            )],
+        );
+        let break_month = YearMonth::new(2024, Month::April);
+        let months = vec![YearMonth::new(2024, Month::January), break_month];
+        assert_eq!(
+            validate_allocations(&months, &ctx),
+            Err(PaymentValidationError::MonthInBreak(break_month))
+        );
+
+        // Multiple issues returns first error (paid month comes first)
+        let paid_month = YearMonth::new(2024, Month::January);
+        let break_month = YearMonth::new(2024, Month::April);
+        let ctx = PaymentContext::new(
+            vec![paid_month],
+            vec![PaymentBreak::make_break(
+                date!(2024 - 04 - 01),
+                date!(2024 - 04 - 30),
+            )],
+        );
+        let months = vec![paid_month, break_month];
+        assert_eq!(
+            validate_allocations(&months, &ctx),
+            Err(PaymentValidationError::MonthAlreadyPaid(paid_month))
+        );
+    }
 }

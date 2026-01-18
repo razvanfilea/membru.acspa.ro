@@ -2,6 +2,7 @@ pub mod day_structure;
 pub mod global_vars;
 pub mod location;
 pub mod payment;
+pub mod payment_context;
 pub mod restriction;
 pub mod role;
 pub mod user;

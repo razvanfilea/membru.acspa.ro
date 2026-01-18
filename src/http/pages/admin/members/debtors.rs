@@ -3,7 +3,7 @@ use crate::model::user::User;
 use crate::utils::dates::{YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use itertools::Itertools;
-use sqlx::{SqliteExecutor, SqlitePool, query_as};
+use sqlx::{SqliteExecutor, SqlitePool, query, query_as};
 use std::collections::HashSet;
 use time::{Date, Month};
 
@@ -12,6 +12,60 @@ const USER_ROLLS_TO_SKIP: &[i64] = &[1, 2, 5, 7];
 pub struct DebtorItem {
     pub member: User,
     pub unpaid_months: Vec<&'static str>,
+}
+
+struct UserBreak {
+    start_date: Date,
+    end_date: Date,
+}
+
+impl UserBreak {
+    fn contains(&self, date: Date) -> bool {
+        (self.start_date..=self.end_date).contains(&date)
+    }
+}
+
+/// Determines if a user should be checked for debts.
+fn should_check_user_for_debts(user: &User) -> bool {
+    !USER_ROLLS_TO_SKIP.contains(&user.role_id)
+}
+
+/// Calculates unpaid months for a single member within a year.
+fn calculate_unpaid_months(
+    member: &User,
+    year_months: impl Iterator<Item = YearMonth>,
+    current_month_start: Date,
+    is_month_paid: impl Fn(Month) -> bool,
+    member_breaks: &[UserBreak],
+) -> Vec<&'static str> {
+    let join_month_start = match member.member_since.replace_day(1) {
+        Ok(date) => date,
+        Err(_) => return vec![],
+    };
+
+    year_months
+        .filter(|year_month| {
+            let date = year_month.to_date();
+
+            // Skip months outside valid range
+            if !(join_month_start..=current_month_start).contains(&date) {
+                return false;
+            }
+
+            // Skip paid months
+            if is_month_paid(date.month()) {
+                return false;
+            }
+
+            // Skip months covered by breaks
+            if member_breaks.iter().any(|b| b.contains(date)) {
+                return false;
+            }
+
+            true
+        })
+        .map(|ym| date_formats::month_as_str(&ym.month))
+        .collect()
 }
 
 pub async fn compute_debtors(
@@ -45,78 +99,51 @@ pub async fn compute_debtors(
     .into_iter()
     .collect();
 
-    // C. Fetch Breaks
     let year_start = Date::from_calendar_date(selected_year, Month::January, 1).unwrap();
     let year_end = Date::from_calendar_date(selected_year, Month::December, 31).unwrap();
 
-    struct BreakRow {
-        user_id: i64,
-        start_date: Date,
-        end_date: Date,
-    }
-    let breaks_lookup = query_as!(
-        BreakRow,
+    let breaks_lookup = query!(
         "select user_id, start_date, end_date from payment_breaks where start_date <= $2 and end_date >= $1",
         year_start, year_end
     )
-        .fetch_all(conn.as_mut())
-        .await?
-        .into_iter()
-        .into_group_map_by(|br| br.user_id);
+    .fetch_all(conn.as_mut())
+    .await?
+    .into_iter()
+    .map(|br| (br.user_id, UserBreak { start_date: br.start_date, end_date: br.end_date }))
+    .into_group_map();
 
-    // D. Calculate Unpaid Months
     let current_month_start = YearMonth::from(current_date).to_date();
     let year_months = YearMonthIter::for_year(selected_year);
 
     let debtors = users
         .into_iter()
-        .filter(|member| !USER_ROLLS_TO_SKIP.contains(&member.role_id))
+        .filter(should_check_user_for_debts)
         .filter_map(|member| {
-            // We assume member_since implies they owe for that month.
-            let join_month_start = member.member_since.replace_day(1).ok()?;
-
             let member_breaks = breaks_lookup
                 .get(&member.id)
                 .map(|v| v.as_slice())
                 .unwrap_or(&[]);
 
-            let unpaid_months: Vec<&'static str> = year_months
-                .clone()
-                .filter(|year_month| {
-                    let date = year_month.to_date();
-                    // Filter out Future and Pre-Join dates
-                    if date > current_month_start || date < join_month_start {
-                        return false;
-                    }
-
-                    // Filter out Paid months
-                    if paid_months.contains(&PaidMonth {
+            let unpaid_months = calculate_unpaid_months(
+                &member,
+                year_months.clone(),
+                current_month_start,
+                |month| {
+                    paid_months.contains(&PaidMonth {
                         user_id: member.id,
-                        month: date.month() as u8,
-                    }) {
-                        return false;
-                    }
+                        month: month as u8,
+                    })
+                },
+                member_breaks,
+            );
 
-                    // Filter out Breaks
-                    if member_breaks
-                        .iter()
-                        .any(|b| (b.start_date..=b.end_date).contains(&date))
-                    {
-                        return false;
-                    }
-
-                    true
-                })
-                .map(|date| date_formats::month_as_str(&date.month))
-                .collect();
-
-            if !unpaid_months.is_empty() {
+            if unpaid_months.is_empty() {
+                None
+            } else {
                 Some(DebtorItem {
                     member,
                     unpaid_months,
                 })
-            } else {
-                None
             }
         })
         .sorted_by(|a, b| b.unpaid_months.len().cmp(&a.unpaid_months.len()))
@@ -129,13 +156,12 @@ pub async fn compute_debtors(
 async fn is_month_covered(
     executor: impl SqliteExecutor<'_>,
     user_id: i64,
-    year: i32,
-    month: Month,
+    year_month: YearMonth,
 ) -> sqlx::Result<bool> {
     // We construct the 1st of the month to check against break ranges
-    let first_of_month = Date::from_calendar_date(year, month, 1).unwrap();
+    let first_of_month = year_month.to_date();
 
-    let month = month as u8;
+    let month = year_month.month as u8;
     let count = sqlx::query_scalar!(
         r#"
         select count(*) from (
@@ -154,7 +180,7 @@ async fn is_month_covered(
         )
         "#,
         user_id,
-        year,
+        year_month.year,
         month,
         first_of_month
     )
@@ -179,7 +205,7 @@ pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result
 
     // Check current month + previous 2 months
     for ym in YearMonthIter::new(start_ym, current_ym) {
-        if is_month_covered(tx.as_mut(), user.id, ym.year, ym.month).await? {
+        if is_month_covered(tx.as_mut(), user.id, ym).await? {
             return Ok(true);
         }
     }
@@ -191,6 +217,75 @@ pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result
 mod tests {
     use super::*;
     use sqlx::{SqlitePool, query};
+    use time::macros::date;
+
+    // Unit tests for helper functions
+
+    #[test]
+    fn user_break_contains_checks_date_range() {
+        let brk = UserBreak {
+            start_date: date!(2020 - 03 - 01),
+            end_date: date!(2020 - 05 - 01),
+        };
+
+        assert!(brk.contains(date!(2020 - 03 - 01))); // start
+        assert!(brk.contains(date!(2020 - 04 - 01))); // middle
+        assert!(brk.contains(date!(2020 - 05 - 01))); // end
+        assert!(!brk.contains(date!(2020 - 02 - 01))); // before
+        assert!(!brk.contains(date!(2020 - 06 - 01))); // after
+    }
+
+    #[test]
+    fn should_check_user_filters_skipped_roles() {
+        let regular_user = User {
+            role_id: 100,
+            ..Default::default()
+        };
+        let skipped_user = User {
+            role_id: 5, // In USER_ROLLS_TO_SKIP
+            ..Default::default()
+        };
+
+        assert!(should_check_user_for_debts(&regular_user));
+        assert!(!should_check_user_for_debts(&skipped_user));
+    }
+
+    #[test]
+    fn calculate_unpaid_months_filters_correctly() {
+        let member = User {
+            id: 1,
+            member_since: date!(2020 - 03 - 15), // Joined in March
+            ..Default::default()
+        };
+
+        let year_months = YearMonthIter::for_year(2020);
+        let current_month = date!(2020 - 08 - 01); // August is "current"
+
+        // Paid for April and June
+        let is_paid = |month: Month| month == Month::April || month == Month::June;
+
+        // Break in July
+        let breaks = vec![UserBreak {
+            start_date: date!(2020 - 07 - 01),
+            end_date: date!(2020 - 07 - 01),
+        }];
+
+        let unpaid = calculate_unpaid_months(&member, year_months, current_month, is_paid, &breaks);
+
+        // Should have: March, May, August (3 unpaid months)
+        // - Jan-Feb: before join
+        // - March: unpaid (first eligible month)
+        // - April: paid
+        // - May: unpaid
+        // - June: paid
+        // - July: break
+        // - August: current month - unpaid
+        // - Sep-Dec: future
+        assert_eq!(unpaid.len(), 3);
+        assert!(unpaid.contains(&"Martie"));
+        assert!(unpaid.contains(&"Mai"));
+        assert!(unpaid.contains(&"August"));
+    }
 
     async fn setup_test_data(pool: &SqlitePool) -> sqlx::Result<()> {
         // Create test role for regular members (role 1 'Admin' already exists from migrations)

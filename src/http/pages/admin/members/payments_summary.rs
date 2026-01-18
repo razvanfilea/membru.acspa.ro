@@ -1,8 +1,6 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
-use crate::http::pages::admin::members::breaks::get_user_payment_breaks;
-use crate::http::pages::admin::members::payments::get_user_payments;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
@@ -44,8 +42,8 @@ pub async fn build_status_grid_response(
     member: User,
     year: i32,
 ) -> HttpResult {
-    let payments = get_user_payments(pool, member.id).await?;
-    let breaks = get_user_payment_breaks(pool, member.id).await?;
+    let payments = PaymentWithAllocations::fetch_for_user(pool, member.id).await?;
+    let breaks = PaymentBreak::fetch_for_user(pool, member.id).await?;
     let current_year = local_date().year();
     let months_status_view = calculate_year_status(year, &member, &payments, &breaks);
 

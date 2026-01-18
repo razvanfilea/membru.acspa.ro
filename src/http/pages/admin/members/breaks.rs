@@ -1,8 +1,7 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
-use crate::http::pages::admin::members::payments::get_payment_allocations;
-use crate::model::payment::PaymentBreak;
+use crate::model::payment_context::PaymentContext;
 use crate::model::user::User;
 use crate::utils::date_formats;
 use crate::utils::dates::YearMonth;
@@ -10,23 +9,13 @@ use axum::Form;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use serde::Deserialize;
-use sqlx::{SqliteExecutor, query, query_as};
+use sqlx::query;
 use time::Date;
 use tracing::info;
 
-pub async fn get_user_payment_breaks(
-    executor: impl SqliteExecutor<'_>,
-    user_id: i64,
-) -> sqlx::Result<Vec<PaymentBreak>> {
-    query_as!(
-        PaymentBreak,
-        "select m.*, u.name as created_by_name
-         from payment_breaks m join users u on u.id = m.created_by
-         where user_id = $1 order by start_date desc",
-        user_id
-    )
-    .fetch_all(executor)
-    .await
+fn is_before_membership(date: Date, member: &User) -> bool {
+    let member_join_month = YearMonth::from(member.member_since).to_date();
+    date < member_join_month
 }
 
 #[derive(Deserialize, Debug)]
@@ -58,10 +47,7 @@ pub async fn add_break(
         return Err(HttpError::Message("Data selectată este invalidă".into()));
     }
 
-    // Validate that break is not before membership
-    let member_join_month = YearMonth::from(member.member_since).to_date();
-
-    if start_date < member_join_month {
+    if is_before_membership(start_date, &member) {
         return Err(HttpError::Message(
             "Nu poți adăuga o pauză înainte de înscriere".into(),
         ));
@@ -69,25 +55,18 @@ pub async fn add_break(
 
     let mut tx = state.write_pool.begin().await?;
 
-    let existing_breaks = get_user_payment_breaks(tx.as_mut(), member_id).await?;
-    let existing_allocations = get_payment_allocations(tx.as_mut(), member_id).await?;
+    let ctx = PaymentContext::fetch(tx.as_mut(), member_id).await?;
 
-    for brk in existing_breaks {
-        if start_date <= brk.end_date && brk.start_date <= end_date {
-            return Err(HttpError::Message(
-                "Perioada se suprapune cu o pauză existentă".into(),
-            ));
-        }
+    if ctx.overlaps_existing_break(start_date, end_date) {
+        return Err(HttpError::Message(
+            "Perioada se suprapune cu o pauză existentă".into(),
+        ));
     }
 
-    for payment in existing_allocations {
-        let pay_date = payment.to_date();
-
-        if pay_date >= start_date && pay_date <= end_date {
-            return Err(HttpError::Message(
-                "Perioada se suprapune cu o lună deja plătită".into(),
-            ));
-        }
+    if ctx.overlaps_existing_payment(start_date, end_date) {
+        return Err(HttpError::Message(
+            "Perioada se suprapune cu o lună deja plătită".into(),
+        ));
     }
 
     let reason = form.reason.filter(|reason| !reason.is_empty());
