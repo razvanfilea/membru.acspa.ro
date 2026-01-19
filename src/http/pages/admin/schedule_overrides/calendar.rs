@@ -16,9 +16,9 @@ use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
 use crate::model::restriction::Restriction;
 use crate::model::user::User;
-use crate::utils::date_formats::DateFormatExt;
+use crate::utils::date_formats::{self, DateFormatExt, IsoDate};
 use crate::utils::dates::DateRangeIter;
-use crate::utils::{date_formats, local_date};
+use crate::utils::local_date;
 use askama::Template;
 use axum::Router;
 use axum::extract::{Path, State};
@@ -158,11 +158,9 @@ async fn calendar_page(
 
 async fn day_details_partial(
     State(state): State<AppState>,
-    Path(date_str): Path<String>,
+    Path(date): Path<IsoDate>,
 ) -> HttpResult {
-    let date = Date::parse(&date_str, date_formats::ISO_DATE).or_bail("Data este invalida")?;
-
-    day_details_response(state, date).await
+    day_details_response(state, *date).await
 }
 
 #[derive(Template)]

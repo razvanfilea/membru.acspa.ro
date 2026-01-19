@@ -2,13 +2,12 @@ use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
-use crate::http::pages::home::reservation_hours::{ReservationHours, get_reservation_hours};
+use crate::http::pages::home::reservation_hours::ReservationHours;
 use crate::http::pages::notification_template::NotificationBubbleResponse;
 use crate::model::user::User;
-use crate::utils::CssColor;
-use crate::utils::date_formats::DateFormatExt;
+use crate::utils::date_formats::{DateFormatExt, IsoDate};
 use crate::utils::dates::DateRangeIter;
-use crate::utils::{date_formats, local_time};
+use crate::utils::{CssColor, local_date};
 use askama::Template;
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
@@ -30,7 +29,7 @@ pub async fn handle_ws(
 
 #[derive(Deserialize)]
 struct WsMessage {
-    selected_date: String,
+    selected_date: IsoDate,
     #[serde(rename = "HEADERS")]
     _headers: IgnoredAny,
 }
@@ -82,7 +81,7 @@ impl<'a> HoursTemplate<'a> {
         user: &'a User,
         enable_editing: bool,
     ) -> Option<String> {
-        let reservation_hours = get_reservation_hours(state, selected_date)
+        let reservation_hours = ReservationHours::fetch(state, selected_date)
             .await
             .inspect_err(|e| error!("Database error fetching reservation hours: {e}"))
             .ok()?;
@@ -100,11 +99,11 @@ impl<'a> HoursTemplate<'a> {
 }
 
 async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
-    let mut selected_date = local_time().date();
+    let mut selected_date = local_date();
     let mut reservations_changed = state.reservation_notifier.subscribe();
 
     if user.role == "Admin" {
-        let current_date = local_time().date();
+        let current_date = local_date();
         if let Ok(celebrated) = query!(
             "select name, received_gift from users where strftime('%d%m', birthday) = strftime('%d%m', $1)",
             current_date
@@ -139,7 +138,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
         let reservations_task = reservations_changed.changed();
         let recv_task = socket.recv();
 
-        let current_date = local_time().date();
+        let current_date = local_date();
         let response = select! {
             result = reservations_task => {
                 if let Err(e) = result {
@@ -159,20 +158,14 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
                     return;
                 };
 
-                selected_date = Date::parse(&ws_message.selected_date, date_formats::ISO_DATE)
-                    .inspect_err(|e| {
-                        warn!(
-                            "Failed to parse date {} with error: {e}",
-                            ws_message.selected_date
-                        )
-                    })
-                    .ok()
-                    .filter(|date| {
-                        date >= &current_date && selected_date <= current_date + DAYS_AHEAD_ALLOWED
-                    })
-                    .unwrap_or(current_date);
+                let parsed_date = *ws_message.selected_date;
+                selected_date = if parsed_date >= current_date && parsed_date <= current_date + DAYS_AHEAD_ALLOWED {
+                    parsed_date
+                } else {
+                    current_date
+                };
 
-                let Ok(reservation_hours) = get_reservation_hours(&state, selected_date).await else {
+                let Ok(reservation_hours) = ReservationHours::fetch(&state, selected_date).await else {
                     error!("Database error fetching reservation hours");
                     continue;
                 };

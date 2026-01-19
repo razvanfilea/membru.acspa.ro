@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult};
+use crate::http::error::{HttpError, HttpResult, bail};
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::role::UserRole;
@@ -141,7 +141,7 @@ async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) ->
     .count;
 
     if users_with_role > 0 {
-        return Err(HttpError::Message(format!(
+        return Err(bail(format!(
             "{users_with_role} utilizatori au acest rol, rolul nu poate fi șters"
         )));
     }

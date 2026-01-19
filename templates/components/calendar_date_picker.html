@@ -11,7 +11,7 @@
             class="rounded-full border border-transparent aspect-square
                 disabled:text-neutral-500 disabled:pointer-events-none
                 hover:border-neutral-500 text-white"
-            hx-vals='{"selected_date": "{{ date.format(date_formats::ISO_DATE).unwrap() }}"}'
+            hx-vals='{"selected_date": "{{ date.to_iso() }}"}'
             ws-send
             style="
                 {% if date == selected_date %}background-color:var(--color-primary); color: black; font-weight: bold;{% endif %}

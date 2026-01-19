@@ -10,7 +10,7 @@ use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
 use crate::model::user_reservation::{GroupedUserReservations, ReservationsCount};
 use crate::utils::date_formats::DateFormatExt;
-use crate::utils::{date_formats, local_date, local_time};
+use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, Query, State};
 use serde::Deserialize;
@@ -39,10 +39,11 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
     .fetch_one(&state.read_pool)
     .await?;
 
+    let current_date = local_date();
     let this_weeks_reservations =
-        ReservationsCount::fetch_user_week(&state.read_pool, &user, local_time().date()).await?;
+        ReservationsCount::fetch_user_week(&state.read_pool, &user, current_date).await?;
 
-    let current_year = local_date().year();
+    let current_year = current_date.year();
     let payments = PaymentWithAllocations::fetch_for_user(&state.read_pool, user.id).await?;
     let breaks = PaymentBreak::fetch_for_user(&state.read_pool, user.id).await?;
     let months_status_view = calculate_year_status(current_year, &user, &payments, &breaks);

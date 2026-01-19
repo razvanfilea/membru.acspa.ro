@@ -1,12 +1,13 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult, OrBail};
+use crate::http::error::{HttpResult, bail};
 use crate::http::pages::admin::schedule_overrides::calendar::day_details_response;
 use crate::http::pages::admin::schedule_overrides::{
     AlternativeDay, AlternativeDayType, NewAlternativeDay, add_alternative_day,
     delete_alternative_day, get_alternative_day, get_alternative_days,
 };
 use crate::model::day_structure::HOLIDAY_DAY_STRUCTURE;
-use crate::utils::{date_formats, local_date};
+use crate::utils::date_formats::IsoDate;
+use crate::utils::local_date;
 use axum::extract::{Path, State};
 use axum::routing::{delete, put};
 use axum::{Form, Router};
@@ -33,7 +34,7 @@ pub async fn get_holidays_for_month(
 
 #[derive(Deserialize)]
 struct NewHoliday {
-    date: String,
+    date: IsoDate,
     description: Option<String>,
 }
 
@@ -41,12 +42,10 @@ async fn create_holiday(
     State(state): State<AppState>,
     Form(new_day): Form<NewHoliday>,
 ) -> HttpResult {
-    let date = Date::parse(&new_day.date, date_formats::ISO_DATE).or_bail("Data este invalida")?;
+    let date = *new_day.date;
 
     if date < local_date() {
-        return Err(HttpError::Message(
-            "Nu se pot modifica datele din trecut".to_string(),
-        ));
+        return Err(bail("Nu se pot modifica datele din trecut"));
     }
 
     let day_structure = &HOLIDAY_DAY_STRUCTURE;
@@ -65,22 +64,20 @@ async fn create_holiday(
 
     info!(
         "Added free day with date: {} and description {}",
-        new_day.date,
-        new_day.description.unwrap_or_default()
+        date,
+        new_day.description.clone().unwrap_or_default()
     );
 
     day_details_response(state, date).await
 }
 
-async fn delete_holiday(State(state): State<AppState>, Path(date_str): Path<String>) -> HttpResult {
-    let date = Date::parse(&date_str, date_formats::ISO_DATE).or_bail("Data este invalida")?;
+async fn delete_holiday(State(state): State<AppState>, Path(date): Path<IsoDate>) -> HttpResult {
+    let date = *date;
 
     if date < local_date() {
-        return Err(HttpError::Message(
-            "Nu se pot modifica datele din trecut".to_string(),
-        ));
+        return Err(bail("Nu se pot modifica datele din trecut"));
     }
 
-    delete_alternative_day(&state, date_str).await?;
+    delete_alternative_day(&state, date).await?;
     day_details_response(state, date).await
 }

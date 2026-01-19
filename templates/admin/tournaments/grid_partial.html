@@ -14,7 +14,7 @@
                 <div class="flex flex-col">
                     <span class="text-xs uppercase tracking-wider opacity-60 font-bold">Data Turneu</span>
                     <h2 class="text-2xl font-black text-primary">
-                        {{ tournament.date.format(date_formats::READABLE_DATE).unwrap() }}
+                        {{ tournament.date.to_readable() }}
                     </h2>
                 </div>
                 {% if let Some(capacity) = tournament.slot_capacity %}
@@ -45,7 +45,7 @@
 
             <div class="flex items-center justify-between items-end">
                     <span class="text-[10px] uppercase opacity-40">
-                        Creat: {{ tournament.created_at.format(date_formats::READABLE_DATE).unwrap() }}
+                        Creat: {{ tournament.created_at.date().to_readable() }}
                     </span>
 
                 {% if tournament.date >= current_date %}

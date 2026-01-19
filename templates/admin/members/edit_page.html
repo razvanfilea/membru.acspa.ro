@@ -48,7 +48,7 @@
             <span>A primit cadou pe</span>
             <input name="received_gift" type="date" autocomplete="off" max="{{ current_date }}"
                    {% if let Some(received_gift)=existing_user.received_gift
-                   %}value="{{ received_gift.format(date_formats::ISO_DATE).unwrap() }}" {% endif %}
+                   %}value="{{ received_gift.to_iso() }}" {% endif %}
                    class="input input-lg input-bordered w-full"/>
         </label>
 

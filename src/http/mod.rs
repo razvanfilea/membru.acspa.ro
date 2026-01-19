@@ -14,6 +14,7 @@ use sqlx::{SqlitePool, query, query_as};
 use std::any::Any;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::signal;
 use tokio::sync::watch;
 use tokio::time::interval;
@@ -57,9 +58,11 @@ impl AppState {
 }
 
 pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
+    const CLEANUP_INTERVAL: Duration = Duration::from_mins(30);
+
     let notifier = state.reservation_notifier;
     let pool = state.write_pool;
-    let mut interval = interval(std::time::Duration::from_mins(30));
+    let mut interval = interval(CLEANUP_INTERVAL);
 
     loop {
         interval.tick().await;

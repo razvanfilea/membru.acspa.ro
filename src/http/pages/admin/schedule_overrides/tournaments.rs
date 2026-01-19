@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult, OrBail};
+use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::schedule_overrides::{
     AlternativeDay, AlternativeDayType, NewAlternativeDay, add_alternative_day,
@@ -7,8 +7,8 @@ use crate::http::pages::admin::schedule_overrides::{
 };
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
-use crate::utils::date_formats::ISO_DATE;
-use crate::utils::{date_formats, local_date, local_time};
+use crate::utils::date_formats::{DateFormatExt, IsoDate};
+use crate::utils::local_date;
 use askama::Template;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
@@ -56,7 +56,7 @@ async fn tournaments_page(
         past: Vec<AlternativeDay>,
     }
 
-    let today = local_time().date();
+    let today = local_date();
     let (upcoming, past) = get_tournament_days(&state.read_pool, None)
         .await?
         .into_iter()
@@ -90,7 +90,7 @@ async fn new_tournament_page(auth_session: AuthSession) -> HttpResult {
 
 #[derive(Deserialize)]
 struct NewTournament {
-    date: String,
+    date: IsoDate,
     description: Option<String>,
     start_hour: u8,
     #[serde(default)]
@@ -104,16 +104,10 @@ async fn create_tournament(
     State(state): State<AppState>,
     Form(tournament): Form<NewTournament>,
 ) -> HttpResult {
-    let Ok(date) = Date::parse(&tournament.date, date_formats::ISO_DATE) else {
-        return Err(HttpError::Message(
-            "Data selectata nu este validă".to_string(),
-        ));
-    };
+    let date = *tournament.date;
 
     if date < local_date() {
-        return Err(HttpError::Message(
-            "Nu se pot modifica datele din trecut".to_string(),
-        ));
+        return Err(bail("Nu se pot modifica datele din trecut"));
     }
 
     let capacity = tournament
@@ -135,8 +129,8 @@ async fn create_tournament(
 
     info!(
         "Added tournament with date: {} and description {}",
-        tournament.date,
-        tournament.description.unwrap_or_default()
+        date,
+        tournament.description.clone().unwrap_or_default()
     );
 
     Ok([("HX-Redirect", "/admin/tournaments")].into_response())
@@ -145,9 +139,9 @@ async fn create_tournament(
 async fn edit_tournament_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
-    Path(date): Path<String>,
+    Path(date): Path<IsoDate>,
 ) -> HttpResult {
-    let date = Date::parse(&date, ISO_DATE).or_bail("Data este invalida")?;
+    let date = *date;
     let current = get_tournament_day(&state.read_pool, date)
         .await?
         .or_bail("Nu exista acest turneu")?;
@@ -155,7 +149,7 @@ async fn edit_tournament_page(
     NewOrEditTournamentTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         current: Some(current),
-        current_date: local_time().date(),
+        current_date: local_date(),
     }
     .try_into_response()
 }
@@ -173,15 +167,13 @@ struct UpdatedTournament {
 
 async fn update_tournament(
     State(state): State<AppState>,
-    Path(date): Path<String>,
+    Path(date): Path<IsoDate>,
     Form(updated): Form<UpdatedTournament>,
 ) -> HttpResult {
-    let date = Date::parse(&date, ISO_DATE).or_bail("Data este invalida")?;
+    let date = *date;
 
     if date < local_date() {
-        return Err(HttpError::Message(
-            "Nu se pot modifica datele din trecut".to_string(),
-        ));
+        return Err(bail("Nu se pot modifica datele din trecut"));
     }
 
     let capacity = updated
@@ -196,6 +188,7 @@ async fn update_tournament(
         .or_bail("Nu exista acest turneu")?;
 
     let consumes_reservation = updated.consumes_reservation == Some("on".to_string());
+    let start_minute = Some(updated.start_minute).filter(|minute| (1..60).contains(minute));
 
     query!(
         "update alternative_days
@@ -205,7 +198,7 @@ async fn update_tournament(
         date,
         updated.description,
         updated.start_hour,
-        updated.start_minute,
+        start_minute,
         updated.duration,
         capacity,
         consumes_reservation
@@ -236,14 +229,12 @@ async fn update_tournament(
 
 pub async fn delete_tournament(
     State(state): State<AppState>,
-    Path(date): Path<String>,
+    Path(date): Path<IsoDate>,
 ) -> HttpResult {
-    let parsed_date = Date::parse(&date, ISO_DATE).or_bail("Data este invalida")?;
+    let date = *date;
 
-    if parsed_date < local_date() {
-        return Err(HttpError::Message(
-            "Nu se pot modifica datele din trecut".to_string(),
-        ));
+    if date < local_date() {
+        return Err(bail("Nu se pot modifica datele din trecut"));
     }
 
     delete_alternative_day(&state, date).await?;
