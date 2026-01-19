@@ -16,7 +16,7 @@
         <label class="floating-label">
             <span>Data</span>
             <input name="date" type="date" class="input input-lg input-bordered w-full" required placeholder="Descriere"
-                   min='{{ current_date.format(date_formats::ISO_DATE).unwrap() }}'/>
+                   min='{{ current_date.to_iso() }}'/>
         </label>
         {% endif %}
 

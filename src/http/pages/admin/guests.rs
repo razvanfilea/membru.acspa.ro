@@ -1,12 +1,12 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult, OrBail, bail};
+use crate::http::error::{HttpError, HttpResult, bail};
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
 use crate::model::user::User;
 use crate::reservation;
-use crate::utils::date_formats::DateFormatExt;
-use crate::utils::{date_formats, local_time};
+use crate::utils::date_formats::{self, DateFormatExt, IsoDate};
+use crate::utils::{local_date, local_time};
 use askama::Template;
 use axum::extract::State;
 use axum::routing::{get, post, put};
@@ -59,14 +59,14 @@ async fn guests_page(State(state): State<AppState>, auth_session: AuthSession) -
     GuestsTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         guests: get_guests(&state.read_pool).await?,
-        current_date: local_time().date(),
+        current_date: local_date(),
     }
     .try_into_response()
 }
 
 #[derive(Deserialize)]
 struct SelectDateForm {
-    date: String,
+    date: IsoDate,
 }
 
 async fn select_hour(
@@ -79,10 +79,8 @@ async fn select_hour(
         hours: Vec<u8>,
     }
 
-    let date = Date::parse(&form.date, date_formats::ISO_DATE).or_bail("Data este invalida")?;
-
     let day_structure =
-        DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
+        DayStructure::fetch_or_default(&state.read_pool, *form.date, &state.location).await?;
 
     SelectHourTemplate {
         hours: day_structure.iter().collect(),
@@ -93,7 +91,7 @@ async fn select_hour(
 #[derive(Deserialize)]
 struct NewGuestForm {
     name: String,
-    date: String,
+    date: IsoDate,
     hour: u8,
     special: Option<String>,
 }
@@ -109,11 +107,11 @@ async fn create_guest(
         guests: Vec<GuestDto>,
     }
 
-    let date = Date::parse(&guest.date, date_formats::ISO_DATE).or_bail("Data este invalida")?;
+    let date = *guest.date;
     let day_structure =
         DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
     if !day_structure.is_hour_valid(guest.hour) {
-        error!("Invalid hour: {} for date: {}", guest.hour, guest.date);
+        error!("Invalid hour: {} for date: {}", guest.hour, date);
 
         return GuestsListTemplate {
             guests: get_guests(&state.read_pool).await?,

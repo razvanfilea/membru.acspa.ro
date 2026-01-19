@@ -2,12 +2,12 @@
     <div class="flex flex-col max-w-96 grow" hx-target="main" hx-swap="outerHTML">
         <span class="mb-4">
             <b>Data selectată:</b>
-            <span class="ml-2 text-blue-400 animate-pop">{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}</span>
+            <span class="ml-2 text-blue-400 animate-pop">{{ selected_date.to_readable() }}</span>
         </span>
         {% include "components/calendar_date_picker.html" %}
     </div>
 
-    <div class="flex flex-col max-w-full grow" hx-vals='{"selected_date": "{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}" }'>
+    <div class="flex flex-col max-w-full grow" hx-vals='{"selected_date": "{{ selected_date.to_iso() }}" }'>
         {% if user.is_active && has_paid %}
         {% let enable_editing = true%}
         {% include "hours.html" %}

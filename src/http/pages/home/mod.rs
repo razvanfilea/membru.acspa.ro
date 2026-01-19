@@ -1,8 +1,8 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult, OrBail};
+use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::debtors::check_user_has_paid;
-use crate::http::pages::home::reservation_hours::{ReservationHours, get_reservation_hours};
+use crate::http::pages::home::reservation_hours::ReservationHours;
 use crate::http::pages::home::socket::handle_ws;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
@@ -12,10 +12,9 @@ use crate::reservation;
 use crate::reservation::{
     ReservationError, ReservationSuccess, create_reservation, is_reservation_possible,
 };
-use crate::utils::date_formats::DateFormatExt;
+use crate::utils::date_formats::{DateFormatExt, IsoDate};
 use crate::utils::dates::DateRangeIter;
-use crate::utils::{CssColor, local_date};
-use crate::utils::{date_formats, get_reservation_result_color, local_time};
+use crate::utils::{CssColor, get_reservation_result_color, local_date, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -26,7 +25,7 @@ use serde::Deserialize;
 use sqlx::query;
 use std::str::FromStr;
 use time::Date;
-use tracing::{error, warn};
+use tracing::error;
 
 pub mod reservation_hours;
 pub mod socket;
@@ -63,7 +62,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
         has_paid: bool,
     }
 
-    let current_date = local_time().date();
+    let current_date = local_date();
 
     let reservation_color_code = query!(
         "select color as 'color!', name from user_roles where color is not null and color != 'None'"
@@ -76,7 +75,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
     .await
     .unwrap_or_default();
 
-    let reservation_hours = get_reservation_hours(&state, current_date).await?;
+    let reservation_hours = ReservationHours::fetch(&state, current_date).await?;
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
     let has_paid = check_user_has_paid(&state.read_pool, &user).await?;
 
@@ -95,7 +94,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
 
 #[derive(Deserialize)]
 struct HourQuery {
-    selected_date: String,
+    selected_date: IsoDate,
     hour: u8,
 }
 
@@ -122,14 +121,7 @@ async fn hour_picker(
     }
 
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
-    let selected_date = Date::parse(&query.selected_date, date_formats::READABLE_DATE)
-        .unwrap_or_else(|e| {
-            warn!(
-                "Failed to parse date {} with error: {}",
-                query.selected_date, e
-            );
-            local_date()
-        });
+    let selected_date = *query.selected_date;
 
     let structure =
         DayStructure::fetch_or_default(&state.read_pool, selected_date, &state.location).await?;
@@ -171,8 +163,7 @@ async fn confirm_reservation(
     Form(query): Form<HourQuery>,
 ) -> HttpResult {
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
-    let selected_date = Date::parse(&query.selected_date, date_formats::READABLE_DATE)
-        .or_bail("Data este invalida")?;
+    let selected_date = *query.selected_date;
     let selected_hour = query.hour;
 
     let result = create_reservation(
@@ -193,16 +184,16 @@ async fn confirm_reservation(
             match success {
                 ReservationSuccess::Reservation { .. } => format!(
                     "Ai rezervare pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
-                    query.selected_date
+                    selected_date
                 ),
                 ReservationSuccess::Guest => format!(
                     "Ai fost înscris ca invitat pe data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
-                    query.selected_date
+                    selected_date
                 ),
                 ReservationSuccess::InWaiting { as_guest } => format!(
                     "Ești in așteptare{} pentru data de <b>{}</b> de la ora <b>{selected_hour}:00</b>",
                     if *as_guest { " ca și invitat" } else { "" },
-                    query.selected_date
+                    selected_date
                 ),
             }
         }
@@ -227,7 +218,7 @@ async fn confirm_reservation(
 
 #[derive(Deserialize)]
 struct CancelReservationQuery {
-    date: String,
+    date: IsoDate,
     hour: u8,
     user_id: Option<i64>,
     created_for: Option<String>,
@@ -238,7 +229,7 @@ async fn cancel_reservation(
     State(state): State<AppState>,
     Query(query): Query<CancelReservationQuery>,
 ) -> HttpResult {
-    let date = Date::parse(&query.date, date_formats::ISO_DATE).or_bail("Data este invalida")?;
+    let date = *query.date;
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
     let user_id = query.user_id.unwrap_or(user.id);
 

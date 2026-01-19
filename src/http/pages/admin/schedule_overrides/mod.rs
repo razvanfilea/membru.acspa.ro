@@ -1,7 +1,6 @@
 use crate::http::AppState;
 use crate::http::error::{HttpResult, bail};
 use crate::model::user_reservation::UserReservation;
-use crate::utils::date_formats;
 use crate::utils::date_formats::DateFormatExt;
 use axum::Router;
 use sqlx::{SqliteConnection, SqliteExecutor, SqlitePool, query, query_as, query_scalar};
@@ -135,11 +134,7 @@ async fn get_alternative_days(
         .await
 }
 
-async fn delete_alternative_day(state: &AppState, date: String) -> HttpResult<()> {
-    let Ok(date) = Date::parse(&date, date_formats::ISO_DATE) else {
-        return Err(bail("Data selectata este invalida"));
-    };
-
+async fn delete_alternative_day(state: &AppState, date: Date) -> HttpResult<()> {
     let mut tx = state.write_pool.begin().await?;
 
     let deleted_reservations = UserReservation::delete_on_day(tx.as_mut(), date, None).await?;
