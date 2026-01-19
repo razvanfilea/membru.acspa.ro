@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult};
+use crate::http::error::{HttpError, HttpResult, OrBailWith};
 use crate::http::pages::AuthSession;
 use crate::model::payment_context::PaymentContext;
 use crate::model::user::User;
@@ -112,20 +112,18 @@ pub async fn add_payment(
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
     let member = User::fetch(&state.read_pool, member_id).await?;
 
-    let amount_cents =
-        validate_and_convert_amount(form.amount).map_err(|e| HttpError::Message(e.to_string()))?;
+    let amount_cents = validate_and_convert_amount(form.amount).or_bail_with(|e| e)?;
 
     let current_year = local_date().year();
     let requested_allocations =
         parse_month_allocations(&form.months, member.member_since, current_year)
-            .map_err(|e| HttpError::Message(e.to_string()))?;
+            .or_bail_with(|e| e)?;
 
     let mut tx = state.write_pool.begin().await?;
 
     let ctx = PaymentContext::fetch(tx.as_mut(), member_id).await?;
 
-    validate_allocations(&requested_allocations, &ctx)
-        .map_err(|e| HttpError::Message(e.to_string()))?;
+    validate_allocations(&requested_allocations, &ctx).or_bail_with(|e| e)?;
 
     let notes = form.notes.filter(|notes| !notes.is_empty());
     let payment_id = query!(

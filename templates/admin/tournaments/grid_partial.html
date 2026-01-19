@@ -48,6 +48,7 @@
                         Creat: {{ tournament.created_at.format(date_formats::READABLE_DATE).unwrap() }}
                     </span>
 
+                {% if tournament.date >= current_date %}
                 <div class="flex gap-2">
                     <a href="/admin/tournaments/edit/{{ iso_date }}"
                        class="btn btn-circle btn-sm btn-ghost hover:btn-info"
@@ -64,6 +65,7 @@
                         <span class="material-symbols-outlined scale-90">delete</span>
                     </button>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>

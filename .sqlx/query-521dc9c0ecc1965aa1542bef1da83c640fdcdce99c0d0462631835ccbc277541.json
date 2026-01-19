@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select p.id, amount, payment_date, notes, created_at, created_by, u.name as created_by_name from payments p\n         join users u on u.id = p.created_by\n         where user_id = $1 order by payment_date desc",
+  "query": "select m.*, u.name as created_by_name\n             from payment_breaks m join users u on u.id = m.created_by\n             where user_id = $1 order by start_date desc",
   "describe": {
     "columns": [
       {
@@ -9,33 +9,38 @@
         "type_info": "Integer"
       },
       {
-        "name": "amount",
+        "name": "user_id",
         "ordinal": 1,
         "type_info": "Integer"
       },
       {
-        "name": "payment_date",
+        "name": "start_date",
         "ordinal": 2,
         "type_info": "Date"
       },
       {
-        "name": "notes",
+        "name": "end_date",
         "ordinal": 3,
+        "type_info": "Date"
+      },
+      {
+        "name": "reason",
+        "ordinal": 4,
         "type_info": "Text"
       },
       {
         "name": "created_at",
-        "ordinal": 4,
+        "ordinal": 5,
         "type_info": "Datetime"
       },
       {
         "name": "created_by",
-        "ordinal": 5,
+        "ordinal": 6,
         "type_info": "Integer"
       },
       {
         "name": "created_by_name",
-        "ordinal": 6,
+        "ordinal": 7,
         "type_info": "Text"
       }
     ],
@@ -46,11 +51,12 @@
       false,
       false,
       false,
+      false,
       true,
       false,
       false,
       false
     ]
   },
-  "hash": "c0cc97b067b0066ec5096c3a6d0ff9651be0084a9cae8ba22084d1ac514b3f88"
+  "hash": "521dc9c0ecc1965aa1542bef1da83c640fdcdce99c0d0462631835ccbc277541"
 }

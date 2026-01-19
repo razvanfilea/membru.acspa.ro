@@ -37,6 +37,7 @@ pub struct ReservationHours {
     pub capacity: Option<u8>,
 }
 
+// TODO
 pub async fn get_reservation_hours(state: &AppState, date: Date) -> sqlx::Result<ReservationHours> {
     let day_structure =
         DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;

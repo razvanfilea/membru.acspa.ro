@@ -6,7 +6,7 @@ use crate::http::pages::home::reservation_hours::{ReservationHours, get_reservat
 use crate::http::pages::notification_template::NotificationBubbleResponse;
 use crate::model::user::User;
 use crate::utils::CssColor;
-use crate::utils::date_formats::READABLE_DATE;
+use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::DateRangeIter;
 use crate::utils::{date_formats, local_time};
 use askama::Template;
@@ -81,16 +81,21 @@ impl<'a> HoursTemplate<'a> {
         selected_date: Date,
         user: &'a User,
         enable_editing: bool,
-    ) -> String {
-        Self {
-            reservation_hours: get_reservation_hours(state, selected_date)
-                .await
-                .expect("Database error"),
-            selected_date,
-            user,
-            enable_editing,
-        }
-        .to_string()
+    ) -> Option<String> {
+        let reservation_hours = get_reservation_hours(state, selected_date)
+            .await
+            .inspect_err(|e| error!("Database error fetching reservation hours: {e}"))
+            .ok()?;
+
+        Some(
+            Self {
+                reservation_hours,
+                selected_date,
+                user,
+                enable_editing,
+            }
+            .to_string(),
+        )
     }
 }
 
@@ -111,7 +116,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
                 let gift = if let Some(gift_date) = user.received_gift {
                     format!(
                         ", a primit cadou pe {}",
-                        gift_date.format(READABLE_DATE).expect("Invalid date in DB")
+                        gift_date.to_readable()
                     )
                 } else {
                     " și nu a primit cadou!!".to_string()
@@ -144,7 +149,10 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
 
                 reservations_changed.borrow_and_update();
 
-                HoursTemplate::create_response(&state, selected_date, &user, true).await
+                let Some(response) = HoursTemplate::create_response(&state, selected_date, &user, true).await else {
+                    continue;
+                };
+                response
             }
             message = recv_task => {
                 let Some(ws_message) = WsMessage::parse(message) else {
@@ -164,11 +172,16 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
                     })
                     .unwrap_or(current_date);
 
+                let Ok(reservation_hours) = get_reservation_hours(&state, selected_date).await else {
+                    error!("Database error fetching reservation hours");
+                    continue;
+                };
+
                 HomeContentTemplate {
                     current_date,
                     selected_date,
                     days: DateRangeIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
-                    reservation_hours: get_reservation_hours(&state, selected_date).await.expect("Database error"),
+                    reservation_hours,
                     user: &user,
                     has_paid: true,
                 }
@@ -176,6 +189,8 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
             }
         };
 
-        socket.send(Message::Text(response.into())).await.unwrap();
+        if socket.send(Message::Text(response.into())).await.is_err() {
+            return;
+        }
     }
 }

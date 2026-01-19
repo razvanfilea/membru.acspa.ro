@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult, OrBail};
+use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
 use crate::model::payment_context::PaymentContext;
 use crate::model::user::User;
@@ -44,13 +44,11 @@ pub async fn add_break(
         .or_bail("Sfârșit de lună invalid")?;
 
     if end_date < start_date {
-        return Err(HttpError::Message("Data selectată este invalidă".into()));
+        return Err(bail("Data selectată este invalidă"));
     }
 
     if is_before_membership(start_date, &member) {
-        return Err(HttpError::Message(
-            "Nu poți adăuga o pauză înainte de înscriere".into(),
-        ));
+        return Err(bail("Nu poți adăuga o pauză înainte de înscriere"));
     }
 
     let mut tx = state.write_pool.begin().await?;
@@ -58,15 +56,11 @@ pub async fn add_break(
     let ctx = PaymentContext::fetch(tx.as_mut(), member_id).await?;
 
     if ctx.overlaps_existing_break(start_date, end_date) {
-        return Err(HttpError::Message(
-            "Perioada se suprapune cu o pauză existentă".into(),
-        ));
+        return Err(bail("Perioada se suprapune cu o pauză existentă"));
     }
 
     if ctx.overlaps_existing_payment(start_date, end_date) {
-        return Err(HttpError::Message(
-            "Perioada se suprapune cu o lună deja plătită".into(),
-        ));
+        return Err(bail("Perioada se suprapune cu o lună deja plătită"));
     }
 
     let reason = form.reason.filter(|reason| !reason.is_empty());

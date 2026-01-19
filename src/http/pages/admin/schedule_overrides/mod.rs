@@ -1,7 +1,8 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult};
+use crate::http::error::{HttpResult, bail};
 use crate::model::user_reservation::UserReservation;
 use crate::utils::date_formats;
+use crate::utils::date_formats::DateFormatExt;
 use axum::Router;
 use sqlx::{SqliteConnection, SqliteExecutor, SqlitePool, query, query_as, query_scalar};
 use time::{Date, OffsetDateTime};
@@ -39,9 +40,9 @@ async fn add_alternative_day(
     let mut tx = write_pool.begin().await?;
 
     if alt_day_exists(tx.as_mut(), day.date).await? {
-        return Err(HttpError::Message(format!(
+        return Err(bail(format!(
             "Deja exists o zi libera/turneu pe data de {}",
-            day.date.format(date_formats::READABLE_DATE).unwrap()
+            day.date.to_readable()
         )));
     }
 
@@ -136,9 +137,7 @@ async fn get_alternative_days(
 
 async fn delete_alternative_day(state: &AppState, date: String) -> HttpResult<()> {
     let Ok(date) = Date::parse(&date, date_formats::ISO_DATE) else {
-        return Err(HttpError::Message(
-            "Data selectata e ste invalida".to_string(),
-        ));
+        return Err(bail("Data selectata este invalida"));
     };
 
     let mut tx = state.write_pool.begin().await?;

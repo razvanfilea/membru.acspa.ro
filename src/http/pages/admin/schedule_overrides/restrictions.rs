@@ -1,10 +1,10 @@
 use crate::http::AppState;
-use crate::http::error::HttpResult;
+use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::admin::schedule_overrides::calendar::day_details_response;
 use crate::model::day_structure::DayStructure;
 use crate::model::restriction::Restriction;
 use crate::model::user_reservation::UserReservation;
-use crate::utils::date_formats;
+use crate::utils::{date_formats, local_date};
 use axum::Router;
 use axum::extract::{Query, State};
 use axum::routing::{delete, put};
@@ -61,6 +61,13 @@ async fn create_restriction(
 ) -> HttpResult {
     let message = restriction.message.trim();
     let date = Date::parse(&restriction.date, date_formats::ISO_DATE).unwrap();
+
+    if date < local_date() {
+        return Err(HttpError::Message(
+            "Nu se pot modifica datele din trecut".to_string(),
+        ));
+    }
+
     let day_structure =
         DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
     let mut tx = state.write_pool.begin().await?;
@@ -114,6 +121,13 @@ async fn delete_restriction(
     Query(query): Query<HourQuery>,
 ) -> HttpResult {
     let date = query.date;
+
+    if date < local_date() {
+        return Err(HttpError::Message(
+            "Nu se pot modifica datele din trecut".to_string(),
+        ));
+    }
+
     if let Some(hour) = query.hour {
         query!(
             "delete from restrictions where date = $1 and hour = $2",

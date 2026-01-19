@@ -155,7 +155,7 @@ async fn create_new_member(
 ) -> HttpResult {
     let role_id = UserRole::fetch_id_by_name(&state.read_pool, new_member.role.as_str())
         .await?
-        .expect("Invalid role");
+        .or_bail("Rolul selectat nu există")?;
 
     let user_name = new_member.name.trim();
     let password_hash = generate_hash_from_password(new_member.password);

@@ -12,6 +12,7 @@ use crate::reservation;
 use crate::reservation::{
     ReservationError, ReservationSuccess, create_reservation, is_reservation_possible,
 };
+use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::DateRangeIter;
 use crate::utils::{CssColor, local_date};
 use crate::utils::{date_formats, get_reservation_result_color, local_time};
@@ -237,7 +238,7 @@ async fn cancel_reservation(
     State(state): State<AppState>,
     Query(query): Query<CancelReservationQuery>,
 ) -> HttpResult {
-    let date = Date::parse(&query.date, date_formats::ISO_DATE).unwrap();
+    let date = Date::parse(&query.date, date_formats::ISO_DATE).or_bail("Data este invalida")?;
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
     let user_id = query.user_id.unwrap_or(user.id);
 

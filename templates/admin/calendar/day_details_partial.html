@@ -17,9 +17,11 @@
             <p class="text-lg font-black text-orange-500 leading-tight">{{ tournament.description }}</p>
             <p class="text-xs font-bold opacity-60 mt-1 uppercase">Start: {{ tournament.start_hour }}:{{
                 tournament.start_minute.unwrap_or_default() }}</p>
+            {% if !is_past_date() %}
             <a href="/admin/tournaments/edit/{{ selected_date.to_iso() }}"
                class="btn btn-outline mt-3 w-full font-black uppercase tracking-widest">Detalii
                 Turneu</a>
+            {% endif %}
         </div>
     </section>
     {% else %}
@@ -31,13 +33,14 @@
 
         {% if let Some(day) = selected_holiday %}
         <div class="space-y-3">
-            {%if !day.description.is_empty() %}
             <div class="p-4 pt-2 mb-6 bg-base-100 rounded-2xl border border-base-content/5 shadow-inner">
                 <label class="text-[10px] font-black text-primary uppercase tracking-widest">Descriere</label>
-                <p class="text-xl font-bold mt-2 leading-tight">{{ day.description }}</p>
+                <p class="text-xl font-bold mt-2 leading-tight">
+                    {% if !day.description.is_empty() %}{{ day.description }}{% else %}Zi liberă{% endif %}
+                </p>
             </div>
-            {% endif %}
 
+            {% if !is_past_date() %}
             <button class="btn btn-error btn-block"
                     hx-delete="/admin/holiday/{{ selected_date.to_iso() }}"
                     hx-target="#day_details_container"
@@ -45,8 +48,10 @@
                 <span class="material-symbols-outlined">event_busy</span>
                 Șterge Ziua Liberă
             </button>
+            {% endif %}
         </div>
         {% else %}
+        {% if !is_past_date() %}
         <form hx-put="/admin/holiday"
               hx-target="#day_details_container"
               hx-confirm="Ești sigur că vrei să marchezi ca zi liberă? Asta va șterge rezervările existente"
@@ -64,6 +69,7 @@
                 Marchează ca Zi Liberă
             </button>
         </form>
+        {% endif %}
         {% endif %}
     </section>
 
@@ -83,16 +89,18 @@
                     <span class="opacity-70">- {{ res.message }}</span>
                     {% endif %}
                 </div>
+                {% if !is_past_date() %}
                 <button class="btn btn-ghost btn-xs text-red-500 p-0 h-auto min-h-0"
                         hx-target="#day_details_container"
                         hx-delete="/admin/restrictions?date={{ restriction_date }}{% if let Some(h) = res.hour %}&hour={{ h }}{% endif %}">
                     <span class="material-symbols-outlined text-sm">delete</span>
                 </button>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
 
-        {% if can_add_restriction() %}
+        {% if can_add_restriction() && !is_past_date() %}
         <form hx-put="/admin/restrictions" hx-target="#day_details_container"
               hx-confirm="Ești sigur că vrei să blochezi orele? Asta va șterge rezervările existente"
               class="space-y-6">

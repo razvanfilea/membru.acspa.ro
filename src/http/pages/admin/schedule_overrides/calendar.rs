@@ -79,6 +79,10 @@ impl CalendarTemplate {
             .iter()
             .any(|r| r.hour == Some(hour))
     }
+
+    fn is_past_date(&self) -> bool {
+        self.selected_date < self.current_date
+    }
 }
 
 async fn calendar_page(
@@ -119,10 +123,13 @@ async fn calendar_page(
     };
     let calendar_days = DateRangeIter::weeks_in_range(selected_date, last_day);
 
-    let mut fake_user = User::default();
-    fake_user.admin_panel_access = true;
-    let reservations =
-        HoursTemplate::create_response(&state, selected_date, &fake_user, false).await;
+    let fake_user = User {
+        admin_panel_access: true,
+        ..Default::default()
+    };
+    let reservations = HoursTemplate::create_response(&state, selected_date, &fake_user, false)
+        .await
+        .unwrap_or_default();
 
     // Navigation logic
     let prev_month_date = selected_date.previous_day().unwrap();
@@ -182,6 +189,10 @@ impl DayDetailsTemplate {
             .iter()
             .any(|r| r.hour == Some(hour))
     }
+
+    fn is_past_date(&self) -> bool {
+        self.selected_date < self.current_date
+    }
 }
 
 pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
@@ -194,9 +205,13 @@ pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
         has_restriction: !selected_restrictions.is_empty(),
     };
 
-    let mut fake_user = User::default();
-    fake_user.admin_panel_access = true;
-    let reservations = HoursTemplate::create_response(&state, date, &fake_user, false).await;
+    let fake_user = User {
+        admin_panel_access: true,
+        ..Default::default()
+    };
+    let reservations = HoursTemplate::create_response(&state, date, &fake_user, false)
+        .await
+        .unwrap_or_default();
 
     DayDetailsTemplate {
         current_date: local_date(),

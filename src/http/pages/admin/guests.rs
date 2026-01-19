@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult, OrBail};
+use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
@@ -109,7 +109,7 @@ async fn create_guest(
         guests: Vec<GuestDto>,
     }
 
-    let date = Date::parse(&guest.date, date_formats::ISO_DATE).unwrap();
+    let date = Date::parse(&guest.date, date_formats::ISO_DATE).or_bail("Data este invalida")?;
     let day_structure =
         DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
     if !day_structure.is_hour_valid(guest.hour) {
@@ -141,9 +141,7 @@ async fn create_guest(
 
     if let Err(e) = result {
         error!("Failed to create guest reservation: {e}");
-        return Err(HttpError::Message(format!(
-            "Nu s-a putut crea invitatul: {e}"
-        )));
+        return Err(bail(format!("Nu s-a putut crea invitatul: {e}")));
     }
 
     info!("Add guest with date: {date}, hour: {hour}: {referral:?}",);

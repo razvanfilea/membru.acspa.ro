@@ -1,12 +1,12 @@
 use crate::http::AppState;
-use crate::http::error::{HttpResult, OrBail};
+use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::admin::schedule_overrides::calendar::day_details_response;
 use crate::http::pages::admin::schedule_overrides::{
     AlternativeDay, AlternativeDayType, NewAlternativeDay, add_alternative_day,
     delete_alternative_day, get_alternative_day, get_alternative_days,
 };
 use crate::model::day_structure::HOLIDAY_DAY_STRUCTURE;
-use crate::utils::date_formats;
+use crate::utils::{date_formats, local_date};
 use axum::extract::{Path, State};
 use axum::routing::{delete, put};
 use axum::{Form, Router};
@@ -43,6 +43,12 @@ async fn create_holiday(
 ) -> HttpResult {
     let date = Date::parse(&new_day.date, date_formats::ISO_DATE).or_bail("Data este invalida")?;
 
+    if date < local_date() {
+        return Err(HttpError::Message(
+            "Nu se pot modifica datele din trecut".to_string(),
+        ));
+    }
+
     let day_structure = &HOLIDAY_DAY_STRUCTURE;
     let day = NewAlternativeDay {
         date,
@@ -68,6 +74,13 @@ async fn create_holiday(
 
 async fn delete_holiday(State(state): State<AppState>, Path(date_str): Path<String>) -> HttpResult {
     let date = Date::parse(&date_str, date_formats::ISO_DATE).or_bail("Data este invalida")?;
+
+    if date < local_date() {
+        return Err(HttpError::Message(
+            "Nu se pot modifica datele din trecut".to_string(),
+        ));
+    }
+
     delete_alternative_day(&state, date_str).await?;
     day_details_response(state, date).await
 }

@@ -8,7 +8,7 @@ use crate::http::pages::admin::schedule_overrides::{
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
 use crate::utils::date_formats::ISO_DATE;
-use crate::utils::{date_formats, local_time};
+use crate::utils::{date_formats, local_date, local_time};
 use askama::Template;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
@@ -51,6 +51,7 @@ async fn tournaments_page(
     #[template(path = "admin/tournaments/list_page.html")]
     struct TournamentsTemplate {
         user: User,
+        current_date: Date,
         upcoming: Vec<AlternativeDay>,
         past: Vec<AlternativeDay>,
     }
@@ -63,6 +64,7 @@ async fn tournaments_page(
 
     TournamentsTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        current_date: today,
         upcoming,
         past,
     }
@@ -81,7 +83,7 @@ async fn new_tournament_page(auth_session: AuthSession) -> HttpResult {
     NewOrEditTournamentTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         current: None,
-        current_date: local_time().date(),
+        current_date: local_date(),
     }
     .try_into_response()
 }
@@ -107,6 +109,12 @@ async fn create_tournament(
             "Data selectata nu este validă".to_string(),
         ));
     };
+
+    if date < local_date() {
+        return Err(HttpError::Message(
+            "Nu se pot modifica datele din trecut".to_string(),
+        ));
+    }
 
     let capacity = tournament
         .capacity
@@ -169,6 +177,13 @@ async fn update_tournament(
     Form(updated): Form<UpdatedTournament>,
 ) -> HttpResult {
     let date = Date::parse(&date, ISO_DATE).or_bail("Data este invalida")?;
+
+    if date < local_date() {
+        return Err(HttpError::Message(
+            "Nu se pot modifica datele din trecut".to_string(),
+        ));
+    }
+
     let capacity = updated
         .capacity
         .as_ref()
@@ -223,6 +238,14 @@ pub async fn delete_tournament(
     State(state): State<AppState>,
     Path(date): Path<String>,
 ) -> HttpResult {
+    let parsed_date = Date::parse(&date, ISO_DATE).or_bail("Data este invalida")?;
+
+    if parsed_date < local_date() {
+        return Err(HttpError::Message(
+            "Nu se pot modifica datele din trecut".to_string(),
+        ));
+    }
+
     delete_alternative_day(&state, date).await?;
     Ok(().into_response())
 }

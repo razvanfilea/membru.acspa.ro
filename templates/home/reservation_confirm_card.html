@@ -1,6 +1,6 @@
 <div id="confirmation">
     <div class="bg-gray-600 p-6 mt-8 m-2 md:m-4 rounded-2xl">
-        <p class="my-1">Pe data de <b>{{ selected_date.format(date_formats::READABLE_DATE).unwrap() }}</b> de la ora <b>{{
+        <p class="my-1">Pe data de <b>{{ selected_date.to_readable() }}</b> de la ora <b>{{
             start_hour }}:00</b> la <b>{{
             end_hour }}:00</b></p>
         <p>Locația: {{ location_name }}</p>
