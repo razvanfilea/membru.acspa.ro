@@ -1,6 +1,6 @@
-{% import "components/color_mapper.html" as color_mapper %}
-
 {% extends "base.html" %}
+
+{% import "components/color_mapper.html" as color_mapper %}
 
 {% block page_title %}Rezervări{% endblock %}
 
@@ -51,7 +51,7 @@
 
                 {% for color_code in reservation_color_code %}
                 <button class="btn btn-sm rounded-full text-white
-                    {% call color_mapper::map_rust_color(color_code.color) %}">
+                    {{ color_mapper::map_rust_color(color_code.color) }}">
                     {{ color_code.name }}
                 </button>
                 {% endfor %}

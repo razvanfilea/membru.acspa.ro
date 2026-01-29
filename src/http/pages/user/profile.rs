@@ -28,6 +28,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         current_year: i32,
         selected_year: i32,
         months_status_view: Vec<MonthStatusView>,
+        total_paid: i64,
     }
 
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
@@ -61,6 +62,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         current_year,
         selected_year: current_year,
         months_status_view,
+        total_paid: 0,
     }
     .try_into_response()
 }

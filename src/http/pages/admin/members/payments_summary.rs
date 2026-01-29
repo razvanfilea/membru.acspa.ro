@@ -34,6 +34,7 @@ pub struct StatusGridTemplate {
     pub current_year: i32,
     pub selected_year: i32,
     pub months_status_view: Vec<MonthStatusView>,
+    pub total_paid: i64,
 }
 
 pub async fn build_status_grid_response(
@@ -46,6 +47,18 @@ pub async fn build_status_grid_response(
     let breaks = PaymentBreak::fetch_for_user(pool, member.id).await?;
     let current_year = local_date().year();
     let months_status_view = calculate_year_status(year, &member, &payments, &breaks);
+    let total_paid: i64 = payments
+        .iter()
+        .map(|p| {
+            let months_in_year = p.allocations.iter().filter(|a| a.year == year).count();
+            let total_months = p.allocations.len();
+            if total_months == 0 {
+                0
+            } else {
+                p.amount * months_in_year as i64 / total_months as i64
+            }
+        })
+        .sum();
 
     StatusGridTemplate {
         user,
@@ -53,6 +66,7 @@ pub async fn build_status_grid_response(
         current_year,
         selected_year: year,
         months_status_view,
+        total_paid,
     }
     .try_into_response()
 }

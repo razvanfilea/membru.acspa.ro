@@ -68,6 +68,14 @@ pub struct PaymentWithAllocations {
 }
 
 impl PaymentWithAllocations {
+    pub fn display_amount(&self) -> String {
+        if self.amount % 100 == 0 {
+            (self.amount / 100).to_string()
+        } else {
+            format!("{:.02}", self.amount as f64 / 100.0)
+        }
+    }
+
     pub async fn fetch_for_user(pool: &SqlitePool, user_id: i64) -> sqlx::Result<Vec<Self>> {
         let payments = query!(
             "select p.id, amount, payment_date, notes, created_at, created_by, u.name as created_by_name from payments p
@@ -79,8 +87,10 @@ impl PaymentWithAllocations {
         .await?;
 
         let all_allocations = query!(
-            "select payment_id, year, month from payment_allocations where payment_id in (select id from payments where user_id = ?) order by year desc, month desc",
-            user_id
+            "select payment_id, year as 'year: i32', month as 'month: u8' from payment_allocations
+             where payment_id in (select id from payments where user_id = ?)
+             order by year desc, month desc",
+            user_id,
         )
         .fetch_all(pool)
         .await?;
@@ -91,12 +101,7 @@ impl PaymentWithAllocations {
                 let allocations = all_allocations
                     .iter()
                     .filter(|a| a.payment_id == p.id)
-                    .filter_map(|a| {
-                        Some(YearMonth::new(
-                            a.year as i32,
-                            Month::try_from(a.month as u8).ok()?,
-                        ))
-                    })
+                    .filter_map(|a| Some(YearMonth::new(a.year, Month::try_from(a.month).ok()?)))
                     .collect();
 
                 PaymentWithAllocations {
@@ -111,14 +116,6 @@ impl PaymentWithAllocations {
                 }
             })
             .collect())
-    }
-
-    pub fn display_amount(&self) -> String {
-        if self.amount % 100 == 0 {
-            (self.amount / 100).to_string()
-        } else {
-            format!("{:.02}", self.amount as f64 / 100.0)
-        }
     }
 }
 

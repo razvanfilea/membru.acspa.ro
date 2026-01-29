@@ -10,7 +10,7 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 # Axum
 axum = { version = "0.8", features = ["ws"] }
 tower-http = { version = "0.6", features = ["trace", "timeout", "fs", "catch-panic"] }
-askama = { version = "0.14" }
+askama = { version = "0.15" }
 axum-login = "0.18"
 axum-extra = { version = "0.12", default-features = false, features = ["form"] }
 
@@ -33,7 +33,7 @@ time = { version = "0.3", features = ["formatting", "macros", "local-offset"] }
 strum = { version = "0.27", features = ["derive"] }
 thiserror = "2.0"
 itertools = "0.14"
-argon2 = { version = "=0.6.0-rc.5" }
+argon2 = { version = "=0.6.0-rc.6" }
 
 [profile.dev.package.askama_derive]
 opt-level = 3

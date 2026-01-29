@@ -3,7 +3,7 @@
 {% macro res_btn(index, id, res) %}
 <button popovertarget="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}"
         class="btn btn-sm no-animation rounded-full text-white items-center
-    {% call color_mapper::map_rust_color(res.color) %}">
+    {{ color_mapper::map_rust_color(res.color) }}">
 
     {{ index }}. {{ res.name }}
 
@@ -49,7 +49,7 @@
             Ora {{ slot.start_hour }}{{ minute }} - {{ slot.end_hour }}{{ minute }}:
             {% if let Ok(reservations) = slot.reservations %}
             {% for res in reservations.active %}
-            {% call res_btn(loop.index, "reservation", res) %}
+            {{ res_btn(loop.index, "reservation", res) }}
             {% endfor %}
             {% endif %}
 
@@ -63,7 +63,7 @@
         <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
         <p class="text-red-400 underline">În așteptare:</p>
             {% for res in reservations.waiting %}
-            {% call res_btn(loop.index, "waiting", res) %}
+            {{ res_btn(loop.index, "waiting", res) }}
             {% endfor %}
         </div>
         {% endif %}
@@ -72,7 +72,7 @@
         <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
             <p class="underline">Retrași:</p>
             {% for res in reservations.cancelled %}
-            {% call res_btn(loop.index, "cancelled", res) %}
+            {{ res_btn(loop.index, "cancelled", res) }}
             {% endfor %}
         </div>
         {% endif %}

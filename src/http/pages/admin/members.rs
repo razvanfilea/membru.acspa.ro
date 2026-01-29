@@ -193,6 +193,7 @@ async fn view_member_page(
         payments: Vec<PaymentWithAllocations>,
         breaks: Vec<PaymentBreak>,
         months_status_view: Vec<MonthStatusView>,
+        total_paid: i64,
     }
 
     impl ViewMemberTemplate {
@@ -221,16 +222,31 @@ async fn view_member_page(
     }
 
     let current_date = local_date();
+    let selected_year = current_date.year();
     let member = User::fetch(&state.read_pool, member_id).await?;
     let payments = PaymentWithAllocations::fetch_for_user(&state.read_pool, member_id)
         .await
         .unwrap_or_default();
 
-    let breaks = PaymentBreak::fetch_for_user(&state.read_pool, member_id)
-        .await
-        .unwrap_or_default();
-    let months_status_view =
-        calculate_year_status(current_date.year(), &member, &payments, &breaks);
+    let breaks = PaymentBreak::fetch_for_user(&state.read_pool, member_id).await?;
+    let months_status_view = calculate_year_status(selected_year, &member, &payments, &breaks);
+
+    let total_paid: i64 = payments
+        .iter()
+        .map(|p| {
+            let months_in_year = p
+                .allocations
+                .iter()
+                .filter(|a| a.year == selected_year)
+                .count();
+            let total_months = p.allocations.len();
+            if total_months == 0 {
+                0
+            } else {
+                p.amount * months_in_year as i64 / total_months as i64
+            }
+        })
+        .sum();
 
     ViewMemberTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
@@ -242,6 +258,7 @@ async fn view_member_page(
         payments,
         breaks,
         months_status_view,
+        total_paid,
     }
     .try_into_response()
 }

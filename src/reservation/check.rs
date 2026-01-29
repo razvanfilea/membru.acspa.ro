@@ -4,7 +4,7 @@ use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::model::user_reservation::ReservationsCount;
 use crate::reservation::{Referral, ReservationError, ReservationResult, ReservationSuccess};
-use sqlx::{SqliteConnection, query};
+use sqlx::{SqliteConnection, query_scalar};
 use time::{Date, OffsetDateTime};
 
 fn check_parameters_validity(
@@ -45,7 +45,7 @@ async fn check_reservation_already_exists(
     hour: u8,
     created_for: Option<&str>,
 ) -> ReservationResult<()> {
-    let reservation_already_exists = query!(
+    let cancelled = query_scalar!(
         "select cancelled from reservations where
         location = $1 and date = $2 and hour = $3 and user_id = $4 and (created_for = $5 or ($5 is null and created_for is null))",
         location.id,
@@ -57,10 +57,8 @@ async fn check_reservation_already_exists(
     .fetch_optional(&mut *tx)
     .await?;
 
-    if let Some(reservation) = reservation_already_exists {
-        return Err(ReservationError::AlreadyExists {
-            cancelled: reservation.cancelled,
-        });
+    if let Some(cancelled) = cancelled {
+        return Err(ReservationError::AlreadyExists { cancelled });
     }
 
     Ok(())
@@ -72,18 +70,17 @@ async fn check_restriction(
     date: Date,
     hour: u8,
 ) -> ReservationResult<()> {
-    let restriction = query!(
+    let message = query_scalar!(
         "select message from restrictions where location = $1 and date = $2 and (hour = $3 or hour is null)",
         location.id,
         date,
         hour
     )
-        .fetch_optional(&mut *tx)
-        .await?;
+    .fetch_optional(&mut *tx)
+    .await?;
 
-    // Check if there is a restriction
-    if let Some(restriction) = restriction {
-        return Err(ReservationError::Restriction(restriction.message));
+    if let Some(message) = message {
+        return Err(ReservationError::Restriction(message));
     }
 
     Ok(())

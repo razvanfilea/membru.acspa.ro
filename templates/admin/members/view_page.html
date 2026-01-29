@@ -368,7 +368,7 @@
                 {% let max_year = current_year + 4 %}
 
                 <div class="flex flex-col">
-                    {% call forms::month_year_picker("start", "Luna de început", current_year, min_year, max_year) %}
+                    {{ forms::month_year_picker("start", "Luna de început", current_year, min_year, max_year) }}
                     <label class="label cursor-pointer justify-start gap-3 mt-3 px-1">
                         <input type="checkbox" id="one_month_toggle" name="one_month" class="checkbox checkbox checkbox-warning" autocomplete="off" />
                         <span class="label-text text-sm">O singură lună</span>
@@ -376,7 +376,7 @@
                 </div>
 
                 <div id="end_date_wrapper">
-                    {% call forms::month_year_picker("end", "Luna de sfârșit (Inclusiv)", current_year, min_year, max_year) %}
+                    {{ forms::month_year_picker("end", "Luna de sfârșit (Inclusiv)", current_year, min_year, max_year) }}
                 </div>
             </div>
 

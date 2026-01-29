@@ -1,5 +1,5 @@
 use super::*;
-use sqlx::{SqlitePool, query, query_as};
+use sqlx::{SqlitePool, query, query_as, query_scalar};
 use time::macros::{date, datetime};
 
 async fn setup(
@@ -292,26 +292,26 @@ mod queue_logic {
         );
 
         // 5. Verify the NEWEST guest (User 2) was bumped to waiting list
-        let guest2_res = query!(
+        let guest2_in_waiting = query_scalar!(
             "select in_waiting from reservations where user_id = $1",
             user_2.id
         )
         .fetch_one(&pool)
         .await?;
         assert!(
-            guest2_res.in_waiting,
+            guest2_in_waiting,
             "The newest guest (User 2) should be bumped"
         );
 
         // 6. Verify the OLDEST guest (User 1) is still active
-        let guest1_res = query!(
+        let guest1_in_waiting = query_scalar!(
             "select in_waiting from reservations where user_id = $1",
             user_1.id
         )
         .fetch_one(&pool)
         .await?;
         assert!(
-            !guest1_res.in_waiting,
+            !guest1_in_waiting,
             "The older guest (User 1) should remain active"
         );
 
@@ -358,26 +358,26 @@ mod queue_logic {
         assert!(res);
 
         // 5. User 2 (Oldest Waiter) should be promoted
-        let u2 = query!(
+        let u2_in_waiting = query_scalar!(
             "select in_waiting from reservations where user_id = $1",
             user_2.id
         )
         .fetch_one(&pool)
         .await?;
         assert!(
-            !u2.in_waiting,
+            !u2_in_waiting,
             "The user who waited longer should be promoted"
         );
 
         // 6. User 3 (Newer Waiter) should still be waiting
-        let u3 = query!(
+        let u3_in_waiting = query_scalar!(
             "select in_waiting from reservations where user_id = $1",
             user_3.id
         )
         .fetch_one(&pool)
         .await?;
         assert!(
-            u3.in_waiting,
+            u3_in_waiting,
             "The user who joined later should still be waiting"
         );
 
@@ -449,13 +449,13 @@ mod cancellation {
         assert!(cancel_reservation(tx, &location, date, 18, user.id, None).await?);
 
         // 2. Verify Cancelled in DB
-        let saved = query!(
+        let cancelled = query_scalar!(
             "select cancelled from reservations where user_id = $1",
             user.id
         )
         .fetch_one(&pool)
         .await?;
-        assert!(saved.cancelled);
+        assert!(cancelled);
 
         // 3. Try to rebook immediately -> Expect Error (AlreadyExists cancelled: true)
         assert_eq!(
@@ -499,13 +499,12 @@ mod cancellation {
         assert!(res);
 
         // Verify Hard Delete (Count should be 0)
-        let count = query!(
-            "select count(*) as c from reservations where created_for = $1",
+        let count = query_scalar!(
+            "select count(*) from reservations where created_for = $1",
             name
         )
         .fetch_one(&pool)
-        .await?
-        .c;
+        .await?;
         assert_eq!(count, 0);
         Ok(())
     }
@@ -534,16 +533,16 @@ mod cancellation {
         assert!(cancel_reservation(tx, &location, date, 18, user.id, None).await?);
 
         // Verify it's cancelled
-        let res_18 = query!("select cancelled from reservations where hour = 18")
+        let res_18_cancelled = query_scalar!("select cancelled from reservations where hour = 18")
             .fetch_one(&pool)
             .await?;
-        assert!(res_18.cancelled);
+        assert!(res_18_cancelled);
 
         // Verify 20:00 is ACTIVE
-        let res_20 = query!("select cancelled from reservations where hour = 20")
+        let res_20_cancelled = query_scalar!("select cancelled from reservations where hour = 20")
             .fetch_one(&pool)
             .await?;
-        assert!(!res_20.cancelled);
+        assert!(!res_20_cancelled);
 
         Ok(())
     }
@@ -590,23 +589,21 @@ mod cancellation {
         assert!(res);
 
         // 5. Verify User 3 (Member) got promoted, NOT User 2 (Guest)
-        let user_3_status = query!(
+        let user_3_in_waiting = query_scalar!(
             "select in_waiting from reservations where user_id = $1 and hour = 18",
             user_3.id
         )
         .fetch_one(&pool)
-        .await?
-        .in_waiting;
-        assert!(!user_3_status, "Member should be promoted");
+        .await?;
+        assert!(!user_3_in_waiting, "Member should be promoted");
 
-        let user_2_status = query!(
+        let user_2_in_waiting = query_scalar!(
             "select in_waiting from reservations where user_id = $1 and hour = 18",
             user_2.id
         )
         .fetch_one(&pool)
-        .await?
-        .in_waiting;
-        assert!(user_2_status, "Guest should still be waiting");
+        .await?;
+        assert!(user_2_in_waiting, "Guest should still be waiting");
 
         Ok(())
     }
@@ -785,7 +782,7 @@ mod constraints_and_schedule {
         assert!(result, "Cancellation should succeed");
 
         // 6. Verify User 3 status
-        let user_3_status = query!(
+        let user_3_in_waiting = query_scalar!(
             "select in_waiting from reservations where user_id = $1",
             user_3.id
         )
@@ -793,7 +790,7 @@ mod constraints_and_schedule {
         .await?;
 
         assert!(
-            !user_3_status.in_waiting,
+            !user_3_in_waiting,
             "FAILURE: User 3 should have been promoted to active, but is still in waiting.
              This indicates the cancellation logic used the default location capacity (1)
              instead of the tournament capacity (2)."

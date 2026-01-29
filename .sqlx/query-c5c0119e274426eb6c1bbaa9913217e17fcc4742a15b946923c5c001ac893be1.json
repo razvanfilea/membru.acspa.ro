@@ -1,10 +1,10 @@
 {
   "db_name": "SQLite",
-  "query": "select count(*) as 'count!' from users where role_id = $1",
+  "query": "select count(*) from users where role_id = $1",
   "describe": {
     "columns": [
       {
-        "name": "count!",
+        "name": "count(*)",
         "ordinal": 0,
         "type_info": "Integer"
       }
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "62b3d79897a16269f7656d564735bbd373bcd5221811a26e53f5df5b36c59858"
+  "hash": "c5c0119e274426eb6c1bbaa9913217e17fcc4742a15b946923c5c001ac893be1"
 }

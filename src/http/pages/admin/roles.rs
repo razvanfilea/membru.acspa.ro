@@ -11,7 +11,7 @@ use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{query, query_as};
+use sqlx::{query, query_as, query_scalar};
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 
@@ -132,13 +132,9 @@ async fn update_role(
 }
 
 async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) -> HttpResult {
-    let users_with_role = query!(
-        "select count(*) as 'count!' from users where role_id = $1",
-        role_id
-    )
-    .fetch_one(&state.write_pool)
-    .await?
-    .count;
+    let users_with_role = query_scalar!("select count(*) from users where role_id = $1", role_id)
+        .fetch_one(&state.write_pool)
+        .await?;
 
     if users_with_role > 0 {
         return Err(bail(format!(
