@@ -9,6 +9,7 @@ use time::{Date, OffsetDateTime};
 
 fn check_parameters_validity(
     now: OffsetDateTime,
+    user: &User,
     day_structure: &DayStructure,
     selected_date: Date,
     selected_hour: u8,
@@ -16,22 +17,21 @@ fn check_parameters_validity(
     let now_date = now.date();
     let now_hour = now.time().hour();
 
-    if selected_date < now_date {
-        return Err(ReservationError::Other(
-            "Nu poți face o rezervare pentru o zi din trecut",
-        ));
+    if !day_structure.is_hour_valid(selected_hour) {
+        return Err(ReservationError::InvalidHour);
     }
 
-    if !day_structure.is_hour_valid(selected_hour) {
-        return Err(ReservationError::Other(
-            "Ora pentru rezervare nu este validă",
-        ));
+    if selected_date < now_date {
+        return Err(ReservationError::PastDate);
+    }
+
+    // The rest of the checks do not apply if the user has admin privileges
+    if user.admin_panel_access {
+        return Ok(());
     }
 
     if selected_date == now_date && now_hour >= selected_hour - 1 {
-        return Err(ReservationError::Other(
-            "Rezervările se fac cu cel putin o oră înainte",
-        ));
+        return Err(ReservationError::BookingWindowClosed);
     }
 
     Ok(())
@@ -97,7 +97,7 @@ pub async fn is_reservation_possible(
 ) -> ReservationResult {
     let day_structure = DayStructure::fetch_or_default(&mut *tx, selected_date, location).await?;
 
-    check_parameters_validity(now, &day_structure, selected_date, selected_hour)?;
+    check_parameters_validity(now, user, &day_structure, selected_date, selected_hour)?;
 
     check_reservation_already_exists(
         &mut *tx,

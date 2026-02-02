@@ -29,7 +29,7 @@ pub async fn cancel_reservation(
     }
 
     let count = query_scalar!(
-        "select count(*) as 'count!' from reservations where
+        "select count(*) from reservations where
             date = $1 and hour = $2 and location = $3 and cancelled = false and in_waiting = false",
         date,
         hour,

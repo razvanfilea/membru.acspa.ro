@@ -67,26 +67,20 @@ mod validation {
                 None
             )
             .await,
-            Err(ReservationError::Other(
-                "Nu poți face o rezervare pentru o zi din trecut"
-            ))
+            Err(ReservationError::PastDate)
         );
 
         // 2. Too Late (Less than 1 hour before)
         let now_too_late = datetime!(2024-07-11 17:00:00 +00:00:00);
         assert_eq!(
             create_reservation(&pool, &location, now_too_late, &user, target_date, 18, None).await,
-            Err(ReservationError::Other(
-                "Rezervările se fac cu cel putin o oră înainte"
-            ))
+            Err(ReservationError::BookingWindowClosed)
         );
 
         // 3. Invalid Hour (e.g., 17:00 when starts at 18:00)
         assert_eq!(
             create_reservation(&pool, &location, now, &user, target_date, 17, None).await,
-            Err(ReservationError::Other(
-                "Ora pentru rezervare nu este validă"
-            ))
+            Err(ReservationError::InvalidHour)
         );
 
         // 4. Valid Booking
@@ -683,9 +677,7 @@ mod constraints_and_schedule {
         // 1. Standard hour (18:00) should now be invalid
         assert_eq!(
             create_reservation(&pool, &location, now, &user, date, 18, None).await,
-            Err(ReservationError::Other(
-                "Ora pentru rezervare nu este validă"
-            ))
+            Err(ReservationError::InvalidHour)
         );
 
         // 2. New holiday hour (10:00) should be valid

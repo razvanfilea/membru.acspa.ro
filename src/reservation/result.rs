@@ -13,7 +13,9 @@ pub enum ReservationError {
     Restriction(String),
     DatabaseError(String),
     NoMoreReservations,
-    Other(&'static str),
+    InvalidHour,
+    PastDate,
+    BookingWindowClosed,
 }
 
 pub type ReservationResult<T = ReservationSuccess> = Result<T, ReservationError>;
@@ -43,7 +45,13 @@ impl Display for ReservationError {
             ReservationError::NoMoreReservations => {
                 write!(f, "Ți-ai epuizat rezervările pe săptămâna aceasta")
             }
-            ReservationError::Other(message) => write!(f, "{}", message),
+            ReservationError::InvalidHour => write!(f, "Ora pentru rezervare nu este validă"),
+            ReservationError::PastDate => {
+                write!(f, "Nu poți face o rezervare pentru o zi din trecut")
+            }
+            ReservationError::BookingWindowClosed => {
+                write!(f, "Rezervările se fac cu cel putin o oră înainte")
+            }
         }
     }
 }
