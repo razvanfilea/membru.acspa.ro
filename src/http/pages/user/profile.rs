@@ -29,6 +29,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         selected_year: i32,
         months_status_view: Vec<MonthStatusView>,
         total_paid: i64,
+        admin_payments_status_grid: bool,
     }
 
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
@@ -63,6 +64,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         selected_year: current_year,
         months_status_view,
         total_paid: 0,
+        admin_payments_status_grid: false,
     }
     .try_into_response()
 }
@@ -104,5 +106,5 @@ pub async fn payment_status_partial(
     Path(year): Path<i32>,
 ) -> HttpResult {
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
-    build_status_grid_response(&state.read_pool, user.clone(), user, year).await
+    build_status_grid_response(&state.read_pool, user, year, false).await
 }

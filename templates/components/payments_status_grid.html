@@ -6,10 +6,10 @@
             {% for year in start_year..=end_year %}
             <button
                     class="join-item btn btn-sm {% if year == selected_year %}btn-active btn-neutral{% else %}btn-ghost{% endif %}"
-                    {% if member.id == user.id %}
-                    hx-get="/profile/payment_status/{{ year }}"
-                    {% else %}
+                    {% if admin_payments_status_grid %}
                     hx-get="/admin/members/payment_status/{{ member.id }}/{{ year }}"
+                    {% else %}
+                    hx-get="/profile/payment_status/{{ year }}"
                     {% endif %}
                     hx-target="#status-grid-container"
                     hx-swap="outerHTML">
@@ -21,22 +21,17 @@
 
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {% for m in months_status_view %}
-        <div class="flex flex-col gap-1 p-3 rounded-xl border transition-all duration-200
+        <div class="month-cell
             {% match m.status %}
-                {% when MonthStatus::Paid with (notes) %}
-                    bg-success/80 border-success text-success-content
-                {% when MonthStatus::Break with (reason) %}
-                    bg-warning/70 border-warning text-warning-content
-                {% when MonthStatus::Unpaid %}
-                    bg-error/10 border-error/20 text-error
-                {% when MonthStatus::NotJoined %}
-                    bg-base-200 border-transparent opacity-50
-                {% when MonthStatus::Future %}
-                    bg-base-100 border-base-200 text-gray-400
+                {% when MonthStatus::Paid with (notes) %}bg-success/80 border-success text-success-content
+                {% when MonthStatus::Break with (reason) %}bg-warning/70 border-warning text-warning-content
+                {% when MonthStatus::Unpaid %}bg-error/10 border-error/20 text-error
+                {% when MonthStatus::NotJoined %}bg-base-200 border-transparent opacity-50
+                {% when MonthStatus::Future %}bg-base-100 border-base-200 text-gray-400
             {% endmatch %}
         ">
             <div class="flex justify-between items-start">
-                <span class="text-xs font-bold uppercase opacity-70">{{ m.month_name }}</span>
+                <span class="text-xs font-bold uppercase opacity-70">{{ date_formats::month_as_str(&m.month) }}</span>
 
                 {% match m.status %}
                 {% when MonthStatus::Paid with (notes) %}
@@ -70,17 +65,38 @@
                 Viitor
                 {% endmatch %}
             </div>
+
+            {% if admin_payments_status_grid %}
+            {% match m.status %}
+            {% when MonthStatus::Unpaid %}
+            <div class="flex flex-col gap-1 mt-2">
+                <button type="button"
+                        class="btn btn-sm btn-primary btn-outline w-full gap-1"
+                        onclick="openPaymentModalForMonth({{ m.month_number() }}, {{ selected_year }})">
+                    <span class="material-symbols-outlined text-base">add_card</span>
+                    Plată
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-warning btn-outline w-full gap-1"
+                        onclick="openBreakModalForMonth({{ m.month_number() }}, {{ selected_year }})">
+                    <span class="material-symbols-outlined text-base">pause_circle</span>
+                    Pauză
+                </button>
+            </div>
+            {% when _ %}
+            {% endmatch %}
+            {% endif %}
         </div>
         {% endfor %}
     </div>
 
     <div class="flex flex-wrap gap-4 justify-center text-xs text-gray-500 opacity-80 mt-2">
-        <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-success"></span> Achitat</div>
-        <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-warning"></span> Pauză</div>
-        <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-error"></span> Restanță</div>
+        <div class="status-legend-item"><span class="status-legend-dot bg-success"></span> Achitat</div>
+        <div class="status-legend-item"><span class="status-legend-dot bg-warning"></span> Pauză</div>
+        <div class="status-legend-item"><span class="status-legend-dot bg-error"></span> Restanță</div>
     </div>
 
-    {% if member.id != user.id %}
+    {% if admin_payments_status_grid %}
     <div class="flex justify-center mt-4">
         <div class="bg-base-200 rounded-lg px-4 py-2 text-sm">
             <span class="text-gray-500">Total achitat pe {{ selected_year }}:</span>

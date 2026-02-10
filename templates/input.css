@@ -36,7 +36,10 @@
     }
 
     .rotate-fab-icon {
-        @apply group-hover:rotate-90 duration-300;
+        @apply duration-300;
+    }
+    .group:hover .rotate-fab-icon {
+        @apply rotate-90;
     }
 
     @keyframes pop-in-centered {
@@ -67,5 +70,43 @@
     .htmx-request .htmx-indicator,
     .htmx-request.htmx-indicator {
         display: flex; /* or block, depending on your layout */
+    }
+
+    /* Member view: Month status grid cells */
+    .month-cell {
+        @apply flex flex-col gap-1 p-3 rounded-xl border transition-all duration-200;
+    }
+
+    /* Member view: Payment cards */
+    .payment-card {
+        @apply relative flex flex-col md:flex-row md:items-center justify-between
+               bg-base-100 border border-base-300 rounded-xl p-3
+               hover:border-primary/50 transition-all shadow-sm;
+    }
+    /* Make .payment-card act as a group parent */
+    .payment-card:hover .group-hover\:border-warning {
+        @apply border-warning;
+    }
+    .payment-alloc-badge {
+        @apply badge badge-sm badge-ghost h-auto py-0.5 border-base-200
+               text-gray-400 font-mono text-[10px] md:text-xs whitespace-nowrap;
+    }
+    .payment-delete-btn {
+        @apply btn btn-ghost btn-circle btn-sm text-gray-400
+               hover:text-error hover:bg-error/10 transition-colors;
+    }
+
+    /* Member view: Break cards */
+    .break-card {
+        @apply card bg-base-100 shadow-lg border border-base-300
+               hover:border-warning/50 transition-all duration-300 hover:shadow-xl;
+    }
+
+    /* Member view: Legend */
+    .status-legend-item {
+        @apply flex items-center gap-1;
+    }
+    .status-legend-dot {
+        @apply w-3 h-3 rounded-full;
     }
 }

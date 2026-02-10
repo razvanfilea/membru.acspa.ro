@@ -9,9 +9,9 @@ use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::breaks::{add_break, delete_break};
 use crate::http::pages::admin::members::payments::{add_payment, delete_payment};
-use crate::http::pages::admin::members::payments_summary::MonthStatus;
 use crate::http::pages::admin::members::payments_summary::{
-    MonthStatusView, calculate_year_status, payments_status_partial,
+    MonthStatus, MonthStatusView, calculate_total_paid_for_year, calculate_year_status,
+    payments_status_partial,
 };
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
@@ -50,6 +50,7 @@ pub fn router() -> Router<AppState> {
         .route("/breaks/{id}", post(add_break))
         .route("/breaks/{id}", delete(delete_break))
         .route("/payment_status/{id}/{year}", get(payments_status_partial))
+        .route("/gifts", delete(clear_gift_dates))
 }
 
 async fn members_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
@@ -231,22 +232,7 @@ async fn view_member_page(
     let breaks = PaymentBreak::fetch_for_user(&state.read_pool, member_id).await?;
     let months_status_view = calculate_year_status(selected_year, &member, &payments, &breaks);
 
-    let total_paid: i64 = payments
-        .iter()
-        .map(|p| {
-            let months_in_year = p
-                .allocations
-                .iter()
-                .filter(|a| a.year == selected_year)
-                .count();
-            let total_months = p.allocations.len();
-            if total_months == 0 {
-                0
-            } else {
-                p.amount * months_in_year as i64 / total_months as i64
-            }
-        })
-        .sum();
+    let total_paid = calculate_total_paid_for_year(&payments, selected_year);
 
     ViewMemberTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
@@ -391,6 +377,14 @@ async fn delete_member(State(state): State<AppState>, Path(member_id): Path<i64>
     tx.commit().await?;
 
     Ok([("HX-Redirect", "/admin/members")].into_response())
+}
+
+async fn clear_gift_dates(State(state): State<AppState>) -> HttpResult {
+    query!("update users set received_gift = NULL where received_gift IS NOT NULL")
+        .execute(&state.write_pool)
+        .await?;
+
+    Ok([("HX-Refresh", "true")].into_response())
 }
 
 #[derive(Deserialize)]

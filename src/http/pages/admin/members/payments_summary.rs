@@ -1,6 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult};
-use crate::http::pages::AuthSession;
+use crate::http::error::HttpResult;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::User;
@@ -9,7 +8,7 @@ use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
 use sqlx::SqlitePool;
-use time::Date;
+use time::{Date, Month};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MonthStatus {
@@ -22,32 +21,52 @@ pub enum MonthStatus {
 
 #[derive(Debug, Clone)]
 pub struct MonthStatusView {
-    pub month_name: &'static str,
+    pub month: Month,
     pub status: MonthStatus,
+}
+
+impl MonthStatusView {
+    pub fn month_number(&self) -> u8 {
+        self.month as u8
+    }
 }
 
 #[derive(Template)]
 #[template(path = "components/payments_status_grid.html")]
 pub struct StatusGridTemplate {
-    pub user: User,
     pub member: User,
     pub current_year: i32,
     pub selected_year: i32,
     pub months_status_view: Vec<MonthStatusView>,
     pub total_paid: i64,
+    pub admin_payments_status_grid: bool,
 }
 
 pub async fn build_status_grid_response(
     pool: &SqlitePool,
-    user: User,
     member: User,
     year: i32,
+    admin_payments_status_grid: bool,
 ) -> HttpResult {
     let payments = PaymentWithAllocations::fetch_for_user(pool, member.id).await?;
     let breaks = PaymentBreak::fetch_for_user(pool, member.id).await?;
     let current_year = local_date().year();
     let months_status_view = calculate_year_status(year, &member, &payments, &breaks);
-    let total_paid: i64 = payments
+    let total_paid = calculate_total_paid_for_year(&payments, year);
+
+    StatusGridTemplate {
+        member,
+        current_year,
+        selected_year: year,
+        months_status_view,
+        total_paid,
+        admin_payments_status_grid,
+    }
+    .try_into_response()
+}
+
+pub fn calculate_total_paid_for_year(payments: &[PaymentWithAllocations], year: i32) -> i64 {
+    payments
         .iter()
         .map(|p| {
             let months_in_year = p.allocations.iter().filter(|a| a.year == year).count();
@@ -58,17 +77,7 @@ pub async fn build_status_grid_response(
                 p.amount * months_in_year as i64 / total_months as i64
             }
         })
-        .sum();
-
-    StatusGridTemplate {
-        user,
-        member,
-        current_year,
-        selected_year: year,
-        months_status_view,
-        total_paid,
-    }
-    .try_into_response()
+        .sum()
 }
 
 pub fn calculate_year_status(
@@ -82,14 +91,14 @@ pub fn calculate_year_status(
     YearMonthIter::for_year(year)
         .map(|year_month| {
             let month_start = year_month.to_date();
-            let month_name = date_formats::month_as_str(&year_month.month);
+            let month = year_month.month;
 
             // 1. Check if before member joined (approximate to month)
             let member_start_month = YearMonth::from(member.member_since).to_date();
 
             if month_start < member_start_month {
                 return MonthStatusView {
-                    month_name,
+                    month,
                     status: MonthStatus::NotJoined,
                 };
             }
@@ -98,12 +107,12 @@ pub fn calculate_year_status(
             let is_paid = payments.iter().find(|p| {
                 p.allocations
                     .iter()
-                    .any(|a| a.year == year && a.month == year_month.month)
+                    .any(|a| a.year == year && a.month == month)
             });
 
             if let Some(paid) = is_paid {
                 return MonthStatusView {
-                    month_name,
+                    month,
                     status: MonthStatus::Paid(paid.notes.clone().unwrap_or_default()),
                 };
             }
@@ -117,7 +126,7 @@ pub fn calculate_year_status(
 
             if let Some(brk) = is_break {
                 return MonthStatusView {
-                    month_name,
+                    month,
                     status: MonthStatus::Break(brk.reason.clone().unwrap_or_default()),
                 };
             }
@@ -129,13 +138,13 @@ pub fn calculate_year_status(
 
             if month_start > current_month_start {
                 return MonthStatusView {
-                    month_name,
+                    month,
                     status: MonthStatus::Future,
                 };
             }
 
             MonthStatusView {
-                month_name,
+                month,
                 status: MonthStatus::Unpaid,
             }
         })
@@ -143,13 +152,11 @@ pub fn calculate_year_status(
 }
 
 pub async fn payments_status_partial(
-    auth_session: AuthSession,
     State(state): State<AppState>,
     Path((user_id, year)): Path<(i64, i32)>,
 ) -> HttpResult {
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
     let member = User::fetch(&state.read_pool, user_id).await?;
-    build_status_grid_response(&state.read_pool, user, member, year).await
+    build_status_grid_response(&state.read_pool, member, year, true).await
 }
 
 #[cfg(test)]
@@ -294,13 +301,13 @@ mod tests {
     }
 
     #[test]
-    fn month_names_are_in_romanian() {
+    fn months_are_correct() {
         let member = make_member(date!(2020 - 01 - 01));
         let result = calculate_year_status(2020, &member, &[], &[]);
 
-        assert_eq!(result[0].month_name, "Ianuarie");
-        assert_eq!(result[5].month_name, "Iunie");
-        assert_eq!(result[11].month_name, "Decembrie");
+        assert_eq!(result[0].month, Month::January);
+        assert_eq!(result[5].month, Month::June);
+        assert_eq!(result[11].month, Month::December);
     }
 
     #[test]

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "update users set received_gift = NULL where received_gift IS NOT NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "b7dcf38c37a05a805d9d100fa612682f6508d80320347fa5f26d829aacbede8a"
+}

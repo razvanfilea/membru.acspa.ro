@@ -90,4 +90,15 @@
         </button>
     </a>
 </li>
+<li class="hidden md:block">
+    <form>
+        <button class="btn btn-wide btn-error"
+                hx-delete="/admin/members/gifts"
+                hx-confirm="Ești sigur că vrei să ștergi toate datele de cadou?"
+                hx-swap="none">
+            <span class="material-symbols-outlined">delete</span>
+            Șterge datele de cadou
+        </button>
+    </form>
+</li>
 {% endblock %}
