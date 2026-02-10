@@ -5,7 +5,7 @@ pub mod payments_summary;
 
 use crate::http::AppState;
 use crate::http::auth::generate_hash_from_password;
-use crate::http::error::{HttpError, HttpResult, OrBail};
+use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::breaks::{add_break, delete_break};
 use crate::http::pages::admin::members::payments::{add_payment, delete_payment};
@@ -23,7 +23,6 @@ use crate::utils::dates::{MonthIter, YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
@@ -50,6 +49,7 @@ pub fn router() -> Router<AppState> {
         .route("/breaks/{id}", post(add_break))
         .route("/breaks/{id}", delete(delete_break))
         .route("/payment_status/{id}/{year}", get(payments_status_partial))
+        .route("/{id}/reservations/{year}", get(member_reservations_year))
         .route("/gifts", delete(clear_gift_dates))
 }
 
@@ -223,21 +223,26 @@ async fn view_member_page(
     }
 
     let current_date = local_date();
-    let selected_year = current_date.year();
+    let current_year = current_date.year();
     let member = User::fetch(&state.read_pool, member_id).await?;
     let payments = PaymentWithAllocations::fetch_for_user(&state.read_pool, member_id)
         .await
         .unwrap_or_default();
 
     let breaks = PaymentBreak::fetch_for_user(&state.read_pool, member_id).await?;
-    let months_status_view = calculate_year_status(selected_year, &member, &payments, &breaks);
+    let months_status_view = calculate_year_status(current_year, &member, &payments, &breaks);
 
-    let total_paid = calculate_total_paid_for_year(&payments, selected_year);
+    let total_paid = calculate_total_paid_for_year(&payments, current_year);
 
     ViewMemberTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
-        reservations: GroupedUserReservations::fetch_for_user(&state.read_pool, member.id, false)
-            .await?,
+        reservations: GroupedUserReservations::fetch_for_user_year(
+            &state.read_pool,
+            member.id,
+            false,
+            current_year,
+        )
+        .await?,
         current_date,
         member,
         allow_reservation_cancellation: false,
@@ -294,19 +299,48 @@ async fn update_member(
             .and_then(|date| Date::parse(date.as_str(), date_formats::ISO_DATE).ok())
     }
 
+    // Parse dates
+    let birthday =
+        parse_date(Some(updated_user.birthday)).or_bail("Data nașterii este invalidă")?;
+    let member_since =
+        parse_date(Some(updated_user.member_since)).or_bail("Data înscrierii este invalidă")?;
+    let received_gift = parse_date(updated_user.received_gift);
+
+    let today = local_date();
+
+    // Email uniqueness check
+    if User::email_exists_for_other(&state.read_pool, &updated_user.email, member_id).await? {
+        return Err(bail("Adresa de email este deja folosită de alt utilizator"));
+    }
+
+    // Birthday validation
+    if birthday > today {
+        return Err(bail("Data nașterii nu poate fi în viitor"));
+    }
+    if birthday.year() < 1900 {
+        return Err(bail("Data nașterii este prea veche"));
+    }
+
+    // member_since validation
+    if member_since > today {
+        return Err(bail("Data înscrierii nu poate fi în viitor"));
+    }
+
+    // received_gift validation
+    if let Some(gift_date) = received_gift {
+        if gift_date < member_since {
+            return Err(bail(
+                "Data primirii cadoului nu poate fi înainte de înscriere",
+            ));
+        }
+    }
+
     let role_id = UserRole::fetch_id_by_name(&state.read_pool, updated_user.role.as_str())
         .await?
         .or_bail("Rolul selectat nu există")?;
     let user_name = updated_user.name.trim();
     let is_active = updated_user.is_active.is_some();
     let has_key = updated_user.has_key.is_some();
-    let Some(birthday) = parse_date(Some(updated_user.birthday)) else {
-        return Ok(StatusCode::UNPROCESSABLE_ENTITY.into_response());
-    };
-    let Some(member_since) = parse_date(Some(updated_user.member_since)) else {
-        return Ok(StatusCode::UNPROCESSABLE_ENTITY.into_response());
-    };
-    let received_gift = parse_date(updated_user.received_gift);
 
     query!(
         "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, is_active = $9
@@ -409,4 +443,41 @@ pub async fn update_member_password(
     .await?;
 
     Ok([("HX-Redirect", format!("/admin/members/view/{member_id}"))].into_response())
+}
+
+pub async fn member_reservations_year(
+    State(state): State<AppState>,
+    Path((member_id, year)): Path<(i64, i32)>,
+) -> HttpResult {
+    #[derive(Template)]
+    #[template(path = "components/reservations_with_year_selector.html")]
+    struct ReservationsTemplate {
+        member: User,
+        reservations: Vec<GroupedUserReservations>,
+        allow_reservation_cancellation: bool,
+        current_year: i32,
+        selected_year: i32,
+        show_cancelled: bool,
+        admin_reservations_view: bool,
+    }
+
+    let member = User::fetch(&state.read_pool, member_id).await?;
+    let current_year = local_date().year();
+
+    ReservationsTemplate {
+        reservations: GroupedUserReservations::fetch_for_user_year(
+            &state.read_pool,
+            member_id,
+            false,
+            year,
+        )
+        .await?,
+        member,
+        allow_reservation_cancellation: false,
+        current_year,
+        selected_year: year,
+        show_cancelled: false,
+        admin_reservations_view: true,
+    }
+    .try_into_response()
 }

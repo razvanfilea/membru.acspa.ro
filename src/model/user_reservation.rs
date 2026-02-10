@@ -49,17 +49,20 @@ pub struct GroupedUserReservations {
 }
 
 impl GroupedUserReservations {
-    pub async fn fetch_for_user(
+    pub async fn fetch_for_user_year(
         executor: impl SqliteExecutor<'_>,
         user_id: i64,
         cancelled: bool,
+        year: i32,
     ) -> sqlx::Result<Vec<Self>> {
+        let year_str = year.to_string();
         let reservations = query_as!(
             UserReservation,
             "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r
-             where user_id = $1 and cancelled = $2 and created_for is null",
+             where user_id = $1 and cancelled = $2 and created_for is null and strftime('%Y', r.date) = $3",
             user_id,
-            cancelled
+            cancelled,
+            year_str
         ).fetch_all(executor)
             .await?;
 

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r\n             where user_id = $1 and cancelled = $2 and created_for is null",
+  "query": "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r\n             where user_id = $1 and cancelled = $2 and created_for is null and strftime('%Y', r.date) = $3",
   "describe": {
     "columns": [
       {
@@ -35,7 +35,7 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 3
     },
     "nullable": [
       false,
@@ -46,5 +46,5 @@
       false
     ]
   },
-  "hash": "c3b469de31655e3586f8fd267e151ac8958a1024040cfdfa4c95e919df3223ff"
+  "hash": "c9870d26bda597f6926eebc0b23ce27474d791b7edc63edcc75040fe32f5fc00"
 }

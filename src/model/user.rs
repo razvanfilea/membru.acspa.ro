@@ -1,6 +1,6 @@
 use axum_login::AuthUser;
 use serde::Deserialize;
-use sqlx::{SqliteExecutor, query_as};
+use sqlx::{SqliteExecutor, query_as, query_scalar};
 use time::Date;
 
 #[derive(Debug, Clone)]
@@ -77,6 +77,21 @@ impl User {
         query_as!(Self, "select * from users_with_role order by name")
             .fetch_all(executor)
             .await
+    }
+
+    pub async fn email_exists_for_other(
+        executor: impl SqliteExecutor<'_>,
+        email: &str,
+        exclude_user_id: i64,
+    ) -> sqlx::Result<bool> {
+        let count = query_scalar!(
+            "SELECT COUNT(*) FROM users WHERE email = $1 AND id != $2 AND is_deleted = false",
+            email,
+            exclude_user_id
+        )
+        .fetch_one(executor)
+        .await?;
+        Ok(count > 0)
     }
 }
 

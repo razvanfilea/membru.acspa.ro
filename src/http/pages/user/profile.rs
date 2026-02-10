@@ -51,8 +51,13 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
     let months_status_view = calculate_year_status(current_year, &user, &payments, &breaks);
 
     ProfileTemplate {
-        reservations: GroupedUserReservations::fetch_for_user(&state.read_pool, user.id, false)
-            .await?,
+        reservations: GroupedUserReservations::fetch_for_user_year(
+            &state.read_pool,
+            user.id,
+            false,
+            current_year,
+        )
+        .await?,
         user,
         show_cancelled: false,
         this_weeks_reservations,
@@ -82,20 +87,67 @@ pub async fn profile_reservations(
     #[derive(Template)]
     #[template(path = "user/profile_content.html")]
     struct ProfileTemplate {
+        member: User,
         reservations: Vec<GroupedUserReservations>,
         show_cancelled: bool,
+        current_year: i32,
+        selected_year: i32,
     }
 
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let current_year = local_date().year();
 
     ProfileTemplate {
-        reservations: GroupedUserReservations::fetch_for_user(
+        reservations: GroupedUserReservations::fetch_for_user_year(
             &state.read_pool,
             user.id,
             query.show_cancelled,
+            current_year,
         )
         .await?,
+        member: user,
         show_cancelled: query.show_cancelled,
+        current_year,
+        selected_year: current_year,
+    }
+    .try_into_response()
+}
+
+pub async fn profile_reservations_year(
+    auth_session: AuthSession,
+    State(state): State<AppState>,
+    Path(year): Path<i32>,
+    Query(query): Query<ReservationsQuery>,
+) -> HttpResult {
+    #[derive(Template)]
+    #[template(path = "components/reservations_with_year_selector.html")]
+    struct ReservationsTemplate {
+        member: User,
+        reservations: Vec<GroupedUserReservations>,
+        allow_reservation_cancellation: bool,
+        current_year: i32,
+        selected_year: i32,
+        show_cancelled: bool,
+        admin_reservations_view: bool,
+    }
+
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let current_year = local_date().year();
+
+    ReservationsTemplate {
+        reservations: GroupedUserReservations::fetch_for_user_year(
+            &state.read_pool,
+            user.id,
+            query.show_cancelled,
+            year,
+        )
+        .await?,
+        member: user,
+        allow_reservation_cancellation: true,
+        show_cancelled: query.show_cancelled,
+        current_year,
+        selected_year: year,
+        admin_reservations_view: false,
     }
     .try_into_response()
 }

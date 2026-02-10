@@ -1,0 +1,49 @@
+<div id="reservations-container" class="flex flex-col gap-4">
+    <div class="flex flex-row justify-center">
+        <div id="reservations-years" class="join bg-base-100 border border-base-300 shadow-sm overflow-x-auto">
+            {% let start_year = member.member_since.year() %}
+            {% for year in start_year..=current_year %}
+            <button
+                    class="join-item btn btn-sm {% if year == selected_year %}btn-active btn-neutral{% else %}btn-ghost{% endif %}"
+                    {% if admin_reservations_view %}
+                    hx-get="/admin/members/{{ member.id }}/reservations/{{ year }}"
+                    {% else %}
+                    hx-get="/profile/reservations/{{ year }}?show_cancelled={{ show_cancelled }}"
+                    {% endif %}
+                    hx-target="#reservations-container"
+                    hx-swap="outerHTML">
+                {{ year }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if !admin_reservations_view %}
+    <label hx-get="/profile/reservations/{{ selected_year }}?show_cancelled={{ !show_cancelled }}"
+           hx-target="#reservations-container" hx-swap="outerHTML"
+           class="label cursor-pointer justify-start gap-8">
+        <span class="label-text">Afiseaza anulate</span>
+        <input type="checkbox" class="checkbox checkbox-primary" autocomplete="off"
+               {% if show_cancelled %} checked="checked" {% endif %}/>
+    </label>
+    {% endif %}
+
+    {% if reservations.is_empty() %}
+    <div class="py-8 flex flex-col items-center justify-center text-gray-400 bg-base-100/50 rounded-xl border-2 border-dashed border-base-300">
+        <span class="material-symbols-outlined text-3xl opacity-50 mb-1">event_busy</span>
+        <p class="text-sm font-semibold">Nu sunt rezervari in {{ selected_year }}</p>
+    </div>
+    {% else %}
+    {% include "components/reservations_list.html" %}
+    {% endif %}
+</div>
+
+<script>
+(function() {
+    const container = document.getElementById('reservations-years');
+    const active = container?.querySelector('.btn-active');
+    if (container && active) {
+        container.scrollLeft = active.offsetLeft - (container.clientWidth / 2) + (active.clientWidth / 2);
+    }
+})();
+</script>
