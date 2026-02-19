@@ -1,13 +1,13 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
+use crate::http::response::hx_refresh;
 use crate::model::payment_context::PaymentContext;
 use crate::model::user::User;
 use crate::utils::date_formats;
 use crate::utils::dates::YearMonth;
 use axum::Form;
 use axum::extract::{Path, State};
-use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::query;
 use time::Date;
@@ -83,7 +83,7 @@ pub async fn add_break(
 
     tx.commit().await?;
 
-    Ok([("HX-Refresh", "true")].into_response())
+    Ok(hx_refresh())
 }
 
 pub async fn delete_break(State(state): State<AppState>, Path(break_id): Path<i64>) -> HttpResult {
@@ -91,5 +91,5 @@ pub async fn delete_break(State(state): State<AppState>, Path(break_id): Path<i6
         .execute(&state.write_pool)
         .await?;
 
-    Ok([("HX-Refresh", "true")].into_response())
+    Ok(hx_refresh())
 }

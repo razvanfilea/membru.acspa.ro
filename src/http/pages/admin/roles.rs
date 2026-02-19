@@ -1,13 +1,13 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult, bail};
 use crate::http::pages::AuthSession;
+use crate::http::response::hx_redirect;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::utils::CssColor;
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
@@ -87,7 +87,7 @@ async fn create_new_role(State(state): State<AppState>, Form(role): Form<NewRole
     .execute(&state.write_pool)
     .await?;
 
-    Ok([("HX-Redirect", "/admin/roles")].into_response())
+    Ok(hx_redirect("/admin/roles"))
 }
 
 async fn edit_role_page(
@@ -100,7 +100,7 @@ async fn edit_role_page(
         .await?;
 
     if role.is_none() {
-        return Ok([("HX-Redirect", "/admin/roles")].into_response());
+        return Ok(hx_redirect("/admin/roles"));
     }
 
     NewOrEditRoleTemplate {
@@ -128,7 +128,7 @@ async fn update_role(
     .execute(&state.write_pool)
     .await?;
 
-    Ok([("HX-Redirect", "/admin/roles")].into_response())
+    Ok(hx_redirect("/admin/roles"))
 }
 
 async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) -> HttpResult {
@@ -146,5 +146,5 @@ async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) ->
         .execute(&state.write_pool)
         .await?;
 
-    Ok([("HX-Redirect", "/admin/roles")].into_response())
+    Ok(hx_redirect("/admin/roles"))
 }

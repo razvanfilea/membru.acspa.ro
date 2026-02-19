@@ -1,13 +1,13 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult, OrBailWith};
 use crate::http::pages::AuthSession;
+use crate::http::response::hx_refresh;
 use crate::model::payment_context::PaymentContext;
 use crate::model::user::User;
 use crate::utils::dates::YearMonth;
 use crate::utils::local_date;
 use axum::Form;
 use axum::extract::{Path, State};
-use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::query;
 use std::fmt;
@@ -161,7 +161,7 @@ pub async fn add_payment(
 
     tx.commit().await?;
 
-    Ok([("HX-Refresh", "true")].into_response())
+    Ok(hx_refresh())
 }
 
 pub async fn delete_payment(
@@ -172,7 +172,7 @@ pub async fn delete_payment(
         .execute(&state.write_pool)
         .await?;
 
-    Ok([("HX-Refresh", "true")].into_response())
+    Ok(hx_refresh())
 }
 
 #[cfg(test)]

@@ -28,6 +28,7 @@ use tracing::{Level, error, info};
 mod auth;
 mod error;
 mod pages;
+mod response;
 mod template_into_response;
 
 #[derive(Clone)]

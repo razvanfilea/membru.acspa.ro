@@ -1,4 +1,5 @@
 use crate::http::pages::AuthSession;
+use crate::http::response::hx_redirect;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::UserCredentials;
 use askama::Template;
@@ -86,5 +87,5 @@ pub async fn logout(mut auth: AuthSession) -> impl IntoResponse {
         }
     }
 
-    [("HX-Redirect", "/")]
+    hx_redirect("/")
 }

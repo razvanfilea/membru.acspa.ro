@@ -2,12 +2,12 @@ use crate::http::AppState;
 use crate::http::auth::{generate_hash_from_password, validate_credentials};
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
+use crate::http::response::hx_redirect;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
 use askama::Template;
 use axum::Form;
 use axum::extract::State;
-use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::query;
 use tracing::debug;
@@ -70,5 +70,6 @@ pub async fn change_password(
     .await?;
 
     debug!("User has been logged in: {}", user.email);
-    Ok([("HX-Redirect", "/")].into_response())
+
+    Ok(hx_redirect("/"))
 }

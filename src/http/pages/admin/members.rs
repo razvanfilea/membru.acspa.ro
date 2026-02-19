@@ -13,6 +13,7 @@ use crate::http::pages::admin::members::payments_summary::{
     MonthStatus, MonthStatusView, calculate_total_paid_for_year, calculate_year_status,
     payments_status_partial,
 };
+use crate::http::response::{hx_redirect, hx_refresh};
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::role::UserRole;
@@ -23,7 +24,6 @@ use crate::utils::dates::{MonthIter, YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
@@ -171,11 +171,7 @@ async fn create_new_member(
         .fetch_one(&state.write_pool)
         .await?;
 
-    Ok([(
-        "HX-Redirect",
-        format!("/admin/members/view/{new_member_id}"),
-    )]
-    .into_response())
+    Ok(hx_redirect(format!("/admin/members/view/{new_member_id}")))
 }
 
 async fn view_member_page(
@@ -358,7 +354,7 @@ async fn update_member(
         .execute(&state.write_pool)
         .await?;
 
-    Ok([("HX-Redirect", format!("/admin/members/view/{member_id}"))].into_response())
+    Ok(hx_redirect(format!("/admin/members/view/{member_id}")))
 }
 
 async fn toggle_active_user(
@@ -372,7 +368,7 @@ async fn toggle_active_user(
     .execute(&state.write_pool)
     .await?;
 
-    Ok([("HX-Refresh", "true")].into_response())
+    Ok(hx_refresh())
 }
 
 async fn change_password_page(
@@ -410,7 +406,7 @@ async fn delete_member(State(state): State<AppState>, Path(member_id): Path<i64>
 
     tx.commit().await?;
 
-    Ok([("HX-Redirect", "/admin/members")].into_response())
+    Ok(hx_redirect("/admin/members"))
 }
 
 async fn clear_gift_dates(State(state): State<AppState>) -> HttpResult {
@@ -418,7 +414,7 @@ async fn clear_gift_dates(State(state): State<AppState>) -> HttpResult {
         .execute(&state.write_pool)
         .await?;
 
-    Ok([("HX-Refresh", "true")].into_response())
+    Ok(hx_refresh())
 }
 
 #[derive(Deserialize)]
@@ -442,7 +438,7 @@ pub async fn update_member_password(
     .execute(&state.write_pool)
     .await?;
 
-    Ok([("HX-Redirect", format!("/admin/members/view/{member_id}"))].into_response())
+    Ok(hx_redirect(format!("/admin/members/view/{member_id}")))
 }
 
 pub async fn member_reservations_year(

@@ -1,0 +1,58 @@
+{#
+Section Header Macro
+Usage: {% call section_header::header(icon, color, title, subtitle) %}
+       {% call section_header::header_with_button(icon, color, title, subtitle, btn_class, btn_text, btn_icon, btn_onclick) %}
+       {% call section_header::header_with_hx_button(icon, color, title, subtitle, btn_class, btn_text, btn_icon, hx_get, hx_target, hx_swap) %}
+
+Colors: primary, secondary, warning, info
+#}
+
+{% macro header(icon, color, title, subtitle) %}
+<div class="flex flex-row justify-between items-center bg-base-200/50 p-4 rounded-2xl border border-base-300">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 flex items-center justify-center bg-{{ color }}/10 text-{{ color }} rounded-full shrink-0">
+            <span class="material-symbols-outlined text-2xl">{{ icon }}</span>
+        </div>
+        <div>
+            <h3 class="text-lg md:text-xl font-bold leading-tight">{{ title }}</h3>
+            <p class="text-xs text-gray-500 hidden sm:block">{{ subtitle }}</p>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro header_with_button(icon, color, title, subtitle, btn_class, btn_text, btn_icon, btn_onclick) %}
+<div class="flex flex-row justify-between items-center bg-base-200/50 p-4 rounded-2xl border border-base-300">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 flex items-center justify-center bg-{{ color }}/10 text-{{ color }} rounded-full shrink-0">
+            <span class="material-symbols-outlined text-2xl">{{ icon }}</span>
+        </div>
+        <div>
+            <h3 class="text-lg md:text-xl font-bold leading-tight">{{ title }}</h3>
+            <p class="text-xs text-gray-500 hidden sm:block">{{ subtitle }}</p>
+        </div>
+    </div>
+    <button class="btn {{ btn_class }} gap-2 shadow-sm" onclick="{{ btn_onclick }}">
+        <span class="hidden xs:inline font-bold">{{ btn_text }}</span>
+        <span class="material-symbols-outlined">{{ btn_icon }}</span>
+    </button>
+</div>
+{% endmacro %}
+
+{% macro header_with_hx_button(icon, color, title, subtitle, btn_class, btn_icon, hx_get, hx_target, hx_swap) %}
+<div class="flex flex-row justify-between items-center bg-base-200/50 p-4 rounded-2xl border border-base-300">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 flex items-center justify-center bg-{{ color }}/10 text-{{ color }} rounded-full shrink-0">
+            <span class="material-symbols-outlined text-2xl">{{ icon }}</span>
+        </div>
+        <div>
+            <h3 class="text-lg md:text-xl font-bold leading-tight">{{ title }}</h3>
+            <p class="text-xs text-gray-500 hidden sm:block">{{ subtitle }}</p>
+        </div>
+    </div>
+    <button hx-get="{{ hx_get }}" hx-target="{{ hx_target }}" hx-swap="{{ hx_swap }}"
+            class="btn btn-circle btn-ghost" title="Refresh">
+        <span class="material-symbols-outlined">{{ btn_icon }}</span>
+    </button>
+</div>
+{% endmacro %}

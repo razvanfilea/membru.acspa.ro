@@ -5,6 +5,7 @@ use crate::http::pages::admin::schedule_overrides::{
     AlternativeDay, AlternativeDayType, NewAlternativeDay, add_alternative_day,
     delete_alternative_day, get_alternative_day, get_alternative_days,
 };
+use crate::http::response::hx_redirect;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
 use crate::utils::date_formats::{DateFormatExt, IsoDate};
@@ -133,7 +134,7 @@ async fn create_tournament(
         tournament.description.clone().unwrap_or_default()
     );
 
-    Ok([("HX-Redirect", "/admin/tournaments")].into_response())
+    Ok(hx_redirect("/admin/tournaments"))
 }
 
 async fn edit_tournament_page(
@@ -224,7 +225,7 @@ async fn update_tournament(
 
     tx.commit().await?;
 
-    Ok([("HX-Redirect", "/admin/tournaments")].into_response())
+    Ok(hx_redirect("/admin/tournaments"))
 }
 
 pub async fn delete_tournament(
