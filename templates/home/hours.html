@@ -1,9 +1,11 @@
 {% import "components/color_mapper.html" as color_mapper %}
 
 {% macro res_btn(index, id, res) %}
-<button popovertarget="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}"
-        class="btn btn-sm no-animation rounded-full text-white items-center
-    {{ color_mapper::map_rust_color(res.color) }}">
+<button {% if id != "cancelled" %} popovertarget="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}"{% endif %}
+        class="btn-reservation no-animation
+    {{ color_mapper::map_rust_color(res.color) }}
+    {% if id == "cancelled" %}border-2 border-red-400/90 opacity-75{% endif %}
+    {% if id == "waiting" %}border-2 border-yellow-500{% endif %}">
 
     {{ index }}. {{ res.name }}
 
@@ -16,7 +18,7 @@
     {% endif %}
 </button>
 
-{% if enable_editing && (user.admin_panel_access || user.id == res.user_id) %}
+{% if id != "cancelled" && enable_editing && (user.admin_panel_access || user.id == res.user_id) %}
 <div id="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}" class="rounded-2xl" popover>
     <div class="p-6 flex flex-col gap-4">
         <p>Rezervarea de la ora <b>{{ slot.start_hour }}</b> pe numele <b>{{ res.name }}</b></p>
@@ -33,7 +35,7 @@
 
 {% endmacro %}
 
-<div id="hours">
+<div id="hours" class="flex flex-col gap-4">
     <h4 class="text-xl mb-2">
         {% if let Some(description) = reservation_hours.description %}
         <span class="font-medium underline">{{ description }}</span>
@@ -43,25 +45,28 @@
         {% endif %}
     </h4>
     {% for slot in reservation_hours.hours %}
-    <div hx-vals='{"hour": {{ slot.start_hour }} }'>
-        <div class="flex flex-row flex-wrap gap-1 mb-4 items-center">
-            {% let minute = format!(":{:02}", slot.minute.unwrap_or_default()) %}
-            Ora {{ slot.start_hour }}{{ minute }} - {{ slot.end_hour }}{{ minute }}:
-            {% if let Ok(reservations) = slot.reservations %}
+    <div hx-vals='{"hour": {{ slot.start_hour }} }' class="bg-base-200/50 rounded-xl p-4 flex flex-col gap-3">
+        {% let minute = format!(":{:02}", slot.minute.unwrap_or_default()) %}
+        <h5 class="font-medium">Ora {{ slot.start_hour }}{{ minute }} - {{ slot.end_hour }}{{ minute }}</h5>
+
+        {% if let Ok(reservations) = slot.reservations %}
+        <div class="flex flex-row flex-wrap gap-1 items-center">
             {% for res in reservations.active %}
             {{ res_btn(loop.index, "reservation", res) }}
             {% endfor %}
-            {% endif %}
-
-            {% if let Err(restriction) = slot.reservations %}
-            <p class="text-red-600 font-semibold">{{ restriction }}</p>
-            {% endif %}
         </div>
+        {% endif %}
+
+        {% if let Err(restriction) = slot.reservations %}
+        <p class="text-red-600 font-semibold">{{ restriction }}</p>
+        {% endif %}
 
         {% if let Ok(reservations) = slot.reservations %}
         {% if !reservations.waiting.is_empty() %}
-        <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
-        <p class="text-red-400 underline">În așteptare:</p>
+        <hr class="border-dashed border-base-content/30">
+
+        <div class="flex flex-row flex-wrap gap-2 items-center">
+            <p class="text-yellow-500 underline">În așteptare:</p>
             {% for res in reservations.waiting %}
             {{ res_btn(loop.index, "waiting", res) }}
             {% endfor %}
@@ -69,8 +74,10 @@
         {% endif %}
 
         {% if !reservations.cancelled.is_empty() %}
-        <div class="flex flex-row flex-wrap gap-2 mb-4 items-center">
-            <p class="underline">Retrași:</p>
+        <hr class="border-dashed border-base-content/30">
+
+        <div class="flex flex-row flex-wrap gap-2 items-center">
+            <p class="text-red-400 underline">Retrași:</p>
             {% for res in reservations.cancelled %}
             {{ res_btn(loop.index, "cancelled", res) }}
             {% endfor %}
@@ -80,15 +87,19 @@
         {% endif %}
 
         {% if enable_editing && slot.reservations.is_ok() %}
-        <input name="reservation" type="radio" aria-label="Rezervare" autocomplete="off"
-               hx-post="/choose_hour" hx-target="#confirmation" hx-swap="outerHTML show:bottom"
-               class="btn btn-md btn-outline btn-accent w-min"/>
+        <div class="flex flex-row flex-wrap gap-2">
+            <input name="reservation" type="radio" aria-label="Rezervare" autocomplete="off"
+                   hx-post="/choose_hour" hx-target="#confirmation" hx-swap="outerHTML show:bottom"
+                   class="btn btn-md btn-outline btn-accent w-min"/>
+
+            {% if user.admin_panel_access %}
+            <button class="btn btn-md btn-outline btn-info" popovertarget="popover_create_guest_{{ slot.start_hour }}">
+                Adaugă invitat
+            </button>
+            {% endif %}
+        </div>
 
         {% if user.admin_panel_access %}
-        <button class="btn btn-md btn-outline btn-info" popovertarget="popover_create_guest_{{ slot.start_hour }}">
-            Adaugă invitat
-        </button>
-
         <div id="popover_create_guest_{{ slot.start_hour }}" class="rounded-2xl" popover>
             <form class="p-6 flex flex-col gap-4" hx-params="not selected_date" hx-vals='{"date": "{{ selected_date }}"}'>
                 <p>Adaugă un invitat de la ora <b>{{ slot.start_hour }}</b> pe numele:</p>
@@ -110,10 +121,6 @@
         </div>
         {% endif %}
 
-        {% endif %}
-
-        {% if !loop.last %}
-        <div class="divider"></div>
         {% endif %}
     </div>
     {% endfor %}
