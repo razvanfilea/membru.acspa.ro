@@ -67,6 +67,11 @@
         "name": "admin_panel_access",
         "ordinal": 12,
         "type_info": "Bool"
+      },
+      {
+        "name": "monthly_fee",
+        "ordinal": 13,
+        "type_info": "Integer"
       }
     ],
     "parameters": {
@@ -85,7 +90,8 @@
       true,
       false,
       false,
-      false
+      false,
+      true
     ]
   },
   "hash": "fd28c33f0a69e1bd8d18cd1bdbb21483abc39c4ec705f4c0dba5161571d89b83"

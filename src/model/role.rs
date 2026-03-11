@@ -8,6 +8,7 @@ pub struct UserRole {
     pub color: Option<String>,
     #[allow(dead_code)]
     pub admin_panel_access: bool,
+    pub monthly_fee: Option<i64>,
 }
 
 impl UserRole {

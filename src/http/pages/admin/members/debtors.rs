@@ -7,8 +7,6 @@ use sqlx::{SqliteExecutor, SqlitePool, query, query_as};
 use std::collections::HashSet;
 use time::{Date, Month};
 
-const USER_ROLLS_TO_SKIP: &[i64] = &[1, 2, 5, 7];
-
 pub struct DebtorItem {
     pub member: User,
     pub unpaid_months: Vec<&'static str>,
@@ -23,11 +21,6 @@ impl UserBreak {
     fn contains(&self, date: Date) -> bool {
         (self.start_date..=self.end_date).contains(&date)
     }
-}
-
-/// Determines if a user should be checked for debts.
-fn should_check_user_for_debts(user: &User) -> bool {
-    !USER_ROLLS_TO_SKIP.contains(&user.role_id)
 }
 
 /// Calculates unpaid months for a single member within a year.
@@ -117,7 +110,7 @@ pub async fn compute_debtors(
 
     let debtors = users
         .into_iter()
-        .filter(should_check_user_for_debts)
+        .filter(|member| member.monthly_fee.is_some())
         .filter_map(|member| {
             let member_breaks = breaks_lookup
                 .get(&member.id)
@@ -191,7 +184,7 @@ async fn is_month_covered(
 }
 
 pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result<bool> {
-    if user.admin_panel_access || USER_ROLLS_TO_SKIP.contains(&user.role_id) {
+    if user.admin_panel_access || user.monthly_fee.is_none() {
         return Ok(true);
     }
     let mut tx = pool.begin().await?;
@@ -236,21 +229,6 @@ mod tests {
     }
 
     #[test]
-    fn should_check_user_filters_skipped_roles() {
-        let regular_user = User {
-            role_id: 100,
-            ..Default::default()
-        };
-        let skipped_user = User {
-            role_id: 5, // In USER_ROLLS_TO_SKIP
-            ..Default::default()
-        };
-
-        assert!(should_check_user_for_debts(&regular_user));
-        assert!(!should_check_user_for_debts(&skipped_user));
-    }
-
-    #[test]
     fn calculate_unpaid_months_filters_correctly() {
         let member = User {
             id: 1,
@@ -290,10 +268,11 @@ mod tests {
     async fn setup_test_data(pool: &SqlitePool) -> sqlx::Result<()> {
         // Create test role for regular members (role 1 'Admin' already exists from migrations)
         // Role 100: Regular member (should be checked for debtors)
+        // monthly_fee must be set for users to be included in debtors calculation
         query!(
             r#"
-            INSERT INTO user_roles (id, name, reservations, guest_reservations, admin_panel_access)
-            VALUES (100, 'Member', 1, 0, FALSE)
+            INSERT INTO user_roles (id, name, reservations, guest_reservations, admin_panel_access, monthly_fee)
+            VALUES (100, 'Member', 1, 0, FALSE, 5000)
             "#
         )
         .execute(pool)
@@ -417,14 +396,14 @@ mod tests {
     }
 
     #[sqlx::test]
-    async fn skips_roles_in_user_rolls_to_skip(pool: SqlitePool) -> sqlx::Result<()> {
-        // Create a role that's in USER_ROLLS_TO_SKIP but has admin_panel_access = FALSE
-        // This ensures we're testing the USER_ROLLS_TO_SKIP logic, not the SQL filter
+    async fn skips_admin_roles(pool: SqlitePool) -> sqlx::Result<()> {
+        // Create roles: one regular, one admin
+        // monthly_fee must be set for users to be included in debtors calculation
         query!(
             r#"
-            INSERT INTO user_roles (id, name, reservations, guest_reservations, admin_panel_access)
-            VALUES (100, 'Member', 1, 0, FALSE),
-                   (5, 'SkippedRole', 1, 0, FALSE)
+            INSERT INTO user_roles (id, name, reservations, guest_reservations, admin_panel_access, monthly_fee)
+            VALUES (100, 'Member', 1, 0, FALSE, 5000),
+                   (101, 'TestAdmin', 1, 0, TRUE, 5000)
             "#
         )
         .execute(&pool)
@@ -433,12 +412,12 @@ mod tests {
         // Regular member with unpaid months
         insert_user(&pool, 1, "Regular", 100, "2020-01-01").await?;
 
-        // User with role 5 (in USER_ROLLS_TO_SKIP) but NOT admin - tests the actual skip logic
-        insert_user(&pool, 2, "SkippedUser", 5, "2020-01-01").await?;
+        // Admin user - should be skipped by compute_debtors
+        insert_user(&pool, 2, "AdminUser", 101, "2020-01-01").await?;
 
         let debtors = compute_debtors(&pool, 2020).await?;
 
-        // Only the regular member should appear (role 5 is skipped by USER_ROLLS_TO_SKIP)
+        // Only the regular member should appear (admins are filtered out)
         assert_eq!(debtors.len(), 1);
         assert_eq!(debtors[0].member.name, "Regular");
         Ok(())

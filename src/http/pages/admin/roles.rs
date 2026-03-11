@@ -33,6 +33,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
         pub guest_reservations: i64,
         pub color: Option<String>,
         pub admin_panel_access: bool,
+        pub monthly_fee: Option<i64>,
         pub members_count: i64,
     }
 
@@ -60,6 +61,7 @@ struct NewRole {
     reservations: i64,
     as_guest: i64,
     color: String,
+    monthly_fee: Option<f64>,
 }
 
 #[derive(Template)]
@@ -78,11 +80,13 @@ async fn new_role_page(auth_session: AuthSession) -> HttpResult {
 }
 
 async fn create_new_role(State(state): State<AppState>, Form(role): Form<NewRole>) -> HttpResult {
+    let fee_cents = role.monthly_fee.map(|f| (f * 100.0).round() as i64);
     query!(
-        "insert into user_roles (name, reservations, guest_reservations) values ($1, $2, $3)",
+        "insert into user_roles (name, reservations, guest_reservations, monthly_fee) values ($1, $2, $3, $4)",
         role.name,
         role.reservations,
-        role.as_guest
+        role.as_guest,
+        fee_cents
     )
     .execute(&state.write_pool)
     .await?;
@@ -117,13 +121,15 @@ async fn update_role(
 ) -> HttpResult {
     let color = CssColor::from_str(role.color.as_str()).unwrap_or(CssColor::None);
     let color = color.as_ref();
+    let fee_cents = role.monthly_fee.map(|f| (f * 100.0).round() as i64);
     query!(
-        "update user_roles set name = $2, reservations = $3, guest_reservations = $4, color = $5 where id = $1",
+        "update user_roles set name = $2, reservations = $3, guest_reservations = $4, color = $5, monthly_fee = $6 where id = $1",
         role_id,
         role.name,
         role.reservations,
         role.as_guest,
-        color
+        color,
+        fee_cents
     )
     .execute(&state.write_pool)
     .await?;

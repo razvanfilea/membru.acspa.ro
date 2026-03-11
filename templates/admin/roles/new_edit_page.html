@@ -38,6 +38,13 @@
             </select>
         </label>
 
+        <label class="floating-label">
+            <span>Cotizație lunară (RON)</span>
+            <input name="monthly_fee" type="number" step="0.01" min="0"
+                   class="input input-lg input-bordered w-full" autocomplete="off"
+                   {% if let Some(val)=current %}{% if let Some(fee)=val.monthly_fee %}value="{{ fee / 100 }}"{% endif %}{% endif %}/>
+        </label>
+
         {% if let Some(val) = current %}
         <button class="btn btn-primary mt-6" hx-post="/admin/roles/edit/{{ val.id }}">
             Actualizează

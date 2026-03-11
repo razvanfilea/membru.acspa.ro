@@ -9,7 +9,7 @@ async fn setup(
 ) -> sqlx::Result<(Location, User, User, User)> {
     query!(
         r#"
-        insert into user_roles VALUES (100, 'Test Role', $1, $2, null, FALSE);
+        insert into user_roles VALUES (100, 'Test Role', $1, $2, null, FALSE, null);
         insert into users (id, email, name, password_hash, role_id, has_key, birthday, member_since)
         VALUES (1000, 'test1@test.com', 'Test 1', '', 100, FALSE, '2000-01-01', '2000-01-01'),
         (2000, 'test2@test.com', 'Test 2', '', 100, FALSE, '2000-01-01', '2000-01-01'),

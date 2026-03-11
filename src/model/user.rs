@@ -19,6 +19,7 @@ pub struct User {
     pub received_gift: Option<Date>,
     #[allow(dead_code)]
     pub is_deleted: bool,
+    pub monthly_fee: Option<i64>,
 }
 
 impl Default for User {
@@ -37,6 +38,7 @@ impl Default for User {
             birthday: Date::MIN,
             received_gift: None,
             is_deleted: false,
+            monthly_fee: None,
         }
     }
 }

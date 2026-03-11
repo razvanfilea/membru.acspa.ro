@@ -15,6 +15,9 @@
                 {% if let Some(color) = role.color %}
                 <p>Culoare rezervări: <b>{{ color }}</b></p>
                 {% endif %}
+                {% if let Some(fee) = role.monthly_fee %}
+                <p>Cotizație lunară: <b>{{ fee / 100 }} RON</b></p>
+                {% endif %}
                 {% if role.admin_panel_access %}
                 <p><b>Access la panoul de administrare</b></p>
                 {% endif %}

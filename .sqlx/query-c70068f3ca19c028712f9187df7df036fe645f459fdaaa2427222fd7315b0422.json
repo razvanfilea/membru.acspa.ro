@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "update user_roles set name = $2, reservations = $3, guest_reservations = $4, color = $5, monthly_fee = $6 where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "c70068f3ca19c028712f9187df7df036fe645f459fdaaa2427222fd7315b0422"
+}

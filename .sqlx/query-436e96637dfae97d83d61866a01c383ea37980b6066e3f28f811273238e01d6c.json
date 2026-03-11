@@ -34,8 +34,13 @@
         "type_info": "Bool"
       },
       {
-        "name": "members_count",
+        "name": "monthly_fee",
         "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "members_count",
+        "ordinal": 7,
         "type_info": "Integer"
       }
     ],
@@ -49,6 +54,7 @@
       false,
       true,
       false,
+      true,
       false
     ]
   },
