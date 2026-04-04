@@ -4,6 +4,7 @@
 
 {% block content %}
 <main class="p-4 md:p-8 w-full flex flex-col gap-8">
+    <p class="text-nowrap text-sm">Ora server: <b>{{ crate::utils::dates::local_time() }}</b></p>
     <div class="divider">Setări generale</div>
 
     <form>

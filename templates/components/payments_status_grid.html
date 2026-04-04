@@ -68,7 +68,7 @@
 
             {% if admin_payments_status_grid %}
             {% match m.status %}
-            {% when MonthStatus::Unpaid %}
+            {% when MonthStatus::Unpaid | MonthStatus::Future %}
             <div class="flex flex-col gap-1 mt-2">
                 <button type="button"
                         class="btn btn-sm btn-primary btn-outline w-full gap-1"
