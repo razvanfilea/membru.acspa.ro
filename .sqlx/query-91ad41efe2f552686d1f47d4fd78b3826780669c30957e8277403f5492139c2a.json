@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select ifnull(r.created_for, u.name) as \"name: String\"\n           from reservations r\n           inner join users u on r.user_id = u.id\n           where r.date = $1 and r.location = $2 and r.cancelled = 0 and r.in_waiting = 0\n           order by r.created_at",
+  "describe": {
+    "columns": [
+      {
+        "name": "name: String",
+        "ordinal": 0,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "91ad41efe2f552686d1f47d4fd78b3826780669c30957e8277403f5492139c2a"
+}

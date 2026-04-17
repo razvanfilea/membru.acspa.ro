@@ -66,6 +66,7 @@ struct CalendarTemplate {
     prev_month: (i32, u8),
     next_month: (i32, u8),
     reservations: String,
+    tournament_participants: String,
 }
 
 impl CalendarTemplate {
@@ -135,6 +136,9 @@ async fn calendar_page(
     let prev_month_date = selected_date.previous_day().unwrap();
     let next_month_date = last_day.next_day().unwrap();
 
+    let selected_tournament = tournaments.into_iter().find(|d| d.date == today);
+    let tournament_participants = get_tournament_participants(&state, &selected_tournament).await?;
+
     CalendarTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         current_date: today,
@@ -142,7 +146,7 @@ async fn calendar_page(
         day_markers,
         selected_date,
         selected_holiday: holidays.into_iter().find(|d| d.date == today),
-        selected_tournament: tournaments.into_iter().find(|d| d.date == today),
+        selected_tournament,
         selected_restrictions: restrictions
             .into_iter()
             .filter(|r| r.date == today)
@@ -152,6 +156,7 @@ async fn calendar_page(
         prev_month: (prev_month_date.year(), prev_month_date.month() as u8),
         next_month: (next_month_date.year(), next_month_date.month() as u8),
         reservations,
+        tournament_participants,
     }
     .try_into_response()
 }
@@ -174,6 +179,8 @@ struct DayDetailsTemplate {
     day_structure: DayStructure,
     events: DayEvents,
     reservations: String,
+    // This is needed just for the copy to clipboard function
+    tournament_participants: String,
 }
 
 impl DayDetailsTemplate {
@@ -191,6 +198,33 @@ impl DayDetailsTemplate {
     fn is_past_date(&self) -> bool {
         self.selected_date < self.current_date
     }
+}
+
+async fn get_tournament_participants(
+    state: &AppState,
+    tournament: &Option<AlternativeDay>,
+) -> sqlx::Result<String> {
+    let Some(tournament) = tournament else {
+        return Ok(String::new());
+    };
+
+    let participants = sqlx::query_scalar!(
+        r#"select ifnull(r.created_for, u.name) as "name: String"
+           from reservations r
+           inner join users u on r.user_id = u.id
+           where r.date = $1 and r.location = $2 and r.cancelled = 0 and r.in_waiting = 0
+           order by r.created_at"#,
+        tournament.date,
+        state.location.id
+    )
+    .fetch_all(&state.read_pool)
+    .await?;
+
+    Ok(participants
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>()
+        .join("\n"))
 }
 
 pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
@@ -211,6 +245,8 @@ pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
         .await
         .unwrap_or_default();
 
+    let tournament_participants = get_tournament_participants(&state, &selected_tournament).await?;
+
     DayDetailsTemplate {
         current_date: local_date(),
         selected_date: date,
@@ -221,6 +257,7 @@ pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
             .await?,
         events,
         reservations,
+        tournament_participants,
     }
     .try_into_response()
 }

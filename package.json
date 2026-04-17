@@ -8,8 +8,8 @@
   },
   "devDependencies": {
     "daisyui": "5.5.19",
-    "prettier": "3.8.1",
+    "prettier": "3.8.3",
     "prettier-plugin-tailwindcss": "0.7.2",
-    "@tailwindcss/cli": "4.2.1"
+    "@tailwindcss/cli": "4.2.2"
   }
 }
