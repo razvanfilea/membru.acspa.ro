@@ -1,9 +1,9 @@
 <div class="divider">Profil</div>
 
 <li><a href="/profile">
-    <img src="https://ui-avatars.com/api/?name={{user.name}}&rounded=true&format=svg" loading="lazy" width="48px" height="48px" alt="{{user.name}}"/>
+    <img src="https://ui-avatars.com/api/?name={{user.display_name()}}&rounded=true&format=svg" loading="lazy" width="48px" height="48px" alt="{{user.display_name()}}"/>
     <div class="flex flex-col">
-        <span class="text-md">{{ user.name }}</span>
+        <span class="text-md">{{ user.display_name() }}</span>
         <span class="text-sm text-gray-300">{{ user.role }}</span>
     </div>
 </a></li>

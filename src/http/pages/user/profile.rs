@@ -7,20 +7,19 @@ use crate::http::pages::admin::members::payments_summary::{
 };
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
-use crate::model::user::User;
+use crate::model::user::UserDetails;
 use crate::model::user_reservation::{GroupedUserReservations, ReservationsCount};
 use crate::utils::date_formats::DateFormatExt;
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, Query, State};
 use serde::Deserialize;
-use sqlx::query;
 
 pub async fn profile_page(auth_session: AuthSession, State(state): State<AppState>) -> HttpResult {
     #[derive(Template)]
     #[template(path = "user/profile_page.html")]
     struct ProfileTemplate {
-        user: User,
+        user: UserDetails,
         reservations: Vec<GroupedUserReservations>,
         show_cancelled: bool,
         this_weeks_reservations: ReservationsCount,
@@ -32,18 +31,15 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         admin_payments_status_grid: bool,
     }
 
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = UserDetails::fetch(&state.read_pool, auth_user.id).await?;
 
-    let role = query!(
-        "select reservations, guest_reservations from user_roles where id = $1",
-        user.role_id
-    )
-    .fetch_one(&state.read_pool)
-    .await?;
+    use crate::model::role::UserRole;
+    let role = UserRole::fetch_by_name(&state.read_pool, &user.role).await?;
 
     let current_date = local_date();
     let this_weeks_reservations =
-        ReservationsCount::fetch_user_week(&state.read_pool, &user, current_date).await?;
+        ReservationsCount::fetch_user_week(&state.read_pool, &auth_user, current_date).await?;
 
     let current_year = current_date.year();
     let payments = PaymentWithAllocations::fetch_for_user(&state.read_pool, user.id).await?;
@@ -87,14 +83,15 @@ pub async fn profile_reservations(
     #[derive(Template)]
     #[template(path = "user/profile_content.html")]
     struct ProfileTemplate {
-        member: User,
+        member: UserDetails,
         reservations: Vec<GroupedUserReservations>,
         show_cancelled: bool,
         current_year: i32,
         selected_year: i32,
     }
 
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = UserDetails::fetch(&state.read_pool, auth_user.id).await?;
     let current_year = local_date().year();
 
     ProfileTemplate {
@@ -122,7 +119,7 @@ pub async fn profile_reservations_year(
     #[derive(Template)]
     #[template(path = "components/reservations_with_year_selector.html")]
     struct ReservationsTemplate {
-        member: User,
+        member: UserDetails,
         reservations: Vec<GroupedUserReservations>,
         allow_reservation_cancellation: bool,
         current_year: i32,
@@ -131,7 +128,8 @@ pub async fn profile_reservations_year(
         admin_reservations_view: bool,
     }
 
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = UserDetails::fetch(&state.read_pool, auth_user.id).await?;
     let current_year = local_date().year();
 
     ReservationsTemplate {
@@ -157,6 +155,7 @@ pub async fn payment_status_partial(
     State(state): State<AppState>,
     Path(year): Path<i32>,
 ) -> HttpResult {
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = UserDetails::fetch(&state.read_pool, auth_user.id).await?;
     build_status_grid_response(&state.read_pool, user, year, false).await
 }

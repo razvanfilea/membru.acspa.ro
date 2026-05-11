@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from users_with_role order by name",
+  "query": "select * from user_details_with_role where id = $1",
   "describe": {
     "columns": [
       {
@@ -19,19 +19,19 @@
         "type_info": "Text"
       },
       {
-        "name": "password_hash",
+        "name": "nickname",
         "ordinal": 3,
         "type_info": "Text"
       },
       {
-        "name": "is_active",
+        "name": "role",
         "ordinal": 4,
-        "type_info": "Bool"
+        "type_info": "Text"
       },
       {
-        "name": "role_id",
+        "name": "is_active",
         "ordinal": 5,
-        "type_info": "Integer"
+        "type_info": "Bool"
       },
       {
         "name": "has_key",
@@ -39,9 +39,9 @@
         "type_info": "Bool"
       },
       {
-        "name": "birthday",
+        "name": "admin_panel_access",
         "ordinal": 7,
-        "type_info": "Date"
+        "type_info": "Bool"
       },
       {
         "name": "member_since",
@@ -49,41 +49,25 @@
         "type_info": "Date"
       },
       {
-        "name": "received_gift",
+        "name": "birthday",
         "ordinal": 9,
         "type_info": "Date"
       },
       {
-        "name": "is_deleted",
+        "name": "received_gift",
         "ordinal": 10,
-        "type_info": "Bool"
-      },
-      {
-        "name": "role",
-        "ordinal": 11,
-        "type_info": "Text"
-      },
-      {
-        "name": "admin_panel_access",
-        "ordinal": 12,
-        "type_info": "Bool"
+        "type_info": "Date"
       },
       {
         "name": "monthly_fee",
-        "ordinal": 13,
+        "ordinal": 11,
         "type_info": "Integer"
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
-      false,
-      false,
-      false,
-      false,
-      false,
-      false,
       false,
       false,
       false,
@@ -91,8 +75,12 @@
       false,
       false,
       false,
+      false,
+      false,
+      false,
+      true,
       true
     ]
   },
-  "hash": "23f4eb8e3b3514d865702ccdbb029852b99f02fee5f6847deed318f6f929ebf9"
+  "hash": "3bc69c724585c4a0c8dc22538f95c46cac4a7bda5b9546e7065cd3d1e66c7083"
 }

@@ -12,8 +12,8 @@ pub struct UserRole {
 }
 
 impl UserRole {
-    pub async fn fetch(executor: impl SqliteExecutor<'_>, id: i64) -> sqlx::Result<Self> {
-        query_as!(Self, "select * from user_roles where id = $1", id)
+    pub async fn fetch_by_user_id(executor: impl SqliteExecutor<'_>, user_id: i64) -> sqlx::Result<Self> {
+        query_as!(Self, "select ur.* from user_roles ur join users u on ur.id = u.role_id where u.id = $1", user_id)
             .fetch_one(executor)
             .await
     }
@@ -21,6 +21,15 @@ impl UserRole {
     pub async fn fetch_all_names(executor: impl SqliteExecutor<'_>) -> sqlx::Result<Vec<String>> {
         query_scalar!("select name from user_roles")
             .fetch_all(executor)
+            .await
+    }
+
+    pub async fn fetch_by_name(
+        executor: impl SqliteExecutor<'_>,
+        name: &str,
+    ) -> sqlx::Result<Self> {
+        query_as!(Self, "select * from user_roles where name = $1", name)
+            .fetch_one(executor)
             .await
     }
 

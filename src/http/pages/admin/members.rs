@@ -14,16 +14,17 @@ use crate::http::pages::admin::members::payments_summary::{
     payments_status_partial,
 };
 use crate::http::response::{hx_redirect, hx_refresh};
+use axum::response::IntoResponse;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::role::UserRole;
-use crate::model::user::User;
+use crate::model::user::{UserDetails, User};
 use crate::model::user_reservation::GroupedUserReservations;
 use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::{MonthIter, YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
@@ -34,6 +35,7 @@ use time::Date;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(members_page))
+        .route("/search_names", get(search_names))
         .route("/search", post(search_members))
         .route("/new", get(new_member_page))
         .route("/new", post(create_new_member))
@@ -58,10 +60,10 @@ async fn members_page(State(state): State<AppState>, auth_session: AuthSession) 
     #[template(path = "admin/members/list_page.html")]
     struct MembersTemplate {
         user: User,
-        members: Vec<User>,
+        members: Vec<UserDetails>,
     }
 
-    let members = User::fetch_all(&state.read_pool).await?;
+    let members = UserDetails::fetch_all(&state.read_pool).await?;
 
     MembersTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
@@ -102,15 +104,15 @@ async fn search_members(
     #[derive(Template)]
     #[template(path = "admin/members/list_page.html", block = "list")]
     struct MembersListTemplate {
-        members: Vec<User>,
+        members: Vec<UserDetails>,
     }
 
     let query = format!("%{}%", search_query.search);
     let sort_order = search_query.sort.to_sql_index();
 
     let members = query_as!(
-        User,
-        "select * from users_with_role where name like $1 or email like $1 or role like $1
+        UserDetails,
+        "select * from user_details_with_role where name like $1 or email like $1 or role like $1 or nickname like $1
          order by case
           when $2 = 0 then name
           when $2 = 1 then birthday
@@ -183,7 +185,7 @@ async fn view_member_page(
     #[template(path = "admin/members/view_page.html")]
     struct ViewMemberTemplate {
         user: User,
-        member: User,
+        member: UserDetails,
         current_date: Date,
         reservations: Vec<GroupedUserReservations>,
         allow_reservation_cancellation: bool,
@@ -220,7 +222,7 @@ async fn view_member_page(
 
     let current_date = local_date();
     let current_year = current_date.year();
-    let member = User::fetch(&state.read_pool, member_id).await?;
+    let member = UserDetails::fetch(&state.read_pool, member_id).await?;
     let payments = PaymentWithAllocations::fetch_for_user(&state.read_pool, member_id)
         .await
         .unwrap_or_default();
@@ -261,14 +263,14 @@ async fn edit_member_page(
         current_date: String,
         user: User,
         roles: Vec<String>,
-        existing_user: User,
+        existing_user: UserDetails,
     }
 
     EditMemberTemplate {
         current_date: local_date().to_iso(),
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         roles: UserRole::fetch_all_names(&state.read_pool).await?,
-        existing_user: User::fetch(&state.read_pool, member_id).await?,
+        existing_user: UserDetails::fetch(&state.read_pool, member_id).await?,
     }
     .try_into_response()
 }
@@ -277,6 +279,7 @@ async fn edit_member_page(
 struct UpdatedUser {
     email: String,
     name: String,
+    nickname: Option<String>,
     role: String,
     is_active: Option<String>,
     has_key: Option<String>,
@@ -335,11 +338,12 @@ async fn update_member(
         .await?
         .or_bail("Rolul selectat nu există")?;
     let user_name = updated_user.name.trim();
+    let nickname = updated_user.nickname.filter(|n| !n.trim().is_empty());
     let is_active = updated_user.is_active.is_some();
     let has_key = updated_user.has_key.is_some();
 
     query!(
-        "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, is_active = $9
+        "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, is_active = $9, nickname = $10
          where id = $1",
         member_id,
         updated_user.email,
@@ -349,7 +353,8 @@ async fn update_member(
         birthday,
         member_since,
         received_gift,
-        is_active
+        is_active,
+        nickname
     )
         .execute(&state.write_pool)
         .await?;
@@ -380,12 +385,12 @@ async fn change_password_page(
     #[template(path = "admin/members/change_password.html")]
     struct ChangePasswordTemplate {
         user: User,
-        existing_user: User,
+        existing_user: UserDetails,
     }
 
     ChangePasswordTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
-        existing_user: User::fetch(&state.read_pool, member_id).await?,
+        existing_user: UserDetails::fetch(&state.read_pool, member_id).await?,
     }
     .try_into_response()
 }
@@ -427,7 +432,7 @@ pub async fn update_member_password(
     Path(member_id): Path<i64>,
     Form(passwords): Form<ChangePasswordForm>,
 ) -> HttpResult {
-    let user = User::fetch(&state.read_pool, member_id).await?;
+    let user = UserDetails::fetch(&state.read_pool, member_id).await?;
 
     let new_password_hash = generate_hash_from_password(passwords.password);
     query!(
@@ -448,7 +453,7 @@ pub async fn member_reservations_year(
     #[derive(Template)]
     #[template(path = "components/reservations_with_year_selector.html")]
     struct ReservationsTemplate {
-        member: User,
+        member: UserDetails,
         reservations: Vec<GroupedUserReservations>,
         allow_reservation_cancellation: bool,
         current_year: i32,
@@ -457,7 +462,7 @@ pub async fn member_reservations_year(
         admin_reservations_view: bool,
     }
 
-    let member = User::fetch(&state.read_pool, member_id).await?;
+    let member = UserDetails::fetch(&state.read_pool, member_id).await?;
     let current_year = local_date().year();
 
     ReservationsTemplate {
@@ -476,4 +481,50 @@ pub async fn member_reservations_year(
         admin_reservations_view: true,
     }
     .try_into_response()
+}
+
+#[derive(Deserialize)]
+struct NameSearchQuery {
+    name: String,
+}
+
+async fn search_names(
+    State(state): State<AppState>,
+    Query(query): Query<NameSearchQuery>,
+) -> impl IntoResponse {
+    let name = format!("%{}%", query.name.trim());
+    if query.name.trim().is_empty() {
+        return "".into_response();
+    }
+
+    let names = query_scalar!(
+        "select coalesce(nickname, name) as 'name!' from users 
+         where (name like $1 or nickname like $1) and is_deleted = false 
+         limit 5",
+        name
+    )
+    .fetch_all(&state.read_pool)
+    .await;
+
+    let Ok(names) = names else {
+        return "".into_response();
+    };
+
+    if names.is_empty() {
+        return "".into_response();
+    }
+
+    let html = names
+        .into_iter()
+        .map(|n| {
+            format!(
+                r#"<div class="px-4 py-2 hover:bg-primary hover:text-primary-content cursor-pointer border-b border-base-300 last:border-0" 
+                        onclick="const input = this.closest('.relative').querySelector('input'); input.value = '{}'; this.closest('.search-results-container').innerHTML = '';">{}</div>"#,
+                n, n
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("");
+
+    format!(r#"<div class="absolute z-[60] bg-base-100 shadow-2xl rounded-xl border border-base-300 w-full mt-1 overflow-hidden">{}</div>"#, html).into_response()
 }

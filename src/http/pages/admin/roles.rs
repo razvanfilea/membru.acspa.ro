@@ -61,7 +61,7 @@ struct NewRole {
     reservations: i64,
     as_guest: i64,
     color: String,
-    monthly_fee: Option<f64>,
+    monthly_fee: Option<String>,
 }
 
 #[derive(Template)]
@@ -79,8 +79,16 @@ async fn new_role_page(auth_session: AuthSession) -> HttpResult {
     .try_into_response()
 }
 
+fn parse_monthly_fee(fee: Option<String>) -> Option<i64> {
+    fee.filter(|s| !s.is_empty())
+        .and_then(|s| s.parse::<f64>().ok())
+        .map(|f| (f * 100.0).round() as i64)
+        .filter(|c| *c != 0)
+}
+
 async fn create_new_role(State(state): State<AppState>, Form(role): Form<NewRole>) -> HttpResult {
-    let fee_cents = role.monthly_fee.map(|f| (f * 100.0).round() as i64);
+    let fee_cents = parse_monthly_fee(role.monthly_fee);
+
     query!(
         "insert into user_roles (name, reservations, guest_reservations, monthly_fee) values ($1, $2, $3, $4)",
         role.name,
@@ -121,7 +129,8 @@ async fn update_role(
 ) -> HttpResult {
     let color = CssColor::from_str(role.color.as_str()).unwrap_or(CssColor::None);
     let color = color.as_ref();
-    let fee_cents = role.monthly_fee.map(|f| (f * 100.0).round() as i64);
+    let fee_cents = parse_monthly_fee(role.monthly_fee);
+
     query!(
         "update user_roles set name = $2, reservations = $3, guest_reservations = $4, color = $5, monthly_fee = $6 where id = $1",
         role_id,

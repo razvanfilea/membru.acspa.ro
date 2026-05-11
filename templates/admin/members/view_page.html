@@ -28,7 +28,12 @@
             <p class="text-lg md:text-xl">{{ member.role }}</p>
         </div>
         <p class="text-gray-200">
-            <span class="text-lg">{{ member.email }}</span><br>
+            <span class="text-lg">
+                {{ member.email }}
+                {% if let Some(nickname) = member.nickname %}
+                <span class="text-gray-400 italic ml-2">({{ nickname }})</span>
+                {% endif %}
+            </span><br>
             Zi de naștere: <span class="font-mono">{{ member.birthday.to_readable() }}</span><br>
             Membru din: <span class="font-mono">{{ member.member_since.to_readable() }}</span><br>
             Primit cadou:

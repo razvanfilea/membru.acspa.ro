@@ -37,7 +37,7 @@
             hover:translate-x-0.5
             focus:outline-none focus:ring-1 focus:ring-white/20">
             <div class="flex flex-row items-center gap-4">
-                <p class="text-white text-lg">{{ member.name }}</p>
+                <p class="text-white text-lg">{{ member.display_name() }}</p>
                 {% if member.has_key %}
                 <span class="material-symbols-outlined text-gray-300 text-base"
                       title="Are cheie de la sală">vpn_key</span>

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, is_active = $9, nickname = $10\n         where id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 10
+    },
+    "nullable": []
+  },
+  "hash": "b993b2619b3669fe6adfb28b1201b1c7342076c3fe8614f15b82e4487cd32cd0"
+}

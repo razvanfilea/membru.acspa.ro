@@ -3,7 +3,7 @@ use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
 use crate::http::response::hx_refresh;
 use crate::model::payment_context::PaymentContext;
-use crate::model::user::User;
+use crate::model::user::UserDetails;
 use crate::utils::date_formats;
 use crate::utils::dates::YearMonth;
 use axum::Form;
@@ -13,7 +13,7 @@ use sqlx::query;
 use time::Date;
 use tracing::info;
 
-fn is_before_membership(date: Date, member: &User) -> bool {
+fn is_before_membership(date: Date, member: &UserDetails) -> bool {
     let member_join_month = YearMonth::from(member.member_since).to_date();
     date < member_join_month
 }
@@ -38,7 +38,7 @@ pub async fn add_break(
 
     let created_by = auth_session.user.ok_or(HttpError::Unauthorized)?;
 
-    let member = User::fetch(&state.read_pool, member_id).await?;
+    let member = UserDetails::fetch(&state.read_pool, member_id).await?;
     let start_date = parse_month_input(&form.start_month).or_bail("Început de lună invalid")?;
     let end_date = parse_month_input(&form.end_month.unwrap_or(form.start_month))
         .or_bail("Sfârșit de lună invalid")?;

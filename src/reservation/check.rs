@@ -111,7 +111,7 @@ pub async fn is_reservation_possible(
 
     check_restriction(&mut *tx, location, selected_date, selected_hour).await?;
 
-    let role = UserRole::fetch(&mut *tx, user.role_id).await?;
+    let role = UserRole::fetch_by_user_id(&mut *tx, user.id).await?;
 
     let slot_reservations =
         ReservationsCount::fetch_for_slot(&mut *tx, location, selected_date, selected_hour).await?;

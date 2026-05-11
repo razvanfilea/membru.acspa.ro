@@ -1,5 +1,6 @@
 use crate::model::global_vars::GlobalVars;
-use crate::model::user::User;
+use crate::model::role::UserRole;
+use crate::model::user::{User, UserDetails};
 use crate::utils::dates::{YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use itertools::Itertools;
@@ -8,7 +9,7 @@ use std::collections::HashSet;
 use time::{Date, Month};
 
 pub struct DebtorItem {
-    pub member: User,
+    pub member: UserDetails,
     pub unpaid_months: Vec<&'static str>,
 }
 
@@ -25,7 +26,7 @@ impl UserBreak {
 
 /// Calculates unpaid months for a single member within a year.
 fn calculate_unpaid_months(
-    member: &User,
+    member: &UserDetails,
     year_months: impl Iterator<Item = YearMonth>,
     current_month_start: Date,
     is_month_paid: impl Fn(Month) -> bool,
@@ -68,8 +69,8 @@ pub async fn compute_debtors(
     let mut conn = pool.acquire().await?;
     let current_date = local_date();
     let users = query_as!(
-        User,
-        "select * from users_with_role where is_active = true and admin_panel_access = false order by name"
+        UserDetails,
+        "select * from user_details_with_role where is_active = true and admin_panel_access = false order by name"
     )
     .fetch_all(conn.as_mut())
     .await?;
@@ -110,7 +111,6 @@ pub async fn compute_debtors(
 
     let debtors = users
         .into_iter()
-        .filter(|member| member.monthly_fee.is_some())
         .filter_map(|member| {
             let member_breaks = breaks_lookup
                 .get(&member.id)
@@ -184,7 +184,9 @@ async fn is_month_covered(
 }
 
 pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result<bool> {
-    if user.admin_panel_access || user.monthly_fee.is_none() {
+    let role = UserRole::fetch_by_user_id(pool, user.id).await?;
+
+    if user.admin_panel_access || role.monthly_fee.is_none() {
         return Ok(true);
     }
     let mut tx = pool.begin().await?;
@@ -230,7 +232,7 @@ mod tests {
 
     #[test]
     fn calculate_unpaid_months_filters_correctly() {
-        let member = User {
+        let member = UserDetails {
             id: 1,
             member_since: date!(2020 - 03 - 15), // Joined in March
             ..Default::default()
@@ -254,7 +256,7 @@ mod tests {
         // - Jan-Feb: before join
         // - March: unpaid (first eligible month)
         // - April: paid
-        // - May: unpaid
+        // - May: unpai
         // - June: paid
         // - July: break
         // - August: current month - unpaid
@@ -413,7 +415,7 @@ mod tests {
         insert_user(&pool, 1, "Regular", 100, "2020-01-01").await?;
 
         // Admin user - should be skipped by compute_debtors
-        insert_user(&pool, 2, "AdminUser", 101, "2020-01-01").await?;
+        insert_user(&pool, 2, "TestAdminUser", 101, "2020-01-01").await?;
 
         let debtors = compute_debtors(&pool, 2020).await?;
 

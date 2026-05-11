@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from users_with_role where email = $1",
+  "query": "select * from user_roles where name = $1",
   "describe": {
     "columns": [
       {
@@ -9,39 +9,34 @@
         "type_info": "Integer"
       },
       {
-        "name": "email",
+        "name": "name",
         "ordinal": 1,
         "type_info": "Text"
       },
       {
-        "name": "name",
+        "name": "reservations",
         "ordinal": 2,
-        "type_info": "Text"
+        "type_info": "Integer"
       },
       {
-        "name": "nickname",
+        "name": "guest_reservations",
         "ordinal": 3,
-        "type_info": "Text"
+        "type_info": "Integer"
       },
       {
-        "name": "password_hash",
+        "name": "color",
         "ordinal": 4,
         "type_info": "Text"
       },
       {
-        "name": "role",
-        "ordinal": 5,
-        "type_info": "Text"
-      },
-      {
-        "name": "is_active",
-        "ordinal": 6,
-        "type_info": "Bool"
-      },
-      {
         "name": "admin_panel_access",
-        "ordinal": 7,
+        "ordinal": 5,
         "type_info": "Bool"
+      },
+      {
+        "name": "monthly_fee",
+        "ordinal": 6,
+        "type_info": "Integer"
       }
     ],
     "parameters": {
@@ -51,12 +46,11 @@
       false,
       false,
       false,
+      false,
       true,
       false,
-      false,
-      false,
-      false
+      true
     ]
   },
-  "hash": "a7bf255664263573d6385a70eedf98d1ecabb51ddb39df0c9c9544606b8dea75"
+  "hash": "45f5bee285157654617f8c8d71a069033cba33c787caa94ec1f3adf61c9aaca1"
 }

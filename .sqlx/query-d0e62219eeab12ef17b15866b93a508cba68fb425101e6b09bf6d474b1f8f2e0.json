@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from users_with_role where name like $1 or email like $1 or role like $1\n         order by case\n          when $2 = 0 then name\n          when $2 = 1 then birthday\n          when $2 = 2 then received_gift\n          when $2 = 3 then ((strftime('%j', birthday) - strftime('%j', 'now') + 365) % 365)\n         end, email, role",
+  "query": "select * from user_details_with_role where is_active = true and admin_panel_access = false order by name",
   "describe": {
     "columns": [
       {
@@ -19,19 +19,19 @@
         "type_info": "Text"
       },
       {
-        "name": "password_hash",
+        "name": "nickname",
         "ordinal": 3,
         "type_info": "Text"
       },
       {
-        "name": "is_active",
+        "name": "role",
         "ordinal": 4,
-        "type_info": "Bool"
+        "type_info": "Text"
       },
       {
-        "name": "role_id",
+        "name": "is_active",
         "ordinal": 5,
-        "type_info": "Integer"
+        "type_info": "Bool"
       },
       {
         "name": "has_key",
@@ -39,9 +39,9 @@
         "type_info": "Bool"
       },
       {
-        "name": "birthday",
+        "name": "admin_panel_access",
         "ordinal": 7,
-        "type_info": "Date"
+        "type_info": "Bool"
       },
       {
         "name": "member_since",
@@ -49,41 +49,25 @@
         "type_info": "Date"
       },
       {
-        "name": "received_gift",
+        "name": "birthday",
         "ordinal": 9,
         "type_info": "Date"
       },
       {
-        "name": "is_deleted",
+        "name": "received_gift",
         "ordinal": 10,
-        "type_info": "Bool"
-      },
-      {
-        "name": "role",
-        "ordinal": 11,
-        "type_info": "Text"
-      },
-      {
-        "name": "admin_panel_access",
-        "ordinal": 12,
-        "type_info": "Bool"
+        "type_info": "Date"
       },
       {
         "name": "monthly_fee",
-        "ordinal": 13,
+        "ordinal": 11,
         "type_info": "Integer"
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 0
     },
     "nullable": [
-      false,
-      false,
-      false,
-      false,
-      false,
-      false,
       false,
       false,
       false,
@@ -91,8 +75,12 @@
       false,
       false,
       false,
+      false,
+      false,
+      false,
+      true,
       true
     ]
   },
-  "hash": "a5a089992f9204d9e7fdab47c5682d70be5ba9af7a8155ac0955920f94574beb"
+  "hash": "d0e62219eeab12ef17b15866b93a508cba68fb425101e6b09bf6d474b1f8f2e0"
 }

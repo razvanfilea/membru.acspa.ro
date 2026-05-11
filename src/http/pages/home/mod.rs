@@ -76,14 +76,14 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
     .unwrap_or_default();
 
     let reservation_hours = ReservationHours::fetch(&state, current_date).await?;
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
-    let has_paid = check_user_has_paid(&state.read_pool, &user).await?;
+    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let has_paid = check_user_has_paid(&state.read_pool, &auth_user).await?;
 
     HomeTemplate {
         current_date,
         selected_date: current_date,
         days: DateRangeIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
-        user,
+        user: auth_user,
         reservation_hours,
         global_vars: GlobalVars::fetch(&state.read_pool).await?,
         reservation_color_code,

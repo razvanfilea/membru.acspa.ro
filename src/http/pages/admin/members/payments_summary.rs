@@ -2,7 +2,7 @@ use crate::http::AppState;
 use crate::http::error::HttpResult;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
-use crate::model::user::User;
+use crate::model::user::UserDetails;
 use crate::utils::dates::{YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
@@ -34,7 +34,7 @@ impl MonthStatusView {
 #[derive(Template)]
 #[template(path = "components/payments_status_grid.html")]
 pub struct StatusGridTemplate {
-    pub member: User,
+    pub member: UserDetails,
     pub current_year: i32,
     pub selected_year: i32,
     pub months_status_view: Vec<MonthStatusView>,
@@ -44,7 +44,7 @@ pub struct StatusGridTemplate {
 
 pub async fn build_status_grid_response(
     pool: &SqlitePool,
-    member: User,
+    member: UserDetails,
     year: i32,
     admin_payments_status_grid: bool,
 ) -> HttpResult {
@@ -82,7 +82,7 @@ pub fn calculate_total_paid_for_year(payments: &[PaymentWithAllocations], year: 
 
 pub fn calculate_year_status(
     year: i32,
-    member: &User,
+    member: &UserDetails,
     payments: &[PaymentWithAllocations],
     breaks: &[PaymentBreak],
 ) -> Vec<MonthStatusView> {
@@ -155,7 +155,7 @@ pub async fn payments_status_partial(
     State(state): State<AppState>,
     Path((user_id, year)): Path<(i64, i32)>,
 ) -> HttpResult {
-    let member = User::fetch(&state.read_pool, user_id).await?;
+    let member = UserDetails::fetch(&state.read_pool, user_id).await?;
     build_status_grid_response(&state.read_pool, member, year, true).await
 }
 
@@ -164,8 +164,8 @@ mod tests {
     use super::*;
     use time::{Month, macros::date};
 
-    fn make_member(member_since: Date) -> User {
-        User {
+    fn make_member(member_since: Date) -> UserDetails {
+        UserDetails {
             member_since,
             ..Default::default()
         }

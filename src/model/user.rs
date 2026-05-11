@@ -8,8 +8,19 @@ pub struct User {
     pub id: i64,
     pub email: String,
     pub name: String,
+    pub nickname: Option<String>,
     pub password_hash: String,
-    pub role_id: i64,
+    pub role: String,
+    pub is_active: bool,
+    pub admin_panel_access: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct UserDetails {
+    pub id: i64,
+    pub email: String,
+    pub name: String,
+    pub nickname: Option<String>,
     pub role: String,
     pub is_active: bool,
     pub has_key: bool,
@@ -17,9 +28,26 @@ pub struct User {
     pub member_since: Date,
     pub birthday: Date,
     pub received_gift: Option<Date>,
-    #[allow(dead_code)]
-    pub is_deleted: bool,
     pub monthly_fee: Option<i64>,
+}
+
+impl Default for UserDetails {
+    fn default() -> Self {
+        Self {
+            id: 0,
+            email: String::new(),
+            name: String::new(),
+            nickname: None,
+            role: String::new(),
+            is_active: false,
+            has_key: false,
+            admin_panel_access: false,
+            member_since: Date::MIN,
+            birthday: Date::MIN,
+            received_gift: None,
+            monthly_fee: None,
+        }
+    }
 }
 
 impl Default for User {
@@ -28,17 +56,11 @@ impl Default for User {
             id: 0,
             email: String::new(),
             name: String::new(),
+            nickname: None,
             password_hash: String::new(),
-            role_id: 0,
             role: String::new(),
             is_active: false,
-            has_key: false,
             admin_panel_access: false,
-            member_since: Date::MIN,
-            birthday: Date::MIN,
-            received_gift: None,
-            is_deleted: false,
-            monthly_fee: None,
         }
     }
 }
@@ -56,10 +78,8 @@ impl AuthUser for User {
 }
 
 impl User {
-    pub async fn fetch(executor: impl SqliteExecutor<'_>, id: i64) -> sqlx::Result<Self> {
-        query_as!(Self, "select * from users_with_role where id = $1", id)
-            .fetch_one(executor)
-            .await
+    pub fn display_name(&self) -> &str {
+        self.nickname.as_deref().unwrap_or(&self.name)
     }
 
     pub async fn fetch_by_email(
@@ -75,25 +95,37 @@ impl User {
         .await
     }
 
-    pub async fn fetch_all(executor: impl SqliteExecutor<'_>) -> sqlx::Result<Vec<Self>> {
-        query_as!(Self, "select * from users_with_role order by name")
-            .fetch_all(executor)
-            .await
-    }
-
     pub async fn email_exists_for_other(
         executor: impl SqliteExecutor<'_>,
         email: &str,
         exclude_user_id: i64,
     ) -> sqlx::Result<bool> {
         let count = query_scalar!(
-            "SELECT COUNT(*) FROM users WHERE email = $1 AND id != $2 AND is_deleted = false",
+            "select count(*) from users where email = $1 and id != $2 and is_deleted = false",
             email,
             exclude_user_id
         )
         .fetch_one(executor)
         .await?;
         Ok(count > 0)
+    }
+}
+
+impl UserDetails {
+    pub fn display_name(&self) -> &str {
+        self.nickname.as_deref().unwrap_or(&self.name)
+    }
+
+    pub async fn fetch(executor: impl SqliteExecutor<'_>, id: i64) -> sqlx::Result<Self> {
+        query_as!(Self, "select * from user_details_with_role where id = $1", id)
+            .fetch_one(executor)
+            .await
+    }
+
+    pub async fn fetch_all(executor: impl SqliteExecutor<'_>) -> sqlx::Result<Vec<Self>> {
+        query_as!(Self, "select * from user_details_with_role order by name")
+            .fetch_all(executor)
+            .await
     }
 }
 

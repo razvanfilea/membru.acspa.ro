@@ -70,7 +70,7 @@ impl ReservationHours {
 
         // This specifically uses the idx_reservations_location_date_guest index
         let date_reservations = query!(
-        r#"select u.name as 'name!', r.user_id, hour, has_key, as_guest, in_waiting, created_for, cancelled, ur.color as role_color
+        r#"select coalesce(u.nickname, u.name) as "name!: String", r.user_id, hour, has_key, as_guest, in_waiting, created_for, cancelled, ur.color as role_color
             from reservations r
             inner join users u on r.user_id = u.id
             inner join user_roles ur on u.role_id = ur.id

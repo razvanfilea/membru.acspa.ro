@@ -21,6 +21,13 @@
         </label>
 
         <label class="floating-label">
+            <span>Nickname</span>
+            <input name="nickname" type="text" placeholder="Nickname" autocomplete="off"
+                   {% if let Some(nickname) = existing_user.nickname %}value="{{ nickname }}"{% endif %}
+                   class="input input-lg input-bordered w-full"/>
+        </label>
+
+        <label class="floating-label">
             <span>Rol</span>
             <select id="role" name="role" class="select input-lg select-bordered w-full" autocomplete="off">
                 {% for role in roles %}
