@@ -186,7 +186,7 @@ async fn is_month_covered(
 pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result<bool> {
     let role = UserRole::fetch_by_user_id(pool, user.id).await?;
 
-    if user.admin_panel_access || role.monthly_fee.is_none() {
+    if user.admin_panel_access || role.monthly_fee.is_none_or(|fee| fee == 0) {
         return Ok(true);
     }
     let mut tx = pool.begin().await?;
