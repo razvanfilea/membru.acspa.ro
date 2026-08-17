@@ -2,7 +2,7 @@
     <div role="alert" class="alert alert-info flex flex-row">
         <span class="material-symbols-outlined h-6 w-6 shrink-0">info</span>
 
-        <span>{{ message }}</span>
+        <span>{{ message | safe }}</span>
 
         <button class="btn btn-sm" onclick="this.parentNode.outerHTML = ''">X</button>
     </div>

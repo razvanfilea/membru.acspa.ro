@@ -14,17 +14,17 @@ use crate::http::pages::admin::members::payments_summary::{
     payments_status_partial,
 };
 use crate::http::response::{hx_redirect, hx_refresh};
-use axum::response::IntoResponse;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::role::UserRole;
-use crate::model::user::{UserDetails, User};
+use crate::model::user::{User, UserDetails};
 use crate::model::user_reservation::GroupedUserReservations;
 use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::{MonthIter, YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, Query, State};
+use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;

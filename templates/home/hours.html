@@ -26,7 +26,7 @@
         <button class="btn btn-error"
                 hx-vals="unset"
                 hx-delete='/reservation?date={{ selected_date }}&hour={{ slot.start_hour }}&user_id={{ res.user_id }}
-{%- if let Some(created_for) = res.created_for %}&created_for={{ created_for }}{% endif %}'>
+{%- if let Some(created_for) = res.created_for %}&created_for={{ created_for|urlencode }}{% endif %}'>
             Anulează
         </button>
     </div>

@@ -117,9 +117,13 @@ impl UserDetails {
     }
 
     pub async fn fetch(executor: impl SqliteExecutor<'_>, id: i64) -> sqlx::Result<Self> {
-        query_as!(Self, "select * from user_details_with_role where id = $1", id)
-            .fetch_one(executor)
-            .await
+        query_as!(
+            Self,
+            "select * from user_details_with_role where id = $1",
+            id
+        )
+        .fetch_one(executor)
+        .await
     }
 
     pub async fn fetch_all(executor: impl SqliteExecutor<'_>) -> sqlx::Result<Vec<Self>> {

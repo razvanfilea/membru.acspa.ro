@@ -11,6 +11,7 @@ use crate::utils::{CssColor, local_date};
 use askama::Template;
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
+use itertools::Itertools;
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 use sqlx::query;
@@ -104,33 +105,34 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
 
     if user.role == "Admin" {
         let current_date = local_date();
-        if let Ok(celebrated) = query!(
+        let celebrated = query!(
             "select name, received_gift from users where strftime('%d%m', birthday) = strftime('%d%m', $1)",
             current_date
         )
         .fetch_all(&state.read_pool)
-        .await
-        {
-            for user in celebrated {
-                let gift = if let Some(gift_date) = user.received_gift {
-                    format!(
-                        ", a primit cadou pe {}",
-                        gift_date.to_readable()
-                    )
-                } else {
-                    " și nu a primit cadou!!".to_string()
-                };
+        .await.unwrap_or_default();
 
-                let message = format!("Este ziua lui {}{}", user.name, gift);
-                let _ = socket
-                    .send(Message::Text(
-                        NotificationBubbleResponse {
-                            message: message.as_str(),
-                        }
-                        .to_string().into(),
-                    ))
-                    .await;
-            }
+        let message = celebrated.into_iter().map(|user| {
+            let gift = if let Some(gift_date) = user.received_gift {
+                format!(
+                    ", a primit cadou pe {}",
+                    gift_date.to_readable()
+                )
+            } else {
+                " și nu a primit cadou!!".to_string()
+            };
+
+            format!("Este ziua lui {}{}", user.name, gift)
+        }).join("<br><br>");
+        if !message.is_empty() {
+            let _ = socket
+                .send(Message::Text(
+                    NotificationBubbleResponse {
+                        message: message.as_str(),
+                    }
+                    .to_string().into(),
+                ))
+                .await;
         }
     }
 
