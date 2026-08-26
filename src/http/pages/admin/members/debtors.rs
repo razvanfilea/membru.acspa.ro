@@ -195,12 +195,20 @@ pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result
         return Ok(true);
     }
 
+    let member_since = sqlx::query_scalar!(
+        "select member_since from users where id = $1",
+        user.id
+    )
+    .fetch_one(tx.as_mut())
+    .await?;
+
+    let join_ym = YearMonth::from(member_since);
     let current_ym = YearMonth::from(local_date());
     let start_ym = current_ym.prev().prev();
 
     // Check current month + previous 2 months
     for ym in YearMonthIter::new(start_ym, current_ym) {
-        if is_month_covered(tx.as_mut(), user.id, ym).await? {
+        if ym < join_ym || is_month_covered(tx.as_mut(), user.id, ym).await? {
             return Ok(true);
         }
     }
@@ -514,6 +522,92 @@ mod tests {
         assert_eq!(debtors[0].unpaid_months.len(), 6);
         assert!(debtors[0].unpaid_months.contains(&"Iulie"));
         assert!(!debtors[0].unpaid_months.contains(&"Ianuarie"));
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn check_user_has_paid_respects_member_since_for_new_users(
+        pool: SqlitePool,
+    ) -> sqlx::Result<()> {
+        setup_test_data(&pool).await?;
+        query!("UPDATE global_vars SET check_payments = TRUE")
+            .execute(&pool)
+            .await?;
+
+        let current_date = local_date();
+        let current_ym = YearMonth::from(current_date);
+        let start_ym = current_ym.prev().prev();
+
+        // 1. User joined this month with NO payments: should pass (fewer than 3 months of membership)
+        insert_user(
+            &pool,
+            1,
+            "New User",
+            100,
+            &current_date.format(date_formats::ISO_DATE).unwrap(),
+        )
+        .await?;
+        let user1 = User {
+            id: 1,
+            email: "New User@test.com".into(),
+            name: "New User".into(),
+            nickname: None,
+            password_hash: "".into(),
+            role: "Member".into(),
+            is_active: true,
+            admin_panel_access: false,
+        };
+        assert!(check_user_has_paid(&pool, &user1).await?);
+
+        // 2. User joined 1 month ago with NO payments: should pass
+        let prev_month_date = current_ym.prev().to_date();
+        insert_user(
+            &pool,
+            2,
+            "One Month User",
+            100,
+            &prev_month_date.format(date_formats::ISO_DATE).unwrap(),
+        )
+        .await?;
+        let user2 = User {
+            id: 2,
+            email: "One Month User@test.com".into(),
+            name: "One Month User".into(),
+            nickname: None,
+            password_hash: "".into(),
+            role: "Member".into(),
+            is_active: true,
+            admin_panel_access: false,
+        };
+        assert!(check_user_has_paid(&pool, &user2).await?);
+
+        // 3. User joined 3 months ago (start_ym) with NO payments: should fail
+        let three_months_ago_date = start_ym.to_date();
+        insert_user(
+            &pool,
+            3,
+            "Delinquent User",
+            100,
+            &three_months_ago_date.format(date_formats::ISO_DATE).unwrap(),
+        )
+        .await?;
+        let user3 = User {
+            id: 3,
+            email: "Delinquent User@test.com".into(),
+            name: "Delinquent User".into(),
+            nickname: None,
+            password_hash: "".into(),
+            role: "Member".into(),
+            is_active: true,
+            admin_panel_access: false,
+        };
+        assert!(!check_user_has_paid(&pool, &user3).await?);
+
+        // 4. User joined 3 months ago but has a payment break for 1 month: should pass
+        let break_date_str = three_months_ago_date.format(date_formats::ISO_DATE).unwrap();
+        insert_break(&pool, 3, &break_date_str, &break_date_str).await?;
+        assert!(check_user_has_paid(&pool, &user3).await?);
+
         Ok(())
     }
 }

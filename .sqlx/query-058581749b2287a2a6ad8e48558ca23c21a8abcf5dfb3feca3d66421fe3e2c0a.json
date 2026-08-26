@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select member_since from users where id = $1",
+  "describe": {
+    "columns": [
+      {
+        "name": "member_since",
+        "ordinal": 0,
+        "type_info": "Date"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "058581749b2287a2a6ad8e48558ca23c21a8abcf5dfb3feca3d66421fe3e2c0a"
+}
