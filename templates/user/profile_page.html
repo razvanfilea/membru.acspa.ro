@@ -7,34 +7,140 @@
 {% block content %}
 {% let member = user %}
 
-<main class="p-4 md:p-8">
-    <div class="flex flex-row flex-wrap gap-8 items-center justify-between p-6 bg-gray-600 rounded-sm shadow">
-        <div class="flex flex-col">
-            <p class="text-2xl font-bold">{{ user.display_name() }}</p>
-            {% if user.nickname.is_some() %}
-                <p class="text-sm text-gray-400">Nume complet: {{ user.name }}</p>
-            {% endif %}
-            <p class="text-gray-300">{{ user.email }}</p>
-        </div>
-        <div class="flex flex-row gap-4 flex-wrap">
-            <a href="/change_password">
-                <button class="btn btn-outline btn-info">
-                    <span class="material-symbols-outlined">password</span>
-                    Schimbă parola
+<main class="p-4 md:p-8 flex flex-col gap-6">
+    <div class="bg-base-100 rounded-2xl border border-base-300 shadow-sm p-6 md:p-8 flex flex-col gap-6">
+        <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-4 md:gap-5 min-w-0">
+                <img src="https://ui-avatars.com/api/?name={{ user.display_name() }}&rounded=true&format=svg"
+                     loading="lazy"
+                     width="64px"
+                     height="64px"
+                     alt="{{ user.display_name() }}"
+                     class="hidden sm:block sm:w-16 sm:h-16 rounded-full shrink-0 shadow-sm" />
+
+                <div class="flex flex-col gap-1.5 min-w-0">
+                    <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+                        <h1 class="text-2xl md:text-3xl font-bold text-base-content">{{ user.name }}</h1>
+                        {% if let Some(nickname) = user.nickname %}
+                            <span class="badge badge-ghost font-mono">@{{ nickname }}</span>
+                        {% endif %}
+                        <span class="badge badge-neutral font-semibold">{{ user.role }}</span>
+                    </div>
+
+                    <div class="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
+                        <span>{{ user.email }}</span>
+                        <span>•</span>
+                        <span>Membru din {{ user.member_since.to_readable() }}</span>
+                    </div>
+
+                    <div class="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
+                        <span>Telefon:
+                            {% if let Some(phone) = user.phone_number %}
+                                <a href="tel:{{ phone }}" class="font-mono text-base-content hover:underline">{{ phone }}</a>
+                            {% else %}
+                                <span class="text-gray-500">—</span>
+                            {% endif %}
+                        </span>
+                        <span>•</span>
+                        <span>Telefon Urgență:
+                            {% if let Some(emergency_phone) = user.emergency_contact_phone_number %}
+                                <a href="tel:{{ emergency_phone }}" class="font-mono text-base-content hover:underline">{{ emergency_phone }}</a>
+                            {% else %}
+                                <span class="text-gray-500">—</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center shrink-0">
+                <details class="dropdown dropdown-end sm:hidden">
+                    <summary class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-base-content" title="Opțiuni">
+                        <span class="material-symbols-outlined">more_vert</span>
+                    </summary>
+                    <ul class="dropdown-content menu bg-base-200 rounded-box z-50 w-52 p-2 shadow-xl border border-base-300">
+                        <li>
+                            <button type="button" class="gap-2" onclick="this.closest('details').removeAttribute('open'); contact_modal.showModal()">
+                                <span class="material-symbols-outlined text-lg">edit</span>
+                                Editează profil
+                            </button>
+                        </li>
+                        <li>
+                            <a href="/change_password" class="gap-2">
+                                <span class="material-symbols-outlined text-lg">password</span>
+                                Schimbă parola
+                            </a>
+                        </li>
+                        <div class="border-t border-base-300 my-1"></div>
+                        <li>
+                            <button class="text-error gap-2 hover:bg-error/10" hx-post="/logout">
+                                <span class="material-symbols-outlined text-lg">logout</span>
+                                Deconectare
+                            </button>
+                        </li>
+                    </ul>
+                </details>
+
+                <button class="hidden sm:inline-flex btn btn-ghost btn-sm text-gray-400 hover:text-error gap-1.5"
+                        hx-post="/logout"
+                        title="Deconectare">
+                    <span class="material-symbols-outlined text-lg">logout</span>
+                    <span>Deconectare</span>
                 </button>
-            </a>
-            <button class="btn btn-outline btn-error" hx-post="/logout">
-                <span class="material-symbols-outlined">logout</span>
-                Sign out
+            </div>
+        </div>
+
+        <div class="hidden sm:flex items-center gap-3 flex-wrap">
+            <button class="btn btn-sm md:btn-md gap-2 text-white shadow-sm border-none bg-blue-600 hover:bg-blue-500"
+                    style="background-color: #2563eb;"
+                    onclick="contact_modal.showModal()">
+                <span class="material-symbols-outlined text-lg">edit</span>
+                Editează profil
             </button>
+            <a href="/change_password" class="btn btn-outline btn-sm md:btn-md gap-2">
+                <span class="material-symbols-outlined text-lg">password</span>
+                Schimbă parola
+            </a>
+        </div>
+
+        <div class="border-t border-base-300"></div>
+
+        <div class="flex flex-col gap-3">
+            <p class="text-xs uppercase font-bold tracking-wider text-gray-400">Săptămâna aceasta</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                <div class="bg-base-200/50 border border-base-300 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3">
+                    <span class="text-sm font-semibold text-base-content shrink-0">Cota membru</span>
+
+                    <progress class="progress bg-base-300 flex-1 h-2 min-w-16 {% if this_weeks_reservations.member >= max_reservations.member && max_reservations.member > 0 %}text-error{% endif %}"
+                              style="{% if this_weeks_reservations.member < max_reservations.member || max_reservations.member == 0 %}color: #3b82f6;{% endif %}"
+                              value="{{ this_weeks_reservations.member }}"
+                              max="{% if max_reservations.member == 0 %}1{% else %}{{ max_reservations.member }}{% endif %}"></progress>
+
+                    <div class="flex items-baseline gap-1 shrink-0 font-mono text-right min-w-12 justify-end">
+                        <span class="text-base font-bold {% if this_weeks_reservations.member >= max_reservations.member && max_reservations.member > 0 %}text-error{% else %}text-base-content{% endif %}">{{ this_weeks_reservations.member }}</span>
+                        <span class="text-xs text-gray-400">/ {{ max_reservations.member }}</span>
+                    </div>
+                </div>
+
+                <div class="bg-base-200/50 border border-base-300 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3">
+                    <span class="text-sm font-semibold text-base-content shrink-0">Cota invitat</span>
+
+                    <progress class="progress bg-base-300 flex-1 h-2 min-w-16 {% if this_weeks_reservations.guest >= max_reservations.guest && max_reservations.guest > 0 %}text-error{% endif %}"
+                              style="{% if this_weeks_reservations.guest < max_reservations.guest || max_reservations.guest == 0 %}color: #3b82f6;{% endif %}"
+                              value="{{ this_weeks_reservations.guest }}"
+                              max="{% if max_reservations.guest == 0 %}1{% else %}{{ max_reservations.guest }}{% endif %}"></progress>
+
+                    <div class="flex items-baseline gap-1 shrink-0 font-mono text-right min-w-12 justify-end">
+                        <span class="text-base font-bold {% if this_weeks_reservations.guest >= max_reservations.guest && max_reservations.guest > 0 %}text-error{% else %}text-base-content{% endif %}">{{ this_weeks_reservations.guest }}</span>
+                        <span class="text-xs text-gray-400">/ {{ max_reservations.guest }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="mt-4 text-lg">
-        Ai rolul de {{ user.role }}. Săptămâna aceasta ai folosit <b>{{ this_weeks_reservations.member }}/{{ max_reservations.member }}</b> rezervări ca membru și <b>{{ this_weeks_reservations.guest }}/{{ max_reservations.guest }}</b> rezervări ca invitat.
-    </div>
-
-    <div class="mt-8 flex flex-col gap-6">
+    <div class="flex flex-col gap-6">
         {{ section_header::header("summarize", "secondary", "Situație anuală cotizații", "Rezumat anual al plăților") }}
         <div class="bg-base-100 rounded-2xl shadow-sm border border-base-300 p-4 md:p-6">
             {% include "components/payments_status_grid.html" %}
@@ -43,4 +149,55 @@
 
     {% include "profile_content.html" %}
 </main>
+
+<dialog id="contact_modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box w-full sm:w-11/12 max-w-md p-0 bg-base-100 overflow-hidden flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 bg-base-200 border-b border-base-300">
+            <h3 class="font-bold text-lg flex items-center gap-2">
+                <span class="material-symbols-outlined">badge</span>
+                Editează date profil
+            </h3>
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </form>
+        </div>
+
+        <form hx-post="/profile/contact" class="flex flex-col flex-1 min-h-0">
+            <div class="p-6 flex flex-col gap-4">
+                <label class="floating-label">
+                    <span>Nickname</span>
+                    <input name="nickname" type="text" placeholder="Nickname" autocomplete="off"
+                           {% if let Some(nickname) = user.nickname %}value="{{ nickname }}"{% endif %}
+                           class="input input-lg input-bordered w-full"/>
+                </label>
+
+                <label class="floating-label">
+                    <span>Număr de telefon</span>
+                    <input name="phone_number" type="tel" placeholder="Număr de telefon" autocomplete="tel"
+                           {% if let Some(phone) = user.phone_number %}value="{{ phone }}"{% endif %}
+                           class="input input-lg input-bordered w-full"/>
+                </label>
+
+                <label class="floating-label">
+                    <span>Contact de urgență (Telefon)</span>
+                    <input name="emergency_contact_phone_number" type="tel" placeholder="Contact de urgență (Telefon)" autocomplete="tel"
+                           {% if let Some(emergency_phone) = user.emergency_contact_phone_number %}value="{{ emergency_phone }}"{% endif %}
+                           class="input input-lg input-bordered w-full"/>
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-2 px-6 py-4 bg-base-200 border-t border-base-300">
+                <button type="button" class="btn btn-ghost" onclick="contact_modal.close()">Anulează</button>
+                <button type="submit"
+                        class="btn min-w-24 gap-2 text-white shadow-sm border-none bg-blue-600 hover:bg-blue-500"
+                        style="background-color: #2563eb;">
+                    <span class="material-symbols-outlined">save</span>
+                    Salvează
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
 {% endblock %}

@@ -5,6 +5,7 @@ use crate::http::pages::admin::members::payments_summary::MonthStatus;
 use crate::http::pages::admin::members::payments_summary::{
     MonthStatusView, build_status_grid_response, calculate_year_status,
 };
+use crate::http::response::hx_refresh;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::UserDetails;
@@ -12,8 +13,10 @@ use crate::model::user_reservation::{GroupedUserReservations, ReservationsCount}
 use crate::utils::date_formats::DateFormatExt;
 use crate::utils::{date_formats, local_date};
 use askama::Template;
+use axum::Form;
 use axum::extract::{Path, Query, State};
 use serde::Deserialize;
+use sqlx::query;
 
 pub async fn profile_page(auth_session: AuthSession, State(state): State<AppState>) -> HttpResult {
     #[derive(Template)]
@@ -159,3 +162,37 @@ pub async fn payment_status_partial(
     let user = UserDetails::fetch(&state.read_pool, auth_user.id).await?;
     build_status_grid_response(&state.read_pool, user, year, false).await
 }
+
+#[derive(Deserialize)]
+pub struct UpdateContactForm {
+    pub nickname: Option<String>,
+    pub phone_number: Option<String>,
+    pub emergency_contact_phone_number: Option<String>,
+}
+
+pub async fn update_profile_contact(
+    auth_session: AuthSession,
+    State(state): State<AppState>,
+    Form(form): Form<UpdateContactForm>,
+) -> HttpResult {
+    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+
+    let nickname = form.nickname.filter(|n| !n.trim().is_empty());
+    let phone_number = form.phone_number.filter(|p| !p.trim().is_empty());
+    let emergency_contact_phone_number = form
+        .emergency_contact_phone_number
+        .filter(|p| !p.trim().is_empty());
+
+    query!(
+        "update users set nickname = $1, phone_number = $2, emergency_contact_phone_number = $3 where id = $4",
+        nickname,
+        phone_number,
+        emergency_contact_phone_number,
+        auth_user.id
+    )
+    .execute(&state.write_pool)
+    .await?;
+
+    Ok(hx_refresh())
+}
+

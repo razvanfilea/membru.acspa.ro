@@ -38,6 +38,12 @@
             Membru din: <span class="font-mono">{{ member.member_since.to_readable() }}</span><br>
             Primit cadou:
             <span class="font-mono text-red-400">{{ member.received_gift.to_readable() }}</span>
+            {% if let Some(phone) = member.phone_number %}
+            <br>Telefon: <a href="tel:{{ phone }}" class="link link-primary font-mono">{{ phone }}</a>
+            {% endif %}
+            {% if let Some(emergency_phone) = member.emergency_contact_phone_number %}
+            <br>Contact urgență: <a href="tel:{{ emergency_phone }}" class="link link-warning font-mono">{{ emergency_phone }}</a>
+            {% endif %}
         </p>
     </div>
 

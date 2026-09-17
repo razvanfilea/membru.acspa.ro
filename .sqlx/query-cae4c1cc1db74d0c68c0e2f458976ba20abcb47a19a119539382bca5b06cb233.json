@@ -24,43 +24,53 @@
         "type_info": "Text"
       },
       {
-        "name": "role",
+        "name": "phone_number",
         "ordinal": 4,
         "type_info": "Text"
       },
       {
-        "name": "is_active",
+        "name": "emergency_contact_phone_number",
         "ordinal": 5,
-        "type_info": "Bool"
+        "type_info": "Text"
       },
       {
-        "name": "has_key",
+        "name": "role",
         "ordinal": 6,
-        "type_info": "Bool"
+        "type_info": "Text"
       },
       {
-        "name": "admin_panel_access",
+        "name": "is_active",
         "ordinal": 7,
         "type_info": "Bool"
       },
       {
-        "name": "member_since",
+        "name": "has_key",
         "ordinal": 8,
-        "type_info": "Date"
+        "type_info": "Bool"
       },
       {
-        "name": "birthday",
+        "name": "admin_panel_access",
         "ordinal": 9,
-        "type_info": "Date"
+        "type_info": "Bool"
       },
       {
-        "name": "received_gift",
+        "name": "member_since",
         "ordinal": 10,
         "type_info": "Date"
       },
       {
-        "name": "monthly_fee",
+        "name": "birthday",
         "ordinal": 11,
+        "type_info": "Date"
+      },
+      {
+        "name": "received_gift",
+        "ordinal": 12,
+        "type_info": "Date"
+      },
+      {
+        "name": "monthly_fee",
+        "ordinal": 13,
         "type_info": "Integer"
       }
     ],
@@ -71,6 +81,8 @@
       false,
       false,
       false,
+      true,
+      true,
       true,
       false,
       false,

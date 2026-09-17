@@ -76,9 +76,8 @@
         display: flex; /* or block, depending on your layout */
     }
 
-    /* Member view: Month status grid cells */
     .month-cell {
-        @apply flex flex-col gap-1 p-3 rounded-xl border transition-all duration-200;
+        @apply flex flex-col gap-0.5 sm:gap-1 py-1.5 px-2.5 sm:p-3 rounded-xl border transition-all duration-200;
     }
 
     /* Member view: Payment cards */

@@ -3,7 +3,7 @@ use serde::Deserialize;
 use sqlx::{SqliteExecutor, query_as, query_scalar};
 use time::Date;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct User {
     pub id: i64,
     pub email: String,
@@ -21,6 +21,8 @@ pub struct UserDetails {
     pub email: String,
     pub name: String,
     pub nickname: Option<String>,
+    pub phone_number: Option<String>,
+    pub emergency_contact_phone_number: Option<String>,
     pub role: String,
     pub is_active: bool,
     pub has_key: bool,
@@ -38,6 +40,8 @@ impl Default for UserDetails {
             email: String::new(),
             name: String::new(),
             nickname: None,
+            phone_number: None,
+            emergency_contact_phone_number: None,
             role: String::new(),
             is_active: false,
             has_key: false,
@@ -46,21 +50,6 @@ impl Default for UserDetails {
             birthday: Date::MIN,
             received_gift: None,
             monthly_fee: None,
-        }
-    }
-}
-
-impl Default for User {
-    fn default() -> Self {
-        Self {
-            id: 0,
-            email: String::new(),
-            name: String::new(),
-            nickname: None,
-            password_hash: String::new(),
-            role: String::new(),
-            is_active: false,
-            admin_panel_access: false,
         }
     }
 }

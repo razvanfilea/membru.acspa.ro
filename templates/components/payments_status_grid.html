@@ -19,39 +19,39 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
         {% for m in months_status_view %}
         <div class="month-cell
             {% match m.status %}
-                {% when MonthStatus::Paid with (notes) %}bg-success/80 border-success text-success-content
-                {% when MonthStatus::Break with (reason) %}bg-warning/70 border-warning text-warning-content
-                {% when MonthStatus::Unpaid %}bg-error/10 border-error/20 text-error
-                {% when MonthStatus::NotJoined %}bg-base-200 border-transparent opacity-50
+                {% when MonthStatus::Paid with (notes) %}bg-base-100 border-success/60 text-success
+                {% when MonthStatus::Break with (reason) %}bg-base-100 border-warning/60 text-warning
+                {% when MonthStatus::Unpaid %}bg-error/20 border-2 border-error text-error shadow-sm
+                {% when MonthStatus::NotJoined %}bg-base-200/40 border-transparent opacity-40 text-gray-500
                 {% when MonthStatus::Future %}bg-base-100 border-base-200 text-gray-400
             {% endmatch %}
         ">
-            <div class="flex justify-between items-start">
-                <span class="text-xs font-bold uppercase opacity-70">{{ date_formats::month_as_str(&m.month) }}</span>
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-bold uppercase opacity-70 leading-none">{{ date_formats::month_as_str(&m.month) }}</span>
 
                 {% match m.status %}
                 {% when MonthStatus::Paid with (notes) %}
                 <div class="tooltip tooltip-left" data-tip="{{ notes }}">
-                    <span class="material-symbols-outlined text-lg">check_circle</span>
+                    <span class="material-symbols-outlined text-base sm:text-lg leading-none">check_circle</span>
                 </div>
                 {% when MonthStatus::Break with (reason) %}
                 <div class="tooltip tooltip-left" data-tip="{{ reason }}">
-                    <span class="material-symbols-outlined text-lg cursor-help">pause_circle</span>
+                    <span class="material-symbols-outlined text-base sm:text-lg cursor-help leading-none">pause_circle</span>
                 </div>
                 {% when MonthStatus::Unpaid %}
-                <span class="material-symbols-outlined text-lg">cancel</span>
+                <span class="material-symbols-outlined text-base sm:text-lg leading-none">cancel</span>
                 {% when MonthStatus::NotJoined %}
-                <span class="material-symbols-outlined text-lg">lock</span>
+                <span class="material-symbols-outlined text-base sm:text-lg leading-none">lock</span>
                 {% when MonthStatus::Future %}
-                <span class="material-symbols-outlined text-lg">event</span>
+                <span class="material-symbols-outlined text-base sm:text-lg leading-none">event</span>
                 {% endmatch %}
             </div>
 
-            <div class="font-bold text-sm mt-1">
+            <div class="font-bold text-sm mt-0.5 sm:mt-1">
                 {% match m.status %}
                 {% when MonthStatus::Paid with (notes) %}
                 Achitat
@@ -91,9 +91,9 @@
     </div>
 
     <div class="flex flex-wrap gap-4 justify-center text-xs text-gray-500 opacity-80 mt-2">
-        <div class="status-legend-item"><span class="status-legend-dot bg-success"></span> Achitat</div>
-        <div class="status-legend-item"><span class="status-legend-dot bg-warning"></span> Pauză</div>
-        <div class="status-legend-item"><span class="status-legend-dot bg-error"></span> Restanță</div>
+        <div class="status-legend-item"><span class="status-legend-dot border border-success bg-success/20"></span> Achitat</div>
+        <div class="status-legend-item"><span class="status-legend-dot border border-warning bg-warning/20"></span> Pauză</div>
+        <div class="status-legend-item"><span class="status-legend-dot border-2 border-error bg-error/20"></span> Restanță</div>
     </div>
 
     {% if admin_payments_status_grid %}

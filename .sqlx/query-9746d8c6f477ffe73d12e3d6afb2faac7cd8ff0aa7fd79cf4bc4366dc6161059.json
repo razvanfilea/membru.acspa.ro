@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from user_details_with_role where name like $1 or email like $1 or role like $1 or nickname like $1\n         order by case\n          when $2 = 0 then name\n          when $2 = 1 then birthday\n          when $2 = 2 then received_gift\n          when $2 = 3 then ((strftime('%j', birthday) - strftime('%j', 'now') + 365) % 365)\n         end, email, role",
+  "query": "select * from user_details_with_role where name like $1 or email like $1 or role like $1 or nickname like $1 or phone_number like $1 or emergency_contact_phone_number like $1\n         order by case\n          when $2 = 0 then name\n          when $2 = 1 then birthday\n          when $2 = 2 then received_gift\n          when $2 = 3 then ((strftime('%j', birthday) - strftime('%j', 'now') + 365) % 365)\n         end, email, role",
   "describe": {
     "columns": [
       {
@@ -24,43 +24,53 @@
         "type_info": "Text"
       },
       {
-        "name": "role",
+        "name": "phone_number",
         "ordinal": 4,
         "type_info": "Text"
       },
       {
-        "name": "is_active",
+        "name": "emergency_contact_phone_number",
         "ordinal": 5,
-        "type_info": "Bool"
+        "type_info": "Text"
       },
       {
-        "name": "has_key",
+        "name": "role",
         "ordinal": 6,
-        "type_info": "Bool"
+        "type_info": "Text"
       },
       {
-        "name": "admin_panel_access",
+        "name": "is_active",
         "ordinal": 7,
         "type_info": "Bool"
       },
       {
-        "name": "member_since",
+        "name": "has_key",
         "ordinal": 8,
-        "type_info": "Date"
+        "type_info": "Bool"
       },
       {
-        "name": "birthday",
+        "name": "admin_panel_access",
         "ordinal": 9,
-        "type_info": "Date"
+        "type_info": "Bool"
       },
       {
-        "name": "received_gift",
+        "name": "member_since",
         "ordinal": 10,
         "type_info": "Date"
       },
       {
-        "name": "monthly_fee",
+        "name": "birthday",
         "ordinal": 11,
+        "type_info": "Date"
+      },
+      {
+        "name": "received_gift",
+        "ordinal": 12,
+        "type_info": "Date"
+      },
+      {
+        "name": "monthly_fee",
+        "ordinal": 13,
         "type_info": "Integer"
       }
     ],
@@ -72,6 +82,8 @@
       false,
       false,
       true,
+      true,
+      true,
       false,
       false,
       false,
@@ -82,5 +94,5 @@
       true
     ]
   },
-  "hash": "4f103c4fb76d448f0482806d01eba00ccc7d51ea85317afb256fdf9a484c7322"
+  "hash": "9746d8c6f477ffe73d12e3d6afb2faac7cd8ff0aa7fd79cf4bc4366dc6161059"
 }

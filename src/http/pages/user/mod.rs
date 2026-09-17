@@ -21,6 +21,7 @@ pub fn user_router() -> Router<AppState> {
             "/profile/payment_status/{year}",
             get(profile::payment_status_partial),
         )
+        .route("/profile/contact", post(profile::update_profile_contact))
         .route(
             "/change_password",
             get(change_password::change_password_page),

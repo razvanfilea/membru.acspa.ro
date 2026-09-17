@@ -112,7 +112,7 @@ async fn search_members(
 
     let members = query_as!(
         UserDetails,
-        "select * from user_details_with_role where name like $1 or email like $1 or role like $1 or nickname like $1
+        "select * from user_details_with_role where name like $1 or email like $1 or role like $1 or nickname like $1 or phone_number like $1 or emergency_contact_phone_number like $1
          order by case
           when $2 = 0 then name
           when $2 = 1 then birthday
@@ -280,6 +280,8 @@ struct UpdatedUser {
     email: String,
     name: String,
     nickname: Option<String>,
+    phone_number: Option<String>,
+    emergency_contact_phone_number: Option<String>,
     role: String,
     is_active: Option<String>,
     has_key: Option<String>,
@@ -326,12 +328,12 @@ async fn update_member(
     }
 
     // received_gift validation
-    if let Some(gift_date) = received_gift {
-        if gift_date < member_since {
-            return Err(bail(
-                "Data primirii cadoului nu poate fi înainte de înscriere",
-            ));
-        }
+    if let Some(gift_date) = received_gift
+        && gift_date < member_since
+    {
+        return Err(bail(
+            "Data primirii cadoului nu poate fi înainte de înscriere",
+        ));
     }
 
     let role_id = UserRole::fetch_id_by_name(&state.read_pool, updated_user.role.as_str())
@@ -339,11 +341,15 @@ async fn update_member(
         .or_bail("Rolul selectat nu există")?;
     let user_name = updated_user.name.trim();
     let nickname = updated_user.nickname.filter(|n| !n.trim().is_empty());
+    let phone_number = updated_user.phone_number.filter(|p| !p.trim().is_empty());
+    let emergency_contact_phone_number = updated_user
+        .emergency_contact_phone_number
+        .filter(|p| !p.trim().is_empty());
     let is_active = updated_user.is_active.is_some();
     let has_key = updated_user.has_key.is_some();
 
     query!(
-        "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, is_active = $9, nickname = $10
+        "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, is_active = $9, nickname = $10, phone_number = $11, emergency_contact_phone_number = $12
          where id = $1",
         member_id,
         updated_user.email,
@@ -354,7 +360,9 @@ async fn update_member(
         member_since,
         received_gift,
         is_active,
-        nickname
+        nickname,
+        phone_number,
+        emergency_contact_phone_number
     )
         .execute(&state.write_pool)
         .await?;
@@ -528,3 +536,61 @@ async fn search_names(
 
     format!(r#"<div class="absolute z-[60] bg-base-100 shadow-2xl rounded-xl border border-base-300 w-full mt-1 overflow-hidden">{}</div>"#, html).into_response()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sqlx::SqlitePool;
+
+    #[sqlx::test]
+    async fn user_phone_numbers_crud_and_anonymization(pool: SqlitePool) -> sqlx::Result<()> {
+        let user_id = query_scalar!(
+            r#"
+            insert into users (email, name, role_id, password_hash, birthday, member_since, phone_number, emergency_contact_phone_number)
+            values ('member@acspa.ro', 'Test Member', 1, '', '1995-05-10', '2024-01-01', '+40712345678', '+40798765432')
+            returning id
+            "#
+        )
+        .fetch_one(&pool)
+        .await?;
+
+        let user_details = UserDetails::fetch(&pool, user_id).await?;
+        assert_eq!(user_details.phone_number.as_deref(), Some("+40712345678"));
+        assert_eq!(
+            user_details.emergency_contact_phone_number.as_deref(),
+            Some("+40798765432")
+        );
+
+        query!(
+            "update users set emergency_contact_phone_number = NULL where id = $1",
+            user_id
+        )
+        .execute(&pool)
+        .await?;
+
+        let user_details = UserDetails::fetch(&pool, user_id).await?;
+        assert_eq!(user_details.phone_number.as_deref(), Some("+40712345678"));
+        assert_eq!(user_details.emergency_contact_phone_number, None);
+
+        query!(
+            "update users set is_deleted = TRUE where id = $1",
+            user_id
+        )
+        .execute(&pool)
+        .await?;
+
+        let raw_user = query!(
+            "select email, name, phone_number, emergency_contact_phone_number from users where id = $1",
+            user_id
+        )
+        .fetch_one(&pool)
+        .await?;
+
+        assert_eq!(raw_user.email, format!("deleted_{}@archived.acspa.ro", user_id));
+        assert_eq!(raw_user.phone_number, None);
+        assert_eq!(raw_user.emergency_contact_phone_number, None);
+
+        Ok(())
+    }
+}
+
