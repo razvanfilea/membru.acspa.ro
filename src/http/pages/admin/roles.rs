@@ -37,6 +37,15 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
         pub members_count: i64,
     }
 
+    impl UserRoleWithCount {
+        fn css_color(&self) -> CssColor {
+            self.color
+                .as_deref()
+                .and_then(|color| CssColor::from_str(color).ok())
+                .unwrap_or(CssColor::None)
+        }
+    }
+
     #[derive(Template)]
     #[template(path = "admin/roles/list_page.html")]
     struct UsersTemplate {
@@ -44,7 +53,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
         roles: Vec<UserRoleWithCount>,
     }
 
-    let roles = query_as!(UserRoleWithCount, "select r.*, (select count(*) from users u where u.role_id = r.id) as 'members_count' from user_roles r")
+    let roles = query_as!(UserRoleWithCount, "select r.*, (select count(*) from users u where u.role_id = r.id and u.is_deleted = false) as 'members_count' from user_roles r")
         .fetch_all(&state.read_pool)
         .await?;
 

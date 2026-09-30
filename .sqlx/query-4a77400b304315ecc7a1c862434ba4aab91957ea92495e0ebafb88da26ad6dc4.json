@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select r.*, (select count(*) from users u where u.role_id = r.id) as 'members_count' from user_roles r",
+  "query": "select r.*, (select count(*) from users u where u.role_id = r.id and u.is_deleted = false) as 'members_count' from user_roles r",
   "describe": {
     "columns": [
       {
@@ -58,5 +58,5 @@
       false
     ]
   },
-  "hash": "436e96637dfae97d83d61866a01c383ea37980b6066e3f28f811273238e01d6c"
+  "hash": "4a77400b304315ecc7a1c862434ba4aab91957ea92495e0ebafb88da26ad6dc4"
 }

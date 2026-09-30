@@ -1,73 +1,71 @@
 {% extends "base.html" %}
+{% import "components/empty_state.html" as empty_state %}
 
-{% block page_title %}Listă Membri{% endblock %}
+{% block page_title %}Membri{% endblock %}
 
 {% block content %}
 
-<main class="p-2 sm:p-4 md:p-8 w-full flex flex-col">
-    <h2 class="text-2xl mt-2 mb-6">{{ members.len() }} membri</h2>
-
-    <form class="flex flex-row items-center gap-2 md:gap-4 mb-6"
+<main class="page-shell">
+    <form class="toolbar flex flex-row items-center gap-2 md:gap-4"
           hx-target="#members_list"
           hx-post="/admin/members/search"
           hx-trigger="input changed delay:500ms, search">
 
-        <label class="input input-bordered flex items-center gap-2 md:px-4 w-full">
-            <span class="material-symbols-outlined">search</span>
-
+        <label class="input input-bordered flex items-center gap-2 w-full">
+            <span class="material-symbols-outlined text-base-content/60">search</span>
             <input type="search" name="search" class="grow" placeholder="Caută după nume, email sau rol"
                    autocomplete="off"/>
         </label>
 
-        <select name="sort" class="menu rounded-box w-26 bg-gray-600 shadow-sm" autocomplete="off"
-                hx-trigger="search">
-            <option selected value="Alphabetical">Alfabetic</option>
-            <option value="Birthday">Data naștere</option>
-            <option value="Gift">Data cadou</option>
-            <option value="ClosestBirthday">Aniversare</option>
-        </select>
+        <label class="floating-label shrink-0 w-36 md:w-44">
+            <span>Sortare</span>
+            <select name="sort" class="select select-bordered w-full" autocomplete="off">
+                <option selected value="Alphabetical">Alfabetic</option>
+                <option value="Birthday">Data nașterii</option>
+                <option value="Gift">Data cadoului</option>
+                <option value="ClosestBirthday">Aniversare</option>
+            </select>
+        </label>
     </form>
 
-    <div id="members_list" class="flex flex-col w-full pb-16">
+    <div id="members_list" class="surface-card overflow-hidden mb-20">
         {% block list %}
+        <p class="px-4 py-3 text-sm text-base-content/60 border-b border-base-300">
+            {{ members.len() }} {% if members.len() == 1 %}membru{% else %}membri{% endif %}
+        </p>
+
         {% for member in members %}
-        <a href="/admin/members/view/{{ member.id }}"
-           class="block rounded-xl p-4 transition
-             hover:bg-white/5 active:bg-white/10
-            hover:translate-x-0.5
-            focus:outline-none focus:ring-1 focus:ring-white/20">
-            <div class="flex flex-row items-center gap-4">
-                <p class="text-white text-lg">{{ member.display_name() }}</p>
+        <a href="/admin/members/view/{{ member.id }}" class="card-row">
+            <div class="flex flex-row flex-wrap items-center gap-x-3 gap-y-1">
+                <p class="text-lg font-semibold">{{ member.display_name() }}</p>
                 {% if member.has_key %}
-                <span class="material-symbols-outlined text-gray-300 text-base"
+                <span class="material-symbols-outlined text-base text-base-content/60"
                       title="Are cheie de la sală">vpn_key</span>
                 {% endif %}
+                <span class="badge badge-sm badge-ghost">{{ member.role }}</span>
                 {% if !member.is_active %}
-                <span class="badge badge-error badge-outline gap-1 font-bold">
-                    Inactiv
-                </span>
+                <span class="badge badge-sm badge-error badge-outline font-bold">Inactiv</span>
                 {% endif %}
-                <p class="text-sm text-gray-400">{{ member.role }}</p>
             </div>
-            <p class="text-gray-300 text-sm leading-snug mt-1">
-                <span>{{ member.email }}</span><br>
-                Zi de naștere: <span class="font-mono">{{ member.birthday.to_readable() }}</span><br>
-                Membru din: <span class="font-mono">{{ member.member_since.to_readable() }}</span><br>
+
+            <div class="flex flex-col md:flex-row md:flex-wrap md:gap-x-6 mt-1 text-sm text-base-content/60 leading-snug">
+                <span class="truncate">{{ member.email }}</span>
+                <span>Zi de naștere: <span class="font-mono">{{ member.birthday.to_readable() }}</span></span>
+                <span>Membru din: <span class="font-mono">{{ member.member_since.to_readable() }}</span></span>
                 {% if member.received_gift.is_some() %}
-                Primit cadou:
-                <span class="font-mono text-red-400">{{ member.received_gift.to_readable() }}</span>
+                <span>Primit cadou: <span class="font-mono text-error">{{ member.received_gift.to_readable() }}</span></span>
                 {% endif %}
-            </p>
+            </div>
         </a>
-
-        {% if !loop.last %}
-        <div class="divider my-0"></div>
-        {% endif %}
-
         {% endfor %}
+
+        {% if members.is_empty() %}
+        <div class="p-4">
+            {{ empty_state::with_subtitle("person_search", "Niciun membru găsit", "Încearcă alt nume, email sau rol.") }}
+        </div>
+        {% endif %}
         {% endblock %}
     </div>
-
 
     <div class="fab">
         <a href="/admin/members/new" class="btn-main-fab group">

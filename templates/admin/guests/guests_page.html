@@ -1,40 +1,49 @@
 {% extends "base.html" %}
+{% import "components/empty_state.html" as empty_state %}
 
 {% block page_title %}Invitați{% endblock %}
 
 {% block content %}
 
-<main class="p-4 md:p-8 w-full">
+<main class="page-shell">
     {% block list %}
-    <div id="list" class="flex flex-col w-full gap-4 pb-16">
+    <div id="list" class="surface-card overflow-hidden mb-20">
         {% for guest in guests %}
-        <div id="guest_{{ guest.rowid }}"
-             class="flex flex-row p-4 bg-gray-600 rounded-sm gap-4 items-center justify-between">
-            <div class="flex flex-col">
-                <p class="font-bold mb-2">{{ guest.name }}</p>
-                <p>Data: <b>{{ guest.date.to_readable() }}</b></p>
-                <p>Ora: <b>{{ guest.hour }}</b></p>
-                {% if !guest.as_guest %}
-                <p class="text-pink-500">Special</p>
-                {% endif %}
-                <p class="text-sm">Creat de {{ guest.created_by }} pe {{ date_formats::as_local(guest.created_at) }}</p>
+        <div id="guest_{{ guest.rowid }}" class="card-row flex flex-row items-center gap-4">
+            <div class="flex flex-col gap-1 min-w-0 grow">
+                <div class="flex flex-row flex-wrap items-center gap-x-3 gap-y-1">
+                    <p class="font-semibold truncate">{{ guest.name }}</p>
+                    {% if !guest.as_guest %}
+                    <span class="badge badge-sm badge-secondary badge-outline">Special</span>
+                    {% endif %}
+                </div>
+                <p class="text-sm">
+                    {{ guest.date.to_readable() }}, ora <b>{{ guest.hour }}</b>
+                </p>
+                <p class="text-xs text-base-content/60">
+                    Creat de {{ guest.created_by }} pe {{ date_formats::as_local(guest.created_at) }}
+                </p>
             </div>
 
-            {% let selected_date_formatted = guest.date.to_iso() %}
-
             {% if guest.is_cancellable() %}
-            <button
-                    class="btn btn-square btn-sm btn-error btn-outline"
+            {% let selected_date_formatted = guest.date.to_iso() %}
+            <button class="btn-icon-delete"
+                    title="Șterge invitatul"
                     hx-delete='/reservation?date={{ selected_date_formatted }}&hour={{ guest.hour }}&user_id={{ guest.created_by_id }}&created_for={{ guest.name|urlencode }}'
                     hx-target="#guest_{{ guest.rowid }}"
                     hx-swap="outerHTML"
-                    hx-confirm="Ești sigur ca vrei să ștergi invitatul '{{ guest.name }}'?">
+                    hx-confirm="Ești sigur că vrei să ștergi invitatul '{{ guest.name }}'?">
                 <span class="material-symbols-outlined">delete</span>
             </button>
             {% endif %}
-
         </div>
         {% endfor %}
+
+        {% if guests.is_empty() %}
+        <div class="p-4">
+            {{ empty_state::with_subtitle("person_add", "Niciun invitat", "Adaugă un invitat cu butonul de jos.") }}
+        </div>
+        {% endif %}
     </div>
     {% endblock %}
 
@@ -62,7 +71,7 @@
             </label>
 
             <label class="floating-label">
-                <span>Data:</span>
+                <span>Data</span>
                 <input name="date" type="date" class="input input-lg input-bordered w-full" required
                        autocomplete="off" hx-post="/admin/guests/select_hour"
                        min='{{ current_date.to_iso() }}'/>
@@ -71,9 +80,8 @@
             <div id="hour_selector"></div>
 
             <label class="label">
-                <span class="text-lg">Special:</span>
-                <input name="special" type="checkbox" class="toggle toggle-lg input-lg toggle-primary"
-                       autocomplete="off"/>
+                <input name="special" type="checkbox" class="toggle toggle-primary" autocomplete="off"/>
+                Special
             </label>
 
             <div class="modal-action grid grid-cols-2" hx-disinherit="*">
