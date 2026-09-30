@@ -1,4 +1,5 @@
 {% import "components/color_mapper.html" as color_mapper %}
+{% import "admin/guests/add_guest_form.html" as add_guest %}
 
 {% macro res_btn(index, id, res) %}
 <button {% if id != "cancelled" %} popovertarget="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}"{% endif %}
@@ -102,32 +103,15 @@
         </div>
 
         {% if user.admin_panel_access %}
-        <div id="popover_create_guest_{{ slot.start_hour }}" class="rounded-2xl" popover>
-            <form class="p-6 flex flex-col gap-4" hx-params="not selected_date" hx-vals='{"date": "{{ selected_date }}"}'>
-                <p>Adaugă un invitat de la ora <b>{{ slot.start_hour }}</b> pe numele:</p>
-
-                <div class="relative">
-                    <input id="guest_name_{{ slot.start_hour }}" name="name" type="text" class="input w-full" required
-                           placeholder="Nume invitat" autocomplete="off"
-                           hx-get="/admin/members/search_names"
-                           hx-params="name"
-                           hx-trigger="input changed delay:300ms, search"
-                           hx-target="#search-results-{{ slot.start_hour }}"
-                           hx-swap="innerHTML"/>
-                    <div id="search-results-{{ slot.start_hour }}" class="search-results-container"></div>
-                </div>
-
-                <label class="label cursor-pointer py-6">
-                    <span>Special:</span>
-                    <input name="special" type="checkbox" class="toggle toggle-primary" autocomplete="off" />
-                </label>
-
-                <button class="btn btn-success"
-                        hx-put="/admin/guests"
-                        hx-swap="none">
-                    Adaugă
-                </button>
-            </form>
+        {% let guest_date = selected_date.to_iso() %}
+        {% let guest_hour = slot.start_hour %}
+        {% let guest_form_id = format!("home_guest_{}", guest_hour) %}
+        <div id="popover_create_guest_{{ slot.start_hour }}" class="rounded-2xl p-6 w-80 max-w-[90vw]" popover>
+            <p class="mb-4">Adaugă un invitat la ora <b>{{ guest_hour }}</b></p>
+            {% call add_guest::form(guest_form_id) %}
+            <input type="hidden" name="date" value="{{ guest_date }}">
+            <input type="hidden" name="hour" value="{{ guest_hour }}">
+            {% endcall %}
         </div>
         {% endif %}
 

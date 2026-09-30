@@ -2,6 +2,7 @@ use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::CalendarUrl;
+use crate::http::pages::admin::guests::{GuestDto, guest_hours};
 use crate::http::pages::admin::schedule_overrides::holidays::get_holiday;
 use crate::http::pages::admin::schedule_overrides::restrictions::get_restrictions_for_day;
 use crate::http::pages::admin::schedule_overrides::tournaments::get_tournament_day;
@@ -61,6 +62,9 @@ struct DayDetails {
     day_structure: DayStructure,
     events: DayEvents,
     reservations: String,
+    guests: Vec<GuestDto>,
+    /// Hours guests can still be added to
+    guest_hours: Vec<u8>,
     // Only needed for the copy to clipboard button
     tournament_participants: String,
 }
@@ -98,6 +102,8 @@ impl DayDetails {
                 .await?,
             events,
             reservations,
+            guests: GuestDto::fetch(&state.read_pool, Some(date)).await?,
+            guest_hours: guest_hours(state, date).await?,
             tournament_participants,
         })
     }
@@ -149,7 +155,7 @@ async fn calendar_page(
 ) -> HttpResult {
     let today = local_date();
     let month_number = Month::try_from(month_u8).unwrap_or(today.month());
-    let month = Date::from_calendar_date(year, month_number, 1).or_bail("Data este invalida")?;
+    let month = Date::from_calendar_date(year, month_number, 1).or_bail("Data este invalidă")?;
 
     let last_day = month.replace_day(month_number.length(year)).unwrap();
     let next_month_date = last_day.next_day().unwrap();
@@ -185,14 +191,22 @@ async fn calendar_page(
     .try_into_response()
 }
 
+#[derive(Deserialize)]
+struct DayDetailsQuery {
+    /// Set when reloading the panel after a change made elsewhere, e.g. a guest
+    #[serde(default)]
+    changed: bool,
+}
+
 async fn day_details_partial(
     State(state): State<AppState>,
     Path(date): Path<IsoDate>,
+    Query(query): Query<DayDetailsQuery>,
 ) -> HttpResult {
     DayDetailsTemplate {
         current_date: local_date(),
         day: DayDetails::fetch(&state, *date).await?,
-        update_cell: false,
+        update_cell: query.changed,
     }
     .try_into_response()
 }
@@ -306,7 +320,9 @@ async fn get_tournament_participants(
         .join("\n"))
 }
 
-pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
+/// Open home pages are told to reload the day's hours too
+pub(super) async fn day_details_response(state: AppState, date: Date) -> HttpResult {
+    let _ = state.reservation_notifier.send(());
     DayDetailsTemplate {
         current_date: local_date(),
         day: DayDetails::fetch(&state, date).await?,

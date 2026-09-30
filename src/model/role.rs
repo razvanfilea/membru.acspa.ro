@@ -1,3 +1,4 @@
+use crate::model::payment::format_amount;
 use sqlx::{SqliteExecutor, query_as, query_scalar};
 
 pub struct UserRole {
@@ -12,6 +13,10 @@ pub struct UserRole {
 }
 
 impl UserRole {
+    pub fn monthly_fee_amount(&self) -> Option<String> {
+        self.monthly_fee.map(format_amount)
+    }
+
     pub async fn fetch_by_user_id(
         executor: impl SqliteExecutor<'_>,
         user_id: i64,

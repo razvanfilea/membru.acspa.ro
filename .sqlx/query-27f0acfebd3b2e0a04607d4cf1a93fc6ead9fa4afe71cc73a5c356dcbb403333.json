@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r\n             where user_id = $1 and cancelled = $2 and created_for is null and strftime('%Y', r.date) = $3",
+  "query": "select r.date, r.hour, a.slots_start_minute as 'start_minute?', r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r\n             left join alternative_days a on a.date = r.date\n             where user_id = $1 and cancelled = $2 and created_for is null and strftime('%Y', r.date) = $3",
   "describe": {
     "columns": [
       {
@@ -14,23 +14,28 @@
         "type_info": "Integer"
       },
       {
-        "name": "as_guest",
+        "name": "start_minute?",
         "ordinal": 2,
-        "type_info": "Bool"
+        "type_info": "Integer"
       },
       {
-        "name": "cancelled",
+        "name": "as_guest",
         "ordinal": 3,
         "type_info": "Bool"
       },
       {
-        "name": "in_waiting",
+        "name": "cancelled",
         "ordinal": 4,
         "type_info": "Bool"
       },
       {
-        "name": "created_at",
+        "name": "in_waiting",
         "ordinal": 5,
+        "type_info": "Bool"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 6,
         "type_info": "Datetime"
       }
     ],
@@ -40,11 +45,12 @@
     "nullable": [
       false,
       false,
+      true,
       false,
       false,
       false,
       false
     ]
   },
-  "hash": "c9870d26bda597f6926eebc0b23ce27474d791b7edc63edcc75040fe32f5fc00"
+  "hash": "27f0acfebd3b2e0a04607d4cf1a93fc6ead9fa4afe71cc73a5c356dcbb403333"
 }

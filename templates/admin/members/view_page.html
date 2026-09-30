@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 
 {% import "components/month_year_picker.html" as forms %}
-{% import "components/section_header.html" as section_header %}
-{% import "components/empty_state.html" as empty_state %}
 
 {% block page_title %}Membru: {{ member.name }}{% endblock %}
 
@@ -195,7 +193,7 @@
                     <label class="input flex items-center gap-2 w-full">
                         Sumă
                         <input type="number" name="amount" step="0.01" class="grow font-mono font-bold text-right"
-                               {% if let Some(fee) = member.monthly_fee %}value="{{ fee / 100 }}"{% endif %}
+                               {% if let Some(fee) = member.monthly_fee_amount() %}value="{{ fee }}"{% endif %}
                                placeholder="0.00" required />
                         <span class="badge badge-neutral badge-sm uppercase">Ron</span>
                     </label>
@@ -488,7 +486,7 @@
             selectedMonths.push(key);
             document.getElementById('months_payload').value = key;
             const counter = document.getElementById('selection_counter');
-            counter.innerText = '1 selectate';
+            counter.innerText = '1 selectată';
             counter.classList.remove('hidden');
         }
 

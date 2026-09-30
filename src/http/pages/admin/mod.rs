@@ -6,7 +6,7 @@ use crate::http::response::hx_notify;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
-use crate::utils::date_formats::DateFormatExt;
+use crate::utils::date_formats::{self, DateFormatExt};
 use crate::utils::{local_date, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
@@ -14,7 +14,7 @@ use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
-use time::{Date, OffsetDateTime};
+use time::Date;
 
 mod guests;
 pub mod members;
@@ -63,7 +63,7 @@ async fn admin_page(
     struct AdminTemplate {
         user: User,
         global_vars: GlobalVars,
-        server_time: OffsetDateTime,
+        server_time: String,
         selected_year: i32,
         debtors: Vec<DebtorItem>,
     }
@@ -74,7 +74,7 @@ async fn admin_page(
     AdminTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         global_vars: GlobalVars::fetch(&state.read_pool).await?,
-        server_time: local_time(),
+        server_time: date_formats::as_local(&local_time()),
         selected_year,
         debtors,
     }

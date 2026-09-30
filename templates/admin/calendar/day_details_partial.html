@@ -1,5 +1,9 @@
+{% import "admin/guests/add_guest_form.html" as add_guest %}
 {% let restriction_date = day.date.to_iso() %}
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-6"
+     hx-get="/admin/calendar/details/{{ restriction_date }}?changed=true"
+     hx-trigger="guests-changed from:body"
+     hx-target="#day_details_container">
     <header class="flex flex-col gap-2">
         <p class="text-sm text-base-content/60">{{ day.weekday() }}</p>
         <h3 class="text-2xl md:text-3xl font-bold leading-none">{{ day.date.to_readable() }}</h3>
@@ -108,8 +112,22 @@
         {{ day.reservations | safe }}
     </section>
 
+    {% if !day.guests.is_empty() %}
+    <section class="flex flex-col gap-2">
+        <div class="flex items-center gap-2 text-info">
+            <span class="material-symbols-outlined">person_add</span>
+            <h4 class="font-semibold">Invitați</h4>
+        </div>
+        <div class="flex flex-col rounded-xl bg-base-100 overflow-hidden">
+            {% for guest in day.guests %}
+            {% include "admin/guests/guest_row.html" %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     {% let can_edit_day = !day.is_past_date() && day.tournament.is_none() %}
-    {% if can_edit_day || day.has_history() %}
+    {% if !day.is_past_date() || day.has_history() %}
     <section class="flex flex-col gap-2">
         <h4 class="font-semibold text-base-content/70">Acțiuni</h4>
 
@@ -122,6 +140,26 @@
         </a>
         {% endif %}
 
+        {% if !day.guest_hours.is_empty() %}
+        {% let hours = day.guest_hours.clone() %}
+        <div class="action-collapse">
+            <input type="checkbox" aria-label="Adaugă invitat"/>
+            <div class="action-collapse-title">
+                <span class="material-symbols-outlined text-info">person_add</span>
+                <span class="grow">Adaugă invitat</span>
+                <span class="action-collapse-arrow material-symbols-outlined">expand_more</span>
+            </div>
+            <div class="action-collapse-body">
+            <div class="action-collapse-content">
+                {% call add_guest::form("day_guest") %}
+                <input type="hidden" name="date" value="{{ restriction_date }}">
+                {% include "admin/guests/select_hour.html" %}
+                {% endcall %}
+            </div>
+        </div>
+        </div>
+        {% endif %}
+
         {% if can_edit_day %}
 
         {% if day.holiday.is_none() %}
@@ -132,12 +170,15 @@
             <span class="material-symbols-outlined text-base-content/50">chevron_right</span>
         </a>
 
-        <details class="collapse collapse-arrow rounded-xl bg-base-100">
-            <summary class="collapse-title flex items-center gap-3 font-medium">
+        <div class="action-collapse">
+            <input type="checkbox" aria-label="Marchează zi liberă"/>
+            <div class="action-collapse-title">
                 <span class="material-symbols-outlined text-primary">event_available</span>
-                Marchează zi liberă
-            </summary>
-            <div class="collapse-content">
+                <span class="grow">Marchează zi liberă</span>
+                <span class="action-collapse-arrow material-symbols-outlined">expand_more</span>
+            </div>
+            <div class="action-collapse-body">
+            <div class="action-collapse-content">
                 <form hx-put="/admin/holiday"
                       hx-target="#day_details_container"
                       hx-confirm="Sigur vrei să marchezi ziua ca liberă? Rezervările existente vor fi șterse."
@@ -151,16 +192,20 @@
                     <button type="submit" class="btn btn-primary">Marchează zi liberă</button>
                 </form>
             </div>
-        </details>
+        </div>
+        </div>
         {% endif %}
 
         {% if day.can_add_restriction() %}
-        <details class="collapse collapse-arrow rounded-xl bg-base-100">
-            <summary class="collapse-title flex items-center gap-3 font-medium">
+        <div class="action-collapse">
+            <input type="checkbox" aria-label="Blochează ore"/>
+            <div class="action-collapse-title">
                 <span class="material-symbols-outlined text-error">calendar_lock</span>
-                Blochează ore
-            </summary>
-            <div class="collapse-content">
+                <span class="grow">Blochează ore</span>
+                <span class="action-collapse-arrow material-symbols-outlined">expand_more</span>
+            </div>
+            <div class="action-collapse-body">
+            <div class="action-collapse-content">
                 <form hx-put="/admin/restrictions" hx-target="#day_details_container"
                       hx-confirm="Sigur vrei să blochezi orele? Rezervările existente vor fi șterse."
                       class="flex flex-col gap-4 pt-1">
@@ -191,7 +236,8 @@
                     <button type="submit" class="btn btn-error">Blochează orele</button>
                 </form>
             </div>
-        </details>
+        </div>
+        </div>
         {% endif %}
         {% endif %}
     </section>

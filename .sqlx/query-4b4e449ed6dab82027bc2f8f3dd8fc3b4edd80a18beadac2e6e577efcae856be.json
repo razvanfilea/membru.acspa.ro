@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "select date as \"date: Date\", hour as \"hour: u8\", user_id, created_for as \"created_for!\"\n        from reservations where _rowid_ = $1 and created_for = $2 and location = $3",
+  "describe": {
+    "columns": [
+      {
+        "name": "date: Date",
+        "ordinal": 0,
+        "type_info": "Date"
+      },
+      {
+        "name": "hour: u8",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "user_id",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_for!",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "4b4e449ed6dab82027bc2f8f3dd8fc3b4edd80a18beadac2e6e577efcae856be"
+}

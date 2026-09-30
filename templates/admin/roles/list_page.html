@@ -33,7 +33,7 @@
                 <div>
                     <dt class="text-base-content/60">Cotizație lunară</dt>
                     <dd class="font-semibold">
-                        {% if let Some(fee) = role.monthly_fee %}{{ fee / 100 }} RON{% else %}—{% endif %}
+                        {% if let Some(fee) = role.monthly_fee_amount() %}{{ fee }} RON{% else %}—{% endif %}
                     </dd>
                 </div>
                 <div>

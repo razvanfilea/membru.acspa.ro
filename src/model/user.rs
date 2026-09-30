@@ -1,3 +1,4 @@
+use crate::model::payment::format_amount;
 use axum_login::AuthUser;
 use serde::Deserialize;
 use sqlx::{SqliteExecutor, query_as, query_scalar};
@@ -101,6 +102,10 @@ impl User {
 }
 
 impl UserDetails {
+    pub fn monthly_fee_amount(&self) -> Option<String> {
+        self.monthly_fee.map(format_amount)
+    }
+
     pub fn display_name(&self) -> &str {
         self.nickname.as_deref().unwrap_or(&self.name)
     }

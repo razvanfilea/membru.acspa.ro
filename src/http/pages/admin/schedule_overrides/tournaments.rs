@@ -30,7 +30,7 @@ pub fn router() -> Router<AppState> {
         .route("/{date}", delete(delete_tournament))
 }
 
-pub async fn get_tournament_day(
+pub(super) async fn get_tournament_day(
     executor: impl SqliteExecutor<'_>,
     date: Date,
 ) -> Result<Option<AlternativeDay>, Error> {
@@ -131,6 +131,7 @@ async fn create_tournament(
         tournament.description.clone().unwrap_or_default()
     );
 
+    let _ = state.reservation_notifier.send(());
     Ok(hx_redirect("/admin/tournaments"))
 }
 
@@ -222,10 +223,11 @@ async fn update_tournament(
 
     tx.commit().await?;
 
+    let _ = state.reservation_notifier.send(());
     Ok(hx_redirect("/admin/tournaments"))
 }
 
-pub async fn delete_tournament(
+async fn delete_tournament(
     State(state): State<AppState>,
     Path(date): Path<IsoDate>,
 ) -> HttpResult {
@@ -236,5 +238,6 @@ pub async fn delete_tournament(
     }
 
     delete_alternative_day(&state, date).await?;
+    let _ = state.reservation_notifier.send(());
     Ok(().into_response())
 }

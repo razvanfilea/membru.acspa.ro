@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select date as \"date: Date\", hour as \"hour: u8\", created_for from reservations\n        where user_id = $1 and location = $2 and cancelled = false\n            and (date > $3 or (date = $3 and hour > $4))",
+  "query": "select date as \"date: Date\", hour as \"hour: u8\", created_for from reservations\n        where user_id = $1 and location = $2 and cancelled = false\n            and (date > $3 or (date = $3 and hour * 60 + ifnull(\n                (select slots_start_minute from alternative_days a where a.date = reservations.date), 0\n            ) > $4))",
   "describe": {
     "columns": [
       {
@@ -28,5 +28,5 @@
       true
     ]
   },
-  "hash": "aa8fe6c83cf3ecd07722fe23071fb598e8538bab4f6cf2696aff84d701a197c5"
+  "hash": "ffdf6ca9c38ae0cd2423d67564d28f961f36cede444c6c285936fa5aef5fae7b"
 }

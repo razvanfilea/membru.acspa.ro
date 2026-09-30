@@ -53,7 +53,7 @@ pub struct StatusGridTemplate {
 }
 
 impl StatusGridTemplate {
-    pub fn new(
+    pub(super) fn new(
         member: UserDetails,
         year: i32,
         admin_payments_status_grid: bool,
