@@ -6,54 +6,103 @@
       {
         "name": "name!: String",
         "ordinal": 0,
-        "type_info": "Null"
+        "type_info": "Text",
+        "origin": "Expression"
       },
       {
         "name": "user_id",
         "ordinal": 1,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "user_id"
+          }
+        }
       },
       {
         "name": "hour",
         "ordinal": 2,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "hour"
+          }
+        }
       },
       {
         "name": "has_key",
         "ordinal": 3,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "has_key"
+          }
+        }
       },
       {
         "name": "as_guest",
         "ordinal": 4,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "as_guest"
+          }
+        }
       },
       {
         "name": "in_waiting",
         "ordinal": 5,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "in_waiting"
+          }
+        }
       },
       {
         "name": "created_for",
         "ordinal": 6,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "created_for"
+          }
+        }
       },
       {
         "name": "cancelled",
         "ordinal": 7,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "cancelled"
+          }
+        }
       },
       {
         "name": "role_color",
         "ordinal": 8,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "user_roles",
+            "name": "color"
+          }
+        }
       }
     ],
     "parameters": {
       "Right": 2
     },
     "nullable": [
-      null,
+      false,
       false,
       false,
       false,

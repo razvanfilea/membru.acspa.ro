@@ -21,7 +21,10 @@ pub fn router() -> Router<AppState> {
         .route("/", put(create_holiday))
         .route("/{date}", delete(delete_holiday))
 }
-pub(super) async fn get_holiday(pool: &SqlitePool, date: Date) -> Result<Option<AlternativeDay>, Error> {
+pub(super) async fn get_holiday(
+    pool: &SqlitePool,
+    date: Date,
+) -> Result<Option<AlternativeDay>, Error> {
     get_alternative_day(pool, AlternativeDayType::Holiday, date).await
 }
 

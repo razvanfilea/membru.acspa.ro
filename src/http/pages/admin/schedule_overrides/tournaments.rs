@@ -61,7 +61,7 @@ async fn tournaments_page(
         .partition(|t| t.date >= today);
 
     TournamentsTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         current_date: today,
         upcoming,
         past,
@@ -79,7 +79,7 @@ struct NewOrEditTournamentTemplate {
 
 async fn new_tournament_page(auth_session: AuthSession) -> HttpResult {
     NewOrEditTournamentTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         current: None,
         current_date: local_date(),
     }
@@ -146,7 +146,7 @@ async fn edit_tournament_page(
         .or_bail("Nu exista acest turneu")?;
 
     NewOrEditTournamentTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         current: Some(current),
         current_date: local_date(),
     }
@@ -227,10 +227,7 @@ async fn update_tournament(
     Ok(hx_redirect("/admin/tournaments"))
 }
 
-async fn delete_tournament(
-    State(state): State<AppState>,
-    Path(date): Path<IsoDate>,
-) -> HttpResult {
+async fn delete_tournament(State(state): State<AppState>, Path(date): Path<IsoDate>) -> HttpResult {
     let date = *date;
 
     if date < local_date() {

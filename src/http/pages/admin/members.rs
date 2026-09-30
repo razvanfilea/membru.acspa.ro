@@ -64,7 +64,7 @@ async fn members_page(State(state): State<AppState>, auth_session: AuthSession) 
     let members = UserDetails::fetch_all(&state.read_pool).await?;
 
     MembersTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         members,
     }
     .try_into_response()
@@ -304,7 +304,7 @@ async fn new_member_page(State(state): State<AppState>, auth_session: AuthSessio
     let current_date = local_date().to_iso();
 
     MemberFormTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         roles: UserRole::fetch_all_names(&state.read_pool).await?,
         member_id: None,
         values: MemberFormValues {
@@ -330,7 +330,7 @@ async fn create_new_member(
 
     let new_member_id = query_scalar!(
         "insert into users (email, name, nickname, phone_number, emergency_contact_phone_number, role_id, has_key, birthday, member_since, received_gift, password_hash)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning id",
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning id as \"id!\"",
         member.email,
         member.name,
         member.nickname,
@@ -375,7 +375,7 @@ async fn view_member_page(
         StatusGridTemplate::new(member.clone(), current_year, true, payments, &breaks);
 
     ViewMemberTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         reservations: GroupedUserReservations::fetch_for_user_year(
             &state.read_pool,
             member.id,
@@ -398,7 +398,7 @@ async fn edit_member_page(
     Path(member_id): Path<i64>,
 ) -> HttpResult {
     MemberFormTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         current_date: local_date().to_iso(),
         roles: UserRole::fetch_all_names(&state.read_pool).await?,
         member_id: Some(member_id),
@@ -480,7 +480,7 @@ async fn delete_member(
     State(state): State<AppState>,
     Path(member_id): Path<i64>,
 ) -> HttpResult {
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     if member_id == user.id {
         return Err(bail("Nu îți poți șterge propriul cont"));
     }
@@ -627,7 +627,7 @@ mod tests {
             r#"
             insert into users (email, name, role_id, password_hash, birthday, member_since, phone_number, emergency_contact_phone_number)
             values ('member@acspa.ro', 'Test Member', 1, '', '1995-05-10', '2024-01-01', '+40712345678', '+40798765432')
-            returning id
+            returning id as "id!"
             "#
         )
         .fetch_one(&pool)

@@ -6,7 +6,13 @@
       {
         "name": "date: Date",
         "ordinal": 0,
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "restrictions",
+            "name": "date"
+          }
+        }
       }
     ],
     "parameters": {

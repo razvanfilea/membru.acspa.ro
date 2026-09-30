@@ -6,37 +6,79 @@
       {
         "name": "slots_start_hour",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "slots_start_hour"
+          }
+        }
       },
       {
         "name": "slots_start_minute",
         "ordinal": 1,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "slots_start_minute"
+          }
+        }
       },
       {
         "name": "slot_duration",
         "ordinal": 2,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "slot_duration"
+          }
+        }
       },
       {
         "name": "slots_per_day",
         "ordinal": 3,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "slots_per_day"
+          }
+        }
       },
       {
         "name": "description",
         "ordinal": 4,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "description"
+          }
+        }
       },
       {
         "name": "slot_capacity",
         "ordinal": 5,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "slot_capacity"
+          }
+        }
       },
       {
         "name": "consumes_reservation",
         "ordinal": 6,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "consumes_reservation"
+          }
+        }
       }
     ],
     "parameters": {

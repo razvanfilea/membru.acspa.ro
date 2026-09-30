@@ -6,7 +6,8 @@
       {
         "name": "month_start: Date",
         "ordinal": 0,
-        "type_info": "Null"
+        "type_info": "Date",
+        "origin": "Expression"
       }
     ],
     "parameters": {

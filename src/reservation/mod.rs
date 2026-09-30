@@ -166,7 +166,7 @@ async fn reorder_extra_guest(
                 where date = $1 and hour = $2 and location = $3 and 
                     as_guest = true and in_waiting = false and cancelled = false
                 order by created_at desc limit 1)
-        returning user_id, created_for",
+        returning user_id as \"user_id!\", created_for",
         date,
         hour,
         location.id

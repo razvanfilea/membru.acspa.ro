@@ -10,7 +10,7 @@ use email_address::EmailAddress;
 use tracing::{debug, error};
 
 pub async fn login_page(auth_session: AuthSession) -> impl IntoResponse {
-    if auth_session.user.is_some() {
+    if auth_session.user().await.is_some() {
         return Redirect::to("/").into_response();
     }
 
@@ -35,7 +35,7 @@ fn login_error(message: impl AsRef<str>) -> Response {
 }
 
 pub async fn login(
-    mut auth: AuthSession,
+    auth: AuthSession,
     Form(login_user): Form<UserCredentials>,
 ) -> impl IntoResponse {
     let generic_error_template = login_error(
@@ -79,8 +79,8 @@ pub async fn login(
     }
 }
 
-pub async fn logout(mut auth: AuthSession) -> impl IntoResponse {
-    if let Some(user) = &auth.user {
+pub async fn logout(auth: AuthSession) -> impl IntoResponse {
+    if let Some(user) = auth.user().await {
         debug!("Logging out user: {}", user.id);
 
         if let Err(e) = auth.logout().await {

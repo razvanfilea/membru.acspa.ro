@@ -6,12 +6,24 @@
       {
         "name": "year",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "payment_allocations",
+            "name": "year"
+          }
+        }
       },
       {
         "name": "month",
         "ordinal": 1,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "payment_allocations",
+            "name": "month"
+          }
+        }
       }
     ],
     "parameters": {

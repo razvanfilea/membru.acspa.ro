@@ -6,42 +6,85 @@
       {
         "name": "date",
         "ordinal": 0,
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "date"
+          }
+        }
       },
       {
         "name": "description",
         "ordinal": 1,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": "Expression"
       },
       {
         "name": "start_hour",
         "ordinal": 2,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "slots_start_hour"
+          }
+        }
       },
       {
         "name": "duration",
         "ordinal": 3,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "slot_duration"
+          }
+        }
       },
       {
         "name": "slot_capacity",
         "ordinal": 4,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "slot_capacity"
+          }
+        }
       },
       {
         "name": "consumes_reservation",
         "ordinal": 5,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "consumes_reservation"
+          }
+        }
       },
       {
         "name": "start_minute",
         "ordinal": 6,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "slots_start_minute"
+          }
+        }
       },
       {
         "name": "created_at",
         "ordinal": 7,
-        "type_info": "Datetime"
+        "type_info": "Datetime",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "created_at"
+          }
+        }
       }
     ],
     "parameters": {

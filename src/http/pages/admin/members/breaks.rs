@@ -39,7 +39,7 @@ pub(super) async fn add_break(
         Date::parse(&date_str, date_formats::ISO_DATE).ok()
     }
 
-    let created_by = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let created_by = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
 
     let member = UserDetails::fetch(&state.read_pool, member_id).await?;
     let start_date = parse_month_input(&form.start_month).or_bail("Început de lună invalid")?;

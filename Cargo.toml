@@ -1,6 +1,6 @@
 [package]
 name = "acspa"
-version = "3.2.0"
+version = "3.3.0"
 edition = "2024"
 
 [dependencies]
@@ -11,12 +11,12 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 axum = { version = "0.8", features = ["ws"] }
 tower-http = { version = "0.7", features = ["trace", "timeout", "fs", "catch-panic"] }
 askama = { version = "0.16" }
-axum-login = "0.18"
+axum-login = { git = "https://github.com/maxcountryman/axum-login", rev = "151c72d7a1b4646830f86b4332e6bd6e34d719a7" }
 axum-extra = { version = "0.12", default-features = false, features = ["form"] }
 
 # Database
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
-tower-sessions-sqlx-store = { version = "0.15", features = ["sqlite"] }
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros", "time"] }
+tower-sessions-sqlx-store = { git = "https://github.com/maxcountryman/tower-sessions-stores", rev = "d18c9bf76f1d4fb73130dbe5aa643197f14b5d2d", features = ["sqlite"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }

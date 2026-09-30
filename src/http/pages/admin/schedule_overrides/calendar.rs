@@ -179,7 +179,7 @@ async fn calendar_page(
     let prev_month_date = month.previous_day().unwrap();
 
     CalendarTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         current_date: today,
         month,
         calendar_days,
@@ -313,11 +313,7 @@ async fn get_tournament_participants(
     .fetch_all(&state.read_pool)
     .await?;
 
-    Ok(participants
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>()
-        .join("\n"))
+    Ok(participants.join("\n"))
 }
 
 /// Open home pages are told to reload the day's hours too

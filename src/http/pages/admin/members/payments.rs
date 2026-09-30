@@ -20,7 +20,7 @@ use tracing::info;
 pub(super) struct NewPayment {
     amount: f64,
     payment_date: Date,
-    months: String,     // Format "M-YYYY"
+    months: String, // Format "M-YYYY"
     notes: Option<String>,
     view_year: Option<i32>,
 }
@@ -112,7 +112,7 @@ pub(super) async fn add_payment(
     auth_session: AuthSession,
     Form(form): Form<NewPayment>,
 ) -> HttpResult {
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let member = UserDetails::fetch(&state.read_pool, member_id).await?;
 
     let amount_cents = validate_and_convert_amount(form.amount).or_bail_with(|e| e)?;

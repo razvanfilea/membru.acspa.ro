@@ -82,7 +82,7 @@ async fn guests_page(State(state): State<AppState>, auth_session: AuthSession) -
     }
 
     GuestsTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         guests: GuestDto::fetch(&state.read_pool, None).await?,
         current_date: local_date(),
     }
@@ -146,7 +146,7 @@ async fn create_guest(
     auth_session: AuthSession,
     Form(guest): Form<NewGuestForm>,
 ) -> HttpResult {
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let date = *guest.date;
     let hour = guest.hour;
     let name = guest.name.trim();
@@ -201,7 +201,7 @@ async fn delete_guest(
     Path(rowid): Path<i64>,
     Query(query): Query<DeleteGuestQuery>,
 ) -> HttpResult {
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
 
     let mut tx = state.write_pool.begin().await?;
 
@@ -245,7 +245,10 @@ async fn delete_guest(
         return Err(bail("Invitatul nu există"));
     }
 
-    info!("Delete guest {} on {} hour {}", guest.created_for, guest.date, guest.hour);
+    info!(
+        "Delete guest {} on {} hour {}",
+        guest.created_for, guest.date, guest.hour
+    );
     let _ = state.reservation_notifier.send(());
 
     guests_changed("Invitatul a fost șters")
