@@ -1,114 +1,107 @@
 {% extends "base.html" %}
 
+{% import "components/section_header.html" as section_header %}
+{% import "components/empty_state.html" as empty_state %}
+
 {% block page_title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<main class="p-4 md:p-8 w-full flex flex-col gap-8">
-    <p class="text-nowrap text-sm">Ora server: <b>{{ crate::utils::dates::local_time() }}</b></p>
-    <div class="divider">Setări generale</div>
+{# Caller blocks only see locals, not template fields #}
+{% let year = selected_year.clone() %}
+<main class="page-shell">
+    <section class="surface-card">
+        {% call section_header::header("settings", "primary", "Setări generale", "Cod de intrare, acces și mesajul de pe pagina principală") %}
+        <span class="text-xs text-base-content/60 text-nowrap">
+            Ora server: <span class="font-mono font-semibold text-base-content">{{ crate::utils::dates::local_time() }}</span>
+        </span>
+        {% endcall %}
 
-    <form>
-        <fieldset class="fieldset gap-8">
-            <label class="floating-label">
-                <span>Cod intrare</span>
-                <input id="entrance_code" name="entrance_code" type="text"
-                       class="input input-lg input-bordered w-full max-w-xs"
-                       value="{{ global_vars.entrance_code }}"/>
-            </label>
+        <form class="section-body">
+            <fieldset class="fieldset gap-6">
+                <label class="floating-label">
+                    <span>Cod intrare</span>
+                    <input id="entrance_code" name="entrance_code" type="text"
+                           class="input input-lg input-bordered w-full max-w-xs"
+                           value="{{ global_vars.entrance_code }}"/>
+                </label>
 
-            <label class="label">
-                <input type="checkbox" name="check_payments" autocomplete="off" class="toggle toggle-warning"
-                       {% if global_vars.check_payments %} checked="checked" {% endif %} />
-                Permite accesul doar celor care au plătit
-            </label>
+                <label class="label">
+                    <input type="checkbox" name="check_payments" autocomplete="off" class="toggle toggle-warning"
+                           {% if global_vars.check_payments %} checked="checked" {% endif %} />
+                    Permite accesul doar celor care au plătit
+                </label>
 
-            <label class="floating-label">
-                <span>Mesaj pe pagina principală</span>
-                <textarea name="homepage_message" type="text"
-                          class="textarea input-lg textarea-bordered w-full">
-                    {{- global_vars.homepage_message -}}
-                </textarea>
-            </label>
+                <label class="floating-label">
+                    <span>Mesaj pe pagina principală</span>
+                    <textarea name="homepage_message" type="text"
+                              class="textarea input-lg textarea-bordered w-full">
+                        {{- global_vars.homepage_message -}}
+                    </textarea>
+                </label>
 
-            <label class="label">
-                <input type="checkbox" name="in_maintenance" autocomplete="off" class="toggle toggle-error"
-                       {% if global_vars.in_maintenance %} checked="checked" {% endif %} />
-                Modul de mentenanță
-            </label>
+                <label class="label">
+                    <input type="checkbox" name="in_maintenance" autocomplete="off" class="toggle toggle-error"
+                           {% if global_vars.in_maintenance %} checked="checked" {% endif %} />
+                    Modul de mentenanță
+                </label>
 
-            <button class="btn btn-primary btn-wide" hx-post="/admin/apply_settings">Aplică setările</button>
-        </fieldset>
-    </form>
-
-    <div class="divider">Rezumat cotizații</div>
-
-    <div class="flex flex-col gap-4">
-        <div class="flex flex-row justify-between items-center bg-base-200/50 p-4 rounded-2xl border border-base-300">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 flex items-center justify-center bg-error/10 text-error rounded-full shrink-0">
-                    <span class="material-symbols-outlined text-2xl">money_off</span>
+                <div class="flex justify-end">
+                    <button class="btn btn-primary gap-2" hx-post="/admin/apply_settings">
+                        <span class="material-symbols-outlined">save</span>
+                        Aplică setările
+                    </button>
                 </div>
-                <div>
-                    <h3 class="text-lg md:text-xl font-bold leading-tight">Restanțieri</h3>
-                    <p class="text-xs text-gray-500 hidden sm:block">Membri cu plăți lipsă în {{ selected_year }}</p>
-                </div>
-            </div>
+            </fieldset>
+        </form>
+    </section>
 
-            <div class="join shadow-sm">
-                <a href="?year={{ selected_year - 1 }}" class="btn btn-sm join-item bg-base-100 border-base-300">«</a>
-                <button class="btn btn-sm join-item btn-active pointer-events-none font-mono text-xs">{{ selected_year
-                    }}
-                </button>
-                <a href="?year={{ selected_year + 1 }}" class="btn btn-sm join-item bg-base-100 border-base-300">»</a>
-            </div>
+    <section class="surface-card">
+        {% call section_header::header("money_off", "error", "Restanțieri", format!("Membri cu plăți lipsă în {}", year)) %}
+        <div class="year-pager">
+            <a href="?year={{ year - 1 }}" class="join-item btn btn-sm btn-ghost" title="Anul anterior">
+                <span class="material-symbols-outlined text-lg">chevron_left</span>
+            </a>
+            <span class="join-item btn btn-sm btn-active btn-neutral pointer-events-none font-mono">{{ year }}</span>
+            <a href="?year={{ year + 1 }}" class="join-item btn btn-sm btn-ghost" title="Anul următor">
+                <span class="material-symbols-outlined text-lg">chevron_right</span>
+            </a>
         </div>
+        {% endcall %}
 
-        <div class="bg-base-100 rounded-2xl shadow-lg border border-base-300 overflow-hidden">
+        <div class="section-body">
             {% if debtors.is_empty() %}
-            <div class="flex flex-col items-center justify-center py-12 text-gray-400">
-                <span class="material-symbols-outlined text-5xl opacity-20 mb-2">check_circle</span>
-                <p class="font-semibold">Nicio restanță!</p>
-                <p class="text-xs">Toți membrii sunt la zi pe anul {{ selected_year }}.</p>
-            </div>
+            {{ empty_state::with_subtitle("check_circle", "Nicio restanță", format!("Toți membrii sunt la zi pe anul {}.", year)) }}
             {% else %}
-
-            <div class="p-4 bg-base-200/30 max-h-200 overflow-y-auto custom-scrollbar">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {% for item in debtors %}
-                    <div class="card bg-base-100 shadow-sm border border-base-300 hover:border-error/50 hover:shadow-md transition-all duration-200 group h-full">
-                        <div class="card-body p-4 gap-2">
-                            <div class="flex justify-between items-start gap-2">
-                                <a href="/admin/members/view/{{ item.member.id }}"
-                                   class="font-bold text-base line-clamp-1 hover:text-primary hover:underline transition-colors"
-                                   title="{{ item.member.name }}">
-                                    {{ item.member.name }}
-                                </a>
-                                <span class="badge badge-error font-bold shadow-sm shrink-0">
-                                    {{ item.unpaid_months.len() }} {% if item.unpaid_months.len() == 1 %} lună {% else %} luni {% endif %}
-                                </span>
-                            </div>
-
-                            <div class="divider my-0 opacity-50"></div>
-
-                            <div class="flex flex-wrap gap-1.5 grow content-start">
-                                {% for m in item.unpaid_months %}
-                                <span class="badge badge-sm badge-outline badge-error font-mono uppercase font-bold tracking-wide">
-                                    {{ m }}
-                                </span>
-                                {% endfor %}
-                            </div>
-                        </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {% for item in debtors %}
+                <div class="flex flex-col gap-2 p-4 rounded-xl bg-base-100 border border-base-300 hover:border-error/50 transition-colors">
+                    <div class="flex justify-between items-start gap-2">
+                        <a href="/admin/members/view/{{ item.member.id }}"
+                           class="font-bold text-base line-clamp-1 hover:text-primary hover:underline transition-colors"
+                           title="{{ item.member.name }}">
+                            {{ item.member.name }}
+                        </a>
+                        <span class="badge badge-error font-bold shrink-0">
+                            {{ item.unpaid_months.len() }} {% if item.unpaid_months.len() == 1 %} lună {% else %} luni {% endif %}
+                        </span>
                     </div>
-                    {% endfor %}
+
+                    <div class="flex flex-wrap gap-1.5 grow content-start">
+                        {% for m in item.unpaid_months %}
+                        <span class="badge badge-sm badge-outline badge-error font-mono uppercase font-bold tracking-wide">
+                            {{ m }}
+                        </span>
+                        {% endfor %}
+                    </div>
                 </div>
+                {% endfor %}
             </div>
 
-            <div class="bg-base-200/30 p-2 text-center text-xs text-gray-500 border-t border-base-200">
+            <p class="mt-4 text-center text-xs text-base-content/60">
                 Total: {{ debtors.len() }} membri cu restanțe
-            </div>
+            </p>
             {% endif %}
         </div>
-    </div>
-
+    </section>
 </main>
 {% endblock %}

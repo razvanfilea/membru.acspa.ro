@@ -82,6 +82,13 @@
         @apply block px-4 py-3 md:py-4 border-b border-base-300 last:border-b-0
                hover:bg-base-200/50 active:bg-base-200 transition-colors;
     }
+    .section-body {
+        @apply p-4 md:p-6;
+    }
+    /* Year selector in a section header */
+    .year-pager {
+        @apply join bg-base-100 border border-base-300 shadow-sm overflow-x-auto max-w-full;
+    }
     .btn-icon-delete {
         @apply btn btn-ghost btn-circle btn-sm text-base-content/50
                hover:text-error hover:bg-error/10 transition-colors;
@@ -122,8 +129,8 @@
 
     /* Member view: Break cards */
     .break-card {
-        @apply card bg-base-100 shadow-lg border border-base-300
-               hover:border-warning/50 transition-all duration-300 hover:shadow-xl;
+        @apply flex flex-col gap-3 p-4 rounded-xl bg-base-100 border border-base-300
+               hover:border-warning/50 transition-colors;
     }
 
     /* Member view: Legend */

@@ -1,14 +1,12 @@
 {% extends "base.html" %}
 
-{% import "components/section_header.html" as section_header %}
-
 {% block page_title %}Profil{% endblock %}
 
 {% block content %}
 {% let member = user %}
 
-<main class="p-4 md:p-8 flex flex-col gap-6">
-    <div class="bg-base-100 rounded-2xl border border-base-300 shadow-sm p-6 md:p-8 flex flex-col gap-6">
+<main class="page-shell">
+    <section class="surface-card p-6 md:p-8 flex flex-col gap-6">
         <div class="flex items-start justify-between gap-4">
             <div class="flex items-start gap-4 md:gap-5 min-w-0">
                 <img src="https://ui-avatars.com/api/?name={{ user.display_name() }}&rounded=true&format=svg"
@@ -27,26 +25,26 @@
                         <span class="badge badge-neutral font-semibold">{{ user.role }}</span>
                     </div>
 
-                    <div class="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
+                    <div class="flex items-center gap-2 text-sm text-base-content/60 flex-wrap">
                         <span>{{ user.email }}</span>
                         <span>•</span>
                         <span>Membru din {{ user.member_since.to_readable() }}</span>
                     </div>
 
-                    <div class="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
+                    <div class="flex items-center gap-2 text-sm text-base-content/60 flex-wrap">
                         <span>Telefon:
                             {% if let Some(phone) = user.phone_number %}
                                 <a href="tel:{{ phone }}" class="font-mono text-base-content hover:underline">{{ phone }}</a>
                             {% else %}
-                                <span class="text-gray-500">—</span>
+                                <span class="text-base-content/50">—</span>
                             {% endif %}
                         </span>
                         <span>•</span>
-                        <span>Telefon Urgență:
+                        <span>Telefon urgență:
                             {% if let Some(emergency_phone) = user.emergency_contact_phone_number %}
                                 <a href="tel:{{ emergency_phone }}" class="font-mono text-base-content hover:underline">{{ emergency_phone }}</a>
                             {% else %}
-                                <span class="text-gray-500">—</span>
+                                <span class="text-base-content/50">—</span>
                             {% endif %}
                         </span>
                     </div>
@@ -55,7 +53,7 @@
 
             <div class="flex items-center shrink-0">
                 <details class="dropdown dropdown-end sm:hidden">
-                    <summary class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-base-content" title="Opțiuni">
+                    <summary class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content" title="Opțiuni">
                         <span class="material-symbols-outlined">more_vert</span>
                     </summary>
                     <ul class="dropdown-content menu bg-base-200 rounded-box z-50 w-52 p-2 shadow-xl border border-base-300">
@@ -81,7 +79,7 @@
                     </ul>
                 </details>
 
-                <button class="hidden sm:inline-flex btn btn-ghost btn-sm text-gray-400 hover:text-error gap-1.5"
+                <button class="hidden sm:inline-flex btn btn-ghost btn-sm text-base-content/60 hover:text-error gap-1.5"
                         hx-post="/logout"
                         title="Deconectare">
                     <span class="material-symbols-outlined text-lg">logout</span>
@@ -91,8 +89,7 @@
         </div>
 
         <div class="hidden sm:flex items-center gap-3 flex-wrap">
-            <button class="btn btn-sm md:btn-md gap-2 text-white shadow-sm border-none bg-blue-600 hover:bg-blue-500"
-                    style="background-color: #2563eb;"
+            <button class="btn btn-sm md:btn-md btn-primary gap-2"
                     onclick="contact_modal.showModal()">
                 <span class="material-symbols-outlined text-lg">edit</span>
                 Editează profil
@@ -106,46 +103,39 @@
         <div class="border-t border-base-300"></div>
 
         <div class="flex flex-col gap-3">
-            <p class="text-xs uppercase font-bold tracking-wider text-gray-400">Săptămâna aceasta</p>
+            <p class="text-xs uppercase font-bold tracking-wider text-base-content/60">Săptămâna aceasta</p>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <div class="bg-base-200/50 border border-base-300 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3">
                     <span class="text-sm font-semibold text-base-content shrink-0">Cota membru</span>
 
-                    <progress class="progress bg-base-300 flex-1 h-2 min-w-16 {% if this_weeks_reservations.member >= max_reservations.member && max_reservations.member > 0 %}text-error{% endif %}"
-                              style="{% if this_weeks_reservations.member < max_reservations.member || max_reservations.member == 0 %}color: #3b82f6;{% endif %}"
+                    <progress class="progress flex-1 h-2 min-w-16 {% if this_weeks_reservations.member >= max_reservations.member && max_reservations.member > 0 %}progress-error{% else %}progress-primary{% endif %}"
                               value="{{ this_weeks_reservations.member }}"
                               max="{% if max_reservations.member == 0 %}1{% else %}{{ max_reservations.member }}{% endif %}"></progress>
 
                     <div class="flex items-baseline gap-1 shrink-0 font-mono text-right min-w-12 justify-end">
                         <span class="text-base font-bold {% if this_weeks_reservations.member >= max_reservations.member && max_reservations.member > 0 %}text-error{% else %}text-base-content{% endif %}">{{ this_weeks_reservations.member }}</span>
-                        <span class="text-xs text-gray-400">/ {{ max_reservations.member }}</span>
+                        <span class="text-xs text-base-content/60">/ {{ max_reservations.member }}</span>
                     </div>
                 </div>
 
                 <div class="bg-base-200/50 border border-base-300 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3">
                     <span class="text-sm font-semibold text-base-content shrink-0">Cota invitat</span>
 
-                    <progress class="progress bg-base-300 flex-1 h-2 min-w-16 {% if this_weeks_reservations.guest >= max_reservations.guest && max_reservations.guest > 0 %}text-error{% endif %}"
-                              style="{% if this_weeks_reservations.guest < max_reservations.guest || max_reservations.guest == 0 %}color: #3b82f6;{% endif %}"
+                    <progress class="progress flex-1 h-2 min-w-16 {% if this_weeks_reservations.guest >= max_reservations.guest && max_reservations.guest > 0 %}progress-error{% else %}progress-primary{% endif %}"
                               value="{{ this_weeks_reservations.guest }}"
                               max="{% if max_reservations.guest == 0 %}1{% else %}{{ max_reservations.guest }}{% endif %}"></progress>
 
                     <div class="flex items-baseline gap-1 shrink-0 font-mono text-right min-w-12 justify-end">
                         <span class="text-base font-bold {% if this_weeks_reservations.guest >= max_reservations.guest && max_reservations.guest > 0 %}text-error{% else %}text-base-content{% endif %}">{{ this_weeks_reservations.guest }}</span>
-                        <span class="text-xs text-gray-400">/ {{ max_reservations.guest }}</span>
+                        <span class="text-xs text-base-content/60">/ {{ max_reservations.guest }}</span>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="flex flex-col gap-6">
-        {{ section_header::header("summarize", "secondary", "Situație anuală cotizații", "Rezumat anual al plăților") }}
-        <div class="bg-base-100 rounded-2xl shadow-sm border border-base-300 p-4 md:p-6">
-            {% include "components/payments_status_grid.html" %}
-        </div>
-    </div>
+    {% include "components/payments_status_grid.html" %}
 
     {% include "profile_content.html" %}
 </main>
@@ -190,9 +180,7 @@
 
             <div class="flex justify-end gap-2 px-6 py-4 bg-base-200 border-t border-base-300">
                 <button type="button" class="btn btn-ghost" onclick="contact_modal.close()">Anulează</button>
-                <button type="submit"
-                        class="btn min-w-24 gap-2 text-white shadow-sm border-none bg-blue-600 hover:bg-blue-500"
-                        style="background-color: #2563eb;">
+                <button type="submit" class="btn btn-primary min-w-24 gap-2">
                     <span class="material-symbols-outlined">save</span>
                     Salvează
                 </button>
