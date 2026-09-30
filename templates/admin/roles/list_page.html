@@ -1,35 +1,52 @@
 {% extends "base.html" %}
+{% import "components/color_mapper.html" as color_mapper %}
+{% import "components/empty_state.html" as empty_state %}
 
-{% block page_title %}Roluri membri{% endblock %}
+{% block page_title %}Roluri{% endblock %}
 
 {% block content %}
 
-<main class="p-4 md:p-8 w-full">
-    <div class="flex flex-col w-full gap-4">
+<main class="page-shell">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-20">
         {% for role in roles %}
-        <div class="flex flex-row p-4 bg-gray-600 rounded gap-4 items-center justify-between">
-            <div class="flex flex-col">
-                <span class="text-xl text-gray-300">{{ role.name }}</span>
-                <p>Rezervări pe săptămână: <b>{{ role.reservations }}</b></p>
-                <p>Rezervări ca invitat pe săptămână: <b>{{ role.guest_reservations }}</b></p>
-                {% if let Some(color) = role.color %}
-                <p>Culoare rezervări: <b>{{ color }}</b></p>
-                {% endif %}
-                {% if let Some(fee) = role.monthly_fee %}
-                <p>Cotizație lunară: <b>{{ fee / 100 }} RON</b></p>
-                {% endif %}
+        <div class="surface-card p-4 flex flex-col gap-4">
+            <div class="flex flex-row items-center gap-3">
+                <span class="w-4 h-4 rounded-full shrink-0 {{ color_mapper::map_rust_color(role.css_color()) }}"></span>
+                <h3 class="text-lg font-bold grow truncate">{{ role.name }}</h3>
                 {% if role.admin_panel_access %}
-                <p><b>Access la panoul de administrare</b></p>
+                <span class="badge badge-sm badge-primary badge-outline">Admin</span>
                 {% endif %}
-                <p class="text-lg mt-2">Membri cu acest rol: <b>{{ role.members_count }}</b></p>
+                <a href="/admin/roles/edit/{{ role.id }}" class="btn-icon-edit" title="Editează rolul">
+                    <span class="material-symbols-outlined">edit</span>
+                </a>
             </div>
 
-            <a href="/admin/roles/edit/{{ role.id }}" class="btn btn-square btn-sm btn-outline">
-                <span class="material-symbols-outlined">edit</span>
-            </a>
-
+            <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div>
+                    <dt class="text-base-content/60">Rezervări / săptămână</dt>
+                    <dd class="font-semibold">{{ role.reservations }}</dd>
+                </div>
+                <div>
+                    <dt class="text-base-content/60">Ca invitat / săptămână</dt>
+                    <dd class="font-semibold">{{ role.guest_reservations }}</dd>
+                </div>
+                <div>
+                    <dt class="text-base-content/60">Cotizație lunară</dt>
+                    <dd class="font-semibold">
+                        {% if let Some(fee) = role.monthly_fee %}{{ fee / 100 }} RON{% else %}—{% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-base-content/60">Membri</dt>
+                    <dd class="font-semibold">{{ role.members_count }}</dd>
+                </div>
+            </dl>
         </div>
         {% endfor %}
+
+        {% if roles.is_empty() %}
+        {{ empty_state::with_subtitle("user_attributes", "Niciun rol definit", "Creează primul rol cu butonul de jos.") }}
+        {% endif %}
     </div>
 
     <div class="fab">
@@ -38,7 +55,6 @@
             Creează rol
         </a>
     </div>
-
 </main>
 
 {% endblock %}

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block page_title %}Zile de turneu{% endblock %}
+{% block page_title %}Turnee{% endblock %}
 
 {% block content %}
-<main class="p-4 md:p-8 w-full max-w-7xl mx-auto">
-    <div role="tablist" class="tabs tabs-border tabs-lg mb-8 grid grid-cols-2">
+<main class="page-shell">
+    <div role="tablist" class="tabs tabs-border tabs-lg grid grid-cols-2">
         <input type="radio" name="tournament_tabs" role="tab" class="tab" aria-label="Viitoare ({{ upcoming.len() }})"
                checked/>
         <div role="tabpanel" class="tab-content py-6 col-span-2">
@@ -21,7 +21,7 @@
 
     <div class="fab">
         <div class="flex flex-col items-end gap-3 z-50">
-            <a href="/admin/tournaments/new?thursday=true" class="btn-secondary-fab border border-white/10 backdrop-blur-md bg-secondary/80 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 px-4">
+            <a href="/admin/tournaments/new?thursday=true" class="btn-secondary-fab backdrop-blur-md bg-secondary/80 gap-2 px-4">
                 <span class="material-symbols-outlined">calendar_month</span>
                 Creează turneu joia
             </a>

@@ -1,72 +1,63 @@
+{% import "components/empty_state.html" as empty_state %}
+
 {% if tournaments.is_empty() %}
-<div class="flex flex-col items-center justify-center py-20 opacity-60">
-    <span class="material-symbols-outlined text-6xl mb-4">event_busy</span>
-    <p class="text-xl font-semibold">Nu există turnee programate</p>
-</div>
+{{ empty_state::with_subtitle("event_busy", "Nu există turnee", "Creează un turneu cu butoanele de jos.") }}
 {% else %}
-<div id="list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6 pb-24">
+<div id="list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 pb-24">
     {% for tournament in tournaments %}
     {% let iso_date = tournament.date.to_string() %}
 
-    <div id="tournament_{{ iso_date }}" class="card bg-neutral text-neutral-content shadow-xl border border-white/5">
-        <div class="card-body p-6">
-            <div class="flex justify-between items-start mb-2">
-                <div class="flex flex-col">
-                    <span class="text-xs uppercase tracking-wider opacity-60 font-bold">Data Turneu</span>
-                    <h2 class="text-2xl font-black text-primary">
-                        {{ tournament.date.to_readable() }}
-                    </h2>
-                </div>
-                {% if let Some(capacity) = tournament.slot_capacity %}
-                <div class="badge badge-secondary badge-outline font-bold">
-                    {{ capacity }} Locuri
-                </div>
+    <div id="tournament_{{ iso_date }}" class="surface-card p-4 md:p-5 flex flex-col gap-3">
+        <div class="flex justify-between items-start gap-2">
+            <div class="flex flex-col min-w-0">
+                <h2 class="text-xl font-bold text-primary">{{ tournament.date.to_readable() }}</h2>
+                {% if !tournament.description.is_empty() %}
+                <p class="text-base-content/80 line-clamp-2 leading-tight">{{ tournament.description }}</p>
                 {% endif %}
             </div>
-
-            {% if !tournament.description.is_empty() %}
-            <p class="italic opacity-80 mb-4 line-clamp-2 leading-tight">
-                "{{ tournament.description }}"
-            </p>
-            {% else %}
-            <div class="h-6"></div>
+            {% if let Some(capacity) = tournament.slot_capacity %}
+            <span class="badge badge-secondary badge-outline font-bold shrink-0">{{ capacity }} locuri</span>
             {% endif %}
+        </div>
 
-            <div class="space-y-2 text-sm grow">
-                <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary text-base">schedule</span>
-                    <span>Începe la ora: <b>{{ tournament.start_hour }}:{{ format!("{:02}", tournament.start_minute.unwrap_or_default()) }}</b></span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary text-base">timer</span>
-                    <span>Durată: <b>{{ tournament.duration }} ore</b></span>
-                </div>
+        <div class="flex flex-col gap-1.5 text-sm grow">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base">schedule</span>
+                <span>Începe la ora <b>{{ tournament.start_hour }}:{{ format!("{:02}", tournament.start_minute.unwrap_or_default()) }}</b></span>
             </div>
-
-            <div class="flex items-center justify-between items-end">
-                    <span class="text-[10px] uppercase opacity-40">
-                        Creat: {{ tournament.created_at.date().to_readable() }}
-                    </span>
-
-                {% if tournament.date >= current_date %}
-                <div class="flex gap-2">
-                    <a href="/admin/tournaments/edit/{{ iso_date }}"
-                       class="btn btn-circle btn-sm btn-ghost hover:btn-info"
-                       title="Editează">
-                        <span class="material-symbols-outlined scale-90">edit</span>
-                    </a>
-
-                    <button class="btn btn-circle btn-sm btn-ghost btn-error"
-                            title="Șterge"
-                            hx-confirm="Ești sigur ca vrei să ștergi acest turneu? Această acțiune va șterge și toate rezervările din acea zi."
-                            hx-delete='/admin/tournaments/{{ iso_date }}'
-                            hx-target="#tournament_{{ iso_date }}"
-                            hx-swap="outerHTML">
-                        <span class="material-symbols-outlined scale-90">delete</span>
-                    </button>
-                </div>
-                {% endif %}
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base">timer</span>
+                <span>Durată <b>{{ tournament.duration }} ore</b></span>
             </div>
+            {% if tournament.consumes_reservation %}
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-warning text-base">confirmation_number</span>
+                <span>Consumă o rezervare</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="flex items-center justify-between">
+            <span class="text-xs text-base-content/50">
+                Creat pe {{ tournament.created_at.date().to_readable() }}
+            </span>
+
+            {% if tournament.date >= current_date %}
+            <div class="flex gap-1">
+                <a href="/admin/tournaments/edit/{{ iso_date }}" class="btn-icon-edit" title="Editează">
+                    <span class="material-symbols-outlined">edit</span>
+                </a>
+
+                <button class="btn-icon-delete"
+                        title="Șterge"
+                        hx-confirm="Ești sigur că vrei să ștergi acest turneu? Această acțiune va șterge și toate rezervările din acea zi."
+                        hx-delete='/admin/tournaments/{{ iso_date }}'
+                        hx-target="#tournament_{{ iso_date }}"
+                        hx-swap="outerHTML">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
+            </div>
+            {% endif %}
         </div>
     </div>
     {% endfor %}
