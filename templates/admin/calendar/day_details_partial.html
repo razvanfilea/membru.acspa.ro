@@ -1,167 +1,200 @@
-<div class="animate-in fade-in slide-in-from-right-4 duration-300 space-y-8">
-    <header>
-        <p class="text-xs font-black uppercase tracking-widest text-base-content/40 mb-1">Data
-            selectată</p>
-        <h3 class="text-3xl font-black text-base-content tracking-tighter animate-pop">{{
-            selected_date.to_readable() }}</h3>
+{% let restriction_date = day.date.to_iso() %}
+<div class="flex flex-col gap-6">
+    <header class="flex flex-col gap-2">
+        <p class="text-sm text-base-content/60">{{ day.weekday() }}</p>
+        <h3 class="text-2xl md:text-3xl font-bold leading-none">{{ day.date.to_readable() }}</h3>
+        <div class="flex flex-wrap gap-1.5">
+            {% if day.is_past_date() %}
+            <span class="badge badge-ghost">Trecut</span>
+            {% endif %}
+            <span class="badge badge-outline gap-1">
+                <span class="material-symbols-outlined text-sm">group</span>
+                {{ day.events.reservations }} {% if day.events.reservations == 1 %}rezervare{% else %}rezervări{% endif %}
+            </span>
+            {% if day.events.has_guests %}
+            <span class="badge badge-outline badge-info gap-1">
+                <span class="material-symbols-outlined text-sm">person_add</span>
+                Invitați
+            </span>
+            {% endif %}
+        </div>
     </header>
 
-    {% if let Some(tournament) = selected_tournament %}
-    <section id="section_tournament" class="space-y-6">
-        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
-            <h4 class="text-xs font-black uppercase tracking-widest text-orange-500">Turneu
-                Programat</h4>
-            <span class="material-symbols-outlined text-orange-500 text-sm">trophy</span>
+    {% if let Some(tournament) = day.tournament %}
+    <section class="flex flex-col gap-3 p-4 rounded-xl border border-warning/50 bg-warning/5">
+        <div class="flex items-center gap-2 text-warning">
+            <span class="material-symbols-outlined">trophy</span>
+            <h4 class="font-semibold">Turneu programat</h4>
         </div>
-        <div class="p-4 rounded-2xl border border-orange-500/50">
-            <p class="text-lg font-black text-orange-500 leading-tight">{{ tournament.description }}</p>
-            <p class="text-xs font-bold opacity-60 mt-1 uppercase">Start: {{ tournament.start_hour }}:{{
-                format!("{:02}", tournament.start_minute.unwrap_or_default()) }}</p>
-            {% if !is_past_date() %}
-            <a href="/admin/tournaments/edit/{{ selected_date.to_iso() }}"
-               class="btn btn-outline mt-3 w-full font-black uppercase tracking-widest">Detalii
-                Turneu</a>
+        <div>
+            <p class="text-lg font-bold leading-tight">{{ tournament.description }}</p>
+            <p class="text-sm text-base-content/60 mt-1">Start: <span class="font-mono">{{ tournament.start_hour }}:{{
+                format!("{:02}", tournament.start_minute.unwrap_or_default()) }}</span></p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            {% if !day.is_past_date() %}
+            <a href="/admin/tournaments/edit/{{ day.date.to_iso() }}" class="btn btn-sm btn-outline gap-2">
+                <span class="material-symbols-outlined text-base">edit</span>
+                Editează turneul
+            </a>
             {% endif %}
-            {% if !tournament_participants.is_empty() %}
+            {% if !day.tournament_participants.is_empty() %}
             <button type="button"
-                    class="btn btn-ghost btn-sm mt-2 w-full gap-2"
-                    data-participants="{{ tournament_participants }}"
+                    class="btn btn-sm btn-ghost gap-2"
+                    data-participants="{{ day.tournament_participants }}"
                     onclick="navigator.clipboard.writeText(this.dataset.participants)">
-                <span class="material-symbols-outlined text-sm">content_copy</span>
+                <span class="material-symbols-outlined text-base">content_copy</span>
                 Copiază participanți
             </button>
             {% endif %}
         </div>
     </section>
-    {% else %}
-    <section id="section_holidays" class="space-y-6">
-        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
-            <h4 class="text-xs font-black uppercase tracking-widest text-primary">Zi libera</h4>
-            <span class="material-symbols-outlined text-primary text-sm">clear_day</span>
-        </div>
+    {% endif %}
 
-        {% if let Some(day) = selected_holiday %}
-        <div class="space-y-3">
-            <div class="p-4 pt-2 mb-6 bg-base-100 rounded-2xl border border-base-content/5 shadow-inner">
-                <label class="text-[10px] font-black text-primary uppercase tracking-widest">Descriere</label>
-                <p class="text-xl font-bold mt-2 leading-tight">
-                    {% if !day.description.is_empty() %}{{ day.description }}{% else %}Zi liberă{% endif %}
-                </p>
+    {% if let Some(holiday) = day.holiday %}
+    <section class="flex items-start justify-between gap-3 p-4 rounded-xl border border-primary/50 bg-primary/5">
+        <div class="flex flex-col gap-1 min-w-0">
+            <div class="flex items-center gap-2 text-primary">
+                <span class="material-symbols-outlined">clear_day</span>
+                <h4 class="font-semibold">Zi liberă</h4>
             </div>
-
-            {% if !is_past_date() %}
-            <button class="btn btn-error btn-block"
-                    hx-delete="/admin/holiday/{{ selected_date.to_iso() }}"
-                    hx-target="#day_details_container"
-                    hx-confirm="Șterge Ziua Liberă?">
-                <span class="material-symbols-outlined">event_busy</span>
-                Șterge Ziua Liberă
-            </button>
+            {% if !holiday.description.is_empty() %}
+            <p class="text-lg font-bold leading-tight wrap-break-word">{{ holiday.description }}</p>
             {% endif %}
         </div>
-        {% else %}
-        {% if !is_past_date() %}
-        <form hx-put="/admin/holiday"
-              hx-target="#day_details_container"
-              hx-confirm="Ești sigur că vrei să marchezi ca zi liberă? Asta va șterge rezervările existente"
-              class="space-y-6">
-            <input type="hidden" name="date" value="{{ selected_date.to_iso() }}">
-
-            <div class="form-control">
-                <label class="label"><span class="label-text font-bold text-xs uppercase opacity-50">Descriere</span></label>
-                <input name="description" type="text" placeholder="Ex: Paște, Crăciun..."
-                       class="input input-lg input-bordered w-full rounded-xl bg-base-100 focus:input-primary"/>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-block">
-                <span class="material-symbols-outlined">event_available</span>
-                Marchează ca Zi Liberă
-            </button>
-        </form>
-        {% endif %}
+        {% if !day.is_past_date() %}
+        <button class="btn-icon-delete"
+                hx-delete="/admin/holiday/{{ day.date.to_iso() }}"
+                hx-target="#day_details_container"
+                hx-confirm="Sigur vrei să ștergi ziua liberă? Programul obișnuit va fi reluat."
+                title="Șterge ziua liberă">
+            <span class="material-symbols-outlined">delete</span>
+        </button>
         {% endif %}
     </section>
+    {% endif %}
 
-    <section id="section_restrictions" class="space-y-6">
-        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
-            <h4 class="text-xs font-black uppercase tracking-widest text-red-500">Restricții Orare</h4>
-            <span class="material-symbols-outlined text-red-500 text-sm">block</span>
+    {% if !day.restrictions.is_empty() %}
+    <section class="flex flex-col gap-2">
+        <div class="flex items-center gap-2 text-error">
+            <span class="material-symbols-outlined">block</span>
+            <h4 class="font-semibold">Restricții orare</h4>
         </div>
-
-        <div class="space-y-2">
-            {% for res in selected_restrictions %}
-            {% let restriction_date = selected_date.to_iso() %}
-            <div class="flex justify-between items-center bg-base-100 p-3 rounded-xl text-sm">
-                <div>
-                    <span class="font-black">{% if let Some(h) = res.hour %}{{ h }}:00{% else %}Toată ziua{% endif %}</span>
+        <div class="flex flex-col rounded-xl border border-base-300 overflow-hidden">
+            {% for res in day.restrictions %}
+            <div class="flex justify-between items-center gap-2 px-3 py-2 border-b border-base-300 last:border-b-0 text-sm">
+                <div class="min-w-0">
+                    <span class="font-semibold font-mono">{% if let Some(h) = res.hour %}{{ h }}:00{% else %}Toată ziua{% endif %}</span>
                     {% if !res.message.is_empty() %}
-                    <span class="opacity-70">- {{ res.message }}</span>
+                    <span class="text-base-content/70">– {{ res.message }}</span>
                     {% endif %}
                 </div>
-                {% if !is_past_date() %}
-                <button class="btn btn-ghost btn-xs text-red-500 p-0 h-auto min-h-0"
+                {% if !day.is_past_date() %}
+                <button class="btn-icon-delete"
                         hx-target="#day_details_container"
-                        hx-delete="/admin/restrictions?date={{ restriction_date }}{% if let Some(h) = res.hour %}&hour={{ h }}{% endif %}">
-                    <span class="material-symbols-outlined text-sm">delete</span>
+                        hx-confirm="Sigur vrei să ștergi restricția?"
+                        hx-delete="/admin/restrictions?date={{ restriction_date }}{% if let Some(h) = res.hour %}&hour={{ h }}{% endif %}"
+                        title="Șterge restricția">
+                    <span class="material-symbols-outlined">delete</span>
                 </button>
                 {% endif %}
             </div>
             {% endfor %}
         </div>
-
-        {% if can_add_restriction() && !is_past_date() %}
-        <form hx-put="/admin/restrictions" hx-target="#day_details_container"
-              hx-confirm="Ești sigur că vrei să blochezi orele? Asta va șterge rezervările existente"
-              class="space-y-6">
-            <input type="hidden" name="date" value="{{ selected_date.to_iso() }}">
-            <div class="form-control">
-                <label class="label"><span class="label-text font-bold text-xs uppercase opacity-50">Descriere</span></label>
-                <input name="message" type="text" placeholder="Motiv blocaj orar..."
-                       class="input input-lg input-bordered w-full rounded-xl bg-base-100 focus:input-primary"/>
-            </div>
-
-            <label class="label cursor-pointer justify-start gap-3 py-0">
-                <input type="checkbox" id="allDayToggle" name="all_day" class="toggle toggle-error"
-                       onchange="toggleHourGrid(this)"/>
-                <span class="label-text font-black uppercase opacity-70">Toată ziua</span>
-            </label>
-
-            <div id="hour_selection_wrapper"
-                 class="flex flex-row flex-nowrap gap-1.5 p-1 border border-base-200 rounded-xl bg-base-200/50">
-                {% for hour in day_structure.iter() %}
-                {% if is_restriction_hour_available(hour.into()) %}
-                <label class="flex flex-col grow items-center justify-center p-1.5 rounded-lg hover:bg-base-300 transition-all cursor-pointer border border-red-500/50
-                    has-checked:bg-red-600 has-checked:text-red-600-content has-checked:border-red-600/20">
-                    <span class="text-sm font-black">{{ hour }}</span>
-                    <input type="checkbox" name="hour" value="{{ hour }}" class="hour-checkbox hidden"/>
-                </label>
-                {% endif %}
-                {% endfor %}
-            </div>
-            <button type="submit" class="btn btn-error btn-block">
-                <span class="material-symbols-outlined">calendar_lock</span>
-                Blochează Orele
-            </button>
-        </form>
-        {% endif %}
     </section>
     {% endif %}
 
-    <section id="section_reservations" class="space-y-6">
-        <div class="flex items-center justify-between border-b border-base-content/10 pb-2">
-            <h4 class="text-xs font-black uppercase tracking-widest text-info">Rezervări</h4>
-            <span class="material-symbols-outlined text-info text-sm">person</span>
+    <section class="flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-info">
+                <span class="material-symbols-outlined">group</span>
+                <h4 class="font-semibold">Rezervări</h4>
+            </div>
+            {% if day.has_history() %}
+            <a href="/admin/history?date={{ day.date.to_iso() }}" class="btn btn-sm btn-ghost gap-1.5">
+                <span class="material-symbols-outlined text-base">history</span>
+                Istoric
+            </a>
+            {% endif %}
         </div>
-        {{ reservations | safe }}
-        {% if has_history() %}
-        <a href="/admin/history?date={{ selected_date.to_iso() }}"
-           class="btn btn-outline btn-info w-full gap-2 font-black uppercase tracking-widest">
-            <span class="material-symbols-outlined text-sm">history</span>
-            Istoric rezervări
-        </a>
-        {% endif %}
+        {{ day.reservations | safe }}
     </section>
 
+    {% if !day.is_past_date() && day.tournament.is_none() %}
+    <section class="flex flex-col gap-2">
+        <h4 class="font-semibold text-base-content/70">Acțiuni</h4>
+
+        {% if day.holiday.is_none() %}
+        <a href="/admin/tournaments/new?date={{ day.date.to_iso() }}"
+           class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-300 hover:border-warning/50 hover:bg-base-200/50 transition-colors">
+            <span class="material-symbols-outlined text-warning">trophy</span>
+            <span class="font-medium grow">Adaugă turneu</span>
+            <span class="material-symbols-outlined text-base-content/50">chevron_right</span>
+        </a>
+
+        <details class="collapse collapse-arrow rounded-xl border border-base-300">
+            <summary class="collapse-title flex items-center gap-3 font-medium">
+                <span class="material-symbols-outlined text-primary">event_available</span>
+                Marchează zi liberă
+            </summary>
+            <div class="collapse-content">
+                <form hx-put="/admin/holiday"
+                      hx-target="#day_details_container"
+                      hx-confirm="Sigur vrei să marchezi ziua ca liberă? Rezervările existente vor fi șterse."
+                      class="flex flex-col gap-4 pt-1">
+                    <input type="hidden" name="date" value="{{ day.date.to_iso() }}">
+                    <label class="floating-label">
+                        <span>Descriere</span>
+                        <input name="description" type="text" placeholder="Descriere (ex: Paște, Crăciun)"
+                               class="input input-bordered w-full"/>
+                    </label>
+                    <button type="submit" class="btn btn-primary">Marchează zi liberă</button>
+                </form>
+            </div>
+        </details>
+        {% endif %}
+
+        {% if day.can_add_restriction() %}
+        <details class="collapse collapse-arrow rounded-xl border border-base-300">
+            <summary class="collapse-title flex items-center gap-3 font-medium">
+                <span class="material-symbols-outlined text-error">calendar_lock</span>
+                Blochează ore
+            </summary>
+            <div class="collapse-content">
+                <form hx-put="/admin/restrictions" hx-target="#day_details_container"
+                      hx-confirm="Sigur vrei să blochezi orele? Rezervările existente vor fi șterse."
+                      class="flex flex-col gap-4 pt-1">
+                    <input type="hidden" name="date" value="{{ day.date.to_iso() }}">
+                    <label class="floating-label">
+                        <span>Motiv</span>
+                        <input name="message" type="text" placeholder="Motiv"
+                               class="input input-bordered w-full"/>
+                    </label>
+
+                    <label class="label cursor-pointer justify-start gap-3">
+                        <input type="checkbox" id="allDayToggle" name="all_day" class="toggle toggle-error"
+                               onchange="toggleHourGrid(this)"/>
+                        Toată ziua
+                    </label>
+
+                    <div id="hour_selection_wrapper" class="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
+                        {% for hour in day.day_structure.iter() %}
+                        {% if day.is_restriction_hour_available(hour.into()) %}
+                        <label class="flex items-center justify-center py-2 rounded-lg border border-base-300 cursor-pointer transition-colors
+                            hover:border-error/50 has-checked:bg-error has-checked:text-error-content has-checked:border-error">
+                            <span class="text-sm font-semibold font-mono">{{ hour }}</span>
+                            <input type="checkbox" name="hour" value="{{ hour }}" class="hour-checkbox hidden"/>
+                        </label>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-error">Blochează orele</button>
+                </form>
+            </div>
+        </details>
+        {% endif %}
+    </section>
+    {% endif %}
 </div>
 
 <script>
@@ -169,17 +202,10 @@
         const wrapper = document.getElementById('hour_selection_wrapper');
         const hourCheckboxes = wrapper.querySelectorAll('.hour-checkbox');
 
-        if (toggle.checked) {
-            wrapper.style.display = 'none';
-            hourCheckboxes.forEach(cb => {
-                cb.disabled = true;
-                cb.checked = false;
-            });
-        } else {
-            wrapper.style.display = 'flex';
-            hourCheckboxes.forEach(cb => {
-                cb.disabled = false;
-            });
-        }
+        wrapper.classList.toggle('hidden', toggle.checked);
+        hourCheckboxes.forEach(cb => {
+            cb.disabled = toggle.checked;
+            if (toggle.checked) cb.checked = false;
+        });
     }
 </script>

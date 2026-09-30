@@ -1,7 +1,7 @@
 use serde::{Deserialize, Deserializer};
 use std::ops::Deref;
 use time::macros::format_description;
-use time::{Date, Month, OffsetDateTime, UtcOffset};
+use time::{Date, Month, OffsetDateTime, UtcOffset, Weekday};
 
 pub const ISO_DATE: &[time::format_description::BorrowedFormatItem] =
     format_description!("[year]-[month]-[day]");
@@ -92,5 +92,17 @@ pub fn month_as_str(month: &Month) -> &'static str {
         Month::October => "Octombrie",
         Month::November => "Noiembrie",
         Month::December => "Decembrie",
+    }
+}
+
+pub fn weekday_as_str(weekday: Weekday) -> &'static str {
+    match weekday {
+        Weekday::Monday => "Luni",
+        Weekday::Tuesday => "Marți",
+        Weekday::Wednesday => "Miercuri",
+        Weekday::Thursday => "Joi",
+        Weekday::Friday => "Vineri",
+        Weekday::Saturday => "Sâmbătă",
+        Weekday::Sunday => "Duminică",
     }
 }

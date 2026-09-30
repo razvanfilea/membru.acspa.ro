@@ -1,27 +1,39 @@
 {% let is_today = (date == current_date) %}
-{% let is_other_month = (date.month() != selected_date.month()) %}
+{% let events = events.clone() %}
 
+{% if date.month() != view_month %}
+{# Days of the adjacent months open their own month #}
+<a href="/admin/calendar/{{ date.year() }}/{{ u8::from(date.month()) }}?day={{ date }}"
+   class="calendar-day opacity-40">
+{% else %}
 <button id="day_{{ date }}"
         hx-get="/admin/calendar/details/{{ date }}"
         hx-target="#day_details_container"
         hx-indicator="#day_details_loading"
+        hx-push-url="/admin/calendar/{{ date.year() }}/{{ u8::from(date.month()) }}?day={{ date }}"
+        hx-on::before-request="selectCalendarDay(this)"
+        hx-on::after-request="showDayPanel()"
         hx-swap-oob="{{ oob_swap }}"
-        class="aspect-square rounded-full border-2 flex flex-col items-center justify-center transition-all relative group
-            {% if is_today %} border-primary/50 {% else %} border-gray-600 {% endif %}
-            {% if is_other_month %} opacity-30 grayscale {% endif %}
-            bg-base-100 hover:border-primary/40 shadow-sm overflow-hidden">
+        aria-pressed="{{ is_selected }}"
+        class="calendar-day">
+{% endif %}
+    <span class="text-sm sm:text-lg font-bold leading-none
+        {% if is_today %} flex items-center justify-center size-5 sm:size-8 rounded-full bg-primary text-primary-content{% endif %}">
+        {{ date.day() }}
+    </span>
 
-    <span class="text-lg font-black">{{ date.day() }}</span>
+    <span class="text-[10px] sm:text-xs font-mono leading-none text-base-content/60 h-2.5 sm:h-3">
+        {% if events.reservations > 0 %}{{ events.reservations }}{% endif %}
+    </span>
 
-    <div class="absolute bottom-0 left-0 w-full flex h-1.5 px-2 pb-1 gap-0.5">
-        {% if events.has_holiday %}
-        <div class="flex-1 rounded-full bg-primary"></div>
-        {% endif %}
-        {% if events.has_restriction %}
-        <div class="flex-1 rounded-full bg-red-500"></div>
-        {% endif %}
-        {% if events.has_tournament %}
-        <div class="flex-1 rounded-full bg-orange-500"></div>
-        {% endif %}
-    </div>
+    <span class="flex gap-0.5 sm:gap-1 h-1.5 sm:h-2">
+        {% if events.has_holiday %}<span class="event-dot event-holiday"></span>{% endif %}
+        {% if events.has_restriction %}<span class="event-dot event-restriction"></span>{% endif %}
+        {% if events.has_tournament %}<span class="event-dot event-tournament"></span>{% endif %}
+        {% if events.has_guests %}<span class="event-dot event-guests"></span>{% endif %}
+    </span>
+{% if date.month() != view_month %}
+</a>
+{% else %}
 </button>
+{% endif %}

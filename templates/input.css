@@ -89,6 +89,20 @@
     .year-pager {
         @apply join bg-base-100 border border-base-300 shadow-sm overflow-x-auto max-w-full;
     }
+    /* Calendar */
+    .calendar-day {
+        @apply aspect-square w-full flex flex-col items-center justify-center gap-0.5 sm:gap-1
+               rounded-lg sm:rounded-xl border border-base-300 bg-base-100 transition-colors
+               hover:border-primary/50 aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-primary/40;
+    }
+    /* Event colors, shared by the calendar markers and the day panel */
+    .event-dot {
+        @apply size-1.5 sm:size-2 rounded-full shrink-0;
+    }
+    .event-holiday { @apply bg-primary; }
+    .event-restriction { @apply bg-error; }
+    .event-tournament { @apply bg-warning; }
+    .event-guests { @apply bg-info; }
     .btn-icon-delete {
         @apply btn btn-ghost btn-circle btn-sm text-base-content/50
                hover:text-error hover:bg-error/10 transition-colors;
