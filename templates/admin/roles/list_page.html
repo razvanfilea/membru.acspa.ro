@@ -11,7 +11,7 @@
         {% for role in roles %}
         <div class="surface-card p-4 flex flex-col gap-4">
             <div class="flex flex-row items-center gap-3">
-                <span class="w-4 h-4 rounded-full shrink-0 {{ color_mapper::map_rust_color(role.css_color()) }}"></span>
+                <span class="w-4 h-4 rounded-full shrink-0 {{ color_mapper::map_rust_color(role.css_color()) }}" title="Culoare rezervări"></span>
                 <h3 class="text-lg font-bold grow truncate">{{ role.name }}</h3>
                 {% if role.admin_panel_access %}
                 <span class="badge badge-sm badge-primary badge-outline">Admin</span>

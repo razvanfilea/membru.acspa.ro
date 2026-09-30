@@ -9,7 +9,7 @@
     <section class="surface-card p-6 md:p-8 flex flex-col gap-6">
         <div class="flex items-start justify-between gap-4">
             <div class="flex items-start gap-4 md:gap-5 min-w-0">
-                <img src="https://ui-avatars.com/api/?name={{ user.display_name() }}&rounded=true&format=svg"
+                <img src="https://ui-avatars.com/api/?name={{ user.display_name()|urlencode }}&rounded=true&format=svg"
                      loading="lazy"
                      width="64px"
                      height="64px"
@@ -26,7 +26,7 @@
                     </div>
 
                     <div class="flex items-center gap-2 text-sm text-base-content/60 flex-wrap">
-                        <span>{{ user.email }}</span>
+                        <span class="break-all">{{ user.email }}</span>
                         <span>•</span>
                         <span>Membru din {{ user.member_since.to_readable() }}</span>
                     </div>
@@ -135,6 +135,8 @@
         </div>
     </section>
 
+    {% let oob = false %}
+    {% let paid_months_json = "" %}
     {% include "components/payments_status_grid.html" %}
 
     {% include "profile_content.html" %}

@@ -1,0 +1,74 @@
+{% import "components/section_header.html" as section_header %}
+{% import "components/empty_state.html" as empty_state %}
+
+<section id="breaks" class="surface-card" {% if oob %}hx-swap-oob="true"{% endif %}>
+    {% call section_header::header("pause_circle", "warning", "Pauze abonament", "Perioadele de suspendare a abonamentului") %}
+    <button class="btn btn-sm btn-warning gap-2" onclick="break_modal.showModal()">
+        <span class="material-symbols-outlined text-lg">add</span>
+        <span class="hidden sm:inline">Adaugă pauză</span>
+    </button>
+    {% endcall %}
+
+    <div class="section-body grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
+        {% for br in breaks %}
+        <div class="break-card group">
+            <div class="flex justify-between items-start">
+                <div class="flex flex-col relative pl-6 border-l-2 border-base-300 group-hover:border-warning transition-colors">
+
+                    <div class="relative mb-2 md:mb-6">
+                        <span class="absolute -left-7.75 top-1.5 w-3.5 h-3.5 rounded-full bg-success ring-4 ring-base-100"></span>
+                        <span class="text-xs font-bold text-success tracking-wider uppercase">Început</span>
+                        <div class="font-bold text-xl text-base-content mt-0.5">
+                            {{ br.start_date.to_month_year() }}
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <span class="absolute -left-7.75 top-1.5 w-3.5 h-3.5 rounded-full bg-error ring-4 ring-base-100"></span>
+                        <span class="text-xs font-bold text-error tracking-wider uppercase">Sfârșit (inclusiv)</span>
+                        <div class="font-bold text-xl text-base-content mt-0.5">
+                            {{ br.end_date.to_month_year() }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col justify-between items-end gap-4">
+                    <button hx-delete="/admin/members/breaks/{{ br.id }}"
+                            hx-vals="js:{view_year: paymentsViewYear()}"
+                            hx-confirm="Sigur vrei să ștergi această pauză?"
+                            class="btn-icon-delete"
+                            aria-label="Șterge">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+
+                    <div class="badge badge-neutral font-mono">
+                        {{ br.length_in_months() }} {% if br.length_in_months() == 1 %} lună {% else %} luni {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="grow"></div>
+
+            {% if let Some(reason) = br.reason %}
+            <div class="bg-base-200/60 items-center rounded-lg p-3 border border-base-200 flex gap-2">
+                <span class="material-symbols-outlined text-base-content/50 text-sm mt-0.5 shrink-0">sticky_note_2</span>
+                <p class="text-sm italic leading-snug wrap-break-word">{{ reason }}</p>
+            </div>
+            {% endif %}
+
+            <div class="flex flex-row items-center justify-end gap-1 text-xs text-base-content/50">
+                <span class="material-symbols-outlined text-sm">edit_calendar</span>
+                <span>{{ date_formats::as_local(br.created_at) }}</span>
+                <span>
+                    de <a href="/admin/members/view/{{ br.created_by }}"
+                          class="hover:text-primary hover:underline transition-colors">{{ br.created_by_name }}</a>
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if breaks.is_empty() %}
+        {{ empty_state::with_subtitle("event_busy", "Nu există pauze înregistrate", "Apasă pe \"Adaugă pauză\" pentru a suspenda abonamentul.") }}
+        {% endif %}
+    </div>
+</section>

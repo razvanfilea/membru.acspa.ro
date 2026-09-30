@@ -1,10 +1,10 @@
 {
   "db_name": "SQLite",
-  "query": "select count(*) from users where role_id = $1",
+  "query": "delete from payment_breaks where id = $1 returning user_id",
   "describe": {
     "columns": [
       {
-        "name": "count(*)",
+        "name": "user_id",
         "ordinal": 0,
         "type_info": "Integer"
       }
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "c5c0119e274426eb6c1bbaa9913217e17fcc4742a15b946923c5c001ac893be1"
+  "hash": "2edc9b2e7c3b84a5e6d78818eeae5b55af1354ce909ccd35f593ed3b21833e22"
 }

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select min(month_start) as \"month_start: Date\" from (\n                       select printf('%04d-%02d-01', a.year, a.month) as month_start\n                       from payment_allocations a\n                       inner join payments p on p.id = a.payment_id\n                       where p.user_id = $1\n                       union all\n                       select start_date from payment_breaks where user_id = $1\n                   )",
+  "describe": {
+    "columns": [
+      {
+        "name": "month_start: Date",
+        "ordinal": 0,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "e3cab50d418816a3e5479984e84ffadbe0608028fac1d5a81626d6e852669d87"
+}

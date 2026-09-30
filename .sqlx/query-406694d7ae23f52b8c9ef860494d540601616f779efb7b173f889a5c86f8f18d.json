@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "update users set is_active = not is_active where id = $1 returning is_active",
+  "describe": {
+    "columns": [
+      {
+        "name": "is_active",
+        "ordinal": 0,
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "406694d7ae23f52b8c9ef860494d540601616f779efb7b173f889a5c86f8f18d"
+}

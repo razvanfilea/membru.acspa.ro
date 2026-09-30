@@ -1,0 +1,17 @@
+<button id="active-toggle"
+        class="btn btn-sm btn-outline {% if is_active %}btn-success{% else %}btn-error{% endif %} gap-1.5"
+        hx-post="/admin/members/toggle_active/{{ member_id }}"
+        hx-target="this"
+        hx-swap="outerHTML"
+        {% if is_active %}
+        hx-confirm="Sigur vrei să marchezi membrul ca inactiv?"
+        {% else %}
+        hx-confirm="Sigur vrei să marchezi membrul ca activ?"
+        {% endif %}
+        title="Schimbă starea">
+    {% if is_active %}
+    <span class="material-symbols-outlined text-base">check_circle</span> Activ
+    {% else %}
+    <span class="material-symbols-outlined text-base">block</span> Inactiv
+    {% endif %}
+</button>

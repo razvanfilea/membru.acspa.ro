@@ -1,15 +1,16 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
-use crate::http::response::hx_refresh;
+use crate::http::pages::admin::members::payments_summary::{ViewYear, payments_changed_response};
 use crate::model::payment_context::PaymentContext;
 use crate::model::user::UserDetails;
 use crate::utils::date_formats;
 use crate::utils::dates::YearMonth;
+use crate::utils::local_date;
 use axum::Form;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use serde::Deserialize;
-use sqlx::query;
+use sqlx::{query, query_scalar};
 use time::Date;
 use tracing::info;
 
@@ -23,6 +24,7 @@ pub struct NewBreak {
     start_month: String,       // Format "2024-06"
     end_month: Option<String>, // Format "2024-08"
     reason: Option<String>,
+    view_year: Option<i32>,
 }
 
 pub async fn add_break(
@@ -83,13 +85,22 @@ pub async fn add_break(
 
     tx.commit().await?;
 
-    Ok(hx_refresh())
+    let year = form.view_year.unwrap_or_else(|| local_date().year());
+    payments_changed_response(&state.read_pool, member_id, year, "Pauza a fost adăugată").await
 }
 
-pub async fn delete_break(State(state): State<AppState>, Path(break_id): Path<i64>) -> HttpResult {
-    query!("delete from payment_breaks where id = $1", break_id)
-        .execute(&state.write_pool)
-        .await?;
+pub async fn delete_break(
+    State(state): State<AppState>,
+    Path(break_id): Path<i64>,
+    Query(view): Query<ViewYear>,
+) -> HttpResult {
+    let member_id = query_scalar!(
+        "delete from payment_breaks where id = $1 returning user_id",
+        break_id
+    )
+    .fetch_optional(&state.write_pool)
+    .await?
+    .or_bail("Pauza nu există")?;
 
-    Ok(hx_refresh())
+    payments_changed_response(&state.read_pool, member_id, view.year(), "Pauza a fost ștearsă").await
 }

@@ -9,12 +9,14 @@
                checked/>
         <div role="tabpanel" class="tab-content py-6 col-span-2">
             {% let tournaments = upcoming %}
+            {% let empty_subtitle = "Creează un turneu cu butoanele de jos." %}
             {% include "admin/tournaments/grid_partial.html" %}
         </div>
 
         <input type="radio" name="tournament_tabs" role="tab" class="tab" aria-label="Trecute ({{ past.len() }})"/>
         <div role="tabpanel" class="tab-content py-6 col-span-2">
             {% let tournaments = past %}
+            {% let empty_subtitle = "Turneele desfășurate vor apărea aici." %}
             {% include "admin/tournaments/grid_partial.html" %}
         </div>
     </div>

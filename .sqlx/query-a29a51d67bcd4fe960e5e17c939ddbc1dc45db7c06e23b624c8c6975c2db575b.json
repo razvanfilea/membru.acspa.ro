@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from payments where id = $1 returning user_id",
+  "describe": {
+    "columns": [
+      {
+        "name": "user_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a29a51d67bcd4fe960e5e17c939ddbc1dc45db7c06e23b624c8c6975c2db575b"
+}
