@@ -25,7 +25,7 @@ use serde::Deserialize;
 use sqlx::query;
 use std::str::FromStr;
 use time::Date;
-use tracing::error;
+use tracing::{error, info};
 
 pub mod reservation_hours;
 pub mod socket;
@@ -245,8 +245,21 @@ async fn cancel_reservation(
         query.hour,
         user_id,
         query.created_for.as_deref(),
+        user.id,
     )
     .await?;
+
+    info!(
+        "Cancel request by user {} for reservation of user {user_id} on {date} hour {} (created_for: {:?}): {}",
+        user.id,
+        query.hour,
+        query.created_for,
+        if reservation_cancelled {
+            "cancelled"
+        } else {
+            "not found"
+        }
+    );
 
     if !reservation_cancelled {
         return Ok(StatusCode::BAD_REQUEST.into_response());

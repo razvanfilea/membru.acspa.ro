@@ -2,10 +2,13 @@ use crate::http::auth::UserAuthenticator;
 use crate::http::pages::notification_template::error_bubble_response;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::location::Location;
+use crate::reservation::{HISTORY_RETENTION_DAYS, delete_expired_waiting};
 use crate::utils::local_time;
 use askama::Template;
 use axum::Router;
-use axum::http::StatusCode;
+use axum::extract::Request;
+use axum::http::{Method, StatusCode};
+use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum_login::AuthManagerLayerBuilder;
 use axum_login::tower_sessions::cookie::SameSite;
@@ -14,7 +17,7 @@ use sqlx::{SqlitePool, query, query_as};
 use std::any::Any;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::signal;
 use tokio::sync::watch;
 use tokio::time::interval;
@@ -23,7 +26,7 @@ use tower_http::timeout::TimeoutLayer;
 use tower_http::trace;
 use tower_http::trace::TraceLayer;
 use tower_sessions_sqlx_store::SqliteStore;
-use tracing::{Level, error, info};
+use tracing::{Level, debug, error, info};
 
 mod auth;
 mod error;
@@ -58,7 +61,8 @@ impl AppState {
     const CSS_VERSION: &str = env!("CSS_VERSION");
 }
 
-pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
+/// Deletes expired waiting-list reservations and reservation history past its retention
+pub async fn periodic_cleanup(state: AppState) {
     const CLEANUP_INTERVAL: Duration = Duration::from_mins(30);
 
     let notifier = state.reservation_notifier;
@@ -72,16 +76,8 @@ pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
         let current_date = current_time.date();
         let current_hour = current_time.hour();
 
-        let query_result = query!(
-            "delete from reservations where in_waiting = true and (date < $1 or (date == $1 and hour <= $2))",
-                current_date,
-                current_hour)
-            .execute(&pool)
-            .await;
-
-        match query_result {
-            Ok(result) => {
-                let rows_affected = result.rows_affected();
+        match delete_expired_waiting(&pool, current_date, current_hour).await {
+            Ok(rows_affected) => {
                 if rows_affected != 0 {
                     info!("Deleted {rows_affected} expired reservations");
                     let _ = notifier.send(());
@@ -91,6 +87,17 @@ pub async fn periodic_cleanup_of_waiting_reservations(state: AppState) {
                 error!("Failed to delete expired reservations: {e}");
             }
         }
+
+        let history_result = query!(
+            "delete from reservation_history where changed_at < datetime('now', '-' || $1 || ' days')",
+            HISTORY_RETENTION_DAYS
+        )
+        .execute(&pool)
+        .await;
+
+        if let Err(e) = history_result {
+            error!("Failed to delete old reservation history: {e}");
+        }
     }
 }
 
@@ -99,7 +106,29 @@ async fn handler_404() -> impl IntoResponse {
     #[template(path = "404.html")]
     struct NotFoundTemplate;
 
-    NotFoundTemplate.try_into_response()
+    (StatusCode::NOT_FOUND, NotFoundTemplate.try_into_response())
+}
+
+/// Logs requests that change data or fail at info level, everything else at debug level
+async fn log_response(request: Request, next: Next) -> Response {
+    let is_read_only = matches!(
+        *request.method(),
+        Method::GET | Method::HEAD | Method::OPTIONS
+    );
+    let start = Instant::now();
+
+    let response = next.run(request).await;
+
+    let latency_ms = start.elapsed().as_millis();
+    let status = response.status().as_u16();
+
+    if !is_read_only || status >= 400 {
+        info!(status, latency_ms, "finished processing request");
+    } else {
+        debug!(status, latency_ms, "finished processing request");
+    }
+
+    response
 }
 
 async fn shutdown_signal() {
@@ -154,7 +183,8 @@ pub async fn http_server(app_state: AppState, session_store: SqliteStore) {
         .layer((
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(Level::INFO))
-                .on_response(trace::DefaultOnResponse::new().level(Level::INFO)),
+                .on_response(()),
+            middleware::from_fn(log_response),
             TimeoutLayer::with_status_code(
                 StatusCode::REQUEST_TIMEOUT,
                 std::time::Duration::from_secs(10),

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "update reservations set in_waiting = false where rowid =\n                (select rowid from reservations where\n                    date = $1 and hour = $2 and location = $3 and cancelled = false and in_waiting = true\n                    order by as_guest, created_at limit 1)\n            returning user_id, created_for",
+  "describe": {
+    "columns": [
+      {
+        "name": "user_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_for",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "6beb3f3d623528776c56181b3aa8e673208c36ac26f4a4e7698bbb565250f52c"
+}

@@ -195,12 +195,9 @@ pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result
         return Ok(true);
     }
 
-    let member_since = sqlx::query_scalar!(
-        "select member_since from users where id = $1",
-        user.id
-    )
-    .fetch_one(tx.as_mut())
-    .await?;
+    let member_since = sqlx::query_scalar!("select member_since from users where id = $1", user.id)
+        .fetch_one(tx.as_mut())
+        .await?;
 
     let join_ym = YearMonth::from(member_since);
     let current_ym = YearMonth::from(local_date());
@@ -588,7 +585,9 @@ mod tests {
             3,
             "Delinquent User",
             100,
-            &three_months_ago_date.format(date_formats::ISO_DATE).unwrap(),
+            &three_months_ago_date
+                .format(date_formats::ISO_DATE)
+                .unwrap(),
         )
         .await?;
         let user3 = User {
@@ -604,7 +603,9 @@ mod tests {
         assert!(!check_user_has_paid(&pool, &user3).await?);
 
         // 4. User joined 3 months ago but has a payment break for 1 month: should pass
-        let break_date_str = three_months_ago_date.format(date_formats::ISO_DATE).unwrap();
+        let break_date_str = three_months_ago_date
+            .format(date_formats::ISO_DATE)
+            .unwrap();
         insert_break(&pool, 3, &break_date_str, &break_date_str).await?;
         assert!(check_user_has_paid(&pool, &user3).await?);
 

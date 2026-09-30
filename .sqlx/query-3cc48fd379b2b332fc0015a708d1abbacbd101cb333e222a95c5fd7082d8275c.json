@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select id, name from users where is_deleted = false order by name",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "3cc48fd379b2b332fc0015a708d1abbacbd101cb333e222a95c5fd7082d8275c"
+}

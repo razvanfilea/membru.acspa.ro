@@ -153,6 +153,13 @@
             <span class="material-symbols-outlined text-info text-sm">person</span>
         </div>
         {{ reservations | safe }}
+        {% if has_history() %}
+        <a href="/admin/history?date={{ selected_date.to_iso() }}"
+           class="btn btn-outline btn-info w-full gap-2 font-black uppercase tracking-widest">
+            <span class="material-symbols-outlined text-sm">history</span>
+            Istoric rezervări
+        </a>
+        {% endif %}
     </section>
 
 </div>

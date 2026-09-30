@@ -16,6 +16,7 @@ use sqlx::query;
 
 mod guests;
 pub mod members;
+mod reservation_history;
 mod roles;
 mod schedule_overrides;
 
@@ -26,6 +27,7 @@ pub fn router() -> Router<AppState> {
         .nest("/members", members::router())
         .nest("/roles", roles::router())
         .nest("/guests", guests::router())
+        .nest("/history", reservation_history::router())
         .merge(schedule_overrides::router())
 }
 

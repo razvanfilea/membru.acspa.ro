@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select name, received_gift from users where strftime('%d%m', birthday) = strftime('%d%m', $1)",
+  "query": "select name, received_gift from users where is_deleted = false and strftime('%d%m', birthday) = strftime('%d%m', $1)",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       true
     ]
   },
-  "hash": "e6d456da5db9836e56149641b80b013fa5c7b31009d822e26c4ee16a582401ac"
+  "hash": "4b7a6f653161805d2b7b69eb3f9ef98f63503da5860747edd403c032a7cbac18"
 }

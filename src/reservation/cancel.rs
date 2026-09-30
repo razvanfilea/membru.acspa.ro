@@ -2,6 +2,7 @@ use crate::model::day_structure::DayStructure;
 use crate::model::location::Location;
 use sqlx::{SqliteTransaction, query, query_scalar};
 use time::Date;
+use tracing::info;
 
 pub async fn cancel_reservation(
     mut tx: SqliteTransaction<'_>,
@@ -10,16 +11,24 @@ pub async fn cancel_reservation(
     hour: u8,
     user_id: i64,
     created_for: Option<&str>,
+    cancelled_by: i64,
 ) -> sqlx::Result<bool> {
     let rows = if let Some(created_for) = created_for {
+        // Stamp the actor first so the delete trigger can record who removed the guest
+        query!("update reservations set cancelled_by = $6
+        where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for = $5",
+            date, hour, user_id, location.id, created_for, cancelled_by)
+            .execute(tx.as_mut())
+            .await?;
+
         query!("delete from reservations where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for = $5",
             date, hour, user_id, location.id, created_for)
             .execute(tx.as_mut())
             .await?
     } else {
-        query!("update reservations set cancelled = true
-        where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for is null",
-            date, hour, user_id, location.id)
+        query!("update reservations set cancelled = true, cancelled_by = $5
+        where date = $1 and hour = $2 and user_id = $3 and location = $4 and created_for is null and cancelled = false",
+            date, hour, user_id, location.id, cancelled_by)
             .execute(tx.as_mut())
             .await?
     }.rows_affected();
@@ -45,14 +54,22 @@ pub async fn cancel_reservation(
         .unwrap_or(location.slot_capacity);
 
     if count < effective_capacity {
-        query!(
+        let promoted = query!(
             "update reservations set in_waiting = false where rowid =
                 (select rowid from reservations where
                     date = $1 and hour = $2 and location = $3 and cancelled = false and in_waiting = true
-                    order by as_guest, created_at limit 1)",
+                    order by as_guest, created_at limit 1)
+            returning user_id, created_for",
             date, hour, location.id)
-            .execute(tx.as_mut())
+            .fetch_optional(tx.as_mut())
             .await?;
+
+        if let Some(promoted) = promoted {
+            info!(
+                "Reservation of user {} (created_for: {:?}) on {date} hour {hour} promoted from waiting list",
+                promoted.user_id, promoted.created_for
+            );
+        }
     }
 
     tx.commit().await?;

@@ -1,0 +1,86 @@
+{
+  "db_name": "SQLite",
+  "query": "select h.event as \"event: HistoryEvent\", h.user_id, coalesce(u.name, '?') as \"user_name!: String\",\n            h.date, h.hour, h.old_hour, h.created_for, h.as_guest, h.waiting_position,\n            h.changed_by, a.name as \"changed_by_name?: String\", h.changed_at\n        from reservation_history h\n        left join users u on u.id = h.user_id\n        left join users a on a.id = h.changed_by\n        -- Old rows are purged periodically, this keeps the page exact between purges\n        where h.changed_at >= datetime('now', '-' || $1 || ' days')\n            and ($2 is null or h.user_id = $2)\n            and ($3 is null or h.date = $3)\n            and ($4 is null or h.event = $4)\n        order by h.changed_at desc, h.id desc\n        limit 500",
+  "describe": {
+    "columns": [
+      {
+        "name": "event: HistoryEvent",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "user_id",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "user_name!: String",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "date",
+        "ordinal": 3,
+        "type_info": "Date"
+      },
+      {
+        "name": "hour",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "old_hour",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_for",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "as_guest",
+        "ordinal": 7,
+        "type_info": "Bool"
+      },
+      {
+        "name": "waiting_position",
+        "ordinal": 8,
+        "type_info": "Integer"
+      },
+      {
+        "name": "changed_by",
+        "ordinal": 9,
+        "type_info": "Integer"
+      },
+      {
+        "name": "changed_by_name?: String",
+        "ordinal": 10,
+        "type_info": "Text"
+      },
+      {
+        "name": "changed_at",
+        "ordinal": 11,
+        "type_info": "Datetime"
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "e269b4d7b6822c61d3a9379f1104a1ec1bf425b49f42830b2463716021eaa5eb"
+}

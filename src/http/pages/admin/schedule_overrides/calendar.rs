@@ -16,6 +16,7 @@ use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
 use crate::model::restriction::Restriction;
 use crate::model::user::User;
+use crate::reservation::is_within_history_retention;
 use crate::utils::date_formats::{self, DateFormatExt, IsoDate};
 use crate::utils::dates::DateRangeIter;
 use crate::utils::local_date;
@@ -83,6 +84,10 @@ impl CalendarTemplate {
 
     fn is_past_date(&self) -> bool {
         self.selected_date < self.current_date
+    }
+
+    fn has_history(&self) -> bool {
+        is_within_history_retention(self.selected_date, self.current_date)
     }
 }
 
@@ -197,6 +202,10 @@ impl DayDetailsTemplate {
 
     fn is_past_date(&self) -> bool {
         self.selected_date < self.current_date
+    }
+
+    fn has_history(&self) -> bool {
+        is_within_history_retention(self.selected_date, self.current_date)
     }
 }
 

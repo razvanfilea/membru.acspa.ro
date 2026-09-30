@@ -195,4 +195,3 @@ pub async fn update_profile_contact(
 
     Ok(hx_refresh())
 }
-

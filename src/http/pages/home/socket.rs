@@ -106,31 +106,32 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
     if user.role == "Admin" {
         let current_date = local_date();
         let celebrated = query!(
-            "select name, received_gift from users where strftime('%d%m', birthday) = strftime('%d%m', $1)",
+            "select name, received_gift from users where is_deleted = false and strftime('%d%m', birthday) = strftime('%d%m', $1)",
             current_date
         )
         .fetch_all(&state.read_pool)
         .await.unwrap_or_default();
 
-        let message = celebrated.into_iter().map(|user| {
-            let gift = if let Some(gift_date) = user.received_gift {
-                format!(
-                    ", a primit cadou pe {}",
-                    gift_date.to_readable()
-                )
-            } else {
-                " și nu a primit cadou!!".to_string()
-            };
+        let message = celebrated
+            .into_iter()
+            .map(|user| {
+                let gift = if let Some(gift_date) = user.received_gift {
+                    format!(", a primit cadou pe {}", gift_date.to_readable())
+                } else {
+                    " și nu a primit cadou!!".to_string()
+                };
 
-            format!("Este ziua lui {}{}", user.name, gift)
-        }).join("<br><br>");
+                format!("Este ziua lui {}{}", user.name, gift)
+            })
+            .join("<br><br>");
         if !message.is_empty() {
             let _ = socket
                 .send(Message::Text(
                     NotificationBubbleResponse {
                         message: message.as_str(),
                     }
-                    .to_string().into(),
+                    .to_string()
+                    .into(),
                 ))
                 .await;
         }

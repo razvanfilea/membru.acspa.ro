@@ -572,12 +572,9 @@ mod tests {
         assert_eq!(user_details.phone_number.as_deref(), Some("+40712345678"));
         assert_eq!(user_details.emergency_contact_phone_number, None);
 
-        query!(
-            "update users set is_deleted = TRUE where id = $1",
-            user_id
-        )
-        .execute(&pool)
-        .await?;
+        query!("update users set is_deleted = TRUE where id = $1", user_id)
+            .execute(&pool)
+            .await?;
 
         let raw_user = query!(
             "select email, name, phone_number, emergency_contact_phone_number from users where id = $1",
@@ -586,11 +583,13 @@ mod tests {
         .fetch_one(&pool)
         .await?;
 
-        assert_eq!(raw_user.email, format!("deleted_{}@archived.acspa.ro", user_id));
+        assert_eq!(
+            raw_user.email,
+            format!("deleted_{}@archived.acspa.ro", user_id)
+        );
         assert_eq!(raw_user.phone_number, None);
         assert_eq!(raw_user.emergency_contact_phone_number, None);
 
         Ok(())
     }
 }
-

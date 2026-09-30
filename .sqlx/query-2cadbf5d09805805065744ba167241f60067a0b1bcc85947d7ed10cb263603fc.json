@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from reservation_history where changed_at < datetime('now', '-' || $1 || ' days')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "2cadbf5d09805805065744ba167241f60067a0b1bcc85947d7ed10cb263603fc"
+}

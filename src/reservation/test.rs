@@ -347,8 +347,16 @@ mod queue_logic {
         );
 
         // 4. User 1 cancels
-        let res =
-            cancel_reservation(pool.begin().await?, &location, date, 18, user_1.id, None).await?;
+        let res = cancel_reservation(
+            pool.begin().await?,
+            &location,
+            date,
+            18,
+            user_1.id,
+            None,
+            user_1.id,
+        )
+        .await?;
         assert!(res);
 
         // 5. User 2 (Oldest Waiter) should be promoted
@@ -440,7 +448,7 @@ mod cancellation {
 
         // 1. Cancel
         let tx = pool.begin().await?;
-        assert!(cancel_reservation(tx, &location, date, 18, user.id, None).await?);
+        assert!(cancel_reservation(tx, &location, date, 18, user.id, None, user.id).await?);
 
         // 2. Verify Cancelled in DB
         let cancelled = query_scalar!(
@@ -489,7 +497,7 @@ mod cancellation {
 
         // Cancel
         let tx = pool.begin().await?;
-        let res = cancel_reservation(tx, &location, date, 18, user.id, Some(name)).await?;
+        let res = cancel_reservation(tx, &location, date, 18, user.id, Some(name), user.id).await?;
         assert!(res);
 
         // Verify Hard Delete (Count should be 0)
@@ -524,7 +532,7 @@ mod cancellation {
         );
 
         let tx = pool.begin().await?;
-        assert!(cancel_reservation(tx, &location, date, 18, user.id, None).await?);
+        assert!(cancel_reservation(tx, &location, date, 18, user.id, None, user.id).await?);
 
         // Verify it's cancelled
         let res_18_cancelled = query_scalar!("select cancelled from reservations where hour = 18")
@@ -578,8 +586,16 @@ mod cancellation {
         );
 
         // 4. User 1 cancels
-        let res =
-            cancel_reservation(pool.begin().await?, &location, date, 18, user_1.id, None).await?;
+        let res = cancel_reservation(
+            pool.begin().await?,
+            &location,
+            date,
+            18,
+            user_1.id,
+            None,
+            user_1.id,
+        )
+        .await?;
         assert!(res);
 
         // 5. Verify User 3 (Member) got promoted, NOT User 2 (Guest)
@@ -770,7 +786,8 @@ mod constraints_and_schedule {
         // Current Bug Logic: 1 (active) is NOT < 1 (location default capacity), so no promotion happens.
         // Correct Logic: 1 (active) IS < 2 (tournament capacity), so promotion happens.
         let tx = pool.begin().await?;
-        let result = cancel_reservation(tx, &location, date, hour, user_1.id, None).await?;
+        let result =
+            cancel_reservation(tx, &location, date, hour, user_1.id, None, user_1.id).await?;
         assert!(result, "Cancellation should succeed");
 
         // 6. Verify User 3 status
@@ -789,5 +806,316 @@ mod constraints_and_schedule {
         );
 
         Ok(())
+    }
+}
+
+mod history {
+    use super::*;
+    use crate::model::user_reservation::UserReservation;
+
+    #[derive(Debug, PartialEq)]
+    struct HistoryRow {
+        event: String,
+        user_id: i64,
+        hour: i64,
+        in_waiting: bool,
+        waiting_position: Option<i64>,
+        changed_by: Option<i64>,
+    }
+
+    fn row(
+        event: &str,
+        user_id: i64,
+        in_waiting: bool,
+        waiting_position: Option<i64>,
+        changed_by: Option<i64>,
+    ) -> HistoryRow {
+        HistoryRow {
+            event: event.to_string(),
+            user_id,
+            hour: 18,
+            in_waiting,
+            waiting_position,
+            changed_by,
+        }
+    }
+
+    async fn fetch_history(pool: &SqlitePool) -> sqlx::Result<Vec<HistoryRow>> {
+        query_as!(
+            HistoryRow,
+            "select event, user_id, hour, in_waiting, waiting_position, changed_by
+            from reservation_history order by id"
+        )
+        .fetch_all(pool)
+        .await
+    }
+
+    #[sqlx::test]
+    async fn records_waiting_positions_cancellation_and_promotion(
+        pool: SqlitePool,
+    ) -> sqlx::Result<()> {
+        let (location, user_1, user_2, user_3) = setup(&pool, 1, 0).await?;
+        let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+        let date = date!(2024 - 07 - 11);
+
+        for user in [&user_1, &user_2, &user_3] {
+            create_reservation(&pool, &location, now, user, date, 18, None)
+                .await
+                .unwrap();
+        }
+
+        assert_eq!(
+            fetch_history(&pool).await?,
+            vec![
+                row("created", user_1.id, false, None, Some(user_1.id)),
+                row("created", user_2.id, true, Some(1), Some(user_2.id)),
+                row("created", user_3.id, true, Some(2), Some(user_3.id)),
+            ]
+        );
+
+        let tx = pool.begin().await?;
+        assert!(cancel_reservation(tx, &location, date, 18, user_1.id, None, user_1.id).await?);
+
+        let history = fetch_history(&pool).await?;
+        assert_eq!(
+            history[3..],
+            [
+                row("cancelled", user_1.id, false, None, Some(user_1.id)),
+                row("promoted", user_2.id, false, None, None),
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn records_admin_cancelling_member_booking(pool: SqlitePool) -> sqlx::Result<()> {
+        let (location, user, admin, _) = setup(&pool, 1, 0).await?;
+        let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+        let date = date!(2024 - 07 - 11);
+
+        create_reservation(&pool, &location, now, &user, date, 18, None)
+            .await
+            .unwrap();
+
+        let tx = pool.begin().await?;
+        assert!(cancel_reservation(tx, &location, date, 18, user.id, None, admin.id).await?);
+
+        assert_eq!(
+            fetch_history(&pool).await?.last(),
+            Some(&row("cancelled", user.id, false, None, Some(admin.id)))
+        );
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn records_single_delete_of_named_guest(pool: SqlitePool) -> sqlx::Result<()> {
+        let (location, admin, other_admin, _) = setup(&pool, 1, 0).await?;
+        let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+        let date = date!(2024 - 07 - 11);
+        let name = "External Name";
+        let referral = Referral {
+            is_special: true,
+            created_for: name,
+        };
+
+        create_reservation(&pool, &location, now, &admin, date, 18, Some(referral))
+            .await
+            .unwrap();
+
+        let tx = pool.begin().await?;
+        assert!(
+            cancel_reservation(
+                tx,
+                &location,
+                date,
+                18,
+                admin.id,
+                Some(name),
+                other_admin.id
+            )
+            .await?
+        );
+
+        assert_eq!(
+            fetch_history(&pool).await?,
+            vec![
+                row("created", admin.id, false, None, Some(admin.id)),
+                row("deleted", admin.id, false, None, Some(other_admin.id)),
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn records_guest_moved_to_waiting(pool: SqlitePool) -> sqlx::Result<()> {
+        let (location, user_member, user_guest, _) = setup(&pool, 1, 1).await?;
+        let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+        let date = date!(2024 - 07 - 11);
+
+        create_reservation(&pool, &location, now, &user_member, date, 20, None)
+            .await
+            .unwrap();
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_member, date, 18, None).await,
+            Ok(ReservationSuccess::Guest)
+        );
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_guest, date, 18, None).await,
+            Ok(ReservationSuccess::Reservation {
+                deletes_guest: true
+            })
+        );
+
+        let history = fetch_history(&pool).await?;
+        assert_eq!(
+            history[2],
+            row("moved_to_waiting", user_member.id, true, Some(1), None)
+        );
+        assert_eq!(
+            history[3],
+            row("created", user_guest.id, false, None, Some(user_guest.id))
+        );
+
+        Ok(())
+    }
+    #[sqlx::test]
+    async fn cancelling_twice_is_rejected_and_not_recorded(pool: SqlitePool) -> sqlx::Result<()> {
+        let (location, user, admin, _) = setup(&pool, 1, 0).await?;
+        let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+        let date = date!(2024 - 07 - 11);
+
+        create_reservation(&pool, &location, now, &user, date, 18, None)
+            .await
+            .unwrap();
+
+        let tx = pool.begin().await?;
+        assert!(cancel_reservation(tx, &location, date, 18, user.id, None, user.id).await?);
+        let tx = pool.begin().await?;
+        assert!(!cancel_reservation(tx, &location, date, 18, user.id, None, user.id).await?);
+        let tx = pool.begin().await?;
+        assert!(!cancel_reservation(tx, &location, date, 18, user.id, None, admin.id).await?);
+
+        assert_eq!(
+            fetch_history(&pool).await?,
+            vec![
+                row("created", user.id, false, None, Some(user.id)),
+                row("cancelled", user.id, false, None, Some(user.id)),
+            ]
+        );
+
+        let cancelled_by = query_scalar!("select cancelled_by from reservations")
+            .fetch_one(&pool)
+            .await?;
+        assert_eq!(cancelled_by, Some(user.id));
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn waiting_member_is_placed_ahead_of_waiting_guest(pool: SqlitePool) -> sqlx::Result<()> {
+        let (location, user_1, user_2, user_3) = setup(&pool, 1, 1).await?;
+        let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+        let date = date!(2024 - 07 - 11);
+
+        create_reservation(&pool, &location, now, &user_1, date, 18, None)
+            .await
+            .unwrap();
+        create_reservation(&pool, &location, now, &user_2, date, 20, None)
+            .await
+            .unwrap();
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_2, date, 18, None).await,
+            Ok(ReservationSuccess::InWaiting { as_guest: true })
+        );
+        assert_eq!(
+            create_reservation(&pool, &location, now, &user_3, date, 18, None).await,
+            Ok(ReservationSuccess::InWaiting { as_guest: false })
+        );
+
+        let history = fetch_history(&pool).await?;
+        // The guest joined first, the member who came later still goes ahead of them
+        assert_eq!(
+            history[2],
+            HistoryRow {
+                event: "created".to_string(),
+                user_id: user_2.id,
+                hour: 18,
+                in_waiting: true,
+                waiting_position: Some(1),
+                changed_by: Some(user_2.id),
+            }
+        );
+        assert_eq!(
+            history[3],
+            row("created", user_3.id, true, Some(1), Some(user_3.id))
+        );
+
+        Ok(())
+    }
+    #[sqlx::test]
+    async fn cleanup_records_expired_waiting_and_skips_cancelled(
+        pool: SqlitePool,
+    ) -> sqlx::Result<()> {
+        let (location, user_1, user_2, user_3) = setup(&pool, 1, 0).await?;
+        let now = datetime!(2024-07-11 10:00:00 +00:00:00);
+        let date = date!(2024 - 07 - 11);
+
+        for user in [&user_1, &user_2, &user_3] {
+            create_reservation(&pool, &location, now, user, date, 18, None)
+                .await
+                .unwrap();
+        }
+        let tx = pool.begin().await?;
+        assert!(cancel_reservation(tx, &location, date, 18, user_3.id, None, user_3.id).await?);
+
+        assert_eq!(delete_expired_waiting(&pool, date, 18).await?, 2);
+
+        let history = fetch_history(&pool).await?;
+        assert_eq!(
+            history[3..],
+            [
+                row("cancelled", user_3.id, true, None, Some(user_3.id)),
+                row("expired", user_2.id, true, None, None),
+            ]
+        );
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn wiping_a_future_day_records_deleted(pool: SqlitePool) -> sqlx::Result<()> {
+        let (location, user, _, _) = setup(&pool, 1, 0).await?;
+        let date = date!(2099 - 01 - 01);
+
+        query!(
+            "insert into reservations (user_id, location, date, hour, in_waiting) values ($1, $2, $3, 18, true)",
+            user.id,
+            location.id,
+            date
+        )
+        .execute(&pool)
+        .await?;
+
+        UserReservation::delete_on_day(&pool, date, None).await?;
+
+        assert_eq!(
+            fetch_history(&pool)
+                .await?
+                .last()
+                .map(|row| row.event.as_str()),
+            Some("deleted")
+        );
+
+        Ok(())
+    }
+    #[test]
+    fn history_retention_covers_last_90_days() {
+        let today = date!(2026 - 09 - 30);
+        assert!(is_within_history_retention(today, today));
+        assert!(is_within_history_retention(date!(2026 - 07 - 02), today));
+        assert!(!is_within_history_retention(date!(2026 - 07 - 01), today));
     }
 }

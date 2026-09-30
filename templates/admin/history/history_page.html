@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% import "components/empty_state.html" as empty_state %}
+
+{% block page_title %}Istoric rezervări{% endblock %}
+
+{% macro actor(entry) %}
+{% if let Some(actor) = entry.changed_by_name %}
+<span class="material-symbols-outlined text-sm">person</span>
+de <b class="text-base-content/80">{{ actor }}</b>
+{% else %}
+<span class="material-symbols-outlined text-sm">settings</span>
+Sistem
+{% endif %}
+<span class="text-gray-500">·</span>
+<span class="font-mono">{{ entry.changed_time() }}</span>
+{% endmacro %}
+
+{% block content %}
+
+<main class="p-2 sm:p-4 md:p-8 w-full max-w-4xl mx-auto flex flex-col gap-4 md:gap-6">
+    {# On mobile: member and reset on the first row, date and event on the second #}
+    <form class="grid grid-cols-[1fr_1fr_auto] md:grid-cols-[1fr_auto_1fr_auto] gap-x-2 gap-y-3 md:gap-4 items-center bg-base-200/50 p-3 md:p-4 rounded-2xl border border-base-300"
+          action="/admin/history"
+          hx-get="/admin/history"
+          hx-trigger="change"
+          hx-target="#history"
+          hx-select="#history"
+          hx-swap="outerHTML"
+          hx-push-url="true">
+        <label class="floating-label col-span-2 md:col-span-1">
+            <span>Membru</span>
+            <select name="user_id" class="select select-bordered w-full" autocomplete="off">
+                <option value="">Toți membrii</option>
+                {% for u in users %}
+                <option value="{{ u.id }}" {% if filters.is_user_selected(u.id) %}selected{% endif %}>{{ u.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label class="floating-label order-2 md:order-none min-w-0">
+            <span>Data rezervării</span>
+            <input name="date" type="date" class="input input-bordered w-full px-2 sm:px-3" autocomplete="off"
+                   min="{{ min_date.to_iso() }}" value="{{ filters.date.to_iso() }}"/>
+        </label>
+
+        <label class="floating-label order-2 md:order-none col-span-2 md:col-span-1 min-w-0">
+            <span>Eveniment</span>
+            <select name="event" class="select select-bordered w-full" autocomplete="off">
+                <option value="">Toate evenimentele</option>
+                {% for event in events %}
+                <option value="{{ event.as_ref() }}" {% if filters.is_event_selected(event) %}selected{% endif %}>{{ event.filter_label() }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <a href="/admin/history" class="btn btn-ghost btn-square lg:w-auto lg:px-4 order-1 md:order-none gap-2"
+           title="Resetează filtrele">
+            <span class="material-symbols-outlined">filter_alt_off</span>
+            <span class="hidden lg:inline">Resetează</span>
+        </a>
+    </form>
+
+    <div id="history" class="flex flex-col gap-6 pb-16">
+        {% if date_beyond_retention %}
+        <div role="alert" class="alert alert-warning alert-soft">
+            <span class="material-symbols-outlined">warning</span>
+            <span>Data depășește ultimele {{ retention_days }} de zile, istoricul poate fi incomplet.</span>
+        </div>
+        {% endif %}
+
+        {% if days.is_empty() %}
+        {% if !date_beyond_retention %}
+        {{ empty_state::with_subtitle("history", "Nicio modificare găsită", "Încearcă alte filtre sau resetează-le.") }}
+        {% endif %}
+        {% else %}
+        <p class="text-xs text-gray-400 px-1">
+            {% if total >= 500 %}
+            Se afișează cele mai recente 500 de modificări, folosește filtrele pentru a restrânge lista.
+            {% else %}
+            {{ total }} {% if total == 1 %}modificare{% else %}modificări{% endif %} în ultimele {{ retention_days }} de zile
+            {% endif %}
+        </p>
+        {% endif %}
+
+        {% for day in days %}
+        <section class="flex flex-col gap-2">
+            <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 px-1">{{ day.title }}</h4>
+
+            {% for entry in day.entries %}
+            <div class="flex gap-3 md:gap-4 p-3 md:p-4 bg-base-100 rounded-2xl border border-base-300 items-start">
+                <div class="w-10 h-10 flex items-center justify-center rounded-full shrink-0 {{ entry.event.icon_class() }}">
+                    <span class="material-symbols-outlined text-xl">{{ entry.event.icon() }}</span>
+                </div>
+
+                <div class="flex flex-col gap-1 min-w-0 grow">
+                    <p class="font-bold truncate">{{ entry.user_name }}</p>
+
+                    <p class="text-sm">
+                        <span class="font-semibold {{ entry.event.text_class() }}">{{ entry.event.label() }}</span>
+                        <span class="text-gray-500">·</span>
+                        {{ entry.date.to_readable() }}, ora
+                        {% if let Some(old_hour) = entry.old_hour %}
+                        <b>{{ old_hour }} → {{ entry.hour }}</b>
+                        {% else %}
+                        <b>{{ entry.hour }}</b>
+                        {% endif %}
+                    </p>
+
+                    {% if let Some(guest) = entry.created_for %}
+                    <p class="text-sm text-sky-400 flex items-center gap-1 min-w-0">
+                        <span class="material-symbols-outlined text-base">person_add</span>
+                        <span class="truncate">{{ guest }}</span>
+                    </p>
+                    {% endif %}
+
+                    <div class="{% if entry.has_badges() %}flex{% else %}flex md:hidden{% endif %} flex-wrap items-center gap-1.5 mt-1">
+                        {% if entry.is_late_cancellation() %}
+                        <span class="badge badge-sm badge-warning whitespace-nowrap gap-1">
+                            <span class="material-symbols-outlined text-sm">warning</span>
+                            Retras în ziua rezervării
+                        </span>
+                        {% endif %}
+                        {% if let Some(position) = entry.waiting_position %}
+                        <span class="badge badge-sm badge-warning badge-outline whitespace-nowrap">Locul {{ position }} în așteptare</span>
+                        {% endif %}
+                        {% if entry.as_guest %}
+                        <span class="badge badge-sm badge-ghost whitespace-nowrap">Ca invitat</span>
+                        {% endif %}
+
+                        <span class="md:hidden text-xs text-gray-400 flex items-center gap-1 ml-auto">
+                            {% call actor(entry) %}{% endcall %}
+                        </span>
+                    </div>
+                </div>
+
+                {# Desktop only: actor and time on the right #}
+                <div class="hidden md:flex text-xs text-gray-400 items-center gap-1 shrink-0">
+                    {% call actor(entry) %}{% endcall %}
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+        {% endfor %}
+    </div>
+</main>
+
+{% endblock %}
