@@ -163,7 +163,10 @@ impl From<UserDetails> for MemberFormValues {
             role: user.role,
             birthday: user.birthday.to_iso(),
             member_since: user.member_since.to_iso(),
-            received_gift: user.received_gift.map(|date| date.to_iso()).unwrap_or_default(),
+            received_gift: user
+                .received_gift
+                .map(|date| date.to_iso())
+                .unwrap_or_default(),
             has_key: user.has_key,
         }
     }
@@ -411,7 +414,9 @@ async fn edit_member_page(
         current_date: local_date().to_iso(),
         roles: UserRole::fetch_all_names(&state.read_pool).await?,
         member_id: Some(member_id),
-        values: UserDetails::fetch(&state.read_pool, member_id).await?.into(),
+        values: UserDetails::fetch(&state.read_pool, member_id)
+            .await?
+            .into(),
     }
     .try_into_response()
 }
@@ -467,7 +472,14 @@ async fn toggle_active_user(
     } else {
         "Membrul este inactiv"
     };
-    hx_notify_with(ActiveToggleTemplate { member_id, is_active }.render()?, message)
+    hx_notify_with(
+        ActiveToggleTemplate {
+            member_id,
+            is_active,
+        }
+        .render()?,
+        message,
+    )
 }
 
 async fn delete_member(

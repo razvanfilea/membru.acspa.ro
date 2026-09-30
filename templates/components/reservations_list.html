@@ -20,7 +20,7 @@
         <span>Anulată</span>
         {% else if allow_reservation_cancellation && reservation.is_cancellable() %}
         <button
-                class="btn btn-outline btn-warning"
+                class="btn btn-soft btn-warning"
                 hx-target="#res_{{ loop.index }}"
                 hx-vals='{"date": "{{ reservation.date.to_iso() }}", "hour": {{ reservation.hour }} }'
                 hx-delete="/reservation">Anulează

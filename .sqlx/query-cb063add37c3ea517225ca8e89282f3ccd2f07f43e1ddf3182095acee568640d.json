@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "select date as \"date: Date\",\n                  sum(not in_waiting) as \"reservations!: i64\",\n                  sum(not in_waiting and (as_guest or created_for is not null)) as \"guests!: i64\"\n           from reservations\n           where location = $1 and date between $2 and $3 and not cancelled\n           group by date",
+  "describe": {
+    "columns": [
+      {
+        "name": "date: Date",
+        "ordinal": 0,
+        "type_info": "Date"
+      },
+      {
+        "name": "reservations!: i64",
+        "ordinal": 1,
+        "type_info": "Null"
+      },
+      {
+        "name": "guests!: i64",
+        "ordinal": 2,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "cb063add37c3ea517225ca8e89282f3ccd2f07f43e1ddf3182095acee568640d"
+}

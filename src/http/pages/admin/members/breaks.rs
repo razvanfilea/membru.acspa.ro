@@ -102,5 +102,11 @@ pub async fn delete_break(
     .await?
     .or_bail("Pauza nu există")?;
 
-    payments_changed_response(&state.read_pool, member_id, view.year(), "Pauza a fost ștearsă").await
+    payments_changed_response(
+        &state.read_pool,
+        member_id,
+        view.year(),
+        "Pauza a fost ștearsă",
+    )
+    .await
 }

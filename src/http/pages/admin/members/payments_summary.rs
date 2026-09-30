@@ -4,8 +4,8 @@ use crate::http::response::hx_notify_with;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::UserDetails;
-use crate::utils::dates::{YearMonth, YearMonthIter};
 use crate::utils::date_formats::DateFormatExt;
+use crate::utils::dates::{YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
@@ -162,7 +162,10 @@ pub fn paid_months_json(payments: &[PaymentWithAllocations], breaks: &[PaymentBr
 }
 
 /// Payments with at least one month allocated to `year`, a payment spanning two years is in both
-pub fn payments_for_year(payments: &[PaymentWithAllocations], year: i32) -> Vec<PaymentWithAllocations> {
+pub fn payments_for_year(
+    payments: &[PaymentWithAllocations],
+    year: i32,
+) -> Vec<PaymentWithAllocations> {
     payments
         .iter()
         .filter(|payment| payment.allocations.iter().any(|alloc| alloc.year == year))
