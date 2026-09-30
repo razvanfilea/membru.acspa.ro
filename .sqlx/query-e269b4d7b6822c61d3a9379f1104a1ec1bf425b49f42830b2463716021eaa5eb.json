@@ -6,62 +6,129 @@
       {
         "name": "event: HistoryEvent",
         "ordinal": 0,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservation_history",
+            "name": "event"
+          }
+        }
       },
       {
         "name": "user_id",
         "ordinal": 1,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "reservation_history",
+            "name": "user_id"
+          }
+        }
       },
       {
         "name": "user_name!: String",
         "ordinal": 2,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": "Expression"
       },
       {
         "name": "date",
         "ordinal": 3,
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "reservation_history",
+            "name": "date"
+          }
+        }
       },
       {
         "name": "hour",
         "ordinal": 4,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "reservation_history",
+            "name": "hour"
+          }
+        }
       },
       {
         "name": "old_hour",
         "ordinal": 5,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "reservation_history",
+            "name": "old_hour"
+          }
+        }
       },
       {
         "name": "created_for",
         "ordinal": 6,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservation_history",
+            "name": "created_for"
+          }
+        }
       },
       {
         "name": "as_guest",
         "ordinal": 7,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "reservation_history",
+            "name": "as_guest"
+          }
+        }
       },
       {
         "name": "waiting_position",
         "ordinal": 8,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "reservation_history",
+            "name": "waiting_position"
+          }
+        }
       },
       {
         "name": "changed_by",
         "ordinal": 9,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "reservation_history",
+            "name": "changed_by"
+          }
+        }
       },
       {
         "name": "changed_by_name?: String",
         "ordinal": 10,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "name"
+          }
+        }
       },
       {
         "name": "changed_at",
         "ordinal": 11,
-        "type_info": "Datetime"
+        "type_info": "Datetime",
+        "origin": {
+          "Table": {
+            "table": "reservation_history",
+            "name": "changed_at"
+          }
+        }
       }
     ],
     "parameters": {

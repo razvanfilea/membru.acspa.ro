@@ -6,17 +6,35 @@
       {
         "name": "payment_id",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "payment_allocations",
+            "name": "payment_id"
+          }
+        }
       },
       {
         "name": "year: i32",
         "ordinal": 1,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "payment_allocations",
+            "name": "year"
+          }
+        }
       },
       {
         "name": "month: u8",
         "ordinal": 2,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "payment_allocations",
+            "name": "month"
+          }
+        }
       }
     ],
     "parameters": {

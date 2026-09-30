@@ -6,7 +6,13 @@
       {
         "name": "member_since",
         "ordinal": 0,
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "member_since"
+          }
+        }
       }
     ],
     "parameters": {

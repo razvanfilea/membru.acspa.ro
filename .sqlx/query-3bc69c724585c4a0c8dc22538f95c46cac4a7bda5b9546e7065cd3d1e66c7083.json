@@ -6,72 +6,156 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "id"
+          }
+        }
       },
       {
         "name": "email",
         "ordinal": 1,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "email"
+          }
+        }
       },
       {
         "name": "name",
         "ordinal": 2,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "name"
+          }
+        }
       },
       {
         "name": "nickname",
         "ordinal": 3,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "nickname"
+          }
+        }
       },
       {
         "name": "phone_number",
         "ordinal": 4,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "phone_number"
+          }
+        }
       },
       {
         "name": "emergency_contact_phone_number",
         "ordinal": 5,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "emergency_contact_phone_number"
+          }
+        }
       },
       {
         "name": "role",
         "ordinal": 6,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "user_roles",
+            "name": "name"
+          }
+        }
       },
       {
         "name": "is_active",
         "ordinal": 7,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "is_active"
+          }
+        }
       },
       {
         "name": "has_key",
         "ordinal": 8,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "has_key"
+          }
+        }
       },
       {
         "name": "admin_panel_access",
         "ordinal": 9,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "user_roles",
+            "name": "admin_panel_access"
+          }
+        }
       },
       {
         "name": "member_since",
         "ordinal": 10,
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "member_since"
+          }
+        }
       },
       {
         "name": "birthday",
         "ordinal": 11,
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "birthday"
+          }
+        }
       },
       {
         "name": "received_gift",
         "ordinal": 12,
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "received_gift"
+          }
+        }
       },
       {
         "name": "monthly_fee",
         "ordinal": 13,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "user_roles",
+            "name": "monthly_fee"
+          }
+        }
       }
     ],
     "parameters": {

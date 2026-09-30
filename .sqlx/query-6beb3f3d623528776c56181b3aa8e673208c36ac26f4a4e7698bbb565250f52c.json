@@ -6,12 +6,24 @@
       {
         "name": "user_id",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "user_id"
+          }
+        }
       },
       {
         "name": "created_for",
         "ordinal": 1,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "created_for"
+          }
+        }
       }
     ],
     "parameters": {

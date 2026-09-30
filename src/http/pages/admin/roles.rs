@@ -60,7 +60,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
         .await?;
 
     UsersTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         roles,
     }
     .try_into_response()
@@ -84,7 +84,7 @@ struct NewOrEditRoleTemplate {
 
 async fn new_role_page(auth_session: AuthSession) -> HttpResult {
     NewOrEditRoleTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         current: None,
     }
     .try_into_response()
@@ -174,7 +174,7 @@ async fn edit_role_page(
     }
 
     NewOrEditRoleTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         current: role,
     }
     .try_into_response()

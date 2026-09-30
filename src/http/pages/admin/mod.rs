@@ -72,7 +72,7 @@ async fn admin_page(
     let debtors = compute_debtors(&state.read_pool, selected_year).await?;
 
     AdminTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         global_vars: GlobalVars::fetch(&state.read_pool).await?,
         server_time: date_formats::as_local(&local_time()),
         selected_year,

@@ -6,14 +6,15 @@
       {
         "name": "name: String",
         "ordinal": 0,
-        "type_info": "Null"
+        "type_info": "Text",
+        "origin": "Expression"
       }
     ],
     "parameters": {
       "Right": 2
     },
     "nullable": [
-      null
+      false
     ]
   },
   "hash": "91ad41efe2f552686d1f47d4fd78b3826780669c30957e8277403f5492139c2a"

@@ -6,7 +6,8 @@
       {
         "name": "exists(select 1 from restrictions where date = $1 and location = $2 and hour is null)",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": "Expression"
       }
     ],
     "parameters": {

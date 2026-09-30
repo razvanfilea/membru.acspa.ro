@@ -281,7 +281,7 @@ async fn history_page(
     .await?;
 
     HistoryTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
         users,
         events: HistoryEvent::iter().collect(),
         filters,

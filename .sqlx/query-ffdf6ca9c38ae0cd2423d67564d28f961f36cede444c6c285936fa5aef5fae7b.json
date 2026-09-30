@@ -6,17 +6,35 @@
       {
         "name": "date: Date",
         "ordinal": 0,
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "date"
+          }
+        }
       },
       {
         "name": "hour: u8",
         "ordinal": 1,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "hour"
+          }
+        }
       },
       {
         "name": "created_for",
         "ordinal": 2,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "created_for"
+          }
+        }
       }
     ],
     "parameters": {

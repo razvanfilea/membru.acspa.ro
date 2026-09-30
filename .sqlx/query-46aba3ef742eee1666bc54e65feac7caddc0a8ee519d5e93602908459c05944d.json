@@ -6,14 +6,20 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "payments",
+            "name": "id"
+          }
+        }
       }
     ],
     "parameters": {
       "Right": 5
     },
     "nullable": [
-      false
+      null
     ]
   },
   "hash": "46aba3ef742eee1666bc54e65feac7caddc0a8ee519d5e93602908459c05944d"

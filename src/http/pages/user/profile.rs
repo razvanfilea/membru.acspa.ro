@@ -30,7 +30,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         status_grid: StatusGridTemplate,
     }
 
-    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let auth_user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let user = UserDetails::fetch(&state.read_pool, auth_user.id).await?;
 
     let role = UserRole::fetch_by_name(&state.read_pool, &user.role).await?;
@@ -84,7 +84,7 @@ pub async fn profile_reservations(
         selected_year: i32,
     }
 
-    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let auth_user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let user = UserDetails::fetch(&state.read_pool, auth_user.id).await?;
     let current_year = local_date().year();
 
@@ -122,7 +122,7 @@ pub async fn profile_reservations_year(
         admin_reservations_view: bool,
     }
 
-    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let auth_user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let user = UserDetails::fetch(&state.read_pool, auth_user.id).await?;
     let current_year = local_date().year();
 
@@ -149,7 +149,7 @@ pub async fn payment_status_partial(
     State(state): State<AppState>,
     Path(year): Path<i32>,
 ) -> HttpResult {
-    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let auth_user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let user = UserDetails::fetch(&state.read_pool, auth_user.id).await?;
     build_status_grid_response(&state.read_pool, user, year, false).await
 }
@@ -166,7 +166,7 @@ pub async fn update_profile_contact(
     State(state): State<AppState>,
     Form(form): Form<UpdateContactForm>,
 ) -> HttpResult {
-    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let auth_user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
 
     let nickname = form.nickname.filter(|n| !n.trim().is_empty());
     let phone_number = form.phone_number.filter(|p| !p.trim().is_empty());

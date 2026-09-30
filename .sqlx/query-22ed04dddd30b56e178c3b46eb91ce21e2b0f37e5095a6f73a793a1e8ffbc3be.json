@@ -6,12 +6,19 @@
       {
         "name": "as_guest",
         "ordinal": 0,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "as_guest"
+          }
+        }
       },
       {
         "name": "count! :i64",
         "ordinal": 1,
-        "type_info": "Null"
+        "type_info": "Integer",
+        "origin": "Expression"
       }
     ],
     "parameters": {
@@ -19,7 +26,7 @@
     },
     "nullable": [
       false,
-      null
+      false
     ]
   },
   "hash": "22ed04dddd30b56e178c3b46eb91ce21e2b0f37e5095a6f73a793a1e8ffbc3be"

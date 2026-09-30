@@ -22,7 +22,7 @@ pub async fn change_password_page(auth_session: AuthSession) -> HttpResult {
     }
 
     ChangePasswordTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        user: auth_session.user().await.ok_or(HttpError::Unauthorized)?,
     }
     .try_into_response()
 }
@@ -52,7 +52,7 @@ pub async fn change_password(
     auth: AuthSession,
     Form(passwords): Form<ChangePasswordForm>,
 ) -> HttpResult {
-    let user = auth.user.as_ref().ok_or(HttpError::Unauthorized)?;
+    let user = auth.user().await.ok_or(HttpError::Unauthorized)?;
 
     if passwords.new != passwords.new_duplicate {
         return change_password_error("Cele 2 parole nu sunt identice");

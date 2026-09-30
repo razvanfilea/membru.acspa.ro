@@ -6,12 +6,24 @@
       {
         "name": "name",
         "ordinal": 0,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "name"
+          }
+        }
       },
       {
         "name": "received_gift",
         "ordinal": 1,
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "received_gift"
+          }
+        }
       }
     ],
     "parameters": {

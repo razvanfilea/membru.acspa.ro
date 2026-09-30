@@ -6,37 +6,79 @@
       {
         "name": "date",
         "ordinal": 0,
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "date"
+          }
+        }
       },
       {
         "name": "hour",
         "ordinal": 1,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "hour"
+          }
+        }
       },
       {
         "name": "start_minute?",
         "ordinal": 2,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "alternative_days",
+            "name": "slots_start_minute"
+          }
+        }
       },
       {
         "name": "as_guest",
         "ordinal": 3,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "as_guest"
+          }
+        }
       },
       {
         "name": "cancelled",
         "ordinal": 4,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "cancelled"
+          }
+        }
       },
       {
         "name": "in_waiting",
         "ordinal": 5,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "in_waiting"
+          }
+        }
       },
       {
         "name": "created_at",
         "ordinal": 6,
-        "type_info": "Datetime"
+        "type_info": "Datetime",
+        "origin": {
+          "Table": {
+            "table": "reservations",
+            "name": "created_at"
+          }
+        }
       }
     ],
     "parameters": {

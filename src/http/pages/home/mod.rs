@@ -75,7 +75,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
     .unwrap_or_default();
 
     let reservation_hours = ReservationHours::fetch(&state, current_date).await?;
-    let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let auth_user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let has_paid = check_user_has_paid(&state.read_pool, &auth_user).await?;
 
     HomeTemplate {
@@ -119,7 +119,7 @@ async fn hour_picker(
         location_name: &'a str,
     }
 
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let selected_date = *query.selected_date;
 
     let structure =
@@ -161,7 +161,7 @@ async fn confirm_reservation(
     State(state): State<AppState>,
     Form(query): Form<HourQuery>,
 ) -> HttpResult {
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let selected_date = *query.selected_date;
     let selected_hour = query.hour;
 
@@ -229,7 +229,7 @@ async fn cancel_reservation(
     Query(query): Query<CancelReservationQuery>,
 ) -> HttpResult {
     let date = *query.date;
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let user_id = query.user_id.unwrap_or(user.id);
 
     if (user_id != user.id || query.created_for.is_some()) && !user.admin_panel_access {

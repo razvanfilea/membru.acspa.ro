@@ -24,7 +24,7 @@ pub async fn handle_ws(
     auth_session: AuthSession,
     ws: WebSocketUpgrade,
 ) -> HttpResult {
-    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    let user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     Ok(ws.on_upgrade(move |socket| handle_socket(socket, state, user)))
 }
 
