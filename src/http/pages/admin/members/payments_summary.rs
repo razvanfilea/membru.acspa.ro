@@ -4,6 +4,7 @@ use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::UserDetails;
 use crate::utils::dates::{YearMonth, YearMonthIter};
+use crate::utils::date_formats::DateFormatExt;
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
@@ -40,6 +41,8 @@ pub struct StatusGridTemplate {
     pub months_status_view: Vec<MonthStatusView>,
     pub total_paid: i64,
     pub admin_payments_status_grid: bool,
+    /// Payments covering a month of `selected_year`, only listed for admins
+    pub year_payments: Vec<PaymentWithAllocations>,
 }
 
 pub async fn build_status_grid_response(
@@ -53,6 +56,11 @@ pub async fn build_status_grid_response(
     let current_year = local_date().year();
     let months_status_view = calculate_year_status(year, &member, &payments, &breaks);
     let total_paid = calculate_total_paid_for_year(&payments, year);
+    let year_payments = if admin_payments_status_grid {
+        payments_for_year(&payments, year)
+    } else {
+        Vec::new()
+    };
 
     StatusGridTemplate {
         member,
@@ -61,8 +69,18 @@ pub async fn build_status_grid_response(
         months_status_view,
         total_paid,
         admin_payments_status_grid,
+        year_payments,
     }
     .try_into_response()
+}
+
+/// Payments with at least one month allocated to `year`, a payment spanning two years is in both
+pub fn payments_for_year(payments: &[PaymentWithAllocations], year: i32) -> Vec<PaymentWithAllocations> {
+    payments
+        .iter()
+        .filter(|payment| payment.allocations.iter().any(|alloc| alloc.year == year))
+        .cloned()
+        .collect()
 }
 
 pub fn calculate_total_paid_for_year(payments: &[PaymentWithAllocations], year: i32) -> i64 {

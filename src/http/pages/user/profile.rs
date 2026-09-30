@@ -32,6 +32,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         months_status_view: Vec<MonthStatusView>,
         total_paid: i64,
         admin_payments_status_grid: bool,
+        year_payments: Vec<PaymentWithAllocations>,
     }
 
     let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
@@ -69,6 +70,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         months_status_view,
         total_paid: 0,
         admin_payments_status_grid: false,
+        year_payments: Vec::new(),
     }
     .try_into_response()
 }

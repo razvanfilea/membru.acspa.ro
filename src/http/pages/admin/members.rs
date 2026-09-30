@@ -11,6 +11,7 @@ use crate::http::pages::admin::members::breaks::{add_break, delete_break};
 use crate::http::pages::admin::members::payments::{add_payment, delete_payment};
 use crate::http::pages::admin::members::payments_summary::{
     MonthStatus, MonthStatusView, calculate_total_paid_for_year, calculate_year_status,
+    payments_for_year,
     payments_status_partial,
 };
 use crate::http::response::{hx_redirect, hx_refresh};
@@ -43,7 +44,6 @@ pub fn router() -> Router<AppState> {
         .route("/view/{id}", get(view_member_page))
         .route("/edit/{id}", get(edit_member_page))
         .route("/edit/{id}", post(update_member))
-        .route("/change_password/{id}", get(change_password_page))
         .route("/change_password/{id}", post(update_member_password))
         .route("/toggle_active/{id}", post(toggle_active_user))
         .route("/delete/{id}", post(delete_member))
@@ -334,6 +334,7 @@ async fn view_member_page(
         breaks: Vec<PaymentBreak>,
         months_status_view: Vec<MonthStatusView>,
         total_paid: i64,
+        year_payments: Vec<PaymentWithAllocations>,
     }
 
     impl ViewMemberTemplate {
@@ -372,6 +373,7 @@ async fn view_member_page(
     let months_status_view = calculate_year_status(current_year, &member, &payments, &breaks);
 
     let total_paid = calculate_total_paid_for_year(&payments, current_year);
+    let year_payments = payments_for_year(&payments, current_year);
 
     ViewMemberTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
@@ -389,6 +391,7 @@ async fn view_member_page(
         breaks,
         months_status_view,
         total_paid,
+        year_payments,
     }
     .try_into_response()
 }
@@ -448,25 +451,6 @@ async fn toggle_active_user(
     .await?;
 
     Ok(hx_refresh())
-}
-
-async fn change_password_page(
-    State(state): State<AppState>,
-    auth_session: AuthSession,
-    Path(member_id): Path<i64>,
-) -> HttpResult {
-    #[derive(Template)]
-    #[template(path = "admin/members/change_password.html")]
-    struct ChangePasswordTemplate {
-        user: User,
-        existing_user: UserDetails,
-    }
-
-    ChangePasswordTemplate {
-        user: auth_session.user.ok_or(HttpError::Unauthorized)?,
-        existing_user: UserDetails::fetch(&state.read_pool, member_id).await?,
-    }
-    .try_into_response()
 }
 
 async fn delete_member(
