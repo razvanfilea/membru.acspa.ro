@@ -109,14 +109,16 @@ async fn cancel_reservation_in(
     Ok(true)
 }
 
-/// Cancels the reservations of a user that haven't started yet, promoting from the waiting list as needed.
-/// Past and in-progress reservations are kept for history. Returns how many were cancelled.
-pub async fn cancel_upcoming_reservations(
+/// Removes the reservations of a user that haven't started yet, used when the user is deleted.
+/// Each one is cancelled first, so the waiting list moves up and the history records who did it,
+/// then the rows are deleted so they don't show up as cancelled.
+/// Past and in-progress reservations are kept. Returns how many were cancelled.
+pub async fn remove_upcoming_reservations(
     tx: &mut SqliteConnection,
     location: &Location,
     now: OffsetDateTime,
     user_id: i64,
-    cancelled_by: i64,
+    removed_by: i64,
 ) -> sqlx::Result<usize> {
     let today = now.date();
     let current_hour = now.hour();
@@ -141,10 +143,23 @@ pub async fn cancel_upcoming_reservations(
             reservation.hour,
             user_id,
             reservation.created_for.as_deref(),
-            cancelled_by,
+            removed_by,
         )
         .await?;
     }
+
+    // Cancelled rows are skipped by the history delete trigger, so each keeps just its cancellation
+    query!(
+        "delete from reservations
+        where user_id = $1 and location = $2 and cancelled = true
+            and (date > $3 or (date = $3 and hour > $4))",
+        user_id,
+        location.id,
+        today,
+        current_hour
+    )
+    .execute(&mut *tx)
+    .await?;
 
     Ok(upcoming.len())
 }

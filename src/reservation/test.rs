@@ -619,7 +619,7 @@ mod cancellation {
     }
 
     #[sqlx::test]
-    async fn cancel_upcoming_keeps_past_and_in_progress(pool: SqlitePool) -> sqlx::Result<()> {
+    async fn remove_upcoming_keeps_past_and_in_progress(pool: SqlitePool) -> sqlx::Result<()> {
         let (location, user_1, user_2, admin) = setup(&pool, 3, 0).await?;
         let booked_at = datetime!(2024-07-10 10:00:00 +00:00:00);
 
@@ -633,7 +633,16 @@ mod cancellation {
                 .unwrap();
         }
         assert_eq!(
-            create_reservation(&pool, &location, booked_at, &user_2, date!(2024 - 07 - 11), 20, None).await,
+            create_reservation(
+                &pool,
+                &location,
+                booked_at,
+                &user_2,
+                date!(2024 - 07 - 11),
+                20,
+                None
+            )
+            .await,
             Ok(ReservationSuccess::InWaiting { as_guest: false })
         );
 
@@ -641,7 +650,7 @@ mod cancellation {
         let now = datetime!(2024-07-11 18:30:00 +00:00:00);
         let mut tx = pool.begin().await?;
         let cancelled =
-            cancel_upcoming_reservations(&mut tx, &location, now, user_1.id, admin.id).await?;
+            remove_upcoming_reservations(&mut tx, &location, now, user_1.id, admin.id).await?;
         tx.commit().await?;
         assert_eq!(cancelled, 1);
 
@@ -660,8 +669,27 @@ mod cancellation {
             vec![
                 (user_1.id, date!(2024 - 07 - 10), 18, false, false),
                 (user_1.id, date!(2024 - 07 - 11), 18, false, false),
-                (user_1.id, date!(2024 - 07 - 11), 20, true, false),
                 (user_2.id, date!(2024 - 07 - 11), 20, false, false),
+            ]
+        );
+
+        // The removed reservation keeps only its cancellation, not an extra delete
+        let history = query!(
+            "select event, user_id, changed_by from reservation_history where date = '2024-07-11' and hour = 20 order by id"
+        )
+        .fetch_all(&pool)
+        .await?
+        .into_iter()
+        .map(|r| (r.event, r.user_id, r.changed_by))
+        .collect::<Vec<_>>();
+
+        assert_eq!(
+            history,
+            vec![
+                ("created".to_string(), user_1.id, Some(user_1.id)),
+                ("created".to_string(), user_2.id, Some(user_2.id)),
+                ("cancelled".to_string(), user_1.id, Some(admin.id)),
+                ("promoted".to_string(), user_2.id, None),
             ]
         );
 

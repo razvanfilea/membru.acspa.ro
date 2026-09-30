@@ -19,7 +19,7 @@ use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::role::UserRole;
 use crate::model::user::{User, UserDetails};
 use crate::model::user_reservation::GroupedUserReservations;
-use crate::reservation::cancel_upcoming_reservations;
+use crate::reservation::remove_upcoming_reservations;
 use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::{MonthIter, YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date, local_time};
@@ -414,7 +414,7 @@ async fn delete_member(
     let mut tx = state.write_pool.begin().await?;
 
     let cancelled =
-        cancel_upcoming_reservations(&mut tx, &state.location, local_time(), member_id, user.id)
+        remove_upcoming_reservations(&mut tx, &state.location, local_time(), member_id, user.id)
             .await?;
 
     query!(
