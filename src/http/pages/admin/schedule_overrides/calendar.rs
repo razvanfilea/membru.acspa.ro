@@ -22,11 +22,12 @@ use crate::utils::dates::DateRangeIter;
 use crate::utils::local_date;
 use askama::Template;
 use axum::Router;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::response::IntoResponse;
 use axum::routing::get;
+use serde::Deserialize;
 use std::collections::HashMap;
-use time::{Date, Month};
+use time::{Date, Duration, Month};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -49,6 +50,81 @@ struct DayEvents {
     has_holiday: bool,
     has_tournament: bool,
     has_restriction: bool,
+    has_guests: bool,
+    /// Confirmed reservations, without the waiting list
+    reservations: i64,
+}
+
+/// Everything the day panel shows for the selected date
+struct DayDetails {
+    today: Date,
+    date: Date,
+    holiday: Option<AlternativeDay>,
+    tournament: Option<AlternativeDay>,
+    restrictions: Vec<Restriction>,
+    day_structure: DayStructure,
+    events: DayEvents,
+    reservations: String,
+    // This is needed just for the copy to clipboard function
+    tournament_participants: String,
+}
+
+impl DayDetails {
+    async fn fetch(state: &AppState, date: Date) -> HttpResult<Self> {
+        let holiday = get_holiday(&state.read_pool, date).await?;
+        let tournament = get_tournament_day(&state.read_pool, date).await?;
+        let restrictions = get_restrictions_for_day(&state.read_pool, date).await?;
+        let mut events = get_reservation_counts(state, date, date)
+            .await?
+            .remove(&date)
+            .unwrap_or_default();
+        events.has_holiday = holiday.is_some();
+        events.has_tournament = tournament.is_some();
+        events.has_restriction = !restrictions.is_empty();
+
+        let fake_user = User {
+            admin_panel_access: true,
+            ..Default::default()
+        };
+        let reservations = HoursTemplate::create_response(state, date, &fake_user, false)
+            .await
+            .unwrap_or_default();
+
+        let tournament_participants = get_tournament_participants(state, &tournament).await?;
+
+        Ok(Self {
+            today: local_date(),
+            date,
+            holiday,
+            tournament,
+            restrictions,
+            day_structure: DayStructure::fetch_or_default(&state.read_pool, date, &state.location)
+                .await?,
+            events,
+            reservations,
+            tournament_participants,
+        })
+    }
+
+    fn can_add_restriction(&self) -> bool {
+        !self.restrictions.iter().any(|r| r.hour.is_none())
+    }
+
+    fn is_restriction_hour_available(&self, hour: i64) -> bool {
+        !self.restrictions.iter().any(|r| r.hour == Some(hour))
+    }
+
+    fn is_past_date(&self) -> bool {
+        self.date < self.today
+    }
+
+    fn has_history(&self) -> bool {
+        is_within_history_retention(self.date, self.today)
+    }
+
+    fn weekday(&self) -> &'static str {
+        date_formats::weekday_as_str(self.date.weekday())
+    }
 }
 
 #[derive(Template)]
@@ -56,55 +132,58 @@ struct DayEvents {
 struct CalendarTemplate {
     user: User,
     current_date: Date,
+    /// First day of the displayed month
+    month: Date,
     calendar_days: DateRangeIter,
     day_markers: HashMap<Date, DayEvents>, // Markers for the calendar grid
-    selected_date: Date,
-    selected_holiday: Option<AlternativeDay>,
-    selected_tournament: Option<AlternativeDay>,
-    selected_restrictions: Vec<Restriction>,
-    day_structure: DayStructure,
+    day: DayDetails,
     // Navigation
     prev_month: (i32, u8),
     next_month: (i32, u8),
-    reservations: String,
-    tournament_participants: String,
 }
 
-impl CalendarTemplate {
-    fn can_add_restriction(&self) -> bool {
-        !self.selected_restrictions.iter().any(|r| r.hour.is_none())
-    }
-
-    fn is_restriction_hour_available(&self, hour: i64) -> bool {
-        !self
-            .selected_restrictions
-            .iter()
-            .any(|r| r.hour == Some(hour))
-    }
-
-    fn is_past_date(&self) -> bool {
-        self.selected_date < self.current_date
-    }
-
-    fn has_history(&self) -> bool {
-        is_within_history_retention(self.selected_date, self.current_date)
-    }
+#[derive(Deserialize)]
+struct CalendarQuery {
+    day: Option<IsoDate>,
 }
 
 async fn calendar_page(
     State(state): State<AppState>,
     auth_session: AuthSession,
     Path((year, month_u8)): Path<(i32, u8)>,
+    Query(query): Query<CalendarQuery>,
 ) -> HttpResult {
     let today = local_date();
-    let month = Month::try_from(month_u8).unwrap_or(today.month());
-    let selected_date = Date::from_calendar_date(year, month, 1).or_bail("Data este invalida")?;
+    let month_number = Month::try_from(month_u8).unwrap_or(today.month());
+    let month = Date::from_calendar_date(year, month_number, 1).or_bail("Data este invalida")?;
 
-    let holidays = get_holidays_for_month(&state.read_pool, selected_date).await?;
-    let tournaments = get_tournament_days(&state.read_pool, Some(selected_date)).await?;
-    let restrictions = get_restrictions_for_month(&state.read_pool, selected_date).await?;
+    // Calculate calendar range (full weeks)
+    let next_month_date = if month_number == Month::December {
+        Date::from_calendar_date(year + 1, Month::January, 1).unwrap()
+    } else {
+        Date::from_calendar_date(year, month_number.next(), 1).unwrap()
+    };
+    let last_day = next_month_date.previous_day().unwrap();
+    let calendar_days = DateRangeIter::weeks_in_range(month, last_day);
 
-    let mut day_markers: HashMap<Date, DayEvents> = HashMap::new();
+    let in_month = |date: Date| date.year() == year && date.month() == month_number;
+    let selected_date = query
+        .day
+        .map(|day| *day)
+        .filter(|day| in_month(*day))
+        .unwrap_or(if in_month(today) { today } else { month });
+
+    let holidays = get_holidays_for_month(&state.read_pool, month).await?;
+    let tournaments = get_tournament_days(&state.read_pool, Some(month)).await?;
+    let restrictions = get_restrictions_for_month(&state.read_pool, month).await?;
+
+    // Adjacent month days are shown too, count reservations for whole weeks around the month
+    let mut day_markers = get_reservation_counts(
+        &state,
+        month - Duration::days(7),
+        last_day + Duration::days(7),
+    )
+    .await?;
     for h in &holidays {
         day_markers.entry(h.date).or_default().has_holiday = true;
     }
@@ -115,53 +194,17 @@ async fn calendar_page(
         day_markers.entry(r.date).or_default().has_restriction = true;
     }
 
-    // Calculate calendar range (full weeks)
-    let last_day = if month == Month::December {
-        Date::from_calendar_date(year + 1, Month::January, 1)
-            .unwrap()
-            .previous_day()
-            .unwrap()
-    } else {
-        Date::from_calendar_date(year, month.next(), 1)
-            .unwrap()
-            .previous_day()
-            .unwrap()
-    };
-    let calendar_days = DateRangeIter::weeks_in_range(selected_date, last_day);
-
-    let fake_user = User {
-        admin_panel_access: true,
-        ..Default::default()
-    };
-    let reservations = HoursTemplate::create_response(&state, selected_date, &fake_user, false)
-        .await
-        .unwrap_or_default();
-
-    // Navigation logic
-    let prev_month_date = selected_date.previous_day().unwrap();
-    let next_month_date = last_day.next_day().unwrap();
-
-    let selected_tournament = tournaments.into_iter().find(|d| d.date == today);
-    let tournament_participants = get_tournament_participants(&state, &selected_tournament).await?;
+    let prev_month_date = month.previous_day().unwrap();
 
     CalendarTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         current_date: today,
+        month,
         calendar_days,
         day_markers,
-        selected_date,
-        selected_holiday: holidays.into_iter().find(|d| d.date == today),
-        selected_tournament,
-        selected_restrictions: restrictions
-            .into_iter()
-            .filter(|r| r.date == today)
-            .collect(),
-        day_structure: DayStructure::fetch_or_default(&state.read_pool, today, &state.location)
-            .await?,
+        day: DayDetails::fetch(&state, selected_date).await?,
         prev_month: (prev_month_date.year(), prev_month_date.month() as u8),
         next_month: (next_month_date.year(), next_month_date.month() as u8),
-        reservations,
-        tournament_participants,
     }
     .try_into_response()
 }
@@ -177,36 +220,40 @@ async fn day_details_partial(
 #[template(path = "admin/calendar/day_details_response.html")]
 struct DayDetailsTemplate {
     current_date: Date,
-    selected_date: Date,
-    selected_holiday: Option<AlternativeDay>,
-    selected_tournament: Option<AlternativeDay>,
-    selected_restrictions: Vec<Restriction>,
-    day_structure: DayStructure,
-    events: DayEvents,
-    reservations: String,
-    // This is needed just for the copy to clipboard function
-    tournament_participants: String,
+    day: DayDetails,
 }
 
-impl DayDetailsTemplate {
-    fn can_add_restriction(&self) -> bool {
-        !self.selected_restrictions.iter().any(|r| r.hour.is_none())
-    }
+/// Reservation counts and guest markers per day, between `from` and `to` inclusive
+async fn get_reservation_counts(
+    state: &AppState,
+    from: Date,
+    to: Date,
+) -> sqlx::Result<HashMap<Date, DayEvents>> {
+    let rows = sqlx::query!(
+        r#"select date as "date: Date",
+                  sum(not in_waiting) as "reservations!: i64",
+                  max(created_for is not null) as "has_guests!: bool"
+           from reservations
+           where location = $1 and date between $2 and $3 and not cancelled
+           group by date"#,
+        state.location.id,
+        from,
+        to
+    )
+    .fetch_all(&state.read_pool)
+    .await?;
 
-    fn is_restriction_hour_available(&self, hour: i64) -> bool {
-        !self
-            .selected_restrictions
-            .iter()
-            .any(|r| r.hour == Some(hour))
-    }
-
-    fn is_past_date(&self) -> bool {
-        self.selected_date < self.current_date
-    }
-
-    fn has_history(&self) -> bool {
-        is_within_history_retention(self.selected_date, self.current_date)
-    }
+    Ok(rows
+        .into_iter()
+        .map(|row| {
+            let events = DayEvents {
+                reservations: row.reservations,
+                has_guests: row.has_guests,
+                ..Default::default()
+            };
+            (row.date, events)
+        })
+        .collect())
 }
 
 async fn get_tournament_participants(
@@ -237,36 +284,9 @@ async fn get_tournament_participants(
 }
 
 pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
-    let selected_holiday = get_holiday(&state.read_pool, date).await?;
-    let selected_tournament = get_tournament_day(&state.read_pool, date).await?;
-    let selected_restrictions = get_restrictions_for_day(&state.read_pool, date).await?;
-    let events = DayEvents {
-        has_holiday: selected_holiday.is_some(),
-        has_tournament: selected_tournament.is_some(),
-        has_restriction: !selected_restrictions.is_empty(),
-    };
-
-    let fake_user = User {
-        admin_panel_access: true,
-        ..Default::default()
-    };
-    let reservations = HoursTemplate::create_response(&state, date, &fake_user, false)
-        .await
-        .unwrap_or_default();
-
-    let tournament_participants = get_tournament_participants(&state, &selected_tournament).await?;
-
     DayDetailsTemplate {
         current_date: local_date(),
-        selected_date: date,
-        selected_holiday,
-        selected_tournament,
-        selected_restrictions,
-        day_structure: DayStructure::fetch_or_default(&state.read_pool, date, &state.location)
-            .await?,
-        events,
-        reservations,
-        tournament_participants,
+        day: DayDetails::fetch(&state, date).await?,
     }
     .try_into_response()
 }

@@ -6,7 +6,7 @@ use crate::model::user::User;
 use crate::reservation::{
     HISTORY_RETENTION_DAYS, history_retention_start, is_within_history_retention,
 };
-use crate::utils::date_formats::{DateFormatExt, ISO_DATE};
+use crate::utils::date_formats::{DateFormatExt, ISO_DATE, weekday_as_str};
 use crate::utils::local_date;
 use askama::Template;
 use axum::Router;
@@ -17,7 +17,7 @@ use sqlx::{SqlitePool, query_as};
 use std::str::FromStr;
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use time::macros::format_description;
-use time::{Date, OffsetDateTime, UtcOffset, Weekday};
+use time::{Date, OffsetDateTime, UtcOffset};
 
 pub fn router() -> Router<AppState> {
     Router::new().route("/", get(history_page))
@@ -179,18 +179,6 @@ fn group_by_day(entries: Vec<HistoryEntry>, today: Date) -> Vec<HistoryDay> {
             HistoryDay { title, entries }
         })
         .collect()
-}
-
-fn weekday_as_str(weekday: Weekday) -> &'static str {
-    match weekday {
-        Weekday::Monday => "Luni",
-        Weekday::Tuesday => "Marți",
-        Weekday::Wednesday => "Miercuri",
-        Weekday::Thursday => "Joi",
-        Weekday::Friday => "Vineri",
-        Weekday::Saturday => "Sâmbătă",
-        Weekday::Sunday => "Duminică",
-    }
 }
 
 pub struct HistoryFilters {

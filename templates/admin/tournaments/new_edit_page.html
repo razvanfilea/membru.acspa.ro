@@ -89,6 +89,11 @@
     document.addEventListener("DOMContentLoaded", function () {
         const urlParams = new URLSearchParams(window.location.search);
 
+        // Opened from a calendar day
+        if (urlParams.get('date')) {
+            document.querySelector('input[name="date"]').value = urlParams.get('date');
+        }
+
         // Only run the calculation if thursday=true is in the URL
         if (urlParams.get('thursday') === 'true') {
             const now = new Date();
