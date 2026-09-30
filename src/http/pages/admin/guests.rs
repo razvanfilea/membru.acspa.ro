@@ -34,6 +34,12 @@ pub struct GuestDto {
     created_at: OffsetDateTime,
 }
 
+impl GuestDto {
+    fn is_cancellable(&self) -> bool {
+        reservation::is_cancellable_at(self.date, self.hour as u8, local_time())
+    }
+}
+
 async fn get_guests(pool: &SqlitePool) -> sqlx::Result<Vec<GuestDto>> {
     query_as!(
         GuestDto,

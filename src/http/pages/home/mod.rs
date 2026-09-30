@@ -1,5 +1,5 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult};
+use crate::http::error::{HttpError, HttpResult, bail};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::debtors::check_user_has_paid;
 use crate::http::pages::home::reservation_hours::ReservationHours;
@@ -235,6 +235,10 @@ async fn cancel_reservation(
 
     if (user_id != user.id || query.created_for.is_some()) && !user.admin_panel_access {
         return Ok(StatusCode::UNAUTHORIZED.into_response());
+    }
+
+    if !reservation::is_cancellable_at(date, query.hour, local_time()) {
+        return Err(bail("Rezervările trecute nu mai pot fi anulate"));
     }
 
     let tx = state.write_pool.begin().await?;

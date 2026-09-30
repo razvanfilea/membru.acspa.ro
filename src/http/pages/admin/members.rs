@@ -19,9 +19,10 @@ use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::role::UserRole;
 use crate::model::user::{User, UserDetails};
 use crate::model::user_reservation::GroupedUserReservations;
+use crate::reservation::cancel_upcoming_reservations;
 use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::{MonthIter, YearMonth, YearMonthIter};
-use crate::utils::{date_formats, local_date};
+use crate::utils::{date_formats, local_date, local_time};
 use askama::Template;
 use axum::extract::{Path, Query, State};
 use axum::response::IntoResponse;
@@ -403,12 +404,18 @@ async fn change_password_page(
     .try_into_response()
 }
 
-async fn delete_member(State(state): State<AppState>, Path(member_id): Path<i64>) -> HttpResult {
+async fn delete_member(
+    auth_session: AuthSession,
+    State(state): State<AppState>,
+    Path(member_id): Path<i64>,
+) -> HttpResult {
+    let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+
     let mut tx = state.write_pool.begin().await?;
 
-    query!("delete from reservations where user_id = $1", member_id)
-        .execute(tx.as_mut())
-        .await?;
+    let cancelled =
+        cancel_upcoming_reservations(&mut tx, &state.location, local_time(), member_id, user.id)
+            .await?;
 
     query!(
         "update users set is_deleted = true where id = $1 ",
@@ -418,6 +425,10 @@ async fn delete_member(State(state): State<AppState>, Path(member_id): Path<i64>
     .await?;
 
     tx.commit().await?;
+
+    if cancelled > 0 {
+        let _ = state.reservation_notifier.send(());
+    }
 
     Ok(hx_redirect("/admin/members"))
 }

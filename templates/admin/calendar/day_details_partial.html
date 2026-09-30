@@ -16,7 +16,7 @@
         <div class="p-4 rounded-2xl border border-orange-500/50">
             <p class="text-lg font-black text-orange-500 leading-tight">{{ tournament.description }}</p>
             <p class="text-xs font-bold opacity-60 mt-1 uppercase">Start: {{ tournament.start_hour }}:{{
-                tournament.start_minute.unwrap_or_default() }}</p>
+                format!("{:02}", tournament.start_minute.unwrap_or_default()) }}</p>
             {% if !is_past_date() %}
             <a href="/admin/tournaments/edit/{{ selected_date.to_iso() }}"
                class="btn btn-outline mt-3 w-full font-black uppercase tracking-widest">Detalii
@@ -121,7 +121,7 @@
             </div>
 
             <label class="label cursor-pointer justify-start gap-3 py-0">
-                <input type="checkbox" id="allDayToggle" name="all_day" class="toggle toggle-red-500"
+                <input type="checkbox" id="allDayToggle" name="all_day" class="toggle toggle-error"
                        onchange="toggleHourGrid(this)"/>
                 <span class="label-text font-black uppercase opacity-70">Toată ziua</span>
             </label>
@@ -133,7 +133,7 @@
                 <label class="flex flex-col grow items-center justify-center p-1.5 rounded-lg hover:bg-base-300 transition-all cursor-pointer border border-red-500/50
                     has-checked:bg-red-600 has-checked:text-red-600-content has-checked:border-red-600/20">
                     <span class="text-sm font-black">{{ hour }}</span>
-                    <input type="checkbox" name="hour" value="{{ hour }}" class="hidden"/>
+                    <input type="checkbox" name="hour" value="{{ hour }}" class="hour-checkbox hidden"/>
                 </label>
                 {% endif %}
                 {% endfor %}

@@ -617,6 +617,56 @@ mod cancellation {
 
         Ok(())
     }
+
+    #[sqlx::test]
+    async fn cancel_upcoming_keeps_past_and_in_progress(pool: SqlitePool) -> sqlx::Result<()> {
+        let (location, user_1, user_2, admin) = setup(&pool, 3, 0).await?;
+        let booked_at = datetime!(2024-07-10 10:00:00 +00:00:00);
+
+        for (date, hour) in [
+            (date!(2024 - 07 - 10), 18),
+            (date!(2024 - 07 - 11), 18),
+            (date!(2024 - 07 - 11), 20),
+        ] {
+            create_reservation(&pool, &location, booked_at, &user_1, date, hour, None)
+                .await
+                .unwrap();
+        }
+        assert_eq!(
+            create_reservation(&pool, &location, booked_at, &user_2, date!(2024 - 07 - 11), 20, None).await,
+            Ok(ReservationSuccess::InWaiting { as_guest: false })
+        );
+
+        // The 18:00 slot of the 11th is in progress
+        let now = datetime!(2024-07-11 18:30:00 +00:00:00);
+        let mut tx = pool.begin().await?;
+        let cancelled =
+            cancel_upcoming_reservations(&mut tx, &location, now, user_1.id, admin.id).await?;
+        tx.commit().await?;
+        assert_eq!(cancelled, 1);
+
+        let remaining = query!(
+            r#"select user_id, date as "date: Date", hour, cancelled, in_waiting from reservations
+            order by date, hour, user_id"#
+        )
+        .fetch_all(&pool)
+        .await?
+        .into_iter()
+        .map(|r| (r.user_id, r.date, r.hour, r.cancelled, r.in_waiting))
+        .collect::<Vec<_>>();
+
+        assert_eq!(
+            remaining,
+            vec![
+                (user_1.id, date!(2024 - 07 - 10), 18, false, false),
+                (user_1.id, date!(2024 - 07 - 11), 18, false, false),
+                (user_1.id, date!(2024 - 07 - 11), 20, true, false),
+                (user_2.id, date!(2024 - 07 - 11), 20, false, false),
+            ]
+        );
+
+        Ok(())
+    }
 }
 
 mod constraints_and_schedule {

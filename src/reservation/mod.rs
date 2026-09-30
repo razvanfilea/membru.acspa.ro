@@ -12,7 +12,7 @@ use sqlx::{SqliteExecutor, SqlitePool, query, query_as};
 use time::{Date, Duration, OffsetDateTime};
 use tracing::{error, info};
 
-pub use cancel::cancel_reservation;
+pub use cancel::{cancel_reservation, cancel_upcoming_reservations, is_cancellable_at};
 
 /// How long entries of `reservation_history` are kept
 pub const HISTORY_RETENTION_DAYS: i64 = 90;

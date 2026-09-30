@@ -69,7 +69,7 @@
             <span class="text-lg">Consumă rezervarea:</span>
             <input name="consumes_reservation" type="checkbox" class="toggle toggle-lg input-lg toggle-primary"
                    autocomplete="off"
-                   {% if let Some(val)=current %} value="{{ val.consumes_reservation }}" {% endif %}/>
+                   {% if let Some(val)=current %}{% if val.consumes_reservation %} checked{% endif %}{% endif %}/>
         </label>
 
 

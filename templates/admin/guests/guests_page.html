@@ -22,6 +22,7 @@
 
             {% let selected_date_formatted = guest.date.to_iso() %}
 
+            {% if guest.is_cancellable() %}
             <button
                     class="btn btn-square btn-sm btn-error btn-outline"
                     hx-delete='/reservation?date={{ selected_date_formatted }}&hour={{ guest.hour }}&user_id={{ guest.created_by_id }}&created_for={{ guest.name|urlencode }}'
@@ -30,6 +31,7 @@
                     hx-confirm="Ești sigur ca vrei să ștergi invitatul '{{ guest.name }}'?">
                 <span class="material-symbols-outlined">delete</span>
             </button>
+            {% endif %}
 
         </div>
         {% endfor %}

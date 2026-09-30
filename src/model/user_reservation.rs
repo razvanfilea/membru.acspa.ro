@@ -1,5 +1,6 @@
 use crate::model::location::Location;
 use crate::model::user::User;
+use crate::reservation::is_cancellable_at;
 use crate::utils::dates::YearMonth;
 use crate::utils::local_time;
 use itertools::Itertools;
@@ -19,11 +20,7 @@ pub struct UserReservation {
 
 impl UserReservation {
     pub fn is_cancellable(&self) -> bool {
-        let now = local_time();
-        let now_date = now.date();
-        !self.cancelled
-            && (self.date > now_date
-                || (self.date == now_date && self.hour as u8 >= now.time().hour()))
+        !self.cancelled && is_cancellable_at(self.date, self.hour as u8, local_time())
     }
 
     pub async fn delete_on_day(

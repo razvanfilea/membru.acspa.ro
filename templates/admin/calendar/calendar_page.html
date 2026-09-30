@@ -14,7 +14,7 @@
                     </h2>
                     <div class="flex gap-4 mt-2">
                         <div class="flex items-center gap-1.5 text-xs font-black uppercase">
-                            <div class="w-3 h-1 rounded-full bg-success"></div>
+                            <div class="w-3 h-1 rounded-full bg-primary"></div>
                             Liber
                         </div>
                         <div class="flex items-center gap-1.5 text-xs font-black uppercase">
@@ -59,15 +59,17 @@
             </div>
         </div>
 
-        <div id="day_details_loading" class="htmx-indicator absolute inset-0 flex flex-col items-center justify-center bg-base-200/50 z-50 rounded-3xl">
-            <span class="loading loading-spinner loading-lg text-primary"></span>
-            <p class="text-xs font-black uppercase tracking-widest mt-2 opacity-50">Se încarcă...</p>
-        </div>
+        <div class="relative w-full lg:w-120 md:m-2">
+            <div id="day_details_loading" class="htmx-indicator absolute inset-0 flex flex-col items-center justify-center bg-base-200/50 z-50 rounded-3xl">
+                <span class="loading loading-spinner loading-lg text-primary"></span>
+                <p class="text-xs font-black uppercase tracking-widest mt-2 opacity-50">Se încarcă...</p>
+            </div>
 
-        <div id="day_details_container"
-             class="w-full lg:w-120 bg-base-200 rounded-3xl p-6 md:m-2 md:p-8 shadow-lg border border-base-300 top-8">
+            <div id="day_details_container"
+                 class="h-full bg-base-200 rounded-3xl p-6 md:p-8 shadow-lg border border-base-300">
 
-            {% include "day_details_partial.html" %}
+                {% include "day_details_partial.html" %}
+            </div>
         </div>
     </div>
 </main>

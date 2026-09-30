@@ -7,12 +7,22 @@ Usage: {% call section_header::header(icon, color, title, subtitle) %}
 Colors: primary, secondary, warning, info
 #}
 
+{# Classes are spelled out so Tailwind generates them #}
+{% macro icon_badge(icon, color) %}
+<div class="w-12 h-12 flex items-center justify-center rounded-full shrink-0
+    {%- if color == "primary" %} bg-primary/10 text-primary
+    {%- else if color == "secondary" %} bg-secondary/10 text-secondary
+    {%- else if color == "warning" %} bg-warning/10 text-warning
+    {%- else if color == "info" %} bg-info/10 text-info
+    {%- else %} bg-base-content/10 text-base-content{% endif %}">
+    <span class="material-symbols-outlined text-2xl">{{ icon }}</span>
+</div>
+{% endmacro %}
+
 {% macro header(icon, color, title, subtitle) %}
 <div class="flex flex-row justify-between items-center bg-base-200/50 p-4 rounded-2xl border border-base-300">
     <div class="flex items-center gap-4">
-        <div class="w-12 h-12 flex items-center justify-center bg-{{ color }}/10 text-{{ color }} rounded-full shrink-0">
-            <span class="material-symbols-outlined text-2xl">{{ icon }}</span>
-        </div>
+        {{ icon_badge(icon, color) }}
         <div>
             <h3 class="text-lg md:text-xl font-bold leading-tight">{{ title }}</h3>
             <p class="text-xs text-gray-500 hidden sm:block">{{ subtitle }}</p>
@@ -24,9 +34,7 @@ Colors: primary, secondary, warning, info
 {% macro header_with_button(icon, color, title, subtitle, btn_class, btn_text, btn_icon, btn_onclick) %}
 <div class="flex flex-row justify-between items-center bg-base-200/50 p-4 rounded-2xl border border-base-300">
     <div class="flex items-center gap-4">
-        <div class="w-12 h-12 flex items-center justify-center bg-{{ color }}/10 text-{{ color }} rounded-full shrink-0">
-            <span class="material-symbols-outlined text-2xl">{{ icon }}</span>
-        </div>
+        {{ icon_badge(icon, color) }}
         <div>
             <h3 class="text-lg md:text-xl font-bold leading-tight">{{ title }}</h3>
             <p class="text-xs text-gray-500 hidden sm:block">{{ subtitle }}</p>
@@ -42,9 +50,7 @@ Colors: primary, secondary, warning, info
 {% macro header_with_hx_button(icon, color, title, subtitle, btn_class, btn_icon, hx_get, hx_target, hx_swap) %}
 <div class="flex flex-row justify-between items-center bg-base-200/50 p-4 rounded-2xl border border-base-300">
     <div class="flex items-center gap-4">
-        <div class="w-12 h-12 flex items-center justify-center bg-{{ color }}/10 text-{{ color }} rounded-full shrink-0">
-            <span class="material-symbols-outlined text-2xl">{{ icon }}</span>
-        </div>
+        {{ icon_badge(icon, color) }}
         <div>
             <h3 class="text-lg md:text-xl font-bold leading-tight">{{ title }}</h3>
             <p class="text-xs text-gray-500 hidden sm:block">{{ subtitle }}</p>

@@ -48,22 +48,16 @@
     </div>
 
     <div class="flex flex-col p-2 md:flex-row gap-2 md:gap-4">
-        <a href="mailto:{{ member.email }}?subject=Cotiza%C8%9Bie%20ACSPA&body=Bun%C4%83%20ziua%2C%0A%0AV%C4%83%20reamintim%20c%C4%83%20ave%C8%9Bi%20de%20plat%C4%83%20cotiza%C8%9Bia%20lunar%C4%83%20de%20membru%20al%20clubului%20ACS%20Perpetuum%20Activ.%0A%0AV%C4%83%20mul%C8%9Bumim%20pentru%20sprijin%20%C8%99i%20implicare.%0A%0ACu%20stim%C4%83%2C%0AACS%20Perpetuum%20Activ">
-            <button class="btn btn-outline">
-                Trimite mail cotizație<span class="material-symbols-outlined">email</span>
-            </button>
+        <a href="mailto:{{ member.email }}?subject=Cotiza%C8%9Bie%20ACSPA&body=Bun%C4%83%20ziua%2C%0A%0AV%C4%83%20reamintim%20c%C4%83%20ave%C8%9Bi%20de%20plat%C4%83%20cotiza%C8%9Bia%20lunar%C4%83%20de%20membru%20al%20clubului%20ACS%20Perpetuum%20Activ.%0A%0AV%C4%83%20mul%C8%9Bumim%20pentru%20sprijin%20%C8%99i%20implicare.%0A%0ACu%20stim%C4%83%2C%0AACS%20Perpetuum%20Activ" class="btn btn-outline">
+            Trimite mail cotizație<span class="material-symbols-outlined">email</span>
         </a>
 
-        <a href="/admin/members/change_password/{{ member.id }}">
-            <button class="btn btn-warning btn-outline">
-                Schimbă parola <span class="material-symbols-outlined">password</span>
-            </button>
+        <a href="/admin/members/change_password/{{ member.id }}" class="btn btn-warning btn-outline">
+            Schimbă parola <span class="material-symbols-outlined">password</span>
         </a>
 
-        <a href="/admin/history?user_id={{ member.id }}">
-            <button class="btn btn-info btn-outline">
-                Istoric rezervări <span class="material-symbols-outlined">history</span>
-            </button>
+        <a href="/admin/history?user_id={{ member.id }}" class="btn btn-info btn-outline">
+            Istoric rezervări <span class="material-symbols-outlined">history</span>
         </a>
     </div>
 
@@ -233,11 +227,9 @@
 </main>
 
 <div class="fab">
-    <a href="/admin/members/edit/{{ member.id }}">
-        <button class="btn-main-fab">
-            <span class="material-symbols-outlined">edit</span>
-            Editează membru
-        </button>
+    <a href="/admin/members/edit/{{ member.id }}" class="btn-main-fab">
+        <span class="material-symbols-outlined">edit</span>
+        Editează membru
     </a>
 </div>
 
