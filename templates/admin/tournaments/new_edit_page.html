@@ -4,8 +4,9 @@
 
 {% block content %}
 
-<form>
-    <fieldset class="fieldset gap-6 p-4 md:p-8">
+<main class="page-shell max-w-2xl">
+<form class="surface-card">
+    <fieldset class="fieldset gap-6 p-4 md:p-6">
         {% if let Some(val) = current %}
         <label class="floating-label">
             <span>Data</span>
@@ -66,24 +67,24 @@
         </label>
 
         <label class="label">
-            <span class="text-lg">Consumă rezervarea:</span>
-            <input name="consumes_reservation" type="checkbox" class="toggle toggle-lg input-lg toggle-primary"
+            <input name="consumes_reservation" type="checkbox" class="toggle toggle-primary"
                    autocomplete="off"
                    {% if let Some(val)=current %}{% if val.consumes_reservation %} checked{% endif %}{% endif %}/>
+            Consumă o rezervare din limita săptămânală
         </label>
 
-
         {% if let Some(val) = current %}
-        <button class="btn btn-primary mt-6" hx-post="/admin/tournaments/edit/{{ val.date }}">
+        <button class="btn btn-primary mt-2" hx-post="/admin/tournaments/edit/{{ val.date }}">
             Actualizează
         </button>
         {% else %}
-        <button class="btn btn-primary mt-6" hx-post="/admin/tournaments/new">
+        <button class="btn btn-primary mt-2" hx-post="/admin/tournaments/new">
             Creează turneul
         </button>
         {% endif %}
     </fieldset>
 </form>
+</main>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const urlParams = new URLSearchParams(window.location.search);

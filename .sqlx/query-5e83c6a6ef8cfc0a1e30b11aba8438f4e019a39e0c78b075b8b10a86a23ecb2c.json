@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into users (email, name, nickname, phone_number, emergency_contact_phone_number, role_id, has_key, birthday, member_since, received_gift, password_hash)\n         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning id",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 11
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5e83c6a6ef8cfc0a1e30b11aba8438f4e019a39e0c78b075b8b10a86a23ecb2c"
+}
