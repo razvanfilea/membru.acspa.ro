@@ -29,7 +29,7 @@ use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{query, query_as, query_scalar};
+use sqlx::{SqlitePool, query, query_as, query_scalar};
 use std::collections::HashSet;
 use time::Date;
 
@@ -129,47 +129,187 @@ async fn search_members(
     MembersListTemplate { members }.try_into_response()
 }
 
-#[derive(Deserialize)]
-struct NewMember {
+#[derive(Template)]
+#[template(path = "admin/members/new_edit_page.html")]
+struct MemberFormTemplate {
+    user: User,
+    current_date: String,
+    roles: Vec<String>,
+    member_id: Option<i64>,
+    values: MemberFormValues,
+}
+
+/// Values shown in the member form, empty for a new member
+#[derive(Default)]
+struct MemberFormValues {
     email: String,
     name: String,
+    nickname: String,
+    phone_number: String,
+    emergency_contact_phone_number: String,
     role: String,
+    birthday: String,
+    member_since: String,
+    received_gift: String,
+    has_key: bool,
+}
+
+impl From<UserDetails> for MemberFormValues {
+    fn from(user: UserDetails) -> Self {
+        Self {
+            email: user.email,
+            name: user.name,
+            nickname: user.nickname.unwrap_or_default(),
+            phone_number: user.phone_number.unwrap_or_default(),
+            emergency_contact_phone_number: user.emergency_contact_phone_number.unwrap_or_default(),
+            role: user.role,
+            birthday: user.birthday.to_iso(),
+            member_since: user.member_since.to_iso(),
+            received_gift: user.received_gift.map(|date| date.to_iso()).unwrap_or_default(),
+            has_key: user.has_key,
+        }
+    }
+}
+
+#[derive(Deserialize, Debug)]
+struct MemberForm {
+    email: String,
+    name: String,
+    nickname: Option<String>,
+    phone_number: Option<String>,
+    emergency_contact_phone_number: Option<String>,
+    role: String,
+    has_key: Option<String>,
+    birthday: String,
+    member_since: String,
+    received_gift: Option<String>,
+    /// Only sent when creating a member
+    password: Option<String>,
+}
+
+struct ValidatedMember {
+    email: String,
+    name: String,
+    nickname: Option<String>,
+    phone_number: Option<String>,
+    emergency_contact_phone_number: Option<String>,
+    role_id: i64,
+    has_key: bool,
     birthday: Date,
-    password: String,
+    member_since: Date,
+    received_gift: Option<Date>,
+}
+
+impl MemberForm {
+    /// `member_id` is the member being edited, `None` when creating one
+    async fn validate(
+        self,
+        pool: &SqlitePool,
+        member_id: Option<i64>,
+    ) -> Result<ValidatedMember, HttpError> {
+        fn parse_date(date: Option<String>) -> Option<Date> {
+            date.filter(|date| !date.is_empty() && date != "yyyy-mm-dd")
+                .and_then(|date| Date::parse(date.as_str(), date_formats::ISO_DATE).ok())
+        }
+
+        fn non_empty(value: Option<String>) -> Option<String> {
+            value
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+        }
+
+        let birthday = parse_date(Some(self.birthday)).or_bail("Data nașterii este invalidă")?;
+        let member_since =
+            parse_date(Some(self.member_since)).or_bail("Data înscrierii este invalidă")?;
+        let received_gift = parse_date(self.received_gift);
+
+        let today = local_date();
+        let email = self.email.trim().to_string();
+
+        if User::email_exists_for_other(pool, &email, member_id.unwrap_or(-1)).await? {
+            return Err(bail("Adresa de email este deja folosită de alt utilizator"));
+        }
+
+        if birthday > today {
+            return Err(bail("Data nașterii nu poate fi în viitor"));
+        }
+        if birthday.year() < 1900 {
+            return Err(bail("Data nașterii este prea veche"));
+        }
+
+        if member_since > today {
+            return Err(bail("Data înscrierii nu poate fi în viitor"));
+        }
+
+        if let Some(gift_date) = received_gift
+            && gift_date < member_since
+        {
+            return Err(bail(
+                "Data primirii cadoului nu poate fi înainte de înscriere",
+            ));
+        }
+
+        let role_id = UserRole::fetch_id_by_name(pool, self.role.as_str())
+            .await?
+            .or_bail("Rolul selectat nu există")?;
+
+        Ok(ValidatedMember {
+            email,
+            name: self.name.trim().to_string(),
+            nickname: non_empty(self.nickname),
+            phone_number: non_empty(self.phone_number),
+            emergency_contact_phone_number: non_empty(self.emergency_contact_phone_number),
+            role_id,
+            has_key: self.has_key.is_some(),
+            birthday,
+            member_since,
+            received_gift,
+        })
+    }
 }
 
 async fn new_member_page(State(state): State<AppState>, auth_session: AuthSession) -> HttpResult {
-    #[derive(Template)]
-    #[template(path = "admin/members/new_page.html")]
-    struct NewMemberTemplate {
-        user: User,
-        roles: Vec<String>,
-    }
+    let current_date = local_date().to_iso();
 
-    NewMemberTemplate {
+    MemberFormTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         roles: UserRole::fetch_all_names(&state.read_pool).await?,
+        member_id: None,
+        values: MemberFormValues {
+            member_since: current_date.clone(),
+            ..Default::default()
+        },
+        current_date,
     }
     .try_into_response()
 }
 
 async fn create_new_member(
     State(state): State<AppState>,
-    Form(new_member): Form<NewMember>,
+    Form(mut form): Form<MemberForm>,
 ) -> HttpResult {
-    let role_id = UserRole::fetch_id_by_name(&state.read_pool, new_member.role.as_str())
-        .await?
-        .or_bail("Rolul selectat nu există")?;
+    let password = form
+        .password
+        .take()
+        .filter(|password| password.len() >= 8)
+        .or_bail("Parola trebuie să aibă cel puțin 8 caractere")?;
+    let member = form.validate(&state.read_pool, None).await?;
+    let password_hash = generate_hash_from_password(password);
 
-    let user_name = new_member.name.trim();
-    let password_hash = generate_hash_from_password(new_member.password);
     let new_member_id = query_scalar!(
-        "insert into users (email, name, role_id, password_hash, birthday, member_since) values ($1, $2, $3, $4, $5, date('now')) returning id",
-        new_member.email,
-        user_name,
-        role_id,
+        "insert into users (email, name, nickname, phone_number, emergency_contact_phone_number, role_id, has_key, birthday, member_since, received_gift, password_hash)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning id",
+        member.email,
+        member.name,
+        member.nickname,
+        member.phone_number,
+        member.emergency_contact_phone_number,
+        member.role_id,
+        member.has_key,
+        member.birthday,
+        member.member_since,
+        member.received_gift,
         password_hash,
-        new_member.birthday,
     )
         .fetch_one(&state.write_pool)
         .await?;
@@ -258,112 +398,37 @@ async fn edit_member_page(
     auth_session: AuthSession,
     Path(member_id): Path<i64>,
 ) -> HttpResult {
-    #[derive(Template)]
-    #[template(path = "admin/members/edit_page.html")]
-    struct EditMemberTemplate {
-        current_date: String,
-        user: User,
-        roles: Vec<String>,
-        existing_user: UserDetails,
-    }
-
-    EditMemberTemplate {
-        current_date: local_date().to_iso(),
+    MemberFormTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
+        current_date: local_date().to_iso(),
         roles: UserRole::fetch_all_names(&state.read_pool).await?,
-        existing_user: UserDetails::fetch(&state.read_pool, member_id).await?,
+        member_id: Some(member_id),
+        values: UserDetails::fetch(&state.read_pool, member_id).await?.into(),
     }
     .try_into_response()
-}
-
-#[derive(Deserialize, Debug)]
-struct UpdatedUser {
-    email: String,
-    name: String,
-    nickname: Option<String>,
-    phone_number: Option<String>,
-    emergency_contact_phone_number: Option<String>,
-    role: String,
-    is_active: Option<String>,
-    has_key: Option<String>,
-    birthday: String,
-    member_since: String,
-    received_gift: Option<String>,
 }
 
 async fn update_member(
     State(state): State<AppState>,
     Path(member_id): Path<i64>,
-    Form(updated_user): Form<UpdatedUser>,
+    Form(form): Form<MemberForm>,
 ) -> HttpResult {
-    fn parse_date(date: Option<String>) -> Option<Date> {
-        date.filter(|date| !date.is_empty() && date != "yyyy-mm-dd")
-            .and_then(|date| Date::parse(date.as_str(), date_formats::ISO_DATE).ok())
-    }
-
-    // Parse dates
-    let birthday =
-        parse_date(Some(updated_user.birthday)).or_bail("Data nașterii este invalidă")?;
-    let member_since =
-        parse_date(Some(updated_user.member_since)).or_bail("Data înscrierii este invalidă")?;
-    let received_gift = parse_date(updated_user.received_gift);
-
-    let today = local_date();
-
-    // Email uniqueness check
-    if User::email_exists_for_other(&state.read_pool, &updated_user.email, member_id).await? {
-        return Err(bail("Adresa de email este deja folosită de alt utilizator"));
-    }
-
-    // Birthday validation
-    if birthday > today {
-        return Err(bail("Data nașterii nu poate fi în viitor"));
-    }
-    if birthday.year() < 1900 {
-        return Err(bail("Data nașterii este prea veche"));
-    }
-
-    // member_since validation
-    if member_since > today {
-        return Err(bail("Data înscrierii nu poate fi în viitor"));
-    }
-
-    // received_gift validation
-    if let Some(gift_date) = received_gift
-        && gift_date < member_since
-    {
-        return Err(bail(
-            "Data primirii cadoului nu poate fi înainte de înscriere",
-        ));
-    }
-
-    let role_id = UserRole::fetch_id_by_name(&state.read_pool, updated_user.role.as_str())
-        .await?
-        .or_bail("Rolul selectat nu există")?;
-    let user_name = updated_user.name.trim();
-    let nickname = updated_user.nickname.filter(|n| !n.trim().is_empty());
-    let phone_number = updated_user.phone_number.filter(|p| !p.trim().is_empty());
-    let emergency_contact_phone_number = updated_user
-        .emergency_contact_phone_number
-        .filter(|p| !p.trim().is_empty());
-    let is_active = updated_user.is_active.is_some();
-    let has_key = updated_user.has_key.is_some();
+    let member = form.validate(&state.read_pool, Some(member_id)).await?;
 
     query!(
-        "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, is_active = $9, nickname = $10, phone_number = $11, emergency_contact_phone_number = $12
+        "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, nickname = $9, phone_number = $10, emergency_contact_phone_number = $11
          where id = $1",
         member_id,
-        updated_user.email,
-        user_name,
-        role_id,
-        has_key,
-        birthday,
-        member_since,
-        received_gift,
-        is_active,
-        nickname,
-        phone_number,
-        emergency_contact_phone_number
+        member.email,
+        member.name,
+        member.role_id,
+        member.has_key,
+        member.birthday,
+        member.member_since,
+        member.received_gift,
+        member.nickname,
+        member.phone_number,
+        member.emergency_contact_phone_number
     )
         .execute(&state.write_pool)
         .await?;

@@ -1,11 +1,13 @@
 {% extends "base.html" %}
+{% import "components/danger_zone.html" as danger_zone %}
 
 {% block page_title %}{% if current.is_none() %}Rol nou{% else %}Editează rolul{% endif %}{% endblock %}
 
 {% block content %}
 
-<form>
-    <fieldset class="fieldset p-4 md:p-8 gap-6 w-full">
+<main class="page-shell max-w-2xl">
+<form class="surface-card">
+    <fieldset class="fieldset p-4 md:p-6 gap-6 w-full">
         <label class="floating-label">
             <span>Nume</span>
             <input name="name" type="text" placeholder="Nume" required class="input input-lg input-bordered w-full"
@@ -46,20 +48,26 @@
         </label>
 
         {% if let Some(val) = current %}
-        <button class="btn btn-primary mt-6" hx-post="/admin/roles/edit/{{ val.id }}">
+        <button class="btn btn-primary mt-2" hx-post="/admin/roles/edit/{{ val.id }}">
             Actualizează
         </button>
-
-        <button class="btn btn-error mt-6" hx-swap="none" hx-delete="/admin/roles/{{ val.id }}"
-                hx-confirm="Ești absolut sigur că vrei să ștergi acest rol?">
-            Șterge
-        </button>
         {% else %}
-        <button class="btn btn-primary mt-6" hx-post="/admin/roles/new">
-            Creează un rol nou
+        <button class="btn btn-primary mt-2" hx-post="/admin/roles/new">
+            Creează rolul
         </button>
         {% endif %}
     </fieldset>
 </form>
+
+{% if let Some(val) = current %}
+{% call danger_zone::danger_zone("Rolul se poate șterge doar dacă nu este atribuit niciunui utilizator.") %}
+<button class="btn btn-error btn-outline" hx-swap="none" hx-delete="/admin/roles/{{ val.id }}"
+        hx-confirm="Ești sigur că vrei să ștergi rolul '{{ val.name }}'?">
+    <span class="material-symbols-outlined">delete</span>
+    Șterge rolul
+</button>
+{% endcall %}
+{% endif %}
+</main>
 
 {% endblock %}
