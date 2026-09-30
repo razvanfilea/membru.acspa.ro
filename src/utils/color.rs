@@ -16,6 +16,14 @@ pub enum CssColor {
     Gray,
 }
 
+impl CssColor {
+    pub fn parse_or_none(color: Option<&str>) -> Self {
+        color
+            .and_then(|color| color.parse().ok())
+            .unwrap_or(CssColor::None)
+    }
+}
+
 pub fn get_reservation_result_color(result: &ReservationResult) -> CssColor {
     match result {
         Ok(success) => match success {

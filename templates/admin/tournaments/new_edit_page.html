@@ -10,34 +10,34 @@
         {% if let Some(val) = current %}
         <label class="floating-label">
             <span>Data</span>
-            <input type="date" class="input input-lg input-bordered w-full" required placeholder="Descriere"
+            <input type="date" class="input input-lg w-full" required placeholder="Descriere"
                    value="{{ val.date }}" autocomplete="off" disabled/>
         </label>
         {% else %}
         <label class="floating-label">
             <span>Data</span>
-            <input name="date" type="date" class="input input-lg input-bordered w-full" required placeholder="Descriere"
+            <input name="date" type="date" class="input input-lg w-full" required placeholder="Descriere"
                    min='{{ current_date.to_iso() }}'/>
         </label>
         {% endif %}
 
         <label class="floating-label">
             <span>Descriere</span>
-            <input name="description" type="text" class="input input-lg input-bordered w-full" autocomplete="off"
+            <input name="description" type="text" class="input input-lg w-full" autocomplete="off"
                    placeholder="Descriere" {% if let Some(val)=current %} value="{{ val.description }}" {% endif %}/>
         </label>
 
         <div class="flex flex-row gap-4">
             <label class="floating-label grow">
                 <span>Ora de început</span>
-                <input name="start_hour" type="number" min="1" max="22" class="input input-lg input-bordered w-full"
+                <input name="start_hour" type="number" min="1" max="22" class="input input-lg w-full"
                        placeholder="Ora de început" autocomplete="off" required
                        {% if let Some(val)=current %} value="{{ val.start_hour }}" {% endif %}/>
             </label>
 
             <label class="floating-label grow">
                 <span>Minut</span>
-                <input name="start_minute" type="number" min="0" max="59" class="input input-lg input-bordered w-full"
+                <input name="start_minute" type="number" min="0" max="59" class="input input-lg w-full"
                        placeholder="Minut" autocomplete="off"
                        {% if let Some(val)=current %}
                        value="{{ val.start_minute.unwrap_or_default() }}"
@@ -50,14 +50,14 @@
         <label class="floating-label">
             <span>Durata (în ore)</span>
             <input id="duration" name="duration" type="number" min="1" max="8"
-                   class="input input-lg input-bordered w-full"
+                   class="input input-lg w-full"
                    placeholder="Durata turneului în ore" autocomplete="off" required
                    {% if let Some(val)=current %} value="{{ val.duration }}" {% endif %}/>
         </label>
 
         <label class="floating-label">
             <span>Capacitate</span>
-            <input name="capacity" type="number" min="1" max="30" class="input input-lg input-bordered w-full"
+            <input name="capacity" type="number" min="1" max="30" class="input input-lg w-full"
                    placeholder="Capacitate" autocomplete="off"
                    {% if let Some(val)=current %}
                    {% if let Some(capacity)=val.slot_capacity %} value="{{ capacity }}" {% endif %}
@@ -89,18 +89,14 @@
     document.addEventListener("DOMContentLoaded", function () {
         const urlParams = new URLSearchParams(window.location.search);
 
-        // Opened from a calendar day
         if (urlParams.get('date')) {
             document.querySelector('input[name="date"]').value = urlParams.get('date');
         }
 
-        // Only run the calculation if thursday=true is in the URL
         if (urlParams.get('thursday') === 'true') {
             const now = new Date();
-            const today = now.getDay(); // 0 (Sun) to 6 (Sat)
+            const today = now.getDay();
 
-            // Calculate days until next Thursday (Thursday is day 4)
-            // If today is Thursday, this finds the Thursday of next week
             let daysUntilThursday = (4 - today + 7) % 7;
             if (daysUntilThursday === 0) daysUntilThursday = 7;
 

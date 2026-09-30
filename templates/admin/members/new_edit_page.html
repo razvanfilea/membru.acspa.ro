@@ -14,19 +14,19 @@
         <label class="floating-label">
             <span>Nume</span>
             <input name="name" type="text" placeholder="Nume" {% if member_id.is_none() %}minlength="4"{% endif %} required autocomplete="off"
-                   value="{{ values.name }}" class="input input-lg input-bordered w-full"/>
+                   value="{{ values.name }}" class="input input-lg w-full"/>
         </label>
 
         <label class="floating-label">
-            <span>Nickname</span>
-            <input name="nickname" type="text" placeholder="Nickname" autocomplete="off"
-                   value="{{ values.nickname }}" class="input input-lg input-bordered w-full"/>
+            <span>Poreclă</span>
+            <input name="nickname" type="text" placeholder="Poreclă" autocomplete="off"
+                   value="{{ values.nickname }}" class="input input-lg w-full"/>
         </label>
 
         <label class="floating-label">
             <span>Zi de naștere</span>
             <input name="birthday" type="date" autocomplete="off" required max="{{ current_date }}"
-                   value="{{ values.birthday }}" class="input input-lg input-bordered w-full"/>
+                   value="{{ values.birthday }}" class="input input-lg w-full"/>
         </label>
 
         <h3 class="fieldset-legend text-base mt-2">Contact</h3>
@@ -34,27 +34,27 @@
         <label class="floating-label">
             <span>Email</span>
             <input name="email" type="email" placeholder="Email" required autocomplete="off"
-                   value="{{ values.email }}" class="input input-lg input-bordered w-full"/>
+                   value="{{ values.email }}" class="input input-lg w-full"/>
         </label>
 
         <label class="floating-label">
             <span>Număr de telefon</span>
             <input name="phone_number" type="tel" placeholder="Număr de telefon" autocomplete="off"
-                   value="{{ values.phone_number }}" class="input input-lg input-bordered w-full"/>
+                   value="{{ values.phone_number }}" class="input input-lg w-full"/>
         </label>
 
         <label class="floating-label">
             <span>Contact de urgență (telefon)</span>
             <input name="emergency_contact_phone_number" type="tel" placeholder="Contact de urgență (telefon)"
                    autocomplete="off" value="{{ values.emergency_contact_phone_number }}"
-                   class="input input-lg input-bordered w-full"/>
+                   class="input input-lg w-full"/>
         </label>
 
         <h3 class="fieldset-legend text-base mt-2">Club</h3>
 
         <label class="floating-label">
             <span>Rol</span>
-            <select name="role" class="select select-lg select-bordered w-full" autocomplete="off">
+            <select name="role" class="select select-lg w-full" autocomplete="off">
                 {% for role in roles %}
                 <option {% if role == values.role.as_str() %}selected{% endif %}>{{ role }}</option>
                 {% endfor %}
@@ -64,13 +64,13 @@
         <label class="floating-label">
             <span>Membru din</span>
             <input name="member_since" type="date" autocomplete="off" required max="{{ current_date }}"
-                   value="{{ values.member_since }}" class="input input-lg input-bordered w-full"/>
+                   value="{{ values.member_since }}" class="input input-lg w-full"/>
         </label>
 
         <label class="floating-label">
             <span>A primit cadou pe</span>
             <input name="received_gift" type="date" autocomplete="off" max="{{ current_date }}"
-                   value="{{ values.received_gift }}" class="input input-lg input-bordered w-full"/>
+                   value="{{ values.received_gift }}" class="input input-lg w-full"/>
         </label>
 
         <label class="label">
@@ -85,7 +85,7 @@
         <label class="floating-label">
             <span>Parolă</span>
             <input name="password" type="text" placeholder="Parolă" minlength="8" required autocomplete="off"
-                   class="input input-lg input-bordered w-full"/>
+                   class="input input-lg w-full"/>
         </label>
         {% endif %}
 

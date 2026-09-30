@@ -23,7 +23,6 @@ use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
-use std::str::FromStr;
 use time::Date;
 use tracing::{error, info};
 
@@ -69,7 +68,7 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
     )
     .map(|color_code| ColorCode {
         name: color_code.name,
-        color: CssColor::from_str(&color_code.color).unwrap_or(CssColor::None),
+        color: CssColor::parse_or_none(Some(&color_code.color)),
     })
     .fetch_all(&state.read_pool)
     .await
@@ -238,7 +237,7 @@ async fn cancel_reservation(
     }
 
     if !reservation::is_cancellable_at(date, query.hour, local_time()) {
-        return Err(bail("Rezervările trecute nu mai pot fi anulate"));
+        return Err(bail("Rezervările începute sau trecute nu mai pot fi anulate"));
     }
 
     let tx = state.write_pool.begin().await?;

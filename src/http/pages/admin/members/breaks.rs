@@ -1,12 +1,13 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
-use crate::http::pages::admin::members::payments_summary::{ViewYear, payments_changed_response};
+use crate::http::pages::admin::members::payments_summary::{
+    ViewYear, payments_changed_response, view_year_or_current,
+};
 use crate::model::payment_context::PaymentContext;
 use crate::model::user::UserDetails;
 use crate::utils::date_formats;
 use crate::utils::dates::YearMonth;
-use crate::utils::local_date;
 use axum::Form;
 use axum::extract::{Path, Query, State};
 use serde::Deserialize;
@@ -20,14 +21,14 @@ fn is_before_membership(date: Date, member: &UserDetails) -> bool {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct NewBreak {
+pub(super) struct NewBreak {
     start_month: String,       // Format "2024-06"
     end_month: Option<String>, // Format "2024-08"
     reason: Option<String>,
     view_year: Option<i32>,
 }
 
-pub async fn add_break(
+pub(super) async fn add_break(
     State(state): State<AppState>,
     Path(member_id): Path<i64>,
     auth_session: AuthSession,
@@ -85,11 +86,11 @@ pub async fn add_break(
 
     tx.commit().await?;
 
-    let year = form.view_year.unwrap_or_else(|| local_date().year());
+    let year = view_year_or_current(form.view_year);
     payments_changed_response(&state.read_pool, member_id, year, "Pauza a fost adăugată").await
 }
 
-pub async fn delete_break(
+pub(super) async fn delete_break(
     State(state): State<AppState>,
     Path(break_id): Path<i64>,
     Query(view): Query<ViewYear>,

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select exists(select 1 from restrictions where date = $1 and location = $2 and hour is null)",
+  "describe": {
+    "columns": [
+      {
+        "name": "exists(select 1 from restrictions where date = $1 and location = $2 and hour is null)",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "94baa74123b16c1dec8d75a763cac98e3e1c32eac6637ef7e43d722385043495"
+}

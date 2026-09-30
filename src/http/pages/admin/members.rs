@@ -1,17 +1,16 @@
-pub mod breaks;
+mod breaks;
 pub mod debtors;
-pub mod payments;
+mod payments;
 pub mod payments_summary;
 
 use crate::http::AppState;
-use crate::http::auth::generate_hash_from_password;
+use crate::http::auth::{PASSWORD_TOO_SHORT, generate_hash_from_password, is_valid_new_password};
 use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::breaks::{add_break, delete_break};
 use crate::http::pages::admin::members::payments::{add_payment, delete_payment};
 use crate::http::pages::admin::members::payments_summary::{
-    MonthStatus, MonthStatusView, calculate_total_paid_for_year, calculate_year_status,
-    paid_months_json, payments_for_year, payments_status_partial,
+    StatusGridTemplate, payments_status_partial,
 };
 use crate::http::response::{hx_notify_with, hx_redirect, hx_refresh};
 use crate::http::template_into_response::TemplateIntoResponse;
@@ -25,9 +24,9 @@ use crate::utils::dates::{MonthIter, YearMonth};
 use crate::utils::{date_formats, local_date, local_time};
 use askama::Template;
 use axum::extract::{Path, Query, State};
-use axum::response::IntoResponse;
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
+use email_address::EmailAddress;
 use serde::Deserialize;
 use sqlx::{SqlitePool, query, query_as, query_scalar};
 use time::Date;
@@ -137,7 +136,6 @@ struct MemberFormTemplate {
     values: MemberFormValues,
 }
 
-/// Values shown in the member form, empty for a new member
 #[derive(Default)]
 struct MemberFormValues {
     email: String,
@@ -172,7 +170,7 @@ impl From<UserDetails> for MemberFormValues {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 struct MemberForm {
     email: String,
     name: String,
@@ -202,15 +200,13 @@ struct ValidatedMember {
 }
 
 impl MemberForm {
-    /// `member_id` is the member being edited, `None` when creating one
     async fn validate(
         self,
         pool: &SqlitePool,
         member_id: Option<i64>,
     ) -> Result<ValidatedMember, HttpError> {
-        fn parse_date(date: Option<String>) -> Option<Date> {
-            date.filter(|date| !date.is_empty() && date != "yyyy-mm-dd")
-                .and_then(|date| Date::parse(date.as_str(), date_formats::ISO_DATE).ok())
+        fn parse_date(date: &str) -> Option<Date> {
+            Date::parse(date, date_formats::ISO_DATE).ok()
         }
 
         fn non_empty(value: Option<String>) -> Option<String> {
@@ -219,10 +215,10 @@ impl MemberForm {
                 .filter(|value| !value.is_empty())
         }
 
-        let birthday = parse_date(Some(self.birthday)).or_bail("Data nașterii este invalidă")?;
+        let birthday = parse_date(&self.birthday).or_bail("Data nașterii este invalidă")?;
         let member_since =
-            parse_date(Some(self.member_since)).or_bail("Data înscrierii este invalidă")?;
-        let received_gift = parse_date(self.received_gift);
+            parse_date(&self.member_since).or_bail("Data înscrierii este invalidă")?;
+        let received_gift = self.received_gift.as_deref().and_then(parse_date);
 
         let today = local_date();
         let email = self.email.trim().to_string();
@@ -232,7 +228,11 @@ impl MemberForm {
             return Err(bail("Numele este obligatoriu"));
         }
 
-        if User::email_exists_for_other(pool, &email, member_id.unwrap_or(-1)).await? {
+        if !EmailAddress::is_valid(&email) {
+            return Err(bail("Adresa de email este invalidă"));
+        }
+
+        if User::email_exists_for_other(pool, &email, member_id).await? {
             return Err(bail("Adresa de email este deja folosită de alt utilizator"));
         }
 
@@ -318,13 +318,13 @@ async fn new_member_page(State(state): State<AppState>, auth_session: AuthSessio
 
 async fn create_new_member(
     State(state): State<AppState>,
-    Form(mut form): Form<MemberForm>,
+    Form(form): Form<MemberForm>,
 ) -> HttpResult {
     let password = form
         .password
-        .take()
-        .filter(|password| password.chars().count() >= 8)
-        .or_bail("Parola trebuie să aibă cel puțin 8 caractere")?;
+        .clone()
+        .filter(|password| is_valid_new_password(password))
+        .or_bail(PASSWORD_TOO_SHORT)?;
     let member = form.validate(&state.read_pool, None).await?;
     let password_hash = generate_hash_from_password(password);
 
@@ -363,25 +363,16 @@ async fn view_member_page(
         reservations: Vec<GroupedUserReservations>,
         allow_reservation_cancellation: bool,
         breaks: Vec<PaymentBreak>,
-        months_status_view: Vec<MonthStatusView>,
-        total_paid: i64,
-        year_payments: Vec<PaymentWithAllocations>,
-        paid_months_json: String,
+        status_grid: StatusGridTemplate,
     }
 
     let current_date = local_date();
     let current_year = current_date.year();
     let member = UserDetails::fetch(&state.read_pool, member_id).await?;
-    let payments = PaymentWithAllocations::fetch_for_user(&state.read_pool, member_id)
-        .await
-        .unwrap_or_default();
-
+    let payments = PaymentWithAllocations::fetch_for_user(&state.read_pool, member_id).await?;
     let breaks = PaymentBreak::fetch_for_user(&state.read_pool, member_id).await?;
-    let months_status_view = calculate_year_status(current_year, &member, &payments, &breaks);
-
-    let total_paid = calculate_total_paid_for_year(&payments, current_year);
-    let year_payments = payments_for_year(&payments, current_year);
-    let paid_months_json = paid_months_json(&payments, &breaks);
+    let status_grid =
+        StatusGridTemplate::new(member.clone(), current_year, true, payments, &breaks);
 
     ViewMemberTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
@@ -396,10 +387,7 @@ async fn view_member_page(
         member,
         allow_reservation_cancellation: false,
         breaks,
-        months_status_view,
-        total_paid,
-        year_payments,
-        paid_months_json,
+        status_grid,
     }
     .try_into_response()
 }
@@ -428,9 +416,9 @@ async fn update_member(
 ) -> HttpResult {
     let member = form.validate(&state.read_pool, Some(member_id)).await?;
 
-    query!(
+    let updated = query!(
         "update users set email = $2, name = $3, role_id = $4, has_key = $5, birthday = $6, member_since = $7, received_gift = $8, nickname = $9, phone_number = $10, emergency_contact_phone_number = $11
-         where id = $1",
+         where id = $1 and is_deleted = false",
         member_id,
         member.email,
         member.name,
@@ -445,6 +433,10 @@ async fn update_member(
     )
         .execute(&state.write_pool)
         .await?;
+
+    if updated.rows_affected() == 0 {
+        return Err(bail("Membrul nu există"));
+    }
 
     Ok(hx_redirect(format!("/admin/members/view/{member_id}")))
 }
@@ -461,11 +453,12 @@ async fn toggle_active_user(
     }
 
     let is_active = query_scalar!(
-        "update users set is_active = not is_active where id = $1 returning is_active",
+        "update users set is_active = not is_active where id = $1 and is_deleted = false returning is_active",
         member_id
     )
-    .fetch_one(&state.write_pool)
-    .await?;
+    .fetch_optional(&state.write_pool)
+    .await?
+    .or_bail("Membrul nu există")?;
 
     let message = if is_active {
         "Membrul este activ"
@@ -488,6 +481,9 @@ async fn delete_member(
     Path(member_id): Path<i64>,
 ) -> HttpResult {
     let user = auth_session.user.ok_or(HttpError::Unauthorized)?;
+    if member_id == user.id {
+        return Err(bail("Nu îți poți șterge propriul cont"));
+    }
 
     let mut tx = state.write_pool.begin().await?;
 
@@ -495,12 +491,16 @@ async fn delete_member(
         remove_upcoming_reservations(&mut tx, &state.location, local_time(), member_id, user.id)
             .await?;
 
-    query!(
-        "update users set is_deleted = true where id = $1 ",
+    // Returning early drops the transaction, rolling back the removed reservations
+    let deleted = query!(
+        "update users set is_deleted = true where id = $1 and is_deleted = false",
         member_id
     )
     .execute(tx.as_mut())
     .await?;
+    if deleted.rows_affected() == 0 {
+        return Err(bail("Membrul nu există"));
+    }
 
     tx.commit().await?;
 
@@ -520,19 +520,19 @@ async fn clear_gift_dates(State(state): State<AppState>) -> HttpResult {
 }
 
 #[derive(Deserialize)]
-pub struct ChangePasswordForm {
+struct ChangePasswordForm {
     password: String,
 }
 
-pub async fn update_member_password(
+async fn update_member_password(
     State(state): State<AppState>,
     Path(member_id): Path<i64>,
     Form(passwords): Form<ChangePasswordForm>,
 ) -> HttpResult {
-    let user = UserDetails::fetch(&state.read_pool, member_id).await?;
-    if passwords.password.chars().count() < 8 {
-        return Err(bail("Parola trebuie să aibă cel puțin 8 caractere"));
+    if !is_valid_new_password(&passwords.password) {
+        return Err(bail(PASSWORD_TOO_SHORT));
     }
+    let user = UserDetails::fetch(&state.read_pool, member_id).await?;
 
     let new_password_hash = generate_hash_from_password(passwords.password);
     query!(
@@ -546,7 +546,7 @@ pub async fn update_member_password(
     Ok(hx_redirect(format!("/admin/members/view/{member_id}")))
 }
 
-pub async fn member_reservations_year(
+async fn member_reservations_year(
     State(state): State<AppState>,
     Path((member_id, year)): Path<(i64, i32)>,
 ) -> HttpResult {
@@ -591,42 +591,29 @@ struct NameSearchQuery {
 async fn search_names(
     State(state): State<AppState>,
     Query(query): Query<NameSearchQuery>,
-) -> impl IntoResponse {
-    let name = format!("%{}%", query.name.trim());
-    if query.name.trim().is_empty() {
-        return "".into_response();
+) -> HttpResult {
+    #[derive(Template)]
+    #[template(path = "admin/members/name_suggestions.html")]
+    struct NameSuggestionsTemplate {
+        names: Vec<String>,
     }
 
-    let names = query_scalar!(
-        "select coalesce(nickname, name) as 'name!' from users 
-         where (name like $1 or nickname like $1) and is_deleted = false 
-         limit 5",
-        name
-    )
-    .fetch_all(&state.read_pool)
-    .await;
-
-    let Ok(names) = names else {
-        return "".into_response();
+    let name = query.name.trim();
+    let names = if name.is_empty() {
+        Vec::new()
+    } else {
+        let pattern = format!("%{name}%");
+        query_scalar!(
+            "select coalesce(nickname, name) as 'name!' from users
+             where (name like $1 or nickname like $1) and is_deleted = false
+             limit 5",
+            pattern
+        )
+        .fetch_all(&state.read_pool)
+        .await?
     };
 
-    if names.is_empty() {
-        return "".into_response();
-    }
-
-    let html = names
-        .into_iter()
-        .map(|n| {
-            format!(
-                r#"<div class="px-4 py-2 hover:bg-primary hover:text-primary-content cursor-pointer border-b border-base-300 last:border-0" 
-                        onclick="const input = this.closest('.relative').querySelector('input'); input.value = '{}'; this.closest('.search-results-container').innerHTML = '';">{}</div>"#,
-                n, n
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("");
-
-    format!(r#"<div class="absolute z-[60] bg-base-100 shadow-2xl rounded-xl border border-base-300 w-full mt-1 overflow-hidden">{}</div>"#, html).into_response()
+    NameSuggestionsTemplate { names }.try_into_response()
 }
 
 #[cfg(test)]

@@ -1,7 +1,6 @@
 {% import "components/section_header.html" as section_header %}
 {% import "components/empty_state.html" as empty_state %}
 
-{# Payments section: status grid for the selected year and, for admins, the payments covering it #}
 {# Caller blocks only see locals, not template fields #}
 {% let start_year = member.member_since.year() %}
 {% let end_year = current_year + 1 %}
@@ -27,7 +26,7 @@
         {% endfor %}
     </div>
     {% if is_admin %}
-    <button class="btn btn-sm btn-primary gap-2" onclick="openPaymentModalForYear({{ active_year }})">
+    <button class="btn btn-sm btn-primary gap-2" aria-label="Înregistrează plată" onclick="openPaymentModalForYear({{ active_year }})">
         <span class="material-symbols-outlined text-lg">add_card</span>
         <span class="hidden sm:inline">Înregistrează</span>
     </button>
@@ -115,11 +114,11 @@
         {% if admin_payments_status_grid %}
         <div class="divider my-0"></div>
 
-        <div class="flex flex-row items-center justify-between gap-2 px-1">
+        <div class="flex flex-row flex-wrap items-center justify-between gap-x-2 gap-y-1 px-1">
             <h4 class="font-semibold">Plăți pentru {{ selected_year }}</h4>
             <span class="text-sm">
                 <span class="text-base-content/60" title="Partea din plăți alocată lunilor din {{ active_year }}">Total alocat pe {{ active_year }}:</span>
-                <span class="font-bold font-mono">{{ crate::model::payment::format_amount(total_paid.clone()) }}</span>
+                <span class="font-bold font-mono">{{ total_paid }}</span>
                 <span class="text-xs text-base-content/60">RON</span>
             </span>
         </div>
@@ -128,7 +127,6 @@
             {% for payment in year_payments %}
             <div class="payment-card">
 
-                {# Mobile only button #}
                 <button
                         hx-delete="/admin/members/payments/{{ payment.id }}"
                         hx-vals='{"view_year": {{ active_year }}}'
@@ -199,13 +197,4 @@
     {% if is_admin %}
     <script>window.paidMonths = {{ paid_months_json|safe }};</script>
     {% endif %}
-    <script>
-    (function() {
-        const container = document.getElementById('status-grid-years');
-        const active = container?.querySelector('.btn-active');
-        if (container && active) {
-            container.scrollLeft = active.offsetLeft - (container.clientWidth / 2) + (active.clientWidth / 2);
-        }
-    })();
-    </script>
 </section>

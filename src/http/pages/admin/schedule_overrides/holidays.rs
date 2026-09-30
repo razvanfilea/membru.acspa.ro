@@ -3,7 +3,7 @@ use crate::http::error::{HttpResult, bail};
 use crate::http::pages::admin::schedule_overrides::calendar::day_details_response;
 use crate::http::pages::admin::schedule_overrides::{
     AlternativeDay, AlternativeDayType, NewAlternativeDay, add_alternative_day,
-    delete_alternative_day, get_alternative_day, get_alternative_days,
+    delete_alternative_day, get_alternative_day,
 };
 use crate::model::day_structure::HOLIDAY_DAY_STRUCTURE;
 use crate::utils::date_formats::IsoDate;
@@ -23,13 +23,6 @@ pub fn router() -> Router<AppState> {
 }
 pub async fn get_holiday(pool: &SqlitePool, date: Date) -> Result<Option<AlternativeDay>, Error> {
     get_alternative_day(pool, AlternativeDayType::Holiday, date).await
-}
-
-pub async fn get_holidays_for_month(
-    pool: &SqlitePool,
-    month_year: Date,
-) -> Result<Vec<AlternativeDay>, Error> {
-    get_alternative_days(pool, AlternativeDayType::Holiday, Some(month_year)).await
 }
 
 #[derive(Deserialize)]

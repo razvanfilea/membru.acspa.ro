@@ -37,11 +37,8 @@ pub async fn get_tournament_day(
     get_alternative_day(executor, AlternativeDayType::Tournament, date).await
 }
 
-pub async fn get_tournament_days(
-    pool: &SqlitePool,
-    year_month: Option<Date>,
-) -> Result<Vec<AlternativeDay>, Error> {
-    get_alternative_days(pool, AlternativeDayType::Tournament, year_month).await
+async fn get_tournament_days(pool: &SqlitePool) -> Result<Vec<AlternativeDay>, Error> {
+    get_alternative_days(pool, AlternativeDayType::Tournament).await
 }
 
 async fn tournaments_page(
@@ -58,7 +55,7 @@ async fn tournaments_page(
     }
 
     let today = local_date();
-    let (upcoming, past) = get_tournament_days(&state.read_pool, None)
+    let (upcoming, past) = get_tournament_days(&state.read_pool)
         .await?
         .into_iter()
         .partition(|t| t.date >= today);

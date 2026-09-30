@@ -3,7 +3,7 @@
 
 <section id="breaks" class="surface-card" {% if oob %}hx-swap-oob="true"{% endif %}>
     {% call section_header::header("pause_circle", "warning", "Pauze abonament", "Perioadele de suspendare a abonamentului") %}
-    <button class="btn btn-sm btn-warning gap-2" onclick="break_modal.showModal()">
+    <button class="btn btn-sm btn-warning gap-2" aria-label="Adaugă pauză" onclick="break_modal.showModal()">
         <span class="material-symbols-outlined text-lg">add</span>
         <span class="hidden sm:inline">Adaugă pauză</span>
     </button>
@@ -11,9 +11,9 @@
 
     <div class="section-body grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
         {% for br in breaks %}
-        <div class="break-card group">
+        <div class="break-card">
             <div class="flex justify-between items-start">
-                <div class="flex flex-col relative pl-6 border-l-2 border-base-300 group-hover:border-warning transition-colors">
+                <div class="flex flex-col relative pl-6 border-l-2 border-base-content/10 transition-colors">
 
                     <div class="relative mb-2 md:mb-6">
                         <span class="absolute -left-7.75 top-1.5 w-3.5 h-3.5 rounded-full bg-success ring-4 ring-base-100"></span>

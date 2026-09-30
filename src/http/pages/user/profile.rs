@@ -1,13 +1,12 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
-use crate::http::pages::admin::members::payments_summary::MonthStatus;
 use crate::http::pages::admin::members::payments_summary::{
-    MonthStatusView, build_status_grid_response, calculate_year_status,
+    StatusGridTemplate, build_status_grid_response,
 };
 use crate::http::response::hx_refresh;
 use crate::http::template_into_response::TemplateIntoResponse;
-use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
+use crate::model::role::UserRole;
 use crate::model::user::UserDetails;
 use crate::model::user_reservation::{GroupedUserReservations, ReservationsCount};
 use crate::utils::date_formats::DateFormatExt;
@@ -28,17 +27,12 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         this_weeks_reservations: ReservationsCount,
         max_reservations: ReservationsCount,
         current_year: i32,
-        selected_year: i32,
-        months_status_view: Vec<MonthStatusView>,
-        total_paid: i64,
-        admin_payments_status_grid: bool,
-        year_payments: Vec<PaymentWithAllocations>,
+        status_grid: StatusGridTemplate,
     }
 
     let auth_user = auth_session.user.ok_or(HttpError::Unauthorized)?;
     let user = UserDetails::fetch(&state.read_pool, auth_user.id).await?;
 
-    use crate::model::role::UserRole;
     let role = UserRole::fetch_by_name(&state.read_pool, &user.role).await?;
 
     let current_date = local_date();
@@ -46,9 +40,8 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         ReservationsCount::fetch_user_week(&state.read_pool, &auth_user, current_date).await?;
 
     let current_year = current_date.year();
-    let payments = PaymentWithAllocations::fetch_for_user(&state.read_pool, user.id).await?;
-    let breaks = PaymentBreak::fetch_for_user(&state.read_pool, user.id).await?;
-    let months_status_view = calculate_year_status(current_year, &user, &payments, &breaks);
+    let status_grid =
+        StatusGridTemplate::fetch(&state.read_pool, user.clone(), current_year, false).await?;
 
     ProfileTemplate {
         reservations: GroupedUserReservations::fetch_for_user_year(
@@ -66,11 +59,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
             guest: role.guest_reservations,
         },
         current_year,
-        selected_year: current_year,
-        months_status_view,
-        total_paid: 0,
-        admin_payments_status_grid: false,
-        year_payments: Vec::new(),
+        status_grid,
     }
     .try_into_response()
 }

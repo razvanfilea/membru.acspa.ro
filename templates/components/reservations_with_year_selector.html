@@ -56,13 +56,3 @@
         {% endif %}
     </div>
 </section>
-
-<script>
-(function() {
-    const container = document.getElementById('reservations-years');
-    const active = container?.querySelector('.btn-active');
-    if (container && active) {
-        container.scrollLeft = active.offsetLeft - (container.clientWidth / 2) + (active.clientWidth / 2);
-    }
-})();
-</script>

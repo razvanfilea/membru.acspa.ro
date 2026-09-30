@@ -1,19 +1,19 @@
 {% for group in reservations %}
-<div class="flex flex-col bg-base-200 p-4 shadow-sm rounded-sm">
+<div class="flex flex-col bg-base-100 p-4 rounded-xl">
     <p class="text-xl font-medium mb-4">{{ date_formats::month_as_str(group.month) }} {{ group.year }}</p>
 
     {% for reservation in group.reservations %}
-    <div id="res_{{ loop.index }}" class="flex flex-row justify-between items-center">
+    <div class="reservation-row flex flex-row justify-between items-center gap-2">
         <div class="flex flex-col gap-1">
-            <p class="text-white">{{ reservation.date.to_readable() }} - {{ reservation.hour }}:00
+            <p class="text-base-content">{{ reservation.date.to_readable() }} - {{ reservation.hour }}:00
             </p>
             {% if reservation.as_guest %}
-            <p class="text-blue-300">Ca invitat</p>
+            <p class="text-info">Ca invitat</p>
             {% endif %}
             {% if reservation.in_waiting %}
-            <p class="text-pink-600">În așteptare</p>
+            <p class="text-warning">În așteptare</p>
             {% endif %}
-            <p class="text-sm">Creat pe: {{ date_formats::as_local(reservation.created_at) }}</p>
+            <p class="text-sm">Creată pe {{ date_formats::as_local(reservation.created_at) }}</p>
         </div>
 
         {% if reservation.cancelled %}
@@ -21,7 +21,8 @@
         {% else if allow_reservation_cancellation && reservation.is_cancellable() %}
         <button
                 class="btn btn-soft btn-warning"
-                hx-target="#res_{{ loop.index }}"
+                hx-target="closest .reservation-row"
+                hx-confirm="Sigur vrei să anulezi rezervarea?"
                 hx-vals='{"date": "{{ reservation.date.to_iso() }}", "hour": {{ reservation.hour }} }'
                 hx-delete="/reservation">Anulează
         </button>

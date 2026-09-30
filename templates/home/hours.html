@@ -2,7 +2,7 @@
 
 {% macro res_btn(index, id, res) %}
 <button {% if id != "cancelled" %} popovertarget="popover_{{ id }}_{{ slot.start_hour }}_{{ index }}"{% endif %}
-        class="btn-reservation no-animation
+        class="btn-reservation
     {{ color_mapper::map_rust_color(res.color) }}
     {% if id == "cancelled" %}border-2 border-red-400/90 opacity-75{% endif %}
     {% if id == "waiting" %}border-2 border-yellow-500{% endif %}">
@@ -36,6 +36,7 @@
 {% endmacro %}
 
 <div id="hours" class="flex flex-col gap-4">
+    {% if reservation_hours.description.is_some() || reservation_hours.capacity.is_some() %}
     <h4 class="text-xl mb-2">
         {% if let Some(description) = reservation_hours.description %}
         <span class="font-medium underline">{{ description }}</span>
@@ -44,6 +45,7 @@
         <span> - Maxim {{ capacity }}</span>
         {% endif %}
     </h4>
+    {% endif %}
     {% for slot in reservation_hours.hours %}
     <div hx-vals='{"hour": {{ slot.start_hour }} }' class="bg-base-200/50 rounded-xl p-4 flex flex-col gap-3">
         {% let minute = format!(":{:02}", slot.minute.unwrap_or_default()) %}
@@ -105,7 +107,7 @@
                 <p>Adaugă un invitat de la ora <b>{{ slot.start_hour }}</b> pe numele:</p>
 
                 <div class="relative">
-                    <input id="guest_name_{{ slot.start_hour }}" name="name" type="text" class="input input-bordered w-full" required
+                    <input id="guest_name_{{ slot.start_hour }}" name="name" type="text" class="input w-full" required
                            placeholder="Nume invitat" autocomplete="off"
                            hx-get="/admin/members/search_names"
                            hx-params="name"
@@ -116,7 +118,7 @@
                 </div>
 
                 <label class="label cursor-pointer py-6">
-                    <span class="label-text">Special:</span>
+                    <span>Special:</span>
                     <input name="special" type="checkbox" class="toggle toggle-primary" autocomplete="off" />
                 </label>
 

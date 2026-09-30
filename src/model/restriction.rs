@@ -1,9 +1,5 @@
-use time::{Date, OffsetDateTime};
-
+/// A restriction of one day, for one hour or the whole day when `hour` is `None`
 pub struct Restriction {
-    pub date: Date,
     pub hour: Option<i64>,
     pub message: String,
-    #[allow(dead_code)]
-    pub created_at: OffsetDateTime,
 }

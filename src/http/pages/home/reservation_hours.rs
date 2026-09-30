@@ -4,7 +4,6 @@ use crate::model::restriction::Restriction;
 use crate::utils::CssColor;
 use itertools::{Either, Itertools};
 use sqlx::{query, query_as};
-use std::str::FromStr;
 use time::Date;
 
 pub struct Reservation {
@@ -44,14 +43,13 @@ impl ReservationHours {
         let mut tx = state.read_pool.begin().await?;
         let restrictions = query_as!(
             Restriction,
-            "select date, hour, message, created_at from restrictions where date = $1 order by hour",
+            "select hour, message from restrictions where date = $1 order by hour",
             date
         )
         .fetch_all(tx.as_mut())
         .await?;
 
-        // Check if the whole day is restricted
-        // Since it's ordered by hour, a null hour should be first if there is one
+        // Ordered by hour, so a whole day (null hour) restriction comes first
         if let Some(restriction) = restrictions.first().filter(|r| r.hour.is_none()) {
             return Ok(Self {
                 hours: day_structure
@@ -113,10 +111,7 @@ impl ReservationHours {
                             color: if record.as_guest {
                                 CssColor::Blue
                             } else if record.created_for.is_none() {
-                                CssColor::from_str(
-                                    record.role_color.as_ref().map_or("", String::as_str),
-                                )
-                                .unwrap_or(CssColor::None)
+                                CssColor::parse_or_none(record.role_color.as_deref())
                             } else {
                                 CssColor::Pink
                             },

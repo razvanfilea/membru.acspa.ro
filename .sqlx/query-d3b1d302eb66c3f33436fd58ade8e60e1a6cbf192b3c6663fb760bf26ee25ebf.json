@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "update users set is_active = not is_active where id = $1 returning is_active",
+  "query": "update users set is_active = not is_active where id = $1 and is_deleted = false returning is_active",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "406694d7ae23f52b8c9ef860494d540601616f779efb7b173f889a5c86f8f18d"
+  "hash": "d3b1d302eb66c3f33436fd58ade8e60e1a6cbf192b3c6663fb760bf26ee25ebf"
 }

@@ -6,19 +6,36 @@ use crate::http::response::hx_notify;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
-use crate::utils::local_date;
+use crate::utils::date_formats::DateFormatExt;
+use crate::utils::{local_date, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
 use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::query;
+use time::{Date, OffsetDateTime};
 
 mod guests;
 pub mod members;
 mod reservation_history;
 mod roles;
 mod schedule_overrides;
+
+trait CalendarUrl {
+    fn calendar_url(&self) -> String;
+}
+
+impl CalendarUrl for Date {
+    fn calendar_url(&self) -> String {
+        format!(
+            "/admin/calendar/{}/{}?day={}",
+            self.year(),
+            self.month() as u8,
+            self.to_iso()
+        )
+    }
+}
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -46,6 +63,7 @@ async fn admin_page(
     struct AdminTemplate {
         user: User,
         global_vars: GlobalVars,
+        server_time: OffsetDateTime,
         selected_year: i32,
         debtors: Vec<DebtorItem>,
     }
@@ -56,6 +74,7 @@ async fn admin_page(
     AdminTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
         global_vars: GlobalVars::fetch(&state.read_pool).await?,
+        server_time: local_time(),
         selected_year,
         debtors,
     }

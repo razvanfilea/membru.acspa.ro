@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "update users set is_deleted = true where id = $1 and is_deleted = false",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "f3d6ed10b7f074ff581d342c05aa4443f218e0a0559eadfb3bc1132392200df5"
+}

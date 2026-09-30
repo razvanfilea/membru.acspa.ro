@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "insert into user_roles (name, reservations, guest_reservations, color, monthly_fee) values ($1, $2, $3, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "1381f9316dbaa19535768b9a8c3e767864754d052b1aaf2ca06ead2eec9a36b5"
+}

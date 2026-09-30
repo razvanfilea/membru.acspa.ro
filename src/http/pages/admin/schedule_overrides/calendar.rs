@@ -1,16 +1,11 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult, OrBail};
 use crate::http::pages::AuthSession;
-use crate::http::pages::admin::schedule_overrides::AlternativeDay;
-use crate::http::pages::admin::schedule_overrides::holidays::{
-    get_holiday, get_holidays_for_month,
-};
-use crate::http::pages::admin::schedule_overrides::restrictions::{
-    get_restrictions_for_day, get_restrictions_for_month,
-};
-use crate::http::pages::admin::schedule_overrides::tournaments::{
-    get_tournament_day, get_tournament_days,
-};
+use crate::http::pages::admin::CalendarUrl;
+use crate::http::pages::admin::schedule_overrides::holidays::get_holiday;
+use crate::http::pages::admin::schedule_overrides::restrictions::get_restrictions_for_day;
+use crate::http::pages::admin::schedule_overrides::tournaments::get_tournament_day;
+use crate::http::pages::admin::schedule_overrides::{AlternativeDay, AlternativeDayType};
 use crate::http::pages::home::socket::HoursTemplate;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
@@ -23,22 +18,23 @@ use crate::utils::local_date;
 use askama::Template;
 use axum::Router;
 use axum::extract::{Path, Query, State};
-use axum::response::IntoResponse;
+use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
 use serde::Deserialize;
+use sqlx::{query, query_scalar};
 use std::collections::HashMap;
 use time::{Date, Duration, Month};
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/", get(calendar_page_redirect)) // Redirect to current month
+        .route("/", get(calendar_page_redirect))
         .route("/{year}/{month}", get(calendar_page))
         .route("/details/{date}", get(day_details_partial))
 }
 
 async fn calendar_page_redirect() -> impl IntoResponse {
     let today = local_date();
-    axum::response::Redirect::to(&format!(
+    Redirect::to(&format!(
         "/admin/calendar/{}/{}",
         today.year(),
         today.month() as u8
@@ -56,7 +52,6 @@ struct DayEvents {
     guests: i64,
 }
 
-/// Everything the day panel shows for the selected date
 struct DayDetails {
     today: Date,
     date: Date,
@@ -66,7 +61,7 @@ struct DayDetails {
     day_structure: DayStructure,
     events: DayEvents,
     reservations: String,
-    // This is needed just for the copy to clipboard function
+    // Only needed for the copy to clipboard button
     tournament_participants: String,
 }
 
@@ -133,12 +128,10 @@ impl DayDetails {
 struct CalendarTemplate {
     user: User,
     current_date: Date,
-    /// First day of the displayed month
     month: Date,
     calendar_days: DateRangeIter,
-    day_markers: HashMap<Date, DayEvents>, // Markers for the calendar grid
+    day_markers: HashMap<Date, DayEvents>,
     day: DayDetails,
-    // Navigation
     prev_month: (i32, u8),
     next_month: (i32, u8),
 }
@@ -158,42 +151,24 @@ async fn calendar_page(
     let month_number = Month::try_from(month_u8).unwrap_or(today.month());
     let month = Date::from_calendar_date(year, month_number, 1).or_bail("Data este invalida")?;
 
-    // Calculate calendar range (full weeks)
-    let next_month_date = if month_number == Month::December {
-        Date::from_calendar_date(year + 1, Month::January, 1).unwrap()
-    } else {
-        Date::from_calendar_date(year, month_number.next(), 1).unwrap()
-    };
-    let last_day = next_month_date.previous_day().unwrap();
+    let last_day = month.replace_day(month_number.length(year)).unwrap();
+    let next_month_date = last_day.next_day().unwrap();
     let calendar_days = DateRangeIter::weeks_in_range(month, last_day);
 
     let in_month = |date: Date| date.year() == year && date.month() == month_number;
     let selected_date = query
         .day
-        .map(|day| *day)
+        .map(|IsoDate(day)| day)
         .filter(|day| in_month(*day))
         .unwrap_or(if in_month(today) { today } else { month });
 
-    let holidays = get_holidays_for_month(&state.read_pool, month).await?;
-    let tournaments = get_tournament_days(&state.read_pool, Some(month)).await?;
-    let restrictions = get_restrictions_for_month(&state.read_pool, month).await?;
-
-    // Adjacent month days are shown too, count reservations for whole weeks around the month
-    let mut day_markers = get_reservation_counts(
+    // Adjacent month days are shown too, so markers cover whole weeks around the month
+    let day_markers = get_day_markers(
         &state,
         month - Duration::days(7),
         last_day + Duration::days(7),
     )
     .await?;
-    for h in &holidays {
-        day_markers.entry(h.date).or_default().has_holiday = true;
-    }
-    for t in &tournaments {
-        day_markers.entry(t.date).or_default().has_tournament = true;
-    }
-    for r in &restrictions {
-        day_markers.entry(r.date).or_default().has_restriction = true;
-    }
 
     let prev_month_date = month.previous_day().unwrap();
 
@@ -214,7 +189,12 @@ async fn day_details_partial(
     State(state): State<AppState>,
     Path(date): Path<IsoDate>,
 ) -> HttpResult {
-    day_details_response(state, *date).await
+    DayDetailsTemplate {
+        current_date: local_date(),
+        day: DayDetails::fetch(&state, *date).await?,
+        update_cell: false,
+    }
+    .try_into_response()
 }
 
 #[derive(Template)]
@@ -222,6 +202,48 @@ async fn day_details_partial(
 struct DayDetailsTemplate {
     current_date: Date,
     day: DayDetails,
+    /// Re-render the day's calendar cell too, only after a change: replacing it on every selection
+    /// would drop the keyboard focus from the clicked cell
+    update_cell: bool,
+}
+
+async fn get_day_markers(
+    state: &AppState,
+    from: Date,
+    to: Date,
+) -> sqlx::Result<HashMap<Date, DayEvents>> {
+    let mut markers = get_reservation_counts(state, from, to).await?;
+
+    let alternative_days = query!(
+        r#"select date as "date: Date", type as kind from alternative_days where date between $1 and $2"#,
+        from,
+        to
+    )
+    .fetch_all(&state.read_pool)
+    .await?;
+    for day in alternative_days {
+        let events = markers.entry(day.date).or_default();
+        if day.kind == AlternativeDayType::Holiday.as_ref() {
+            events.has_holiday = true;
+        } else if day.kind == AlternativeDayType::Tournament.as_ref() {
+            events.has_tournament = true;
+        }
+    }
+
+    let restricted_days = query_scalar!(
+        r#"select distinct date as "date: Date" from restrictions
+           where location = $1 and date between $2 and $3"#,
+        state.location.id,
+        from,
+        to
+    )
+    .fetch_all(&state.read_pool)
+    .await?;
+    for date in restricted_days {
+        markers.entry(date).or_default().has_restriction = true;
+    }
+
+    Ok(markers)
 }
 
 /// Reservation and guest counts per day, between `from` and `to` inclusive
@@ -230,7 +252,7 @@ async fn get_reservation_counts(
     from: Date,
     to: Date,
 ) -> sqlx::Result<HashMap<Date, DayEvents>> {
-    let rows = sqlx::query!(
+    let rows = query!(
         r#"select date as "date: Date",
                   sum(not in_waiting) as "reservations!: i64",
                   sum(not in_waiting and (as_guest or created_for is not null)) as "guests!: i64"
@@ -265,7 +287,7 @@ async fn get_tournament_participants(
         return Ok(String::new());
     };
 
-    let participants = sqlx::query_scalar!(
+    let participants = query_scalar!(
         r#"select ifnull(r.created_for, u.name) as "name: String"
            from reservations r
            inner join users u on r.user_id = u.id
@@ -288,6 +310,7 @@ pub async fn day_details_response(state: AppState, date: Date) -> HttpResult {
     DayDetailsTemplate {
         current_date: local_date(),
         day: DayDetails::fetch(&state, date).await?,
+        update_cell: true,
     }
     .try_into_response()
 }

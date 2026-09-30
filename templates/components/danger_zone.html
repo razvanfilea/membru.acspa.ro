@@ -1,10 +1,5 @@
-{#
-Danger Zone Macro, for destructive actions kept apart from the main form
-Usage: {% call danger_zone::danger_zone(description) %}<button>...</button>{% endcall %}
-#}
-
 {% macro danger_zone(description) %}
-<div class="surface-card border-error/40 p-4 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div class="surface-card p-4 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
         <h3 class="font-bold text-error">Zonă periculoasă</h3>
         <p class="text-sm text-base-content/60">{{ description }}</p>

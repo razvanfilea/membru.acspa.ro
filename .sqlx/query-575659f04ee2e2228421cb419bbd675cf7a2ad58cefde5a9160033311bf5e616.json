@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select date as \"date: Date\", type as kind from alternative_days where date between $1 and $2",
+  "describe": {
+    "columns": [
+      {
+        "name": "date: Date",
+        "ordinal": 0,
+        "type_info": "Date"
+      },
+      {
+        "name": "kind",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "575659f04ee2e2228421cb419bbd675cf7a2ad58cefde5a9160033311bf5e616"
+}

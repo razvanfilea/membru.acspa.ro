@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select hour, message from restrictions where date = $1 order by hour",
+  "describe": {
+    "columns": [
+      {
+        "name": "hour",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "message",
+        "ordinal": 1,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false
+    ]
+  },
+  "hash": "ba152fc02256ff06a6d78bebc202c122e7035a5f897952a34fe3152393b67d5f"
+}

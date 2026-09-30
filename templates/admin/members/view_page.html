@@ -78,7 +78,7 @@
                     <summary class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content" title="Opțiuni">
                         <span class="material-symbols-outlined">more_vert</span>
                     </summary>
-                    <ul class="dropdown-content menu bg-base-200 rounded-box z-50 w-56 p-2 shadow-xl border border-base-300">
+                    <ul class="dropdown-content menu bg-base-200 rounded-box z-50 w-56 p-2 shadow-xl">
                         <li>
                             <a href="/admin/members/edit/{{ member.id }}" class="gap-2">
                                 <span class="material-symbols-outlined text-lg">edit</span>
@@ -128,13 +128,12 @@
         </div>
     </section>
 
-    {% let selected_year = current_year %}
-    {% let admin_payments_status_grid = true %}
-    {% let oob = false %}
-    {% include "components/payments_status_grid.html" %}
+    {{ status_grid|safe }}
 
+    {% let oob = false %}
     {% include "admin/members/breaks_section.html" %}
 
+    {% let selected_year = current_year %}
     {% let show_cancelled = false %}
     {% let admin_reservations_view = true %}
     {% include "components/reservations_with_year_selector.html" %}
@@ -142,13 +141,13 @@
 
 <dialog id="password_modal" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box w-full sm:w-11/12 max-w-md p-0 bg-base-100 overflow-hidden flex flex-col">
-        <div class="flex items-center justify-between px-6 py-4 bg-base-200 border-b border-base-300">
+        <div class="flex items-center justify-between px-6 py-4 bg-base-200 border-b border-base-content/5">
             <h3 class="font-bold text-lg flex items-center gap-2">
                 <span class="material-symbols-outlined">password</span>
                 Schimbă parola
             </h3>
             <form method="dialog">
-                <button class="btn btn-sm btn-circle btn-ghost">
+                <button class="btn btn-sm btn-circle btn-ghost" aria-label="Închide">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </form>
@@ -159,11 +158,11 @@
                 <label class="floating-label">
                     <span>Parola nouă</span>
                     <input name="password" type="text" placeholder="Parola nouă" minlength="8" required autocomplete="off"
-                           class="input input-lg input-bordered w-full"/>
+                           class="input input-lg w-full"/>
                 </label>
             </div>
 
-            <div class="flex justify-end gap-2 px-6 py-4 bg-base-200 border-t border-base-300">
+            <div class="flex justify-end gap-2 px-6 py-4 bg-base-200 border-t border-base-content/5">
                 <button type="button" class="btn btn-ghost" onclick="password_modal.close()">Anulează</button>
                 <button type="submit" class="btn btn-primary min-w-24 gap-2">
                     <span class="material-symbols-outlined">save</span>
@@ -177,13 +176,13 @@
 <dialog id="payment_modal" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box w-full sm:w-11/12 max-w-2xl p-0 bg-base-100 overflow-hidden flex flex-col">
 
-        <div class="flex items-center justify-between px-6 py-4 bg-base-200 border-b border-base-300">
+        <div class="flex items-center justify-between px-6 py-4 bg-base-200 border-b border-base-content/5">
             <h3 class="font-bold text-lg flex items-center gap-2">
                 <span class="material-symbols-outlined">payments</span>
                 Înregistrează plată
             </h3>
             <form method="dialog">
-                <button class="btn btn-sm btn-circle btn-ghost">
+                <button class="btn btn-sm btn-circle btn-ghost" aria-label="Închide">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </form>
@@ -193,7 +192,7 @@
             <div class="p-6 flex flex-col gap-6 overflow-y-auto flex-1">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <label class="input input-bordered flex items-center gap-2 w-full">
+                    <label class="input flex items-center gap-2 w-full">
                         Sumă
                         <input type="number" name="amount" step="0.01" class="grow font-mono font-bold text-right"
                                {% if let Some(fee) = member.monthly_fee %}value="{{ fee / 100 }}"{% endif %}
@@ -201,7 +200,7 @@
                         <span class="badge badge-neutral badge-sm uppercase">Ron</span>
                     </label>
 
-                    <label class="input input-bordered flex items-center gap-2 w-full">
+                    <label class="input flex items-center gap-2 w-full">
                         Data
                         <input type="date" name="payment_date" class="grow font-mono text-right" value="{{ current_date }}" required />
                     </label>
@@ -219,7 +218,7 @@
                             {% let end_year = current_year + 1 %}
                             {% for year in start_year..=end_year %}
                             <button type="button"
-                                    class="year-btn btn btn-sm btn-ghost border-base-300 snap-center {% if year == current_year %}btn-active btn-primary{% endif %}"
+                                    class="year-btn btn btn-sm btn-ghost snap-center {% if year == current_year %}btn-active btn-primary{% endif %}"
                                     onclick="switchYear({{ year }}, this)">
                                 {{ year }}
                             </button>
@@ -233,7 +232,7 @@
                         {% let m = format!("{}", month.clone() as u8) %}
                         <button type="button"
                                 id="m-btn-{{ m }}"
-                                class="month-btn flex flex-col items-center justify-center py-3 rounded-lg border border-base-300 bg-base-100 hover:border-primary hover:bg-primary/5 transition-all"
+                                class="month-btn flex flex-col items-center justify-center py-3 rounded-lg bg-base-200 hover:bg-primary/10 transition-all"
                                 onclick="toggleMonth({{ m }})">
                             <span class="text-xs font-mono uppercase font-bold">{{ m }}. {{ month_name }}</span>
                             <div class="paid-marker hidden mt-1">
@@ -250,14 +249,14 @@
                     <input type="hidden" name="months" id="months_payload" autocomplete="off" />
                 </div>
 
-                <label class="input input-bordered flex items-center gap-2 w-full shrink-0">
+                <label class="input flex items-center gap-2 w-full shrink-0">
                     Note
                     <input name="notes" type="text" class="grow" placeholder="Ex: Cash, Revolut..." />
                     <span class="badge badge-ghost badge-sm">Opțional</span>
                 </label>
             </div>
 
-            <div class="flex justify-end gap-2 px-6 py-4 bg-base-200 border-t border-base-300">
+            <div class="flex justify-end gap-2 px-6 py-4 bg-base-200 border-t border-base-content/5">
                 <button type="button" class="btn btn-ghost" onclick="payment_modal.close()">Anulează</button>
                 <button type="submit" class="btn btn-primary min-w-24 gap-2">
                     <span class="material-symbols-outlined">save</span>
@@ -281,7 +280,7 @@
                     {{ forms::month_year_picker("start", "Luna de început", current_year, min_year, max_year) }}
                     <label class="label cursor-pointer justify-start gap-3 mt-3 px-1">
                         <input type="checkbox" id="one_month_toggle" name="one_month" class="checkbox checkbox-warning" autocomplete="off" />
-                        <span class="label-text text-sm">O singură lună</span>
+                        <span class="text-sm">O singură lună</span>
                     </label>
                 </div>
 
@@ -309,11 +308,9 @@
         const year = document.getElementById(prefix + '_year_select').value;
         const finalInput = document.getElementById(prefix + '_final_input');
 
-        // Constructs "YYYY-MM" format
         finalInput.value = `${year}-${month}`;
     }
 
-    // Initialize on load to ensure defaults are set
     document.addEventListener("DOMContentLoaded", () => {
         updateHiddenDate('start');
         updateHiddenDate('end');
@@ -338,12 +335,10 @@
         function updateEndYearOptions() {
             const startYear = parseInt(sY.value);
 
-            // Disable years before start year
             Array.from(eY.options).forEach(opt => {
                 opt.disabled = parseInt(opt.value) < startYear;
             });
 
-            // If current selection is invalid, bump it up
             if (parseInt(eY.value) < startYear) {
                 eY.value = startYear;
             }
@@ -354,7 +349,6 @@
             const endYear = parseInt(eY.value);
             const startMonth = parseInt(sM.value);
 
-            // Disable months before start month IF we are in the same year
             Array.from(eM.options).forEach(opt => {
                 if (endYear > startYear) {
                     opt.disabled = false;
@@ -363,7 +357,6 @@
                 }
             });
 
-            // If current selection is invalid (same year, earlier month), bump it up
             const currentMonth = parseInt(eM.value);
             if (endYear === startYear && (isNaN(currentMonth) || currentMonth < startMonth)) {
                 eM.value = sM.value;
@@ -374,32 +367,27 @@
         function handleStateChange() {
             if (toggle.checked) {
                 syncEndToStart();
-                // Disable End UI
                 endWrapper.classList.add('opacity-40', 'pointer-events-none');
                 endWrapper.querySelectorAll('select').forEach(s => s.disabled = true);
             } else {
-                // Enable End UI
                 endWrapper.classList.remove('opacity-40', 'pointer-events-none');
                 endWrapper.querySelectorAll('select').forEach(s => s.disabled = false);
 
-                // Enforce Logic constraints
                 updateEndYearOptions();
                 updateEndMonthOptions();
             }
         }
 
-        // Event Listeners
         toggle.addEventListener('change', handleStateChange);
 
         [sY, sM].forEach(el => el.addEventListener('change', handleStateChange));
 
         eY.addEventListener('change', updateEndMonthOptions);
 
-        // Run once on init
         handleStateChange();
     }
 
-    let selectedMonths = []; // Array of "M-YYYY"
+    let selectedMonths = [];
     let currentActiveYear = {{ current_year }};
     // `paidMonths` is set by the Cotizații section, which is re-rendered after each change
 
@@ -422,7 +410,6 @@
     function switchYear(year, btn) {
         currentActiveYear = year;
 
-        // Year Buttons
         document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('btn-primary', 'btn-active'));
         btn.classList.add('btn-primary', 'btn-active');
 
@@ -435,19 +422,16 @@
             const marker = btn.querySelector('.paid-marker');
             const key = `${m}-${currentActiveYear}`;
 
-            // Reset state
-            btn.classList.remove('border-primary', 'bg-primary/10', 'opacity-50', 'cursor-not-allowed', 'bg-base-200');
+            btn.classList.remove('bg-primary/25', 'text-primary', 'opacity-50', 'cursor-not-allowed');
             marker.classList.add('hidden');
             btn.disabled = false;
 
             if (paidMonths.includes(key)) {
-                // Already paid
-                btn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-base-200');
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
                 marker.classList.remove('hidden');
                 btn.disabled = true;
             } else if (selectedMonths.includes(key)) {
-                // Selected but not saved yet
-                btn.classList.add('border-primary', 'bg-primary/10');
+                btn.classList.add('bg-primary/25', 'text-primary');
             }
         }
     }
@@ -462,36 +446,15 @@
             selectedMonths.push(key);
         }
 
-        // Sync to hidden input for form submission
         document.getElementById('months_payload').value = selectedMonths.join(',');
 
-        // Update counter UI
         const counter = document.getElementById('selection_counter');
-        counter.innerText = `${selectedMonths.length} selectate`;
+        counter.innerText = `${selectedMonths.length} ${selectedMonths.length === 1 ? 'selectată' : 'selectate'}`;
         counter.classList.toggle('hidden', selectedMonths.length === 0);
 
         updateMonthGrid();
     }
 
-    function initYearScroll() {
-        const container = document.getElementById('year_scroll_container');
-        const active = container.querySelector('.btn-active');
-        if (active) {
-            container.scrollLeft = active.offsetLeft - (container.clientWidth / 2) + (active.clientWidth / 2);
-        }
-    }
-
-    // Trigger scroll when modal opens
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.attributeName === 'open' && payment_modal.open) {
-                initYearScroll();
-            }
-        });
-    });
-    observer.observe(payment_modal, { attributes: true });
-
-    // Clears the selection and shows the given year in the payment modal
     function resetPaymentModal(year) {
         selectedMonths = [];
         currentActiveYear = year;
@@ -509,15 +472,14 @@
     function showPaymentModal() {
         updateMonthGrid();
         payment_modal.showModal();
+        centerActiveYear(document.getElementById('year_scroll_container'));
     }
 
-    // Opens payment modal on the given year, without a preselected month
     function openPaymentModalForYear(year) {
         resetPaymentModal(year);
         showPaymentModal();
     }
 
-    // Opens payment modal with a specific month pre-selected
     function openPaymentModalForMonth(month, year) {
         resetPaymentModal(year);
 
@@ -533,7 +495,6 @@
         showPaymentModal();
     }
 
-    // Opens break modal with start date pre-filled
     function openBreakModalForMonth(month, year) {
         document.getElementById('start_month_select').value = String(month).padStart(2, '0');
         document.getElementById('start_year_select').value = String(year);

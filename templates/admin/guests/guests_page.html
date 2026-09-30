@@ -67,12 +67,12 @@
 
             <label class="floating-label">
                 <span>Nume</span>
-                <input name="name" type="text" class="input input-lg input-bordered w-full" minlength="4" required/>
+                <input name="name" type="text" class="input input-lg w-full" minlength="4" required/>
             </label>
 
             <label class="floating-label">
                 <span>Data</span>
-                <input name="date" type="date" class="input input-lg input-bordered w-full" required
+                <input name="date" type="date" class="input input-lg w-full" required
                        autocomplete="off" hx-post="/admin/guests/select_hour"
                        min='{{ current_date.to_iso() }}'/>
             </label>
@@ -85,7 +85,7 @@
             </label>
 
             <div class="modal-action grid grid-cols-2" hx-disinherit="*">
-                <button class="btn"
+                <button type="button" class="btn"
                         onclick="add_modal.close()">
                     Anulează
                 </button>
@@ -98,7 +98,7 @@
     </form>
 
     <form method="dialog" class="modal-backdrop">
-        <button>close</button>
+        <button>Închide</button>
     </form>
 </dialog>
 

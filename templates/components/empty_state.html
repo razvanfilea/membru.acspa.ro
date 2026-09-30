@@ -1,19 +1,13 @@
-{#
-Empty State Macro
-Usage: {% call empty_state::simple(icon, title) %}
-       {% call empty_state::with_subtitle(icon, title, subtitle) %}
-#}
-
 {% macro simple(icon, title) %}
-<div class="col-span-full py-8 flex flex-col items-center justify-center text-base-content/50 bg-base-100/50 rounded-xl">
+<div class="col-span-full py-8 flex flex-col items-center justify-center text-base-content/50 bg-base-content/5 rounded-xl">
     <span class="material-symbols-outlined text-3xl opacity-50 mb-1">{{ icon }}</span>
     <p class="text-sm font-semibold">{{ title }}</p>
 </div>
 {% endmacro %}
 
 {% macro with_subtitle(icon, title, subtitle) %}
-<div class="col-span-full py-12 flex flex-col items-center justify-center text-base-content/50 bg-base-100/50 rounded-2xl">
-    <div class="p-4 bg-base-100 rounded-full mb-3">
+<div class="col-span-full py-12 flex flex-col items-center justify-center text-base-content/50 bg-base-content/5 rounded-2xl">
+    <div class="p-4 bg-base-content/5 rounded-full mb-3">
         <span class="material-symbols-outlined text-4xl opacity-50">{{ icon }}</span>
     </div>
     <p class="text-base font-semibold">{{ title }}</p>

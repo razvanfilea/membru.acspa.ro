@@ -11,14 +11,13 @@ de <b class="text-base-content/80">{{ actor }}</b>
 <span class="material-symbols-outlined text-sm">settings</span>
 Sistem
 {% endif %}
-<span class="text-gray-500">·</span>
+<span class="text-base-content/50">·</span>
 <span class="font-mono">{{ entry.changed_time() }}</span>
 {% endmacro %}
 
 {% block content %}
 
 <main class="p-2 sm:p-4 md:p-8 w-full max-w-4xl mx-auto flex flex-col gap-4 md:gap-6">
-    {# On mobile: member and reset on the first row, date and event on the second #}
     <form class="grid grid-cols-[1fr_1fr_auto] md:grid-cols-[1fr_auto_1fr_auto] gap-x-2 gap-y-3 md:gap-4 items-center bg-base-200 p-3 md:p-4 rounded-2xl"
           action="/admin/history"
           hx-get="/admin/history"
@@ -29,7 +28,7 @@ Sistem
           hx-push-url="true">
         <label class="floating-label col-span-2 md:col-span-1">
             <span>Membru</span>
-            <select name="user_id" class="select select-bordered w-full" autocomplete="off">
+            <select name="user_id" class="select w-full" autocomplete="off">
                 <option value="">Toți membrii</option>
                 {% for u in users %}
                 <option value="{{ u.id }}" {% if filters.is_user_selected(u.id) %}selected{% endif %}>{{ u.name }}</option>
@@ -39,13 +38,13 @@ Sistem
 
         <label class="floating-label order-2 md:order-none min-w-0">
             <span>Data rezervării</span>
-            <input name="date" type="date" class="input input-bordered w-full px-2 sm:px-3" autocomplete="off"
+            <input name="date" type="date" class="input w-full px-2 sm:px-3" autocomplete="off"
                    min="{{ min_date.to_iso() }}" value="{{ filters.date.to_iso() }}"/>
         </label>
 
         <label class="floating-label order-2 md:order-none col-span-2 md:col-span-1 min-w-0">
             <span>Eveniment</span>
-            <select name="event" class="select select-bordered w-full" autocomplete="off">
+            <select name="event" class="select w-full" autocomplete="off">
                 <option value="">Toate evenimentele</option>
                 {% for event in events %}
                 <option value="{{ event.as_ref() }}" {% if filters.is_event_selected(event) %}selected{% endif %}>{{ event.filter_label() }}</option>
@@ -73,18 +72,27 @@ Sistem
         {{ empty_state::with_subtitle("history", "Nicio modificare găsită", "Încearcă alte filtre sau resetează-le.") }}
         {% endif %}
         {% else %}
-        <p class="text-xs text-gray-400 px-1">
+        <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+        <p class="text-xs text-base-content/60">
             {% if total >= 500 %}
             Se afișează cele mai recente 500 de modificări, folosește filtrele pentru a restrânge lista.
             {% else %}
             {{ total }} {% if total == 1 %}modificare{% else %}modificări{% endif %} în ultimele {{ retention_days }} de zile
             {% endif %}
         </p>
+        {% if let Some(date) = filters.date %}
+        <a href="{{ date.calendar_url() }}"
+           class="btn btn-sm btn-ghost gap-1.5">
+            <span class="material-symbols-outlined text-base">calendar_month</span>
+            Vezi ziua în calendar
+        </a>
+        {% endif %}
+        </div>
         {% endif %}
 
         {% for day in days %}
         <section class="flex flex-col gap-2">
-            <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 px-1">{{ day.title }}</h4>
+            <h4 class="text-xs font-black uppercase tracking-widest text-base-content/60 px-1">{{ day.title }}</h4>
 
             {% for entry in day.entries %}
             <div class="flex gap-3 md:gap-4 p-3 md:p-4 bg-base-200 rounded-2xl items-start">
@@ -97,8 +105,9 @@ Sistem
 
                     <p class="text-sm">
                         <span class="font-semibold {{ entry.event.text_class() }}">{{ entry.event.label() }}</span>
-                        <span class="text-gray-500">·</span>
-                        {{ entry.date.to_readable() }}, ora
+                        <span class="text-base-content/50">·</span>
+                        <a href="{{ entry.date.calendar_url() }}"
+                           class="link link-hover" title="Vezi ziua în calendar">{{ entry.date.to_readable() }}</a>, ora
                         {% if let Some(old_hour) = entry.old_hour %}
                         <b>{{ old_hour }} → {{ entry.hour }}</b>
                         {% else %}
@@ -127,14 +136,13 @@ Sistem
                         <span class="badge badge-sm badge-ghost whitespace-nowrap">Ca invitat</span>
                         {% endif %}
 
-                        <span class="md:hidden text-xs text-gray-400 flex items-center gap-1 ml-auto">
+                        <span class="md:hidden text-xs text-base-content/60 flex items-center gap-1 ml-auto">
                             {% call actor(entry) %}{% endcall %}
                         </span>
                     </div>
                 </div>
 
-                {# Desktop only: actor and time on the right #}
-                <div class="hidden md:flex text-xs text-gray-400 items-center gap-1 shrink-0">
+                <div class="hidden md:flex text-xs text-base-content/60 items-center gap-1 shrink-0">
                     {% call actor(entry) %}{% endcall %}
                 </div>
             </div>
