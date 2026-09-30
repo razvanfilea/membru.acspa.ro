@@ -32,7 +32,7 @@
                     {% endfor %}
                 </div>
 
-                {% let oob_swap = "none" %}
+                {% let oob = false %}
                 {% let view_month = month.month() %}
                 <div class="grid grid-cols-7 gap-1 sm:gap-2">
                     {% for date in calendar_days %}
@@ -65,6 +65,13 @@
 </main>
 
 <script>
+    // History snapshots are taken after the new cell was selected, sync the selection with ?day=
+    document.body.addEventListener('htmx:historyRestore', () => {
+        const day = new URLSearchParams(window.location.search).get('day');
+        document.querySelectorAll('.calendar-day[aria-pressed]')
+            .forEach(cell => cell.setAttribute('aria-pressed', String(cell.id === `day_${day}`)));
+    });
+
     function selectCalendarDay(cell) {
         document.querySelectorAll('.calendar-day[aria-pressed="true"]')
             .forEach(other => other.setAttribute('aria-pressed', 'false'));

@@ -3,7 +3,7 @@
 {% import "components/section_header.html" as section_header %}
 {% import "components/empty_state.html" as empty_state %}
 
-{% block page_title %}Admin Dashboard{% endblock %}
+{% block page_title %}Panou{% endblock %}
 
 {% block content %}
 {# Caller blocks only see locals, not template fields #}
@@ -12,7 +12,7 @@
     <section class="surface-card">
         {% call section_header::header("settings", "primary", "Setări generale", "Cod de intrare, acces și mesajul de pe pagina principală") %}
         <span class="text-xs text-base-content/60 text-nowrap">
-            Ora server: <span class="font-mono font-semibold text-base-content">{{ crate::utils::dates::local_time() }}</span>
+            Ora server: <span class="font-mono font-semibold text-base-content">{{ server_time }}</span>
         </span>
         {% endcall %}
 
@@ -21,7 +21,7 @@
                 <label class="floating-label">
                     <span>Cod intrare</span>
                     <input id="entrance_code" name="entrance_code" type="text"
-                           class="input input-lg input-bordered w-full max-w-xs"
+                           class="input input-lg w-full max-w-xs"
                            value="{{ global_vars.entrance_code }}"/>
                 </label>
 
@@ -33,8 +33,8 @@
 
                 <label class="floating-label">
                     <span>Mesaj pe pagina principală</span>
-                    <textarea name="homepage_message" type="text"
-                              class="textarea input-lg textarea-bordered w-full">
+                    <textarea name="homepage_message"
+                              class="textarea textarea-lg w-full">
                         {{- global_vars.homepage_message -}}
                     </textarea>
                 </label>

@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select coalesce(nickname, name) as 'name!' from users\n             where (name like $1 or nickname like $1) and is_deleted = false\n             limit 5",
+  "describe": {
+    "columns": [
+      {
+        "name": "name!",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2fd85cb23fbf9886ef982f654fad85b6609ec4a1f192f1bbc158a55d3de4a150"
+}

@@ -72,6 +72,14 @@ impl AuthzBackend for UserAuthenticator {
     }
 }
 
+/// Minimum password length, in characters
+pub const MIN_PASSWORD_LEN: usize = 8;
+pub const PASSWORD_TOO_SHORT: &str = "Parola trebuie să aibă cel puțin 8 caractere";
+
+pub fn is_valid_new_password(password: &str) -> bool {
+    password.trim().chars().count() >= MIN_PASSWORD_LEN
+}
+
 pub fn generate_hash_from_password<T: AsRef<str>>(password: T) -> String {
     let salt = SaltString::generate();
 

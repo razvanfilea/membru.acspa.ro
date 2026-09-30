@@ -1,8 +1,8 @@
 {% macro month_year_picker(prefix, label, current_year, min_year, max_year) %}
-<div class="form-control">
-    <label class="label"><span class="label-text">{{ label }}</span></label>
+<div>
+    <label class="label">{{ label }}</label>
     <div class="join w-full">
-        <select id="{{ prefix }}_month_select" class="select select-bordered join-item w-3/5"
+        <select id="{{ prefix }}_month_select" class="select join-item w-3/5"
                 autocomplete="off"
                 onchange="updateHiddenDate('{{ prefix }}')">
             {% for month in MonthIter::default() %}
@@ -10,7 +10,7 @@
             {% endfor %}
         </select>
 
-        <select id="{{ prefix }}_year_select" class="select select-bordered join-item w-2/5"
+        <select id="{{ prefix }}_year_select" class="select join-item w-2/5"
                 autocomplete="off"
                 onchange="updateHiddenDate('{{ prefix }}')">
             {% for year in min_year..=max_year %}

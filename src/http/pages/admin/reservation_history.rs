@@ -1,6 +1,7 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
+use crate::http::pages::admin::CalendarUrl;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::user::User;
 use crate::reservation::{
@@ -52,7 +53,6 @@ impl HistoryEvent {
         }
     }
 
-    /// Label used by the filter dropdown
     pub fn filter_label(&self) -> &'static str {
         match self {
             HistoryEvent::Created => "Rezervări noi",
@@ -79,7 +79,6 @@ impl HistoryEvent {
         }
     }
 
-    /// Background and text color of the event icon
     pub fn icon_class(&self) -> &'static str {
         match self {
             HistoryEvent::Created => "bg-success/15 text-success",
@@ -151,7 +150,6 @@ impl HistoryEntry {
 const TIME: &[time::format_description::BorrowedFormatItem] =
     format_description!("[hour]:[minute]");
 
-/// Entries changed on the same local day, newest first
 pub struct HistoryDay {
     pub title: String,
     pub entries: Vec<HistoryEntry>,

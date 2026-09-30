@@ -3,21 +3,21 @@
 
 {% if date.month() != view_month %}
 {# Days of the adjacent months open their own month #}
-<a href="/admin/calendar/{{ date.year() }}/{{ u8::from(date.month()) }}?day={{ date }}"
+<a href="{{ date.calendar_url() }}"
    class="calendar-day calendar-day-other">
 {% else %}
 <button id="day_{{ date }}"
         hx-get="/admin/calendar/details/{{ date }}"
         hx-target="#day_details_container"
         hx-indicator="#day_details_loading"
-        hx-push-url="/admin/calendar/{{ date.year() }}/{{ u8::from(date.month()) }}?day={{ date }}"
+        hx-push-url="{{ date.calendar_url() }}"
         hx-on::before-request="selectCalendarDay(this)"
         hx-on::after-request="showDayPanel()"
-        hx-swap-oob="{{ oob_swap }}"
+        {% if oob %}hx-swap-oob="outerHTML"{% endif %}
         aria-pressed="{{ is_selected }}"
         class="calendar-day">
 {% endif %}
-    <span class="flex flex-col sm:flex-row items-center sm:items-start sm:justify-between gap-1 w-full">
+    <span class="flex flex-col sm:flex-row items-center sm:items-start sm:justify-between gap-1.5 sm:gap-1 w-full">
         <span class="text-sm sm:text-base font-bold leading-none
             {% if is_today %} underline decoration-2 underline-offset-1 sm:underline-offset-4{% endif %}">
             {{ date.day() }}

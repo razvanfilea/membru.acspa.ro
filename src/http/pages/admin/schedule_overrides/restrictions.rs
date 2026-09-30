@@ -11,7 +11,7 @@ use axum::extract::{Query, State};
 use axum::routing::{delete, put};
 use axum_extra::extract::Form as AxumExtraForm;
 use serde::Deserialize;
-use sqlx::{Error, SqlitePool, query, query_as};
+use sqlx::{Error, SqlitePool, query, query_as, query_scalar};
 use time::Date;
 use tracing::info;
 
@@ -27,23 +27,8 @@ pub async fn get_restrictions_for_day(
 ) -> Result<Vec<Restriction>, Error> {
     query_as!(
         Restriction,
-        "select date, hour, message, created_at from restrictions where date = $1 order by hour",
+        "select hour, message from restrictions where date = $1 order by hour",
         date
-    )
-    .fetch_all(pool)
-    .await
-}
-
-pub async fn get_restrictions_for_month(
-    pool: &SqlitePool,
-    month_year: Date,
-) -> Result<Vec<Restriction>, Error> {
-    query_as!(
-        Restriction,
-        "select date, hour, message, created_at from restrictions
-         where strftime('%m%Y', date) = strftime('%m%Y', $1)
-         order by hour",
-        month_year
     )
     .fetch_all(pool)
     .await
@@ -70,6 +55,17 @@ async fn create_restriction(
     let day_structure =
         DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
     let mut tx = state.write_pool.begin().await?;
+
+    let day_blocked = query_scalar!(
+        "select exists(select 1 from restrictions where date = $1 and location = $2 and hour is null)",
+        date,
+        state.location.id
+    )
+    .fetch_one(tx.as_mut())
+    .await?;
+    if day_blocked != 0 {
+        return Err(bail("Ziua este deja blocată în întregime"));
+    }
 
     if let Some(hours) = restriction.hour {
         for hour in hours {

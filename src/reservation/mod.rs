@@ -14,7 +14,6 @@ use tracing::{error, info};
 
 pub use cancel::{cancel_reservation, is_cancellable_at, remove_upcoming_reservations};
 
-/// How long entries of `reservation_history` are kept
 pub const HISTORY_RETENTION_DAYS: i64 = 90;
 
 /// Oldest reservation date whose changes can still be in `reservation_history`
@@ -134,7 +133,6 @@ async fn try_create_reservation(
     Ok(success)
 }
 
-/// Deletes waiting-list reservations whose slot has already started
 pub async fn delete_expired_waiting(
     executor: impl SqliteExecutor<'_>,
     current_date: Date,

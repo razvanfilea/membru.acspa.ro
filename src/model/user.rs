@@ -87,10 +87,10 @@ impl User {
     pub async fn email_exists_for_other(
         executor: impl SqliteExecutor<'_>,
         email: &str,
-        exclude_user_id: i64,
+        exclude_user_id: Option<i64>,
     ) -> sqlx::Result<bool> {
         let count = query_scalar!(
-            "select count(*) from users where email = $1 and id != $2 and is_deleted = false",
+            "select count(*) from users where lower(email) = lower($1) and id is not $2 and is_deleted = false",
             email,
             exclude_user_id
         )

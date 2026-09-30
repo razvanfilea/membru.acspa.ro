@@ -1,3 +1,4 @@
+use crate::http::auth::MIN_PASSWORD_LEN;
 use crate::http::pages::AuthSession;
 use crate::http::response::hx_redirect;
 use crate::http::template_into_response::TemplateIntoResponse;
@@ -45,7 +46,7 @@ pub async fn login(
         return login_error("Adresa de email este invalidă");
     }
 
-    if login_user.password.len() < 8 {
+    if login_user.password.chars().count() < MIN_PASSWORD_LEN {
         return login_error("Parola este prea scurtă");
     }
 

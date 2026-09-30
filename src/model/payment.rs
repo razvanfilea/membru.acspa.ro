@@ -132,11 +132,11 @@ mod tests {
     #[test]
     fn length_in_months() {
         let cases = [
-            (date!(2024 - 01 - 01), date!(2024 - 01 - 31), 1), // same month
-            (date!(2024 - 01 - 15), date!(2024 - 02 - 10), 2), // two consecutive months
-            (date!(2024 - 01 - 01), date!(2024 - 12 - 31), 12), // full year
-            (date!(2023 - 11 - 01), date!(2024 - 02 - 28), 4), // across years
-            (date!(2022 - 06 - 01), date!(2024 - 06 - 30), 25), // multiple years
+            (date!(2024 - 01 - 01), date!(2024 - 01 - 31), 1),
+            (date!(2024 - 01 - 15), date!(2024 - 02 - 10), 2),
+            (date!(2024 - 01 - 01), date!(2024 - 12 - 31), 12),
+            (date!(2023 - 11 - 01), date!(2024 - 02 - 28), 4),
+            (date!(2022 - 06 - 01), date!(2024 - 06 - 30), 25),
         ];
         for (start, end, expected) in cases {
             let pb = PaymentBreak::make_break(start, end);

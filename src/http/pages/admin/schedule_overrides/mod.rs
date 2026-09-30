@@ -122,14 +122,12 @@ async fn get_alternative_day(
 async fn get_alternative_days(
     pool: &SqlitePool,
     day_type: AlternativeDayType,
-    month_year: Option<Date>,
 ) -> sqlx::Result<Vec<AlternativeDay>> {
     let day_type = day_type.as_ref();
     query_as!(AlternativeDay, "select date, COALESCE(description, '') as 'description',
         slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, slots_start_minute as 'start_minute', created_at
         from alternative_days where type = $1
-        and strftime('%m%Y', date) = strftime('%m%Y', COALESCE($2, date))
-        order by date desc, created_at", day_type, month_year)
+        order by date desc, created_at", day_type)
         .fetch_all(pool)
         .await
 }

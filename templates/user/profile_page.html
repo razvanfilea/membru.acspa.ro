@@ -56,7 +56,7 @@
                     <summary class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content" title="Opțiuni">
                         <span class="material-symbols-outlined">more_vert</span>
                     </summary>
-                    <ul class="dropdown-content menu bg-base-200 rounded-box z-50 w-52 p-2 shadow-xl border border-base-300">
+                    <ul class="dropdown-content menu bg-base-200 rounded-box z-50 w-52 p-2 shadow-xl">
                         <li>
                             <button type="button" class="gap-2" onclick="this.closest('details').removeAttribute('open'); contact_modal.showModal()">
                                 <span class="material-symbols-outlined text-lg">edit</span>
@@ -69,7 +69,7 @@
                                 Schimbă parola
                             </a>
                         </li>
-                        <div class="border-t border-base-300 my-1"></div>
+                        <div class="border-t border-base-content/10 my-1"></div>
                         <li>
                             <button class="text-error gap-2 hover:bg-error/10" hx-post="/logout">
                                 <span class="material-symbols-outlined text-lg">logout</span>
@@ -100,7 +100,7 @@
             </a>
         </div>
 
-        <div class="border-t border-base-300"></div>
+        <div class="border-t border-base-content/5"></div>
 
         <div class="flex flex-col gap-3">
             <p class="text-xs uppercase font-bold tracking-wider text-base-content/60">Săptămâna aceasta</p>
@@ -135,22 +135,21 @@
         </div>
     </section>
 
-    {% let oob = false %}
-    {% let paid_months_json = "" %}
-    {% include "components/payments_status_grid.html" %}
+    {{ status_grid|safe }}
 
+    {% let selected_year = current_year.clone() %}
     {% include "profile_content.html" %}
 </main>
 
 <dialog id="contact_modal" class="modal modal-bottom sm:modal-middle">
     <div class="modal-box w-full sm:w-11/12 max-w-md p-0 bg-base-100 overflow-hidden flex flex-col">
-        <div class="flex items-center justify-between px-6 py-4 bg-base-200 border-b border-base-300">
+        <div class="flex items-center justify-between px-6 py-4 bg-base-200 border-b border-base-content/5">
             <h3 class="font-bold text-lg flex items-center gap-2">
                 <span class="material-symbols-outlined">badge</span>
                 Editează date profil
             </h3>
             <form method="dialog">
-                <button class="btn btn-sm btn-circle btn-ghost">
+                <button class="btn btn-sm btn-circle btn-ghost" aria-label="Închide">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </form>
@@ -159,28 +158,28 @@
         <form hx-post="/profile/contact" class="flex flex-col flex-1 min-h-0">
             <div class="p-6 flex flex-col gap-4">
                 <label class="floating-label">
-                    <span>Nickname</span>
-                    <input name="nickname" type="text" placeholder="Nickname" autocomplete="off"
+                    <span>Poreclă</span>
+                    <input name="nickname" type="text" placeholder="Poreclă" autocomplete="off"
                            {% if let Some(nickname) = user.nickname %}value="{{ nickname }}"{% endif %}
-                           class="input input-lg input-bordered w-full"/>
+                           class="input input-lg w-full"/>
                 </label>
 
                 <label class="floating-label">
                     <span>Număr de telefon</span>
                     <input name="phone_number" type="tel" placeholder="Număr de telefon" autocomplete="tel"
                            {% if let Some(phone) = user.phone_number %}value="{{ phone }}"{% endif %}
-                           class="input input-lg input-bordered w-full"/>
+                           class="input input-lg w-full"/>
                 </label>
 
                 <label class="floating-label">
-                    <span>Contact de urgență (Telefon)</span>
-                    <input name="emergency_contact_phone_number" type="tel" placeholder="Contact de urgență (Telefon)" autocomplete="tel"
+                    <span>Contact de urgență (telefon)</span>
+                    <input name="emergency_contact_phone_number" type="tel" placeholder="Contact de urgență (telefon)" autocomplete="tel"
                            {% if let Some(emergency_phone) = user.emergency_contact_phone_number %}value="{{ emergency_phone }}"{% endif %}
-                           class="input input-lg input-bordered w-full"/>
+                           class="input input-lg w-full"/>
                 </label>
             </div>
 
-            <div class="flex justify-end gap-2 px-6 py-4 bg-base-200 border-t border-base-300">
+            <div class="flex justify-end gap-2 px-6 py-4 bg-base-200 border-t border-base-content/5">
                 <button type="button" class="btn btn-ghost" onclick="contact_modal.close()">Anulează</button>
                 <button type="submit" class="btn btn-primary min-w-24 gap-2">
                     <span class="material-symbols-outlined">save</span>

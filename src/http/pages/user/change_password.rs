@@ -1,5 +1,7 @@
 use crate::http::AppState;
-use crate::http::auth::{generate_hash_from_password, validate_credentials};
+use crate::http::auth::{
+    PASSWORD_TOO_SHORT, generate_hash_from_password, is_valid_new_password, validate_credentials,
+};
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::response::hx_redirect;
@@ -54,6 +56,10 @@ pub async fn change_password(
 
     if passwords.new != passwords.new_duplicate {
         return change_password_error("Cele 2 parole nu sunt identice");
+    }
+
+    if !is_valid_new_password(&passwords.new) {
+        return change_password_error(PASSWORD_TOO_SHORT);
     }
 
     if !validate_credentials(passwords.old, user.password_hash.as_str()).unwrap_or(false) {

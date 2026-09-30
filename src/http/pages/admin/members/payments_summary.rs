@@ -1,22 +1,22 @@
 use crate::http::AppState;
 use crate::http::error::HttpResult;
-use crate::http::response::hx_notify_with;
+use crate::http::response::hx_notify_oob;
 use crate::http::template_into_response::TemplateIntoResponse;
-use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
+use crate::model::payment::{PaymentBreak, PaymentWithAllocations, format_amount};
 use crate::model::user::UserDetails;
 use crate::utils::date_formats::DateFormatExt;
 use crate::utils::dates::{YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
-use axum::http::{HeaderName, HeaderValue};
+use axum::response::IntoResponse;
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use std::collections::HashSet;
 use time::{Date, Month};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum MonthStatus {
+enum MonthStatus {
     Paid(String),  // Notes
     Break(String), // Reason
     Unpaid,
@@ -25,13 +25,13 @@ pub enum MonthStatus {
 }
 
 #[derive(Debug, Clone)]
-pub struct MonthStatusView {
-    pub month: Month,
-    pub status: MonthStatus,
+struct MonthStatusView {
+    month: Month,
+    status: MonthStatus,
 }
 
 impl MonthStatusView {
-    pub fn month_number(&self) -> u8 {
+    fn month_number(&self) -> u8 {
         self.month as u8
     }
 }
@@ -39,20 +39,51 @@ impl MonthStatusView {
 #[derive(Template)]
 #[template(path = "components/payments_status_grid.html")]
 pub struct StatusGridTemplate {
-    pub member: UserDetails,
-    pub current_year: i32,
-    pub selected_year: i32,
-    pub months_status_view: Vec<MonthStatusView>,
-    pub total_paid: i64,
-    pub admin_payments_status_grid: bool,
+    member: UserDetails,
+    current_year: i32,
+    selected_year: i32,
+    months_status_view: Vec<MonthStatusView>,
+    admin_payments_status_grid: bool,
+    /// Formatted amount allocated to `selected_year`, only shown to admins
+    total_paid: String,
     /// Payments covering a month of `selected_year`, only listed for admins
-    pub year_payments: Vec<PaymentWithAllocations>,
-    /// Paid or paused months, used by the payment modal
-    pub paid_months_json: String,
-    pub oob: bool,
+    year_payments: Vec<PaymentWithAllocations>,
+    paid_months_json: String,
+    oob: bool,
 }
 
 impl StatusGridTemplate {
+    pub fn new(
+        member: UserDetails,
+        year: i32,
+        admin_payments_status_grid: bool,
+        payments: Vec<PaymentWithAllocations>,
+        breaks: &[PaymentBreak],
+    ) -> Self {
+        let months_status_view = calculate_year_status(year, &member, &payments, breaks);
+        let (total_paid, paid_months_json, year_payments) = if admin_payments_status_grid {
+            (
+                format_amount(calculate_total_paid_for_year(&payments, year)),
+                paid_months_json(&payments, breaks),
+                payments_for_year(payments, year),
+            )
+        } else {
+            Default::default()
+        };
+
+        Self {
+            member,
+            current_year: local_date().year(),
+            selected_year: year,
+            months_status_view,
+            admin_payments_status_grid,
+            total_paid,
+            year_payments,
+            paid_months_json,
+            oob: false,
+        }
+    }
+
     pub async fn fetch(
         pool: &SqlitePool,
         member: UserDetails,
@@ -61,25 +92,13 @@ impl StatusGridTemplate {
     ) -> HttpResult<Self> {
         let payments = PaymentWithAllocations::fetch_for_user(pool, member.id).await?;
         let breaks = PaymentBreak::fetch_for_user(pool, member.id).await?;
-        let months_status_view = calculate_year_status(year, &member, &payments, &breaks);
-        let total_paid = calculate_total_paid_for_year(&payments, year);
-        let year_payments = if admin_payments_status_grid {
-            payments_for_year(&payments, year)
-        } else {
-            Vec::new()
-        };
-
-        Ok(Self {
+        Ok(Self::new(
             member,
-            current_year: local_date().year(),
-            selected_year: year,
-            months_status_view,
-            total_paid,
+            year,
             admin_payments_status_grid,
-            year_payments,
-            paid_months_json: paid_months_json(&payments, &breaks),
-            oob: false,
-        })
+            payments,
+            &breaks,
+        ))
     }
 }
 
@@ -96,53 +115,48 @@ pub async fn build_status_grid_response(
 
 #[derive(Template)]
 #[template(path = "admin/members/breaks_section.html")]
-pub struct BreaksSectionTemplate {
-    pub breaks: Vec<PaymentBreak>,
-    pub oob: bool,
+struct BreaksSectionTemplate {
+    breaks: Vec<PaymentBreak>,
+    oob: bool,
 }
 
-/// Year shown by the Cotizații section when a change was made, sent with the request
+/// Event the member view listens to, to close the payment and break modals
+const PAYMENTS_CHANGED_EVENT: &str = "paymentsChanged";
+
+pub(super) fn view_year_or_current(view_year: Option<i32>) -> i32 {
+    view_year.unwrap_or_else(|| local_date().year())
+}
+
 #[derive(Deserialize)]
-pub struct ViewYear {
+pub(super) struct ViewYear {
     view_year: Option<i32>,
 }
 
 impl ViewYear {
-    pub fn year(&self) -> i32 {
-        self.view_year.unwrap_or_else(|| local_date().year())
+    pub(super) fn year(&self) -> i32 {
+        view_year_or_current(self.view_year)
     }
 }
 
-/// Re-renders the Cotizații (showing `year`) and breaks sections of the member view after a change
-pub async fn payments_changed_response(
+pub(super) async fn payments_changed_response(
     pool: &SqlitePool,
     member_id: i64,
     year: i32,
     message: &str,
 ) -> HttpResult {
     let member = UserDetails::fetch(pool, member_id).await?;
-    let mut status_grid = StatusGridTemplate::fetch(pool, member, year, true).await?;
-    status_grid.oob = true;
-    let breaks_section = BreaksSectionTemplate {
-        breaks: PaymentBreak::fetch_for_user(pool, member_id).await?,
-        oob: true,
-    };
+    let payments = PaymentWithAllocations::fetch_for_user(pool, member_id).await?;
+    let breaks = PaymentBreak::fetch_for_user(pool, member_id).await?;
 
-    let mut response = hx_notify_with(status_grid.render()? + &breaks_section.render()?, message)?;
-    let headers = response.headers_mut();
-    headers.insert(
-        const { HeaderName::from_static("hx-reswap") },
-        const { HeaderValue::from_static("none") },
-    );
-    headers.insert(
-        const { HeaderName::from_static("hx-trigger") },
-        const { HeaderValue::from_static("paymentsChanged") },
-    );
-    Ok(response)
+    let mut status_grid = StatusGridTemplate::new(member, year, true, payments, &breaks);
+    status_grid.oob = true;
+    let breaks_section = BreaksSectionTemplate { breaks, oob: true };
+
+    let response = hx_notify_oob(status_grid.render()? + &breaks_section.render()?, message)?;
+    Ok(([("HX-Trigger", PAYMENTS_CHANGED_EVENT)], response).into_response())
 }
 
-/// Paid and paused months as a JSON list of "M-YYYY"
-pub fn paid_months_json(payments: &[PaymentWithAllocations], breaks: &[PaymentBreak]) -> String {
+fn paid_months_json(payments: &[PaymentWithAllocations], breaks: &[PaymentBreak]) -> String {
     let mut months: HashSet<String> = payments
         .iter()
         .flat_map(|p| p.allocations.iter())
@@ -162,18 +176,17 @@ pub fn paid_months_json(payments: &[PaymentWithAllocations], breaks: &[PaymentBr
 }
 
 /// Payments with at least one month allocated to `year`, a payment spanning two years is in both
-pub fn payments_for_year(
-    payments: &[PaymentWithAllocations],
+fn payments_for_year(
+    payments: Vec<PaymentWithAllocations>,
     year: i32,
 ) -> Vec<PaymentWithAllocations> {
     payments
-        .iter()
+        .into_iter()
         .filter(|payment| payment.allocations.iter().any(|alloc| alloc.year == year))
-        .cloned()
         .collect()
 }
 
-pub fn calculate_total_paid_for_year(payments: &[PaymentWithAllocations], year: i32) -> i64 {
+fn calculate_total_paid_for_year(payments: &[PaymentWithAllocations], year: i32) -> i64 {
     payments
         .iter()
         .map(|p| {
@@ -188,7 +201,7 @@ pub fn calculate_total_paid_for_year(payments: &[PaymentWithAllocations], year: 
         .sum()
 }
 
-pub fn calculate_year_status(
+fn calculate_year_status(
     year: i32,
     member: &UserDetails,
     payments: &[PaymentWithAllocations],
@@ -201,7 +214,6 @@ pub fn calculate_year_status(
             let month_start = year_month.to_date();
             let month = year_month.month;
 
-            // 1. Check if before member joined (approximate to month)
             let member_start_month = YearMonth::from(member.member_since).to_date();
 
             if month_start < member_start_month {
@@ -211,7 +223,6 @@ pub fn calculate_year_status(
                 };
             }
 
-            // 2. Check if Paid
             let is_paid = payments.iter().find(|p| {
                 p.allocations
                     .iter()
@@ -225,9 +236,7 @@ pub fn calculate_year_status(
                 };
             }
 
-            // 3. Check if Break
             let is_break = breaks.iter().find(|b| {
-                // Check if this month (e.g. 2024-05-01) is within break start..=end
                 // Breaks are stored as 1st of month.
                 month_start >= b.start_date && month_start <= b.end_date
             });
@@ -239,8 +248,6 @@ pub fn calculate_year_status(
                 };
             }
 
-            // 4. Check Future vs Unpaid
-            // If the month is in the future compared to now
             let current_month_start =
                 Date::from_calendar_date(current_date.year(), current_date.month(), 1).unwrap();
 
@@ -259,7 +266,7 @@ pub fn calculate_year_status(
         .collect()
 }
 
-pub async fn payments_status_partial(
+pub(super) async fn payments_status_partial(
     State(state): State<AppState>,
     Path((user_id, year)): Path<(i64, i32)>,
 ) -> HttpResult {
@@ -310,11 +317,9 @@ mod tests {
         let member = make_member(date!(2020 - 06 - 15));
         let result = calculate_year_status(2020, &member, &[], &[]);
 
-        // January through May should be NotJoined
-        for i in 0..5 {
-            assert_eq!(result[i].status, MonthStatus::NotJoined);
+        for month in &result[..5] {
+            assert_eq!(month.status, MonthStatus::NotJoined);
         }
-        // June onwards should be something else (Unpaid in this case)
         assert_ne!(result[5].status, MonthStatus::NotJoined);
     }
 
@@ -324,8 +329,8 @@ mod tests {
         let payment = make_payment(2020, &[Month::March, Month::April], Some("Cash"));
         let result = calculate_year_status(2020, &member, &[payment], &[]);
 
-        assert_eq!(result[2].status, MonthStatus::Paid("Cash".to_string())); // March
-        assert_eq!(result[3].status, MonthStatus::Paid("Cash".to_string())); // April
+        assert_eq!(result[2].status, MonthStatus::Paid("Cash".to_string()));
+        assert_eq!(result[3].status, MonthStatus::Paid("Cash".to_string()));
     }
 
     #[test]
@@ -338,9 +343,9 @@ mod tests {
         );
         let result = calculate_year_status(2020, &member, &[], &[brk]);
 
-        assert_eq!(result[2].status, MonthStatus::Break("Medical".to_string())); // March
-        assert_eq!(result[3].status, MonthStatus::Break("Medical".to_string())); // April
-        assert_eq!(result[4].status, MonthStatus::Break("Medical".to_string())); // May
+        assert_eq!(result[2].status, MonthStatus::Break("Medical".to_string()));
+        assert_eq!(result[3].status, MonthStatus::Break("Medical".to_string()));
+        assert_eq!(result[4].status, MonthStatus::Break("Medical".to_string()));
     }
 
     #[test]
@@ -348,7 +353,6 @@ mod tests {
         let member = make_member(date!(2020 - 01 - 01));
         let result = calculate_year_status(2020, &member, &[], &[]);
 
-        // All months in 2020 should be Unpaid (since it's in the past)
         for status in &result {
             assert_eq!(status.status, MonthStatus::Unpaid);
         }
@@ -359,8 +363,6 @@ mod tests {
         let member = make_member(date!(2099 - 01 - 01));
         let result = calculate_year_status(2099, &member, &[], &[]);
 
-        // All months in 2099 should be Future (except possibly current month if we're in 2099)
-        // Since we're definitely not in 2099, all should be Future
         for status in &result {
             assert_eq!(status.status, MonthStatus::Future);
         }
@@ -374,31 +376,25 @@ mod tests {
 
         let result = calculate_year_status(2020, &member, &[payment], &[brk]);
 
-        // Jan-Mar: NotJoined
         assert_eq!(result[0].status, MonthStatus::NotJoined);
         assert_eq!(result[1].status, MonthStatus::NotJoined);
         assert_eq!(result[2].status, MonthStatus::NotJoined);
 
-        // Apr-May: Paid
         assert_eq!(result[3].status, MonthStatus::Paid(String::new()));
         assert_eq!(result[4].status, MonthStatus::Paid(String::new()));
 
-        // Jun: Unpaid
         assert_eq!(result[5].status, MonthStatus::Unpaid);
 
-        // Jul-Aug: Break
         assert_eq!(result[6].status, MonthStatus::Break(String::new()));
         assert_eq!(result[7].status, MonthStatus::Break(String::new()));
 
-        // Sep-Dec: Unpaid
-        for i in 8..12 {
-            assert_eq!(result[i].status, MonthStatus::Unpaid);
+        for month in &result[8..] {
+            assert_eq!(month.status, MonthStatus::Unpaid);
         }
     }
 
     #[test]
     fn payment_takes_precedence_over_break() {
-        // If a month has both payment and break, payment should win (checked first)
         let member = make_member(date!(2020 - 01 - 01));
         let payment = make_payment(2020, &[Month::March], Some("Paid"));
         let brk = make_break(date!(2020 - 03 - 01), date!(2020 - 03 - 01), Some("Break"));
@@ -424,9 +420,8 @@ mod tests {
         let payment = make_payment(2020, &[Month::January, Month::December], None);
         let result = calculate_year_status(2020, &member, &[payment], &[]);
 
-        assert_eq!(result[0].status, MonthStatus::Paid(String::new())); // January
-        assert_eq!(result[11].status, MonthStatus::Paid(String::new())); // December
-        // Middle months should be Unpaid
-        assert_eq!(result[6].status, MonthStatus::Unpaid); // July
+        assert_eq!(result[0].status, MonthStatus::Paid(String::new()));
+        assert_eq!(result[11].status, MonthStatus::Paid(String::new()));
+        assert_eq!(result[6].status, MonthStatus::Unpaid);
     }
 }

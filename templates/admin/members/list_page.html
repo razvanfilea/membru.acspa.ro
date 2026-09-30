@@ -11,7 +11,7 @@
           hx-post="/admin/members/search"
           hx-trigger="input changed delay:500ms, search">
 
-        <label class="input input-bordered flex items-center gap-2 w-full">
+        <label class="input flex items-center gap-2 w-full">
             <span class="material-symbols-outlined text-base-content/60">search</span>
             <input type="search" name="search" class="grow" placeholder="Caută după nume, email sau rol"
                    autocomplete="off"/>
@@ -19,7 +19,7 @@
 
         <label class="floating-label shrink-0 w-36 md:w-44">
             <span>Sortare</span>
-            <select name="sort" class="select select-bordered w-full" autocomplete="off">
+            <select name="sort" class="select w-full" autocomplete="off">
                 <option selected value="Alphabetical">Alfabetic</option>
                 <option value="Birthday">Data nașterii</option>
                 <option value="Gift">Data cadoului</option>
@@ -50,10 +50,10 @@
 
             <div class="flex flex-col md:flex-row md:flex-wrap md:gap-x-6 mt-1 text-sm text-base-content/60 leading-snug">
                 <span class="truncate">{{ member.email }}</span>
-                <span>Zi de naștere: <span class="font-mono">{{ member.birthday.to_readable() }}</span></span>
-                <span>Membru din: <span class="font-mono">{{ member.member_since.to_readable() }}</span></span>
+                <span>Zi de naștere <span class="font-mono">{{ member.birthday.to_readable() }}</span></span>
+                <span>Membru din <span class="font-mono">{{ member.member_since.to_readable() }}</span></span>
                 {% if member.received_gift.is_some() %}
-                <span>Primit cadou: <span class="font-mono text-error">{{ member.received_gift.to_readable() }}</span></span>
+                <span>Primit cadou <span class="font-mono text-error">{{ member.received_gift.to_readable() }}</span></span>
                 {% endif %}
             </div>
         </a>
@@ -79,7 +79,7 @@
 
 {% block nav_menu %}
 <li>
-    <a href="/admin/roles" class="btn btn-wide">
+    <a href="/admin/roles" class="btn btn-sm sm:btn-md md:btn-wide">
         <span class="material-symbols-outlined">user_attributes</span>
         Roluri
     </a>

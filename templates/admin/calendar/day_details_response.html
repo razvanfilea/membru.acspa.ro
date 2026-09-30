@@ -1,9 +1,11 @@
 {% include "day_details_partial.html" %}
 
+{% if update_cell %}
 {# Re-render the selected cell so its markers and count follow the change #}
-{% let oob_swap = "outerHTML" %}
+{% let oob = true %}
 {% let date = day.date.clone() %}
 {% let view_month = day.date.month() %}
 {% let is_selected = true %}
 {% let events = day.events.clone() %}
 {% include "calendar_page_day.html" %}
+{% endif %}

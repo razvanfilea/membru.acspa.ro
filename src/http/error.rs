@@ -17,7 +17,6 @@ pub enum HttpError {
     Unauthorized,
 }
 
-/// Helper function to create an HttpError::Message
 pub fn bail(msg: impl Into<String>) -> HttpError {
     HttpError::Message(msg.into())
 }
@@ -30,21 +29,18 @@ pub trait OrBailWith<T, E> {
     fn or_bail_with<S: ToString>(self, f: impl FnOnce(E) -> S) -> Result<T, HttpError>;
 }
 
-// Implementation for Option
 impl<T> OrBail<T> for Option<T> {
     fn or_bail(self, msg: impl Into<String>) -> Result<T, HttpError> {
         self.ok_or_else(|| HttpError::Message(msg.into()))
     }
 }
 
-// Implementation for Result
 impl<T, E> OrBail<T> for Result<T, E> {
     fn or_bail(self, msg: impl Into<String>) -> Result<T, HttpError> {
         self.map_err(|_| HttpError::Message(msg.into()))
     }
 }
 
-// Implementation for Result with error transformation
 impl<T, E> OrBailWith<T, E> for Result<T, E> {
     fn or_bail_with<S: ToString>(self, f: impl FnOnce(E) -> S) -> Result<T, HttpError> {
         self.map_err(|e| HttpError::Message(f(e).to_string()))
@@ -53,8 +49,12 @@ impl<T, E> OrBailWith<T, E> for Result<T, E> {
 
 impl IntoResponse for HttpError {
     fn into_response(self) -> Response {
-        let message = self.to_string();
-        error!("{message}");
+        error!("{self}");
+        let message = match self {
+            // A missing id, e.g. an old link to a deleted member
+            HttpError::Database(sqlx::Error::RowNotFound) => "Elementul căutat nu există".to_string(),
+            error => error.to_string(),
+        };
         error_bubble_response(message)
     }
 }

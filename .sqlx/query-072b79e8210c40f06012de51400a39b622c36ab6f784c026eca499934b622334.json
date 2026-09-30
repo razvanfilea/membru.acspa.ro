@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select count(*) from users where email = $1 and id != $2 and is_deleted = false",
+  "query": "select count(*) from users where lower(email) = lower($1) and id is not $2 and is_deleted = false",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "6dc6938639beffe97ae341a0fb4336b37b81f6dd1cf8ab67758168db85161ade"
+  "hash": "072b79e8210c40f06012de51400a39b622c36ab6f784c026eca499934b622334"
 }

@@ -4,10 +4,10 @@ use sqlx::{SqliteConnection, SqliteTransaction, query, query_scalar};
 use time::{Date, OffsetDateTime};
 use tracing::info;
 
-/// A reservation can be cancelled until the hour its slot starts in has passed
+/// A reservation can be cancelled until its slot starts
 pub fn is_cancellable_at(date: Date, hour: u8, now: OffsetDateTime) -> bool {
     let today = now.date();
-    date > today || (date == today && hour >= now.hour())
+    date > today || (date == today && hour > now.hour())
 }
 
 pub async fn cancel_reservation(
@@ -37,7 +37,7 @@ pub async fn cancel_reservation(
     Ok(cancelled)
 }
 
-/// Same as [cancel_reservation], but runs inside the caller's transaction without committing it
+/// Same as [`cancel_reservation`], but runs inside the caller's transaction without committing it
 async fn cancel_reservation_in(
     tx: &mut SqliteConnection,
     location: &Location,
@@ -123,6 +123,7 @@ pub async fn remove_upcoming_reservations(
     let today = now.date();
     let current_hour = now.hour();
 
+    // Same boundary as `is_cancellable_at`: a slot is upcoming until its hour starts
     let upcoming = query!(
         r#"select date as "date: Date", hour as "hour: u8", created_for from reservations
         where user_id = $1 and location = $2 and cancelled = false

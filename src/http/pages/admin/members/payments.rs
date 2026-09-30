@@ -1,7 +1,9 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult, OrBail, OrBailWith};
 use crate::http::pages::AuthSession;
-use crate::http::pages::admin::members::payments_summary::{ViewYear, payments_changed_response};
+use crate::http::pages::admin::members::payments_summary::{
+    ViewYear, payments_changed_response, view_year_or_current,
+};
 use crate::model::payment_context::PaymentContext;
 use crate::model::user::UserDetails;
 use crate::utils::dates::YearMonth;
@@ -15,10 +17,10 @@ use time::{Date, Month};
 use tracing::info;
 
 #[derive(Deserialize, Debug)]
-pub struct NewPayment {
-    amount: f64,        // From input type="number" step="0.01"
-    payment_date: Date, // From input type="date"
-    months: String,     // From checkboxes (format: "M-YYYY")
+pub(super) struct NewPayment {
+    amount: f64,
+    payment_date: Date,
+    months: String,     // Format "M-YYYY"
     notes: Option<String>,
     view_year: Option<i32>,
 }
@@ -104,7 +106,7 @@ fn validate_allocations(
     Ok(())
 }
 
-pub async fn add_payment(
+pub(super) async fn add_payment(
     State(state): State<AppState>,
     Path(member_id): Path<i64>,
     auth_session: AuthSession,
@@ -162,7 +164,7 @@ pub async fn add_payment(
 
     tx.commit().await?;
 
-    let year = form.view_year.unwrap_or(current_year);
+    let year = view_year_or_current(form.view_year);
     payments_changed_response(
         &state.read_pool,
         member_id,
@@ -172,7 +174,7 @@ pub async fn add_payment(
     .await
 }
 
-pub async fn delete_payment(
+pub(super) async fn delete_payment(
     State(state): State<AppState>,
     Path(payment_id): Path<i64>,
     Query(view): Query<ViewYear>,
@@ -218,13 +220,11 @@ mod tests {
 
     #[test]
     fn test_parse_month_allocations() {
-        // Valid single month
         assert_eq!(
             parse_month_allocations("3-2024", date!(2020 - 01 - 01), 2024),
             Ok(vec![YearMonth::new(2024, Month::March)])
         );
 
-        // Valid multiple months
         assert_eq!(
             parse_month_allocations("1-2024,2-2024,3-2024", date!(2020 - 01 - 01), 2024),
             Ok(vec![
@@ -234,13 +234,11 @@ mod tests {
             ])
         );
 
-        // Invalid month format is skipped
         assert_eq!(
             parse_month_allocations("invalid,3-2024", date!(2020 - 01 - 01), 2024),
             Ok(vec![YearMonth::new(2024, Month::March)])
         );
 
-        // Month before member_since is skipped
         assert_eq!(
             parse_month_allocations("1-2020,6-2020", date!(2020 - 03 - 15), 2024),
             Ok(vec![YearMonth::new(2020, Month::June)])
@@ -252,13 +250,11 @@ mod tests {
             Ok(vec![YearMonth::new(2024, Month::March)])
         );
 
-        // Empty string returns error
         assert_eq!(
             parse_month_allocations("", date!(2020 - 01 - 01), 2024),
             Err(PaymentValidationError::NoValidMonths)
         );
 
-        // All invalid months returns error
         assert_eq!(
             parse_month_allocations("invalid,bad,nope", date!(2020 - 01 - 01), 2024),
             Err(PaymentValidationError::NoValidMonths)
@@ -267,7 +263,6 @@ mod tests {
 
     #[test]
     fn test_validate_allocations() {
-        // All months valid returns Ok
         let ctx = PaymentContext::new(vec![], vec![]);
         let months = vec![
             YearMonth::new(2024, Month::January),
@@ -275,7 +270,6 @@ mod tests {
         ];
         assert_eq!(validate_allocations(&months, &ctx), Ok(()));
 
-        // Already paid month returns error
         let paid_month = YearMonth::new(2024, Month::January);
         let ctx = PaymentContext::new(vec![paid_month], vec![]);
         let months = vec![paid_month, YearMonth::new(2024, Month::February)];
@@ -284,7 +278,6 @@ mod tests {
             Err(PaymentValidationError::MonthAlreadyPaid(paid_month))
         );
 
-        // Month in break returns error
         let ctx = PaymentContext::new(
             vec![],
             vec![PaymentBreak::make_break(

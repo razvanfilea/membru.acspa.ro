@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select date, COALESCE(description, '') as 'description',\n        slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, slots_start_minute as 'start_minute', created_at\n        from alternative_days where type = $1\n        and strftime('%m%Y', date) = strftime('%m%Y', COALESCE($2, date))\n        order by date desc, created_at",
+  "query": "select date, COALESCE(description, '') as 'description',\n        slots_start_hour as 'start_hour', slot_duration as 'duration', slot_capacity, consumes_reservation, slots_start_minute as 'start_minute', created_at\n        from alternative_days where type = $1\n        order by date desc, created_at",
   "describe": {
     "columns": [
       {
@@ -45,7 +45,7 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 1
     },
     "nullable": [
       false,
@@ -58,5 +58,5 @@
       false
     ]
   },
-  "hash": "0459de76085a09af5333ace68a3741395cf0c9c0b99b528993763c2159481fa8"
+  "hash": "579252a49b2bc794f3e8e157f04cf18682c3f4a96b2dc09735abd72965adaabf"
 }

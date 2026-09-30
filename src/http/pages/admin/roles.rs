@@ -11,8 +11,8 @@ use axum::extract::{Path, State};
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
+use sqlx::sqlite::SqliteQueryResult;
 use sqlx::{query, query_as};
-use std::str::FromStr;
 use strum::IntoEnumIterator;
 
 pub fn router() -> Router<AppState> {
@@ -39,10 +39,7 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
 
     impl UserRoleWithCount {
         fn css_color(&self) -> CssColor {
-            self.color
-                .as_deref()
-                .and_then(|color| CssColor::from_str(color).ok())
-                .unwrap_or(CssColor::None)
+            CssColor::parse_or_none(self.color.as_deref())
         }
     }
 
@@ -95,18 +92,32 @@ fn parse_monthly_fee(fee: Option<String>) -> Option<i64> {
         .filter(|c| *c != 0)
 }
 
+fn role_saved(result: sqlx::Result<SqliteQueryResult>) -> HttpResult<()> {
+    match result {
+        Err(sqlx::Error::Database(error)) if error.is_unique_violation() => {
+            Err(bail("Există deja un rol cu acest nume"))
+        }
+        result => result.map(|_| ()).map_err(Into::into),
+    }
+}
+
 async fn create_new_role(State(state): State<AppState>, Form(role): Form<NewRole>) -> HttpResult {
+    let color = CssColor::parse_or_none(Some(&role.color));
+    let color = color.as_ref();
     let fee_cents = parse_monthly_fee(role.monthly_fee);
 
-    query!(
-        "insert into user_roles (name, reservations, guest_reservations, monthly_fee) values ($1, $2, $3, $4)",
-        role.name,
-        role.reservations,
-        role.as_guest,
-        fee_cents
-    )
-    .execute(&state.write_pool)
-    .await?;
+    role_saved(
+        query!(
+            "insert into user_roles (name, reservations, guest_reservations, color, monthly_fee) values ($1, $2, $3, $4, $5)",
+            role.name,
+            role.reservations,
+            role.as_guest,
+            color,
+            fee_cents
+        )
+        .execute(&state.write_pool)
+        .await,
+    )?;
 
     Ok(hx_redirect("/admin/roles"))
 }
@@ -136,21 +147,23 @@ async fn update_role(
     Path(role_id): Path<i64>,
     Form(role): Form<NewRole>,
 ) -> HttpResult {
-    let color = CssColor::from_str(role.color.as_str()).unwrap_or(CssColor::None);
+    let color = CssColor::parse_or_none(Some(&role.color));
     let color = color.as_ref();
     let fee_cents = parse_monthly_fee(role.monthly_fee);
 
-    query!(
-        "update user_roles set name = $2, reservations = $3, guest_reservations = $4, color = $5, monthly_fee = $6 where id = $1",
-        role_id,
-        role.name,
-        role.reservations,
-        role.as_guest,
-        color,
-        fee_cents
-    )
-    .execute(&state.write_pool)
-    .await?;
+    role_saved(
+        query!(
+            "update user_roles set name = $2, reservations = $3, guest_reservations = $4, color = $5, monthly_fee = $6 where id = $1",
+            role_id,
+            role.name,
+            role.reservations,
+            role.as_guest,
+            color,
+            fee_cents
+        )
+        .execute(&state.write_pool)
+        .await,
+    )?;
 
     Ok(hx_redirect("/admin/roles"))
 }

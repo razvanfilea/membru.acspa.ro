@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "select distinct date as \"date: Date\" from restrictions\n           where location = $1 and date between $2 and $3",
+  "describe": {
+    "columns": [
+      {
+        "name": "date: Date",
+        "ordinal": 0,
+        "type_info": "Date"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "258b3eceac7995e549e04408c8b0ce2c6bad5209f5f8bd4a5cbc179a1a09a881"
+}
