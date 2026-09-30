@@ -30,7 +30,7 @@
                         {% endif %}
                         <span class="badge badge-neutral font-semibold">{{ member.role }}</span>
                         {% if member.has_key %}
-                        <span class="badge badge-outline gap-1" title="Are cheie">
+                        <span class="badge badge-soft gap-1" title="Are cheie">
                             <span class="material-symbols-outlined text-sm">vpn_key</span>
                             Cheie
                         </span>
@@ -113,15 +113,15 @@
                 <span class="material-symbols-outlined text-lg">edit</span>
                 Editează membru
             </a>
-            <button type="button" class="btn btn-sm md:btn-md btn-outline gap-2" onclick="password_modal.showModal()">
+            <button type="button" class="btn btn-sm md:btn-md btn-soft gap-2" onclick="password_modal.showModal()">
                 <span class="material-symbols-outlined text-lg">password</span>
                 Schimbă parola
             </button>
-            <a href="{{ fee_mail_href }}" class="btn btn-sm md:btn-md btn-outline gap-2">
+            <a href="{{ fee_mail_href }}" class="btn btn-sm md:btn-md btn-soft gap-2">
                 <span class="material-symbols-outlined text-lg">email</span>
                 Trimite mail cotizație
             </a>
-            <a href="/admin/history?user_id={{ member.id }}" class="btn btn-sm md:btn-md btn-outline gap-2">
+            <a href="/admin/history?user_id={{ member.id }}" class="btn btn-sm md:btn-md btn-soft gap-2">
                 <span class="material-symbols-outlined text-lg">history</span>
                 Istoric rezervări
             </a>

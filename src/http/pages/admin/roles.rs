@@ -172,7 +172,10 @@ async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) ->
                 counts.total, counts.deleted
             )
         } else {
-            format!("{} utilizatori au acest rol, rolul nu poate fi șters", counts.total)
+            format!(
+                "{} utilizatori au acest rol, rolul nu poate fi șters",
+                counts.total
+            )
         };
         return Err(bail(message));
     }

@@ -163,7 +163,13 @@ pub async fn add_payment(
     tx.commit().await?;
 
     let year = form.view_year.unwrap_or(current_year);
-    payments_changed_response(&state.read_pool, member_id, year, "Plata a fost înregistrată").await
+    payments_changed_response(
+        &state.read_pool,
+        member_id,
+        year,
+        "Plata a fost înregistrată",
+    )
+    .await
 }
 
 pub async fn delete_payment(
@@ -179,7 +185,13 @@ pub async fn delete_payment(
     .await?
     .or_bail("Plata nu există")?;
 
-    payments_changed_response(&state.read_pool, member_id, view.year(), "Plata a fost ștearsă").await
+    payments_changed_response(
+        &state.read_pool,
+        member_id,
+        view.year(),
+        "Plata a fost ștearsă",
+    )
+    .await
 }
 
 #[cfg(test)]

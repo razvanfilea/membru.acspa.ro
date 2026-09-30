@@ -97,7 +97,7 @@
 
 {% if let Some(id) = member_id %}
 {% call danger_zone::danger_zone("Datele personale vor fi anonimizate, iar rezervările viitoare șterse.") %}
-<button class="btn btn-error btn-outline" hx-post="/admin/members/delete/{{ id }}"
+<button class="btn btn-error btn-soft" hx-post="/admin/members/delete/{{ id }}"
         hx-confirm="Ești sigur că vrei să ștergi membrul '{{ values.name }}'?">
     <span class="material-symbols-outlined">delete</span>
     Șterge membrul

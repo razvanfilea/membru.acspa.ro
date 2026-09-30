@@ -94,7 +94,7 @@
                 <span class="material-symbols-outlined text-lg">edit</span>
                 Editează profil
             </button>
-            <a href="/change_password" class="btn btn-outline btn-sm md:btn-md gap-2">
+            <a href="/change_password" class="btn btn-soft btn-sm md:btn-md gap-2">
                 <span class="material-symbols-outlined text-lg">password</span>
                 Schimbă parola
             </a>
@@ -106,7 +106,7 @@
             <p class="text-xs uppercase font-bold tracking-wider text-base-content/60">Săptămâna aceasta</p>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                <div class="bg-base-200/50 border border-base-300 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3">
+                <div class="bg-base-100 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3">
                     <span class="text-sm font-semibold text-base-content shrink-0">Cota membru</span>
 
                     <progress class="progress flex-1 h-2 min-w-16 {% if this_weeks_reservations.member >= max_reservations.member && max_reservations.member > 0 %}progress-error{% else %}progress-primary{% endif %}"
@@ -119,7 +119,7 @@
                     </div>
                 </div>
 
-                <div class="bg-base-200/50 border border-base-300 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3">
+                <div class="bg-base-100 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3">
                     <span class="text-sm font-semibold text-base-content shrink-0">Cota invitat</span>
 
                     <progress class="progress flex-1 h-2 min-w-16 {% if this_weeks_reservations.guest >= max_reservations.guest && max_reservations.guest > 0 %}progress-error{% else %}progress-primary{% endif %}"

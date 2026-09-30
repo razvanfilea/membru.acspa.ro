@@ -1,5 +1,5 @@
 <button id="active-toggle"
-        class="btn btn-sm btn-outline {% if is_active %}btn-success{% else %}btn-error{% endif %} gap-1.5"
+        class="btn btn-sm btn-soft {% if is_active %}btn-success{% else %}btn-error{% endif %} gap-1.5"
         hx-post="/admin/members/toggle_active/{{ member_id }}"
         hx-target="this"
         hx-swap="outerHTML"

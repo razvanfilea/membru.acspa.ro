@@ -50,9 +50,10 @@ struct DayEvents {
     has_holiday: bool,
     has_tournament: bool,
     has_restriction: bool,
-    has_guests: bool,
     /// Confirmed reservations, without the waiting list
     reservations: i64,
+    /// Confirmed guest reservations, both guest spots and named guests
+    guests: i64,
 }
 
 /// Everything the day panel shows for the selected date
@@ -223,7 +224,7 @@ struct DayDetailsTemplate {
     day: DayDetails,
 }
 
-/// Reservation counts and guest markers per day, between `from` and `to` inclusive
+/// Reservation and guest counts per day, between `from` and `to` inclusive
 async fn get_reservation_counts(
     state: &AppState,
     from: Date,
@@ -232,7 +233,7 @@ async fn get_reservation_counts(
     let rows = sqlx::query!(
         r#"select date as "date: Date",
                   sum(not in_waiting) as "reservations!: i64",
-                  max(created_for is not null) as "has_guests!: bool"
+                  sum(not in_waiting and (as_guest or created_for is not null)) as "guests!: i64"
            from reservations
            where location = $1 and date between $2 and $3 and not cancelled
            group by date"#,
@@ -248,7 +249,7 @@ async fn get_reservation_counts(
         .map(|row| {
             let events = DayEvents {
                 reservations: row.reservations,
-                has_guests: row.has_guests,
+                guests: row.guests,
                 ..Default::default()
             };
             (row.date, events)

@@ -30,7 +30,7 @@
 
     <div id="members_list" class="surface-card overflow-hidden mb-20">
         {% block list %}
-        <p class="px-4 py-3 text-sm text-base-content/60 border-b border-base-300">
+        <p class="px-4 py-3 text-sm text-base-content/60 border-b border-base-content/5">
             {{ members.len() }} {% if members.len() == 1 %}membru{% else %}membri{% endif %}
         </p>
 
@@ -44,7 +44,7 @@
                 {% endif %}
                 <span class="badge badge-sm badge-ghost">{{ member.role }}</span>
                 {% if !member.is_active %}
-                <span class="badge badge-sm badge-error badge-outline font-bold">Inactiv</span>
+                <span class="badge badge-sm badge-error badge-soft font-bold">Inactiv</span>
                 {% endif %}
             </div>
 

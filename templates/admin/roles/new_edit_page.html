@@ -61,7 +61,7 @@
 
 {% if let Some(val) = current %}
 {% call danger_zone::danger_zone("Rolul se poate șterge doar dacă nu este atribuit niciunui utilizator, inclusiv membrilor șterși.") %}
-<button class="btn btn-error btn-outline" hx-swap="none" hx-delete="/admin/roles/{{ val.id }}"
+<button class="btn btn-error btn-soft" hx-swap="none" hx-delete="/admin/roles/{{ val.id }}"
         hx-confirm="Ești sigur că vrei să ștergi rolul '{{ val.name }}'?">
     <span class="material-symbols-outlined">delete</span>
     Șterge rolul

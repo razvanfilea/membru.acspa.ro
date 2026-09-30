@@ -84,11 +84,11 @@ impl HistoryEvent {
         match self {
             HistoryEvent::Created => "bg-success/15 text-success",
             HistoryEvent::Cancelled | HistoryEvent::Deleted => "bg-error/15 text-error",
-            HistoryEvent::Expired => "bg-orange-500/15 text-orange-400",
+            HistoryEvent::Expired => "bg-accent/15 text-accent",
             HistoryEvent::Promoted => "bg-info/15 text-info",
             HistoryEvent::MovedToWaiting => "bg-warning/15 text-warning",
-            HistoryEvent::HourChanged => "bg-purple-500/15 text-purple-400",
-            HistoryEvent::Updated => "bg-base-300 text-gray-400",
+            HistoryEvent::HourChanged => "bg-secondary/15 text-secondary",
+            HistoryEvent::Updated => "bg-base-300 text-base-content/60",
         }
     }
 
@@ -96,11 +96,11 @@ impl HistoryEvent {
         match self {
             HistoryEvent::Created => "text-success",
             HistoryEvent::Cancelled | HistoryEvent::Deleted => "text-error",
-            HistoryEvent::Expired => "text-orange-400",
+            HistoryEvent::Expired => "text-accent",
             HistoryEvent::Promoted => "text-info",
             HistoryEvent::MovedToWaiting => "text-warning",
-            HistoryEvent::HourChanged => "text-purple-400",
-            HistoryEvent::Updated => "text-gray-400",
+            HistoryEvent::HourChanged => "text-secondary",
+            HistoryEvent::Updated => "text-base-content/60",
         }
     }
 }

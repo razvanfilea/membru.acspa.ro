@@ -1,3 +1,7 @@
+/* Icons go in the base layer so Tailwind utilities (size, hidden, ...) apply to them; the layer order
+   is declared first to keep Tailwind's order */
+@layer properties, theme, base, components, utilities;
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0") layer(base);
 @import 'tailwindcss';
 
 @plugin "daisyui" {
@@ -77,35 +81,44 @@
     .page-shell {
         @apply p-2 sm:p-4 md:p-8 w-full max-w-6xl mx-auto flex flex-col gap-4 md:gap-6;
     }
+    /* Cards are a step darker than the page, the items inside them a step lighter, no outlines */
     .surface-card {
-        @apply bg-base-100 rounded-2xl border border-base-300 shadow-sm;
+        @apply bg-base-200 rounded-2xl shadow-sm;
     }
     /* Filter and search bars above a list */
     .toolbar {
-        @apply bg-base-200/50 p-3 md:p-4 rounded-2xl border border-base-300;
+        @apply bg-base-200 p-3 md:p-4 rounded-2xl;
     }
     /* A row inside a .surface-card */
     .card-row {
-        @apply block px-4 py-3 md:py-4 border-b border-base-300 last:border-b-0
-               hover:bg-base-200/50 active:bg-base-200 transition-colors;
+        @apply block px-4 py-3 md:py-4 border-b border-base-content/5 last:border-b-0
+               hover:bg-base-100/60 active:bg-base-100 transition-colors;
     }
     .section-body {
         @apply p-4 md:p-6;
     }
     /* Year selector in a section header, on its own full width row on mobile */
     .year-pager {
-        @apply join bg-base-100 border border-base-300 shadow-sm overflow-x-auto
+        @apply join bg-base-100 rounded-field overflow-x-auto
                order-last w-full sm:order-none sm:w-auto max-w-full min-w-0;
     }
     /* Previous / current / next selector */
     .step-pager {
-        @apply join bg-base-100 border border-base-300 shadow-sm shrink-0;
+        @apply join bg-base-100 rounded-field shrink-0;
     }
     /* Calendar */
     .calendar-day {
-        @apply aspect-square w-full flex flex-col items-center justify-center gap-0.5 sm:gap-1
-               rounded-lg sm:rounded-xl border border-base-300 bg-base-100 transition-colors
-               hover:border-primary/50 aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-primary/40;
+        @apply aspect-square sm:aspect-4/3 w-full flex flex-col items-center sm:items-stretch justify-between
+               p-1 sm:p-2 rounded-lg sm:rounded-xl bg-base-100 transition-colors
+               hover:bg-base-300 aria-pressed:bg-primary/20 aria-pressed:text-primary;
+    }
+    /* Reservation count badge in a calendar day */
+    .calendar-count {
+        @apply px-1 sm:px-1.5 rounded-full bg-base-content/10 text-base-content/80
+               text-[10px] sm:text-xs font-semibold leading-3.5 sm:leading-5 tabular-nums;
+    }
+    .calendar-day-other {
+        @apply bg-transparent opacity-40 hover:bg-base-100;
     }
     /* Event colors, shared by the calendar markers and the day panel */
     .event-dot {
@@ -135,14 +148,13 @@
     }
 
     .month-cell {
-        @apply flex flex-col gap-0.5 sm:gap-1 py-1.5 px-2.5 sm:p-3 rounded-xl border transition-all duration-200;
+        @apply flex flex-col gap-0.5 sm:gap-1 py-1.5 px-2.5 sm:p-3 rounded-xl transition-all duration-200;
     }
 
     /* Member view: Payment cards */
     .payment-card {
         @apply relative flex flex-col md:flex-row md:items-center justify-between
-               bg-base-100 border border-base-300 rounded-xl p-3
-               hover:border-primary/50 transition-all shadow-sm;
+               bg-base-100 rounded-xl p-3 transition-colors;
     }
     /* Make .payment-card act as a group parent */
     .payment-card:hover .group-hover\:border-warning {
@@ -155,8 +167,7 @@
 
     /* Member view: Break cards */
     .break-card {
-        @apply flex flex-col gap-3 p-4 rounded-xl bg-base-100 border border-base-300
-               hover:border-warning/50 transition-colors;
+        @apply flex flex-col gap-3 p-4 rounded-xl bg-base-100;
     }
 
     /* Member view: Legend */

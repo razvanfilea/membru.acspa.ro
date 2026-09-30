@@ -24,7 +24,7 @@ Colors: primary, secondary, warning, info, error
 
 {% macro header(icon, color, title, subtitle) %}
 {# Caller items are direct flex items: buttons sit next to the title, a .year-pager wraps to its own row on mobile #}
-<div class="flex flex-row flex-wrap items-center gap-3 p-4 border-b border-base-300">
+<div class="flex flex-row flex-wrap items-center gap-3 p-4 border-b border-base-content/5">
     <div class="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
         {{ icon_badge(icon, color) }}
         <div class="min-w-0">

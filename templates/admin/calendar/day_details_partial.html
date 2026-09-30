@@ -7,21 +7,21 @@
             {% if day.is_past_date() %}
             <span class="badge badge-ghost">Trecut</span>
             {% endif %}
-            <span class="badge badge-outline gap-1">
+            <span class="badge badge-soft gap-1">
                 <span class="material-symbols-outlined text-sm">group</span>
                 {{ day.events.reservations }} {% if day.events.reservations == 1 %}rezervare{% else %}rezervări{% endif %}
             </span>
-            {% if day.events.has_guests %}
-            <span class="badge badge-outline badge-info gap-1">
+            {% if day.events.guests > 0 %}
+            <span class="badge badge-soft badge-info gap-1">
                 <span class="material-symbols-outlined text-sm">person_add</span>
-                Invitați
+                {{ day.events.guests }} {% if day.events.guests == 1 %}invitat{% else %}invitați{% endif %}
             </span>
             {% endif %}
         </div>
     </header>
 
     {% if let Some(tournament) = day.tournament %}
-    <section class="flex flex-col gap-3 p-4 rounded-xl border border-warning/50 bg-warning/5">
+    <section class="flex flex-col gap-3 p-4 rounded-xl bg-warning/10">
         <div class="flex items-center gap-2 text-warning">
             <span class="material-symbols-outlined">trophy</span>
             <h4 class="font-semibold">Turneu programat</h4>
@@ -33,7 +33,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
             {% if !day.is_past_date() %}
-            <a href="/admin/tournaments/edit/{{ day.date.to_iso() }}" class="btn btn-sm btn-outline gap-2">
+            <a href="/admin/tournaments/edit/{{ day.date.to_iso() }}" class="btn btn-sm btn-soft gap-2">
                 <span class="material-symbols-outlined text-base">edit</span>
                 Editează turneul
             </a>
@@ -52,7 +52,7 @@
     {% endif %}
 
     {% if let Some(holiday) = day.holiday %}
-    <section class="flex items-start justify-between gap-3 p-4 rounded-xl border border-primary/50 bg-primary/5">
+    <section class="flex items-start justify-between gap-3 p-4 rounded-xl bg-primary/10">
         <div class="flex flex-col gap-1 min-w-0">
             <div class="flex items-center gap-2 text-primary">
                 <span class="material-symbols-outlined">clear_day</span>
@@ -80,9 +80,9 @@
             <span class="material-symbols-outlined">block</span>
             <h4 class="font-semibold">Restricții orare</h4>
         </div>
-        <div class="flex flex-col rounded-xl border border-base-300 overflow-hidden">
+        <div class="flex flex-col rounded-xl bg-base-100 overflow-hidden">
             {% for res in day.restrictions %}
-            <div class="flex justify-between items-center gap-2 px-3 py-2 border-b border-base-300 last:border-b-0 text-sm">
+            <div class="flex justify-between items-center gap-2 px-3 py-2 border-b border-base-content/5 last:border-b-0 text-sm">
                 <div class="min-w-0">
                     <span class="font-semibold font-mono">{% if let Some(h) = res.hour %}{{ h }}:00{% else %}Toată ziua{% endif %}</span>
                     {% if !res.message.is_empty() %}
@@ -104,35 +104,35 @@
     </section>
     {% endif %}
 
-    <section class="flex flex-col gap-3">
-        <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 text-info">
-                <span class="material-symbols-outlined">group</span>
-                <h4 class="font-semibold">Rezervări</h4>
-            </div>
-            {% if day.has_history() %}
-            <a href="/admin/history?date={{ day.date.to_iso() }}" class="btn btn-sm btn-ghost gap-1.5">
-                <span class="material-symbols-outlined text-base">history</span>
-                Istoric
-            </a>
-            {% endif %}
-        </div>
+    <section>
         {{ day.reservations | safe }}
     </section>
 
-    {% if !day.is_past_date() && day.tournament.is_none() %}
+    {% let can_edit_day = !day.is_past_date() && day.tournament.is_none() %}
+    {% if can_edit_day || day.has_history() %}
     <section class="flex flex-col gap-2">
         <h4 class="font-semibold text-base-content/70">Acțiuni</h4>
 
+        {% if day.has_history() %}
+        <a href="/admin/history?date={{ day.date.to_iso() }}"
+           class="flex items-center gap-3 px-4 py-3 rounded-xl bg-base-100 hover:bg-base-300 transition-colors">
+            <span class="material-symbols-outlined text-info">history</span>
+            <span class="font-medium grow">Istoric rezervări</span>
+            <span class="material-symbols-outlined text-base-content/50">chevron_right</span>
+        </a>
+        {% endif %}
+
+        {% if can_edit_day %}
+
         {% if day.holiday.is_none() %}
         <a href="/admin/tournaments/new?date={{ day.date.to_iso() }}"
-           class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-300 hover:border-warning/50 hover:bg-base-200/50 transition-colors">
+           class="flex items-center gap-3 px-4 py-3 rounded-xl bg-base-100 hover:bg-base-300 transition-colors">
             <span class="material-symbols-outlined text-warning">trophy</span>
             <span class="font-medium grow">Adaugă turneu</span>
             <span class="material-symbols-outlined text-base-content/50">chevron_right</span>
         </a>
 
-        <details class="collapse collapse-arrow rounded-xl border border-base-300">
+        <details class="collapse collapse-arrow rounded-xl bg-base-100">
             <summary class="collapse-title flex items-center gap-3 font-medium">
                 <span class="material-symbols-outlined text-primary">event_available</span>
                 Marchează zi liberă
@@ -155,7 +155,7 @@
         {% endif %}
 
         {% if day.can_add_restriction() %}
-        <details class="collapse collapse-arrow rounded-xl border border-base-300">
+        <details class="collapse collapse-arrow rounded-xl bg-base-100">
             <summary class="collapse-title flex items-center gap-3 font-medium">
                 <span class="material-symbols-outlined text-error">calendar_lock</span>
                 Blochează ore
@@ -180,8 +180,8 @@
                     <div id="hour_selection_wrapper" class="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
                         {% for hour in day.day_structure.iter() %}
                         {% if day.is_restriction_hour_available(hour.into()) %}
-                        <label class="flex items-center justify-center py-2 rounded-lg border border-base-300 cursor-pointer transition-colors
-                            hover:border-error/50 has-checked:bg-error has-checked:text-error-content has-checked:border-error">
+                        <label class="flex items-center justify-center py-2 rounded-lg bg-base-200 cursor-pointer transition-colors
+                            hover:bg-base-300 has-checked:bg-error has-checked:text-error-content">
                             <span class="text-sm font-semibold font-mono">{{ hour }}</span>
                             <input type="checkbox" name="hour" value="{{ hour }}" class="hour-checkbox hidden"/>
                         </label>
@@ -192,6 +192,7 @@
                 </form>
             </div>
         </details>
+        {% endif %}
         {% endif %}
     </section>
     {% endif %}

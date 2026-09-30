@@ -19,7 +19,7 @@ Sistem
 
 <main class="p-2 sm:p-4 md:p-8 w-full max-w-4xl mx-auto flex flex-col gap-4 md:gap-6">
     {# On mobile: member and reset on the first row, date and event on the second #}
-    <form class="grid grid-cols-[1fr_1fr_auto] md:grid-cols-[1fr_auto_1fr_auto] gap-x-2 gap-y-3 md:gap-4 items-center bg-base-200/50 p-3 md:p-4 rounded-2xl border border-base-300"
+    <form class="grid grid-cols-[1fr_1fr_auto] md:grid-cols-[1fr_auto_1fr_auto] gap-x-2 gap-y-3 md:gap-4 items-center bg-base-200 p-3 md:p-4 rounded-2xl"
           action="/admin/history"
           hx-get="/admin/history"
           hx-trigger="change"
@@ -87,7 +87,7 @@ Sistem
             <h4 class="text-xs font-black uppercase tracking-widest text-gray-400 px-1">{{ day.title }}</h4>
 
             {% for entry in day.entries %}
-            <div class="flex gap-3 md:gap-4 p-3 md:p-4 bg-base-100 rounded-2xl border border-base-300 items-start">
+            <div class="flex gap-3 md:gap-4 p-3 md:p-4 bg-base-200 rounded-2xl items-start">
                 <div class="w-10 h-10 flex items-center justify-center rounded-full shrink-0 {{ entry.event.icon_class() }}">
                     <span class="material-symbols-outlined text-xl">{{ entry.event.icon() }}</span>
                 </div>
@@ -107,7 +107,7 @@ Sistem
                     </p>
 
                     {% if let Some(guest) = entry.created_for %}
-                    <p class="text-sm text-sky-400 flex items-center gap-1 min-w-0">
+                    <p class="text-sm text-info flex items-center gap-1 min-w-0">
                         <span class="material-symbols-outlined text-base">person_add</span>
                         <span class="truncate">{{ guest }}</span>
                     </p>
@@ -121,7 +121,7 @@ Sistem
                         </span>
                         {% endif %}
                         {% if let Some(position) = entry.waiting_position %}
-                        <span class="badge badge-sm badge-warning badge-outline whitespace-nowrap">Locul {{ position }} în așteptare</span>
+                        <span class="badge badge-sm badge-warning badge-soft whitespace-nowrap">Locul {{ position }} în așteptare</span>
                         {% endif %}
                         {% if entry.as_guest %}
                         <span class="badge badge-sm badge-ghost whitespace-nowrap">Ca invitat</span>
