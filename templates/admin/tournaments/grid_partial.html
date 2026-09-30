@@ -1,7 +1,7 @@
 {% import "components/empty_state.html" as empty_state %}
 
 {% if tournaments.is_empty() %}
-{{ empty_state::with_subtitle("event_busy", "Nu există turnee", "Creează un turneu cu butoanele de jos.") }}
+{{ empty_state::with_subtitle("event_busy", "Nu există turnee", empty_subtitle) }}
 {% else %}
 <div id="list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 pb-24">
     {% for tournament in tournaments %}

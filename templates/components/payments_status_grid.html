@@ -11,8 +11,11 @@
 {% let status_url -%}
 {% if is_admin %}/admin/members/payment_status/{{ member_id }}{% else %}/profile/payment_status{% endif %}
 {%- endlet %}
-<section id="payments-section" class="surface-card">
-    {% call section_header::header("payments", "primary", "Cotizații", "Situația lunilor și plățile pe anul selectat") %}
+{% let subtitle -%}
+{% if is_admin %}Situația lunilor și plățile pe anul selectat{% else %}Situația lunilor pe anul selectat{% endif %}
+{%- endlet %}
+<section id="payments-section" class="surface-card" data-year="{{ active_year }}" {% if oob %}hx-swap-oob="true"{% endif %}>
+    {% call section_header::header("payments", "primary", "Cotizații", subtitle) %}
     <div id="status-grid-years" class="year-pager">
         {% for year in start_year..=end_year %}
         <button class="join-item btn btn-sm {% if year == active_year %}btn-active btn-neutral{% else %}btn-ghost{% endif %}"
@@ -115,8 +118,8 @@
         <div class="flex flex-row items-center justify-between gap-2 px-1">
             <h4 class="font-semibold">Plăți pentru {{ selected_year }}</h4>
             <span class="text-sm">
-                <span class="text-base-content/60">Total achitat:</span>
-                <span class="font-bold font-mono">{{ total_paid / 100 }}</span>
+                <span class="text-base-content/60" title="Partea din plăți alocată lunilor din {{ active_year }}">Total alocat pe {{ active_year }}:</span>
+                <span class="font-bold font-mono">{{ crate::model::payment::format_amount(total_paid.clone()) }}</span>
                 <span class="text-xs text-base-content/60">RON</span>
             </span>
         </div>
@@ -128,6 +131,7 @@
                 {# Mobile only button #}
                 <button
                         hx-delete="/admin/members/payments/{{ payment.id }}"
+                        hx-vals='{"view_year": {{ active_year }}}'
                         hx-confirm="Sigur vrei să ștergi această plată?"
                         class="md:hidden m-4 absolute top-1 right-1 btn btn-ghost btn-circle text-base-content/50 hover:text-error transition-colors z-10"
                         title="Șterge plata">
@@ -174,6 +178,7 @@
 
                     <button
                             hx-delete="/admin/members/payments/{{ payment.id }}"
+                            hx-vals='{"view_year": {{ active_year }}}'
                             hx-confirm="Sigur vrei să ștergi această plată?"
                             class="btn-icon-delete"
                             title="Șterge plata">
@@ -190,14 +195,17 @@
         </div>
         {% endif %}
     </div>
-</section>
 
-<script>
-(function() {
-    const container = document.getElementById('status-grid-years');
-    const active = container?.querySelector('.btn-active');
-    if (container && active) {
-        container.scrollLeft = active.offsetLeft - (container.clientWidth / 2) + (active.clientWidth / 2);
-    }
-})();
-</script>
+    {% if is_admin %}
+    <script>window.paidMonths = {{ paid_months_json|safe }};</script>
+    {% endif %}
+    <script>
+    (function() {
+        const container = document.getElementById('status-grid-years');
+        const active = container?.querySelector('.btn-active');
+        if (container && active) {
+            container.scrollLeft = active.offsetLeft - (container.clientWidth / 2) + (active.clientWidth / 2);
+        }
+    })();
+    </script>
+</section>

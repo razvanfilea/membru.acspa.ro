@@ -11,7 +11,7 @@ use axum::extract::{Path, State};
 use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
-use sqlx::{query, query_as, query_scalar};
+use sqlx::{query, query_as};
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 
@@ -156,14 +156,25 @@ async fn update_role(
 }
 
 async fn delete_role(State(state): State<AppState>, Path(role_id): Path<i64>) -> HttpResult {
-    let users_with_role = query_scalar!("select count(*) from users where role_id = $1", role_id)
-        .fetch_one(&state.write_pool)
-        .await?;
+    // Deleted members keep their role, so they block the delete too
+    let counts = query!(
+        r#"select count(*) as "total!: i64", ifnull(sum(is_deleted), 0) as "deleted!: i64"
+           from users where role_id = $1"#,
+        role_id
+    )
+    .fetch_one(&state.write_pool)
+    .await?;
 
-    if users_with_role > 0 {
-        return Err(bail(format!(
-            "{users_with_role} utilizatori au acest rol, rolul nu poate fi șters"
-        )));
+    if counts.total > 0 {
+        let message = if counts.deleted > 0 {
+            format!(
+                "{} utilizatori au acest rol (dintre care {} membri șterși), rolul nu poate fi șters",
+                counts.total, counts.deleted
+            )
+        } else {
+            format!("{} utilizatori au acest rol, rolul nu poate fi șters", counts.total)
+        };
+        return Err(bail(message));
     }
 
     query!("delete from user_roles where id = $1", role_id,)

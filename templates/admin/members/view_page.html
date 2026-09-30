@@ -15,7 +15,7 @@
     <section class="surface-card p-6 md:p-8 flex flex-col gap-6">
         <div class="flex items-start justify-between gap-4">
             <div class="flex items-start gap-4 md:gap-5 min-w-0">
-                <img src="https://ui-avatars.com/api/?name={{ member.name }}&rounded=true&format=svg"
+                <img src="https://ui-avatars.com/api/?name={{ member.name|urlencode }}&rounded=true&format=svg"
                      loading="lazy"
                      width="64px"
                      height="64px"
@@ -38,7 +38,7 @@
                     </div>
 
                     <div class="flex items-center gap-2 text-sm text-base-content/60 flex-wrap">
-                        <a href="mailto:{{ member.email }}" class="hover:underline">{{ member.email }}</a>
+                        <a href="mailto:{{ member.email }}" class="hover:underline break-all">{{ member.email }}</a>
                         <span>•</span>
                         <span>Membru din {{ member.member_since.to_readable() }}</span>
                     </div>
@@ -70,20 +70,9 @@
             </div>
 
             <div class="flex items-center gap-1 shrink-0">
-                <button class="btn btn-sm btn-outline {% if member.is_active %}btn-success{% else %}btn-error{% endif %} gap-1.5"
-                        hx-post="/admin/members/toggle_active/{{ member.id }}"
-                        {% if member.is_active %}
-                        hx-confirm="Sigur vrei să marchezi membrul ca inactiv?"
-                        {% else %}
-                        hx-confirm="Sigur vrei să marchezi membrul ca activ?"
-                        {% endif %}
-                        title="Schimbă starea">
-                    {% if member.is_active %}
-                    <span class="material-symbols-outlined text-base">check_circle</span> Activ
-                    {% else %}
-                    <span class="material-symbols-outlined text-base">block</span> Inactiv
-                    {% endif %}
-                </button>
+                {% let is_active = member.is_active %}
+                {% let member_id = member.id %}
+                {% include "admin/members/active_toggle.html" %}
 
                 <details class="dropdown dropdown-end sm:hidden">
                     <summary class="btn btn-ghost btn-circle btn-sm text-base-content/60 hover:text-base-content" title="Opțiuni">
@@ -141,78 +130,10 @@
 
     {% let selected_year = current_year %}
     {% let admin_payments_status_grid = true %}
+    {% let oob = false %}
     {% include "components/payments_status_grid.html" %}
 
-    <section id="breaks" class="surface-card">
-        {% call section_header::header("pause_circle", "warning", "Pauze abonament", "Perioadele de suspendare a abonamentului") %}
-        <button class="btn btn-sm btn-warning gap-2" onclick="break_modal.showModal()">
-            <span class="material-symbols-outlined text-lg">add</span>
-            <span class="hidden sm:inline">Adaugă pauză</span>
-        </button>
-        {% endcall %}
-
-        <div class="section-body grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
-            {% for br in breaks %}
-            <div class="break-card group">
-                <div class="flex justify-between items-start">
-                    <div class="flex flex-col relative pl-6 border-l-2 border-base-300 group-hover:border-warning transition-colors">
-
-                        <div class="relative mb-2 md:mb-6">
-                            <span class="absolute -left-7.75 top-1.5 w-3.5 h-3.5 rounded-full bg-success ring-4 ring-base-100"></span>
-                            <span class="text-xs font-bold text-success tracking-wider uppercase">Început</span>
-                            <div class="font-bold text-xl text-base-content mt-0.5">
-                                {{ br.start_date.to_month_year() }}
-                            </div>
-                        </div>
-
-                        <div class="relative">
-                            <span class="absolute -left-7.75 top-1.5 w-3.5 h-3.5 rounded-full bg-error ring-4 ring-base-100"></span>
-                            <span class="text-xs font-bold text-error tracking-wider uppercase">Sfârșit (inclusiv)</span>
-                            <div class="font-bold text-xl text-base-content mt-0.5">
-                                {{ br.end_date.to_month_year() }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col justify-between items-end gap-4">
-                        <button hx-delete="/admin/members/breaks/{{ br.id }}"
-                                hx-confirm="Sigur vrei să ștergi această pauză?"
-                                class="btn-icon-delete"
-                                aria-label="Șterge">
-                            <span class="material-symbols-outlined">delete</span>
-                        </button>
-
-                        <div class="badge badge-neutral font-mono">
-                            {{ br.length_in_months() }} {% if br.length_in_months() == 1 %} lună {% else %} luni {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grow"></div>
-
-                {% if let Some(reason) = br.reason %}
-                <div class="bg-base-200/60 items-center rounded-lg p-3 border border-base-200 flex gap-2">
-                    <span class="material-symbols-outlined text-base-content/50 text-sm mt-0.5 shrink-0">sticky_note_2</span>
-                    <p class="text-sm italic leading-snug wrap-break-word">{{ reason }}</p>
-                </div>
-                {% endif %}
-
-                <div class="flex flex-row items-center justify-end gap-1 text-xs text-base-content/50">
-                    <span class="material-symbols-outlined text-sm">edit_calendar</span>
-                    <span>{{ date_formats::as_local(br.created_at) }}</span>
-                    <span>
-                        de <a href="/admin/members/view/{{ br.created_by }}"
-                              class="hover:text-primary hover:underline transition-colors">{{ br.created_by_name }}</a>
-                    </span>
-                </div>
-            </div>
-            {% endfor %}
-
-            {% if breaks.is_empty() %}
-            {{ empty_state::with_subtitle("event_busy", "Nu există pauze înregistrate", "Apasă pe \"Adaugă pauză\" pentru a suspenda abonamentul.") }}
-            {% endif %}
-        </div>
-    </section>
+    {% include "admin/members/breaks_section.html" %}
 
     {% let show_cancelled = false %}
     {% let admin_reservations_view = true %}
@@ -268,7 +189,7 @@
             </form>
         </div>
 
-        <form hx-post="/admin/members/payments/{{ member.id }}" class="flex flex-col flex-1 min-h-0">
+        <form hx-post="/admin/members/payments/{{ member.id }}" hx-vals="js:{view_year: paymentsViewYear()}" class="flex flex-col flex-1 min-h-0">
             <div class="p-6 flex flex-col gap-6 overflow-y-auto flex-1">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -351,7 +272,7 @@
     <div class="modal-box w-11/12 max-w-lg overflow-visible">
         <h3 class="font-bold text-lg mb-4">Adaugă pauză abonament</h3>
 
-        <form hx-post="/admin/members/breaks/{{ member.id }}" class="flex flex-col gap-4">
+        <form hx-post="/admin/members/breaks/{{ member.id }}" hx-vals="js:{view_year: paymentsViewYear()}" class="flex flex-col gap-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {% let min_year = member.member_since.year() %}
                 {% let max_year = current_year + 4 %}
@@ -480,7 +401,23 @@
 
     let selectedMonths = []; // Array of "M-YYYY"
     let currentActiveYear = {{ current_year }};
-    const paidMonths = {{ get_paid_months_json() | safe }};
+    // `paidMonths` is set by the Cotizații section, which is re-rendered after each change
+
+    function paymentsViewYear() {
+        return document.getElementById('payments-section').dataset.year;
+    }
+
+    // Sent by the server after a payment or break was saved or deleted
+    document.body.addEventListener('paymentsChanged', () => {
+        if (payment_modal.open) {
+            payment_modal.close();
+            payment_modal.querySelector('input[name="notes"]').value = '';
+        }
+        if (break_modal.open) {
+            break_modal.close();
+            break_modal.querySelector('input[name="reason"]').value = '';
+        }
+    });
 
     function switchYear(year, btn) {
         currentActiveYear = year;

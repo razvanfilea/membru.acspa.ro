@@ -11,10 +11,9 @@ use crate::http::pages::admin::members::breaks::{add_break, delete_break};
 use crate::http::pages::admin::members::payments::{add_payment, delete_payment};
 use crate::http::pages::admin::members::payments_summary::{
     MonthStatus, MonthStatusView, calculate_total_paid_for_year, calculate_year_status,
-    payments_for_year,
-    payments_status_partial,
+    paid_months_json, payments_for_year, payments_status_partial,
 };
-use crate::http::response::{hx_redirect, hx_refresh};
+use crate::http::response::{hx_notify_with, hx_redirect, hx_refresh};
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::role::UserRole;
@@ -22,7 +21,7 @@ use crate::model::user::{User, UserDetails};
 use crate::model::user_reservation::GroupedUserReservations;
 use crate::reservation::remove_upcoming_reservations;
 use crate::utils::date_formats::DateFormatExt;
-use crate::utils::dates::{MonthIter, YearMonth, YearMonthIter};
+use crate::utils::dates::{MonthIter, YearMonth};
 use crate::utils::{date_formats, local_date, local_time};
 use askama::Template;
 use axum::extract::{Path, Query, State};
@@ -31,7 +30,6 @@ use axum::routing::{delete, get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
 use sqlx::{SqlitePool, query, query_as, query_scalar};
-use std::collections::HashSet;
 use time::Date;
 
 pub fn router() -> Router<AppState> {
@@ -225,6 +223,11 @@ impl MemberForm {
 
         let today = local_date();
         let email = self.email.trim().to_string();
+        let name = self.name.trim().to_string();
+
+        if name.is_empty() {
+            return Err(bail("Numele este obligatoriu"));
+        }
 
         if User::email_exists_for_other(pool, &email, member_id.unwrap_or(-1)).await? {
             return Err(bail("Adresa de email este deja folosită de alt utilizator"));
@@ -241,6 +244,32 @@ impl MemberForm {
             return Err(bail("Data înscrierii nu poate fi în viitor"));
         }
 
+        // Payments and breaks before the join month would no longer be shown
+        if let Some(member_id) = member_id {
+            let first_covered = query_scalar!(
+                r#"select min(month_start) as "month_start: Date" from (
+                       select printf('%04d-%02d-01', a.year, a.month) as month_start
+                       from payment_allocations a
+                       inner join payments p on p.id = a.payment_id
+                       where p.user_id = $1
+                       union all
+                       select start_date from payment_breaks where user_id = $1
+                   )"#,
+                member_id
+            )
+            .fetch_one(pool)
+            .await?;
+
+            if let Some(first_covered) = first_covered
+                && YearMonth::from(first_covered) < YearMonth::from(member_since)
+            {
+                return Err(bail(format!(
+                    "Există plăți sau pauze din {}, data înscrierii nu poate fi după această lună",
+                    first_covered.to_month_year()
+                )));
+            }
+        }
+
         if let Some(gift_date) = received_gift
             && gift_date < member_since
         {
@@ -255,7 +284,7 @@ impl MemberForm {
 
         Ok(ValidatedMember {
             email,
-            name: self.name.trim().to_string(),
+            name,
             nickname: non_empty(self.nickname),
             phone_number: non_empty(self.phone_number),
             emergency_contact_phone_number: non_empty(self.emergency_contact_phone_number),
@@ -291,7 +320,7 @@ async fn create_new_member(
     let password = form
         .password
         .take()
-        .filter(|password| password.len() >= 8)
+        .filter(|password| password.chars().count() >= 8)
         .or_bail("Parola trebuie să aibă cel puțin 8 caractere")?;
     let member = form.validate(&state.read_pool, None).await?;
     let password_hash = generate_hash_from_password(password);
@@ -330,36 +359,11 @@ async fn view_member_page(
         current_date: Date,
         reservations: Vec<GroupedUserReservations>,
         allow_reservation_cancellation: bool,
-        payments: Vec<PaymentWithAllocations>,
         breaks: Vec<PaymentBreak>,
         months_status_view: Vec<MonthStatusView>,
         total_paid: i64,
         year_payments: Vec<PaymentWithAllocations>,
-    }
-
-    impl ViewMemberTemplate {
-        pub fn get_paid_months_json(&self) -> String {
-            let mut months: HashSet<String> = self
-                .payments
-                .iter()
-                .flat_map(|p| p.allocations.iter())
-                .map(|alloc| {
-                    // Formats as M-YYYY
-                    format!("{}-{:04}", alloc.month as u8, alloc.year)
-                })
-                .collect();
-
-            for br in &self.breaks {
-                let start = YearMonth::from(br.start_date);
-                let end = YearMonth::from(br.end_date);
-
-                for ym in YearMonthIter::new(start, end) {
-                    months.insert(format!("{}-{:04}", ym.month as u8, ym.year));
-                }
-            }
-
-            serde_json::to_string(&months).expect("Failed to serialize")
-        }
+        paid_months_json: String,
     }
 
     let current_date = local_date();
@@ -374,6 +378,7 @@ async fn view_member_page(
 
     let total_paid = calculate_total_paid_for_year(&payments, current_year);
     let year_payments = payments_for_year(&payments, current_year);
+    let paid_months_json = paid_months_json(&payments, &breaks);
 
     ViewMemberTemplate {
         user: auth_session.user.ok_or(HttpError::Unauthorized)?,
@@ -387,11 +392,11 @@ async fn view_member_page(
         current_date,
         member,
         allow_reservation_cancellation: false,
-        payments,
         breaks,
         months_status_view,
         total_paid,
         year_payments,
+        paid_months_json,
     }
     .try_into_response()
 }
@@ -443,14 +448,26 @@ async fn toggle_active_user(
     State(state): State<AppState>,
     Path(member_id): Path<i64>,
 ) -> HttpResult {
-    query!(
-        "update users set is_active = not is_active where id = $1",
+    #[derive(Template)]
+    #[template(path = "admin/members/active_toggle.html")]
+    struct ActiveToggleTemplate {
+        member_id: i64,
+        is_active: bool,
+    }
+
+    let is_active = query_scalar!(
+        "update users set is_active = not is_active where id = $1 returning is_active",
         member_id
     )
-    .execute(&state.write_pool)
+    .fetch_one(&state.write_pool)
     .await?;
 
-    Ok(hx_refresh())
+    let message = if is_active {
+        "Membrul este activ"
+    } else {
+        "Membrul este inactiv"
+    };
+    hx_notify_with(ActiveToggleTemplate { member_id, is_active }.render()?, message)
 }
 
 async fn delete_member(
@@ -501,6 +518,9 @@ pub async fn update_member_password(
     Form(passwords): Form<ChangePasswordForm>,
 ) -> HttpResult {
     let user = UserDetails::fetch(&state.read_pool, member_id).await?;
+    if passwords.password.chars().count() < 8 {
+        return Err(bail("Parola trebuie să aibă cel puțin 8 caractere"));
+    }
 
     let new_password_hash = generate_hash_from_password(passwords.password);
     query!(

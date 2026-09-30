@@ -1,15 +1,15 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult, OrBailWith};
+use crate::http::error::{HttpError, HttpResult, OrBail, OrBailWith};
 use crate::http::pages::AuthSession;
-use crate::http::response::hx_refresh;
+use crate::http::pages::admin::members::payments_summary::{ViewYear, payments_changed_response};
 use crate::model::payment_context::PaymentContext;
 use crate::model::user::UserDetails;
 use crate::utils::dates::YearMonth;
 use crate::utils::local_date;
 use axum::Form;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use serde::Deserialize;
-use sqlx::query;
+use sqlx::{query, query_scalar};
 use std::fmt;
 use time::{Date, Month};
 use tracing::info;
@@ -20,6 +20,7 @@ pub struct NewPayment {
     payment_date: Date, // From input type="date"
     months: String,     // From checkboxes (format: "M-YYYY")
     notes: Option<String>,
+    view_year: Option<i32>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -161,18 +162,24 @@ pub async fn add_payment(
 
     tx.commit().await?;
 
-    Ok(hx_refresh())
+    let year = form.view_year.unwrap_or(current_year);
+    payments_changed_response(&state.read_pool, member_id, year, "Plata a fost înregistrată").await
 }
 
 pub async fn delete_payment(
     State(state): State<AppState>,
     Path(payment_id): Path<i64>,
+    Query(view): Query<ViewYear>,
 ) -> HttpResult {
-    query!("delete from payments where id = $1", payment_id)
-        .execute(&state.write_pool)
-        .await?;
+    let member_id = query_scalar!(
+        "delete from payments where id = $1 returning user_id",
+        payment_id
+    )
+    .fetch_optional(&state.write_pool)
+    .await?
+    .or_bail("Plata nu există")?;
 
-    Ok(hx_refresh())
+    payments_changed_response(&state.read_pool, member_id, view.year(), "Plata a fost ștearsă").await
 }
 
 #[cfg(test)]

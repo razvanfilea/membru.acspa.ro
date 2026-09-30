@@ -13,7 +13,7 @@
 
         <label class="floating-label">
             <span>Nume</span>
-            <input name="name" type="text" placeholder="Nume" minlength="4" required autocomplete="off"
+            <input name="name" type="text" placeholder="Nume" {% if member_id.is_none() %}minlength="4"{% endif %} required autocomplete="off"
                    value="{{ values.name }}" class="input input-lg input-bordered w-full"/>
         </label>
 

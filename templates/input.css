@@ -42,6 +42,13 @@
         @apply rotate-90;
     }
 
+    /* Success bubbles fade out on their own */
+    @keyframes bubble-fade-out {
+        to { opacity: 0; transform: translateY(0.5rem); }
+    }
+    .bubble-auto-dismiss {
+        animation: bubble-fade-out 0.4s ease-in 4s forwards;
+    }
     @keyframes pop-in-centered {
         0% {
             transform: scale(0.8);
@@ -85,9 +92,14 @@
     .section-body {
         @apply p-4 md:p-6;
     }
-    /* Year selector in a section header */
+    /* Year selector in a section header, on its own full width row on mobile */
     .year-pager {
-        @apply join bg-base-100 border border-base-300 shadow-sm overflow-x-auto max-w-full;
+        @apply join bg-base-100 border border-base-300 shadow-sm overflow-x-auto
+               order-last w-full sm:order-none sm:w-auto max-w-full min-w-0;
+    }
+    /* Previous / current / next selector */
+    .step-pager {
+        @apply join bg-base-100 border border-base-300 shadow-sm shrink-0;
     }
     /* Calendar */
     .calendar-day {
@@ -138,7 +150,7 @@
     }
     .payment-alloc-badge {
         @apply badge badge-sm badge-ghost h-auto py-0.5 border-base-200
-               text-gray-400 font-mono text-[10px] md:text-xs whitespace-nowrap;
+               text-base-content/60 font-mono text-[10px] md:text-xs whitespace-nowrap;
     }
 
     /* Member view: Break cards */

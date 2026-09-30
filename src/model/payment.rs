@@ -67,13 +67,18 @@ pub struct PaymentWithAllocations {
     pub created_by_name: String,
 }
 
+/// Formats an amount in cents as RON, without decimals when they are zero
+pub fn format_amount(cents: i64) -> String {
+    if cents % 100 == 0 {
+        (cents / 100).to_string()
+    } else {
+        format!("{:.02}", cents as f64 / 100.0)
+    }
+}
+
 impl PaymentWithAllocations {
     pub fn display_amount(&self) -> String {
-        if self.amount % 100 == 0 {
-            (self.amount / 100).to_string()
-        } else {
-            format!("{:.02}", self.amount as f64 / 100.0)
-        }
+        format_amount(self.amount)
     }
 
     pub async fn fetch_for_user(pool: &SqlitePool, user_id: i64) -> sqlx::Result<Vec<Self>> {

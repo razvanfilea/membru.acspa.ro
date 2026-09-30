@@ -28,3 +28,9 @@ pub fn error_bubble_response(message: impl AsRef<str>) -> Response {
 pub struct NotificationBubbleResponse<'a> {
     pub message: &'a str,
 }
+
+#[derive(Template)]
+#[template(path = "components/bubble/success.html")]
+pub struct SuccessBubbleTemplate<'a> {
+    pub message: &'a str,
+}

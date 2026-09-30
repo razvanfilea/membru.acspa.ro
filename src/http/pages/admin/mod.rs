@@ -2,13 +2,13 @@ use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::debtors::{DebtorItem, compute_debtors};
+use crate::http::response::hx_notify;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::global_vars::GlobalVars;
 use crate::model::user::User;
 use crate::utils::local_date;
 use askama::Template;
 use axum::extract::{Query, State};
-use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Form, Router};
 use serde::Deserialize;
@@ -86,5 +86,5 @@ async fn apply_settings(
     .execute(&state.write_pool)
     .await?;
 
-    Ok("Setările au fost aplicate".into_response())
+    hx_notify("Setările au fost aplicate")
 }

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "select count(*) as \"total!: i64\", ifnull(sum(is_deleted), 0) as \"deleted!: i64\"\n           from users where role_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "name": "total!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "deleted!: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "f2a19bf7c7db7b15a392fae6fbae0c27a649102715347a172a165bcd76348695"
+}

@@ -1,5 +1,6 @@
 use crate::http::AppState;
 use crate::http::error::HttpResult;
+use crate::http::response::hx_notify_with;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::payment::{PaymentBreak, PaymentWithAllocations};
 use crate::model::user::UserDetails;
@@ -8,7 +9,10 @@ use crate::utils::date_formats::DateFormatExt;
 use crate::utils::{date_formats, local_date};
 use askama::Template;
 use axum::extract::{Path, State};
+use axum::http::{HeaderName, HeaderValue};
+use serde::Deserialize;
 use sqlx::SqlitePool;
+use std::collections::HashSet;
 use time::{Date, Month};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -43,6 +47,40 @@ pub struct StatusGridTemplate {
     pub admin_payments_status_grid: bool,
     /// Payments covering a month of `selected_year`, only listed for admins
     pub year_payments: Vec<PaymentWithAllocations>,
+    /// Paid or paused months, used by the payment modal
+    pub paid_months_json: String,
+    pub oob: bool,
+}
+
+impl StatusGridTemplate {
+    pub async fn fetch(
+        pool: &SqlitePool,
+        member: UserDetails,
+        year: i32,
+        admin_payments_status_grid: bool,
+    ) -> HttpResult<Self> {
+        let payments = PaymentWithAllocations::fetch_for_user(pool, member.id).await?;
+        let breaks = PaymentBreak::fetch_for_user(pool, member.id).await?;
+        let months_status_view = calculate_year_status(year, &member, &payments, &breaks);
+        let total_paid = calculate_total_paid_for_year(&payments, year);
+        let year_payments = if admin_payments_status_grid {
+            payments_for_year(&payments, year)
+        } else {
+            Vec::new()
+        };
+
+        Ok(Self {
+            member,
+            current_year: local_date().year(),
+            selected_year: year,
+            months_status_view,
+            total_paid,
+            admin_payments_status_grid,
+            year_payments,
+            paid_months_json: paid_months_json(&payments, &breaks),
+            oob: false,
+        })
+    }
 }
 
 pub async fn build_status_grid_response(
@@ -51,27 +89,76 @@ pub async fn build_status_grid_response(
     year: i32,
     admin_payments_status_grid: bool,
 ) -> HttpResult {
-    let payments = PaymentWithAllocations::fetch_for_user(pool, member.id).await?;
-    let breaks = PaymentBreak::fetch_for_user(pool, member.id).await?;
-    let current_year = local_date().year();
-    let months_status_view = calculate_year_status(year, &member, &payments, &breaks);
-    let total_paid = calculate_total_paid_for_year(&payments, year);
-    let year_payments = if admin_payments_status_grid {
-        payments_for_year(&payments, year)
-    } else {
-        Vec::new()
+    StatusGridTemplate::fetch(pool, member, year, admin_payments_status_grid)
+        .await?
+        .try_into_response()
+}
+
+#[derive(Template)]
+#[template(path = "admin/members/breaks_section.html")]
+pub struct BreaksSectionTemplate {
+    pub breaks: Vec<PaymentBreak>,
+    pub oob: bool,
+}
+
+/// Year shown by the Cotizații section when a change was made, sent with the request
+#[derive(Deserialize)]
+pub struct ViewYear {
+    view_year: Option<i32>,
+}
+
+impl ViewYear {
+    pub fn year(&self) -> i32 {
+        self.view_year.unwrap_or_else(|| local_date().year())
+    }
+}
+
+/// Re-renders the Cotizații (showing `year`) and breaks sections of the member view after a change
+pub async fn payments_changed_response(
+    pool: &SqlitePool,
+    member_id: i64,
+    year: i32,
+    message: &str,
+) -> HttpResult {
+    let member = UserDetails::fetch(pool, member_id).await?;
+    let mut status_grid = StatusGridTemplate::fetch(pool, member, year, true).await?;
+    status_grid.oob = true;
+    let breaks_section = BreaksSectionTemplate {
+        breaks: PaymentBreak::fetch_for_user(pool, member_id).await?,
+        oob: true,
     };
 
-    StatusGridTemplate {
-        member,
-        current_year,
-        selected_year: year,
-        months_status_view,
-        total_paid,
-        admin_payments_status_grid,
-        year_payments,
+    let mut response = hx_notify_with(status_grid.render()? + &breaks_section.render()?, message)?;
+    let headers = response.headers_mut();
+    headers.insert(
+        const { HeaderName::from_static("hx-reswap") },
+        const { HeaderValue::from_static("none") },
+    );
+    headers.insert(
+        const { HeaderName::from_static("hx-trigger") },
+        const { HeaderValue::from_static("paymentsChanged") },
+    );
+    Ok(response)
+}
+
+/// Paid and paused months as a JSON list of "M-YYYY"
+pub fn paid_months_json(payments: &[PaymentWithAllocations], breaks: &[PaymentBreak]) -> String {
+    let mut months: HashSet<String> = payments
+        .iter()
+        .flat_map(|p| p.allocations.iter())
+        .map(|alloc| format!("{}-{:04}", alloc.month as u8, alloc.year))
+        .collect();
+
+    for br in breaks {
+        let start = YearMonth::from(br.start_date);
+        let end = YearMonth::from(br.end_date);
+
+        for ym in YearMonthIter::new(start, end) {
+            months.insert(format!("{}-{:04}", ym.month as u8, ym.year));
+        }
     }
-    .try_into_response()
+
+    serde_json::to_string(&months).expect("Failed to serialize")
 }
 
 /// Payments with at least one month allocated to `year`, a payment spanning two years is in both
