@@ -26,7 +26,7 @@ pub(super) struct NewPayment {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum PaymentValidationError {
+enum PaymentValidationError {
     InvalidAmount,
     NoValidMonths,
     MonthAlreadyPaid(YearMonth),

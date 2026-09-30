@@ -15,7 +15,7 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--color-base-300, currentColor);
     }
 }
 
@@ -24,6 +24,54 @@
 }
 
 @layer components {
+    /* Animates in every browser: daisyUI's <details> collapse needs interpolate-size for its height,
+       and its checkbox variant jumps halfway because min-height changes discretely */
+    .action-collapse {
+        @apply relative grid rounded-xl bg-base-100 grid-cols-[minmax(0,1fr)];
+        grid-template-rows: auto 0fr;
+        transition: grid-template-rows 0.2s ease-out;
+
+        &:has(> input:checked) {
+            grid-template-rows: auto 1fr;
+        }
+
+        &:has(> input:focus-visible) {
+            @apply outline-2 outline-offset-2 outline-base-content;
+        }
+
+        > input {
+            @apply absolute inset-x-0 top-0 h-14 z-1 cursor-pointer opacity-0 appearance-none;
+        }
+    }
+    .action-collapse-title {
+        @apply flex items-center gap-3 h-14 px-4 font-medium;
+    }
+    .action-collapse-arrow {
+        @apply text-base-content/50;
+        transition: transform 0.2s ease-out;
+    }
+    .action-collapse > input:checked ~ .action-collapse-title .action-collapse-arrow {
+        transform: rotate(180deg);
+    }
+    /* Hidden once closed, so the fields inside can't be reached with the keyboard */
+    .action-collapse-body {
+        @apply min-h-0 overflow-hidden invisible;
+        transition: visibility 0.2s;
+    }
+    .action-collapse > input:checked ~ .action-collapse-body {
+        @apply visible;
+    }
+    .action-collapse-content {
+        @apply px-4 pb-4 pt-1;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .action-collapse,
+        .action-collapse-arrow,
+        .action-collapse-body {
+            transition: none;
+        }
+    }
+
     .btn-main-fab {
         @apply btn btn-md xl:btn-lg btn-primary rounded-2xl shadow-2xl transition-transform hover:scale-105 active:scale-95;
     }

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "components/empty_state.html" as empty_state %}
+{% import "admin/guests/add_guest_form.html" as add_guest %}
 
 {% block page_title %}Invitați{% endblock %}
 
@@ -7,36 +8,10 @@
 
 <main class="page-shell">
     {% block list %}
-    <div id="list" class="surface-card overflow-hidden mb-20">
+    <div id="list" class="surface-card overflow-hidden mb-20"
+         hx-get="/admin/guests/list" hx-trigger="guests-changed from:body" hx-swap="outerHTML">
         {% for guest in guests %}
-        <div id="guest_{{ guest.rowid }}" class="card-row flex flex-row items-center gap-4">
-            <div class="flex flex-col gap-1 min-w-0 grow">
-                <div class="flex flex-row flex-wrap items-center gap-x-3 gap-y-1">
-                    <p class="font-semibold truncate">{{ guest.name }}</p>
-                    {% if !guest.as_guest %}
-                    <span class="badge badge-sm badge-secondary badge-soft">Special</span>
-                    {% endif %}
-                </div>
-                <p class="text-sm">
-                    {{ guest.date.to_readable() }}, ora <b>{{ guest.hour }}</b>
-                </p>
-                <p class="text-xs text-base-content/60">
-                    Creat de {{ guest.created_by }} pe {{ date_formats::as_local(guest.created_at) }}
-                </p>
-            </div>
-
-            {% if guest.is_cancellable() %}
-            {% let selected_date_formatted = guest.date.to_iso() %}
-            <button class="btn-icon-delete"
-                    title="Șterge invitatul"
-                    hx-delete='/reservation?date={{ selected_date_formatted }}&hour={{ guest.hour }}&user_id={{ guest.created_by_id }}&created_for={{ guest.name|urlencode }}'
-                    hx-target="#guest_{{ guest.rowid }}"
-                    hx-swap="outerHTML"
-                    hx-confirm="Ești sigur că vrei să ștergi invitatul '{{ guest.name }}'?">
-                <span class="material-symbols-outlined">delete</span>
-            </button>
-            {% endif %}
-        </div>
+        {% include "admin/guests/guest_row.html" %}
         {% endfor %}
 
         {% if guests.is_empty() %}
@@ -53,49 +28,28 @@
             Adaugă invitat
         </button>
     </div>
-
 </main>
 
-<dialog id="add_modal" class="modal">
-    <form class="modal-box"
-          onsubmit="add_modal.close()"
-          hx-put="/admin/guests"
-          hx-target="#list"
-          hx-swap="outerHTML">
-        <fieldset class="fieldset gap-6" hx-target="#hour_selector" hx-trigger="change">
-            <h3 class="text-lg font-bold mb-4">Adaugă invitat</h3>
+{% let min_date = current_date.to_iso() %}
+<dialog id="add_modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box flex flex-col gap-4">
+        <h3 class="text-lg font-bold">Adaugă invitat</h3>
 
-            <label class="floating-label">
-                <span>Nume</span>
-                <input name="name" type="text" class="input input-lg w-full" minlength="4" required/>
-            </label>
+        {% call add_guest::form("guests_page") %}
+        <label class="floating-label">
+            <span>Data</span>
+            <input name="date" type="date" class="input w-full" required autocomplete="off"
+                   min="{{ min_date }}"
+                   hx-post="/admin/guests/select_hour"
+                   hx-trigger="change"
+                   hx-target="#guests_page_hour"
+                   hx-swap="innerHTML"/>
+        </label>
+        <div id="guests_page_hour" data-reset-empty></div>
+        {% endcall %}
 
-            <label class="floating-label">
-                <span>Data</span>
-                <input name="date" type="date" class="input input-lg w-full" required
-                       autocomplete="off" hx-post="/admin/guests/select_hour"
-                       min='{{ current_date.to_iso() }}'/>
-            </label>
-
-            <div id="hour_selector"></div>
-
-            <label class="label">
-                <input name="special" type="checkbox" class="toggle toggle-primary" autocomplete="off"/>
-                Special
-            </label>
-
-            <div class="modal-action grid grid-cols-2" hx-disinherit="*">
-                <button type="button" class="btn"
-                        onclick="add_modal.close()">
-                    Anulează
-                </button>
-
-                <button class="btn btn-success" type="submit">
-                    Adaugă
-                </button>
-            </div>
-        </fieldset>
-    </form>
+        <button type="button" class="btn btn-ghost" onclick="add_modal.close()">Anulează</button>
+    </div>
 
     <form method="dialog" class="modal-backdrop">
         <button>Închide</button>

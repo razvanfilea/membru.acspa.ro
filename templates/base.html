@@ -84,6 +84,14 @@
         }
     }
 
+    // Also clears what the form loaded: the hour picked for a date and the name suggestions
+    function resetGuestForm(form) {
+        form.reset();
+        form.querySelectorAll('[data-reset-empty], .search-results-container').forEach(el => el.innerHTML = '');
+        form.closest('[popover]')?.hidePopover();
+        form.closest('dialog')?.close();
+    }
+
     htmx.onLoad(function (element) {
         const pagers = [...element.querySelectorAll('.year-pager')];
         if (element.matches('.year-pager')) pagers.push(element);

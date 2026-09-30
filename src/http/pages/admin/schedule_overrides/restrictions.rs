@@ -21,7 +21,7 @@ pub fn router() -> Router<AppState> {
         .route("/", delete(delete_restriction))
 }
 
-pub async fn get_restrictions_for_day(
+pub(super) async fn get_restrictions_for_day(
     pool: &SqlitePool,
     date: Date,
 ) -> Result<Vec<Restriction>, Error> {

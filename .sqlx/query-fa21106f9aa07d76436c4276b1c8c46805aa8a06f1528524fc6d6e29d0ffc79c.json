@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "delete from reservations\n        where user_id = $1 and location = $2 and cancelled = true\n            and (date > $3 or (date = $3 and hour * 60 + ifnull(\n                (select slots_start_minute from alternative_days a where a.date = reservations.date), 0\n            ) > $4))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "fa21106f9aa07d76436c4276b1c8c46805aa8a06f1528524fc6d6e29d0ffc79c"
+}

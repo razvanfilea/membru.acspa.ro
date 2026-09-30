@@ -11,28 +11,24 @@
 {% let title -%}
 {% if is_admin %}Rezervări{% else %}Rezervările tale{% endif %}
 {%- endlet %}
-{% let reservations_url -%}
-{% if is_admin %}/admin/members/{{ member_id }}/reservations/{{ active_year }}
-{%- else %}/profile/reservations/{{ active_year }}?show_cancelled={{ cancelled }}{% endif %}
-{%- endlet %}
+{% macro year_url(is_admin, member_id, year, cancelled) -%}
+{% if is_admin %}/admin/members/{{ member_id }}/reservations/{{ year }}
+{%- else %}/profile/reservations/{{ year }}?show_cancelled={{ cancelled }}{% endif %}
+{%- endmacro %}
 
 <section id="reservations-container" class="surface-card">
     {% call section_header::header("calendar_month", "info", title, "Rezervările pe anul selectat") %}
     <div id="reservations-years" class="year-pager">
         {% for year in start_year..=last_year %}
         <button class="join-item btn btn-sm {% if year == active_year %}btn-active btn-neutral{% else %}btn-ghost{% endif %}"
-                {% if is_admin %}
-                hx-get="/admin/members/{{ member_id }}/reservations/{{ year }}"
-                {% else %}
-                hx-get="/profile/reservations/{{ year }}?show_cancelled={{ cancelled }}"
-                {% endif %}
+                hx-get="{{ year_url(is_admin, member_id, year, cancelled) }}"
                 hx-target="#reservations-container"
                 hx-swap="outerHTML">
             {{ year }}
         </button>
         {% endfor %}
     </div>
-    <button hx-get="{{ reservations_url }}" hx-target="#reservations-container" hx-swap="outerHTML"
+    <button hx-get="{{ year_url(is_admin, member_id, active_year, cancelled) }}" hx-target="#reservations-container" hx-swap="outerHTML"
             class="btn btn-sm btn-circle btn-ghost" title="Reîncarcă">
         <span class="material-symbols-outlined">refresh</span>
     </button>

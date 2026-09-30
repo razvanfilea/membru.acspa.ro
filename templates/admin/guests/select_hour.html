@@ -1,8 +1,12 @@
+{% if hours.is_empty() %}
+<p class="text-sm text-base-content/60">Nu mai sunt ore disponibile în această zi</p>
+{% else %}
 <label class="floating-label">
     <span>Ora</span>
-    <select name="hour" class="select select-lg w-full">
+    <select name="hour" class="select w-full">
         {% for hour in hours %}
         <option {% if loop.first %}selected{% endif %}>{{ hour }}</option>
         {% endfor %}
     </select>
 </label>
+{% endif %}

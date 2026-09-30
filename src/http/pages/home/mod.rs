@@ -236,8 +236,12 @@ async fn cancel_reservation(
         return Ok(StatusCode::UNAUTHORIZED.into_response());
     }
 
-    if !reservation::is_cancellable_at(date, query.hour, local_time()) {
-        return Err(bail("Rezervările începute sau trecute nu mai pot fi anulate"));
+    let structure = DayStructure::fetch_or_default(&state.read_pool, date, &state.location).await?;
+    if !reservation::is_cancellable_at(date, query.hour, structure.slots_start_minute, local_time())
+    {
+        return Err(bail(
+            "Rezervările începute sau trecute nu mai pot fi anulate",
+        ));
     }
 
     let tx = state.write_pool.begin().await?;

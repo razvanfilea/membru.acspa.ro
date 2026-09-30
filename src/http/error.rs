@@ -50,10 +50,15 @@ impl<T, E> OrBailWith<T, E> for Result<T, E> {
 impl IntoResponse for HttpError {
     fn into_response(self) -> Response {
         error!("{self}");
+        // The details are in the log, users get a Romanian message
         let message = match self {
+            HttpError::Message(message) => message,
             // A missing id, e.g. an old link to a deleted member
             HttpError::Database(sqlx::Error::RowNotFound) => "Elementul căutat nu există".to_string(),
-            error => error.to_string(),
+            HttpError::Unauthorized => "Nu ești autentificat".to_string(),
+            HttpError::Response(_) | HttpError::Database(_) | HttpError::Template(_) => {
+                "A apărut o eroare pe server, încearcă din nou".to_string()
+            }
         };
         error_bubble_response(message)
     }

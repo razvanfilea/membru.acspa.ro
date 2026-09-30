@@ -50,13 +50,44 @@ mod validation {
     #[test]
     fn cancellable_until_the_slot_starts() {
         let now = datetime!(2024-07-11 17:59:00 +00:00:00);
-        assert!(is_cancellable_at(date!(2024 - 07 - 11), 18, now));
-        assert!(is_cancellable_at(date!(2024 - 07 - 12), 8, now));
-        assert!(!is_cancellable_at(date!(2024 - 07 - 11), 17, now));
+        assert!(is_cancellable_at(date!(2024 - 07 - 11), 18, None, now));
+        assert!(is_cancellable_at(date!(2024 - 07 - 12), 8, None, now));
+        assert!(!is_cancellable_at(date!(2024 - 07 - 11), 17, None, now));
 
         let now = datetime!(2024-07-11 18:00:00 +00:00:00);
-        assert!(!is_cancellable_at(date!(2024 - 07 - 11), 18, now));
-        assert!(!is_cancellable_at(date!(2024 - 07 - 10), 20, now));
+        assert!(!is_cancellable_at(date!(2024 - 07 - 11), 18, None, now));
+        assert!(!is_cancellable_at(date!(2024 - 07 - 10), 20, None, now));
+    }
+
+    #[test]
+    fn cancellable_until_a_slot_with_minutes_starts() {
+        let date = date!(2024 - 07 - 11);
+        let minute = Some(30);
+
+        assert!(is_cancellable_at(
+            date,
+            18,
+            minute,
+            datetime!(2024-07-11 18:00:00 +00:00:00)
+        ));
+        assert!(is_cancellable_at(
+            date,
+            18,
+            minute,
+            datetime!(2024-07-11 18:29:00 +00:00:00)
+        ));
+        assert!(!is_cancellable_at(
+            date,
+            18,
+            minute,
+            datetime!(2024-07-11 18:30:00 +00:00:00)
+        ));
+        assert!(!is_cancellable_at(
+            date,
+            18,
+            minute,
+            datetime!(2024-07-11 19:00:00 +00:00:00)
+        ));
     }
 
     #[sqlx::test]
@@ -579,6 +610,54 @@ mod cancellation {
         .fetch_one(&pool)
         .await?;
         assert!(user_2_in_waiting, "Guest should still be waiting");
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn remove_upcoming_uses_the_slot_start_minute(pool: SqlitePool) -> sqlx::Result<()> {
+        let (location, user, _, admin) = setup(&pool, 3, 0).await?;
+        let date = date!(2024 - 07 - 11);
+
+        query!(
+            "insert into alternative_days (date, type, slots_start_hour, slots_start_minute, slot_duration, slots_per_day)
+             values ('2024-07-11', 'turneu', 18, 30, 3, 1)"
+        )
+        .execute(&pool)
+        .await?;
+
+        create_reservation(
+            &pool,
+            &location,
+            datetime!(2024-07-11 10:00:00 +00:00:00),
+            &user,
+            date,
+            18,
+            None,
+        )
+        .await
+        .unwrap();
+
+        // The slot has started at 18:30, so the reservation is kept
+        let mut tx = pool.begin().await?;
+        let started = datetime!(2024-07-11 18:30:00 +00:00:00);
+        assert_eq!(
+            remove_upcoming_reservations(&mut tx, &location, started, user.id, admin.id).await?,
+            0
+        );
+
+        // At 18:10 the hour has begun but the slot hasn't
+        let upcoming = datetime!(2024-07-11 18:10:00 +00:00:00);
+        assert_eq!(
+            remove_upcoming_reservations(&mut tx, &location, upcoming, user.id, admin.id).await?,
+            1
+        );
+        tx.commit().await?;
+
+        let remaining = query_scalar!("select count(*) from reservations")
+            .fetch_one(&pool)
+            .await?;
+        assert_eq!(remaining, 0);
 
         Ok(())
     }

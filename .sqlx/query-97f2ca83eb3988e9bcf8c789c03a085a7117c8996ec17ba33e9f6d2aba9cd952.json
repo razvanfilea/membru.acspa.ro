@@ -1,0 +1,68 @@
+{
+  "db_name": "SQLite",
+  "query": "select r._rowid_ as 'rowid!', r.created_for 'name!', r.date, r.hour, a.slots_start_minute as 'start_minute?', r.as_guest, r.in_waiting, r.created_at, u.name as created_by\n            from reservations r\n            inner join users u on r.user_id = u.id\n            left join alternative_days a on a.date = r.date\n            where r.created_for is not null and ($1 is null or r.date = $1)\n            order by r.date desc, r.hour, r.created_at desc",
+  "describe": {
+    "columns": [
+      {
+        "name": "rowid!",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name!",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "date",
+        "ordinal": 2,
+        "type_info": "Date"
+      },
+      {
+        "name": "hour",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "start_minute?",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "as_guest",
+        "ordinal": 5,
+        "type_info": "Bool"
+      },
+      {
+        "name": "in_waiting",
+        "ordinal": 6,
+        "type_info": "Bool"
+      },
+      {
+        "name": "created_at",
+        "ordinal": 7,
+        "type_info": "Datetime"
+      },
+      {
+        "name": "created_by",
+        "ordinal": 8,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "97f2ca83eb3988e9bcf8c789c03a085a7117c8996ec17ba33e9f6d2aba9cd952"
+}

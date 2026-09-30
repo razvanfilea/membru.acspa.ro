@@ -4,10 +4,17 @@ use sqlx::{SqliteConnection, SqliteTransaction, query, query_scalar};
 use time::{Date, OffsetDateTime};
 use tracing::info;
 
-/// A reservation can be cancelled until its slot starts
-pub fn is_cancellable_at(date: Date, hour: u8, now: OffsetDateTime) -> bool {
+/// A reservation can be cancelled until its slot starts, `start_minute` is the day's `slots_start_minute`
+pub fn is_cancellable_at(
+    date: Date,
+    hour: u8,
+    start_minute: Option<i64>,
+    now: OffsetDateTime,
+) -> bool {
     let today = now.date();
-    date > today || (date == today && hour > now.hour())
+    let slot_start = i64::from(hour) * 60 + start_minute.unwrap_or(0);
+    let current = i64::from(now.hour()) * 60 + i64::from(now.minute());
+    date > today || (date == today && slot_start > current)
 }
 
 pub async fn cancel_reservation(
@@ -121,17 +128,19 @@ pub async fn remove_upcoming_reservations(
     removed_by: i64,
 ) -> sqlx::Result<usize> {
     let today = now.date();
-    let current_hour = now.hour();
+    let current_minutes = i64::from(now.hour()) * 60 + i64::from(now.minute());
 
-    // Same boundary as `is_cancellable_at`: a slot is upcoming until its hour starts
+    // Same boundary as `is_cancellable_at`: a slot is upcoming until it starts
     let upcoming = query!(
         r#"select date as "date: Date", hour as "hour: u8", created_for from reservations
         where user_id = $1 and location = $2 and cancelled = false
-            and (date > $3 or (date = $3 and hour > $4))"#,
+            and (date > $3 or (date = $3 and hour * 60 + ifnull(
+                (select slots_start_minute from alternative_days a where a.date = reservations.date), 0
+            ) > $4))"#,
         user_id,
         location.id,
         today,
-        current_hour
+        current_minutes
     )
     .fetch_all(&mut *tx)
     .await?;
@@ -153,11 +162,13 @@ pub async fn remove_upcoming_reservations(
     query!(
         "delete from reservations
         where user_id = $1 and location = $2 and cancelled = true
-            and (date > $3 or (date = $3 and hour > $4))",
+            and (date > $3 or (date = $3 and hour * 60 + ifnull(
+                (select slots_start_minute from alternative_days a where a.date = reservations.date), 0
+            ) > $4))",
         user_id,
         location.id,
         today,
-        current_hour
+        current_minutes
     )
     .execute(&mut *tx)
     .await?;

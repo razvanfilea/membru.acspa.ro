@@ -1,8 +1,9 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult, bail};
+use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
 use crate::http::response::hx_redirect;
 use crate::http::template_into_response::TemplateIntoResponse;
+use crate::model::payment::format_amount;
 use crate::model::role::UserRole;
 use crate::model::user::User;
 use crate::utils::CssColor;
@@ -38,6 +39,10 @@ async fn roles_page(State(state): State<AppState>, auth_session: AuthSession) ->
     }
 
     impl UserRoleWithCount {
+        fn monthly_fee_amount(&self) -> Option<String> {
+            self.monthly_fee.map(format_amount)
+        }
+
         fn css_color(&self) -> CssColor {
             CssColor::parse_or_none(self.color.as_deref())
         }
@@ -85,11 +90,45 @@ async fn new_role_page(auth_session: AuthSession) -> HttpResult {
     .try_into_response()
 }
 
-fn parse_monthly_fee(fee: Option<String>) -> Option<i64> {
-    fee.filter(|s| !s.is_empty())
-        .and_then(|s| s.parse::<f64>().ok())
-        .map(|f| (f * 100.0).round() as i64)
-        .filter(|c| *c != 0)
+struct ValidatedRole {
+    name: String,
+    reservations: i64,
+    as_guest: i64,
+    color: CssColor,
+    /// In cents, `None` when the role has no fee
+    monthly_fee: Option<i64>,
+}
+
+impl NewRole {
+    fn validate(self) -> HttpResult<ValidatedRole> {
+        let name = self.name.trim().to_string();
+        if name.is_empty() {
+            return Err(bail("Numele rolului este obligatoriu"));
+        }
+        if self.reservations < 0 || self.as_guest < 0 {
+            return Err(bail("Numărul de rezervări nu poate fi negativ"));
+        }
+
+        let monthly_fee = match self.monthly_fee.as_deref().map(str::trim) {
+            None | Some("") => None,
+            Some(fee) => {
+                let fee = fee
+                    .parse::<f64>()
+                    .ok()
+                    .filter(|fee| fee.is_finite() && *fee >= 0.0)
+                    .or_bail("Cotizația lunară este invalidă")?;
+                Some((fee * 100.0).round() as i64).filter(|cents| *cents != 0)
+            }
+        };
+
+        Ok(ValidatedRole {
+            name,
+            reservations: self.reservations,
+            as_guest: self.as_guest,
+            color: CssColor::parse_or_none(Some(&self.color)),
+            monthly_fee,
+        })
+    }
 }
 
 fn role_saved(result: sqlx::Result<SqliteQueryResult>) -> HttpResult<()> {
@@ -102,9 +141,8 @@ fn role_saved(result: sqlx::Result<SqliteQueryResult>) -> HttpResult<()> {
 }
 
 async fn create_new_role(State(state): State<AppState>, Form(role): Form<NewRole>) -> HttpResult {
-    let color = CssColor::parse_or_none(Some(&role.color));
-    let color = color.as_ref();
-    let fee_cents = parse_monthly_fee(role.monthly_fee);
+    let role = role.validate()?;
+    let color = role.color.as_ref();
 
     role_saved(
         query!(
@@ -113,7 +151,7 @@ async fn create_new_role(State(state): State<AppState>, Form(role): Form<NewRole
             role.reservations,
             role.as_guest,
             color,
-            fee_cents
+            role.monthly_fee
         )
         .execute(&state.write_pool)
         .await,
@@ -147,9 +185,8 @@ async fn update_role(
     Path(role_id): Path<i64>,
     Form(role): Form<NewRole>,
 ) -> HttpResult {
-    let color = CssColor::parse_or_none(Some(&role.color));
-    let color = color.as_ref();
-    let fee_cents = parse_monthly_fee(role.monthly_fee);
+    let role = role.validate()?;
+    let color = role.color.as_ref();
 
     role_saved(
         query!(
@@ -159,7 +196,7 @@ async fn update_role(
             role.reservations,
             role.as_guest,
             color,
-            fee_cents
+            role.monthly_fee
         )
         .execute(&state.write_pool)
         .await,

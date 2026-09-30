@@ -9,6 +9,7 @@ use time::{Date, Month, OffsetDateTime};
 pub struct UserReservation {
     pub date: Date,
     pub hour: i64,
+    pub start_minute: Option<i64>,
 
     pub as_guest: bool,
 
@@ -20,7 +21,8 @@ pub struct UserReservation {
 
 impl UserReservation {
     pub fn is_cancellable(&self) -> bool {
-        !self.cancelled && is_cancellable_at(self.date, self.hour as u8, local_time())
+        !self.cancelled
+            && is_cancellable_at(self.date, self.hour as u8, self.start_minute, local_time())
     }
 
     pub async fn delete_on_day(
@@ -55,7 +57,8 @@ impl GroupedUserReservations {
         let year_str = year.to_string();
         let reservations = query_as!(
             UserReservation,
-            "select r.date, r.hour, r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r
+            "select r.date, r.hour, a.slots_start_minute as 'start_minute?', r.as_guest, r.cancelled, r.in_waiting, r.created_at from reservations as r
+             left join alternative_days a on a.date = r.date
              where user_id = $1 and cancelled = $2 and created_for is null and strftime('%Y', r.date) = $3",
             user_id,
             cancelled,

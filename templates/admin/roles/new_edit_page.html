@@ -44,7 +44,7 @@
             <span>Cotizație lunară (RON)</span>
             <input name="monthly_fee" type="number" step="0.01" min="0"
                    class="input input-lg w-full" autocomplete="off"
-                   {% if let Some(val)=current %}{% if let Some(fee)=val.monthly_fee %}value="{{ fee / 100 }}"{% endif %}{% endif %}/>
+                   {% if let Some(val)=current %}{% if let Some(fee) = val.monthly_fee_amount() %}value="{{ fee }}"{% endif %}{% endif %}/>
         </label>
 
         {% if let Some(val) = current %}

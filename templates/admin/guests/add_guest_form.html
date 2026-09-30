@@ -1,0 +1,28 @@
+{# The caller block holds the date and hour fields #}
+{% macro form(id) %}
+<form class="flex flex-col gap-4"
+      hx-put="/admin/guests"
+      hx-swap="none"
+      hx-on:guests-changed="resetGuestForm(this)">
+    {{ caller() }}
+
+    <label class="floating-label relative">
+        <span>Nume invitat</span>
+        <input name="name" type="text" class="input w-full" required minlength="3"
+               placeholder="Nume invitat" autocomplete="off"
+               hx-get="/admin/members/search_names"
+               hx-params="name"
+               hx-trigger="input changed delay:300ms"
+               hx-target="#{{ id }}_names"
+               hx-swap="innerHTML"/>
+        <div id="{{ id }}_names" class="search-results-container"></div>
+    </label>
+
+    <label class="label cursor-pointer justify-start gap-3">
+        <input name="special" type="checkbox" class="toggle toggle-primary" autocomplete="off"/>
+        Special
+    </label>
+
+    <button type="submit" class="btn btn-success">Adaugă invitat</button>
+</form>
+{% endmacro %}

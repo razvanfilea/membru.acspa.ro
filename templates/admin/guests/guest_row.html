@@ -1,0 +1,30 @@
+<div class="card-row flex flex-row items-center gap-4">
+    <div class="flex flex-col gap-1 min-w-0 grow">
+        <div class="flex flex-row flex-wrap items-center gap-x-3 gap-y-1">
+            <p class="font-semibold truncate">{{ guest.name }}</p>
+            {% if !guest.as_guest %}
+            <span class="badge badge-sm badge-secondary badge-soft">Special</span>
+            {% endif %}
+            {% if guest.in_waiting %}
+            <span class="badge badge-sm badge-warning badge-soft">În așteptare</span>
+            {% endif %}
+        </div>
+        <p class="text-sm">
+            {{ guest.date.to_readable() }}, ora <b>{{ guest.hour }}</b>
+        </p>
+        <p class="text-xs text-base-content/60">
+            Creat de {{ guest.created_by }} pe {{ date_formats::as_local(guest.created_at) }}
+        </p>
+    </div>
+
+    {% if guest.is_cancellable() %}
+    <button class="btn-icon-delete"
+            title="Șterge invitatul"
+            aria-label="Șterge invitatul"
+            hx-delete="/admin/guests/{{ guest.rowid }}?name={{ guest.name|urlencode }}"
+            hx-swap="none"
+            hx-confirm="Ești sigur că vrei să ștergi invitatul '{{ guest.name }}'?">
+        <span class="material-symbols-outlined">delete</span>
+    </button>
+    {% endif %}
+</div>
