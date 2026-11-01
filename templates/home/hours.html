@@ -36,7 +36,7 @@
 
 {% endmacro %}
 
-<div id="hours" class="flex flex-col gap-4">
+<div id="hours" class="flex flex-col gap-2 sm:gap-4">
     {% if reservation_hours.description.is_some() || reservation_hours.capacity.is_some() %}
     <h4 class="text-xl mb-2">
         {% if let Some(description) = reservation_hours.description %}
@@ -48,7 +48,7 @@
     </h4>
     {% endif %}
     {% for slot in reservation_hours.hours %}
-    <div hx-vals='{"hour": {{ slot.start_hour }} }' class="bg-base-200/50 rounded-xl p-4 flex flex-col gap-3">
+    <div hx-vals='{"hour": {{ slot.start_hour }} }' class="bg-base-100 rounded-xl p-3 sm:p-4 flex flex-col gap-2 sm:gap-3">
         {% let minute = format!(":{:02}", slot.minute.unwrap_or_default()) %}
         <h5 class="font-medium">Ora {{ slot.start_hour }}{{ minute }} - {{ slot.end_hour }}{{ minute }}</h5>
 

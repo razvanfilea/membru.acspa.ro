@@ -1,12 +1,12 @@
 use crate::http::AppState;
 use crate::http::error::{HttpError, HttpResult};
 use crate::http::pages::AuthSession;
-use crate::http::pages::home::DAYS_AHEAD_ALLOWED;
+use crate::http::pages::admin::members::debtors::check_user_has_paid;
+use crate::http::pages::home::panels::{CalendarTemplate, DayPanelTemplate, clamp_date};
 use crate::http::pages::home::reservation_hours::ReservationHours;
 use crate::http::pages::notification_template::NotificationBubbleResponse;
 use crate::model::user::User;
 use crate::utils::date_formats::{DateFormatExt, IsoDate};
-use crate::utils::dates::DateRangeIter;
 use crate::utils::{CssColor, local_date};
 use askama::Template;
 use axum::extract::ws::{Message, WebSocket};
@@ -31,6 +31,9 @@ pub async fn handle_ws(
 #[derive(Deserialize)]
 struct WsMessage {
     selected_date: IsoDate,
+    /// Sent by the browser after the socket (re)connects, to bring the page back in sync
+    #[serde(default)]
+    resync: bool,
     #[serde(rename = "HEADERS")]
     _headers: IgnoredAny,
 }
@@ -53,17 +56,6 @@ impl WsMessage {
             _ => None,
         }
     }
-}
-
-#[derive(Template)]
-#[template(path = "home/content.html")]
-struct HomeContentTemplate<'a> {
-    current_date: Date,
-    selected_date: Date,
-    days: DateRangeIter,
-    reservation_hours: ReservationHours,
-    user: &'a User,
-    has_paid: bool,
 }
 
 #[derive(Template)]
@@ -99,7 +91,7 @@ impl<'a> HoursTemplate<'a> {
     }
 }
 
-async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
+async fn handle_socket(mut socket: WebSocket, state: AppState, mut user: User) {
     let mut selected_date = local_date();
     let mut reservations_changed = state.reservation_notifier.subscribe();
 
@@ -137,11 +129,13 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
         }
     }
 
+    // The page only connects once the user has paid, and shows the hours to active users
+    let mut showing_hours = user.is_active;
+
     loop {
         let reservations_task = reservations_changed.changed();
         let recv_task = socket.recv();
 
-        let current_date = local_date();
         let response = select! {
             result = reservations_task => {
                 if let Err(e) = result {
@@ -151,37 +145,68 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
 
                 reservations_changed.borrow_and_update();
 
-                let Some(response) = HoursTemplate::create_response(&state, selected_date, &user, true).await else {
+                let today = local_date();
+                let clamped = clamp_date(selected_date, today);
+                let Some((fresh_user, has_paid)) = refresh_user(&state, &user).await else {
                     continue;
                 };
-                response
+                user = fresh_user;
+
+                // The calendar is replaced too, its counts and the week window may have changed.
+                // The whole panel is only replaced when something other than the hours changed,
+                // so a confirmation prompt that is open stays
+                let can_reserve = user.is_active && has_paid;
+                let Ok(calendar) = CalendarTemplate::render(&state, today, clamped).await else {
+                    error!("Database error fetching the calendar");
+                    continue;
+                };
+                let panel = if clamped != selected_date || can_reserve != showing_hours {
+                    DayPanelTemplate::render(&state, clamped, &user, has_paid).await
+                } else if can_reserve {
+                    HoursTemplate::create_response(&state, clamped, &user, true).await
+                } else {
+                    Some(String::new())
+                };
+                let Some(panel) = panel else {
+                    continue;
+                };
+
+                selected_date = clamped;
+                showing_hours = can_reserve;
+                calendar + &panel
             }
             message = recv_task => {
                 let Some(ws_message) = WsMessage::parse(message) else {
                     return;
                 };
 
-                let parsed_date = *ws_message.selected_date;
-                selected_date = if parsed_date >= current_date && parsed_date <= current_date + DAYS_AHEAD_ALLOWED {
-                    parsed_date
-                } else {
-                    current_date
-                };
+                let today = local_date();
+                let requested = *ws_message.selected_date;
+                selected_date = clamp_date(requested, today);
 
-                let Ok(reservation_hours) = ReservationHours::fetch(&state, selected_date).await else {
-                    error!("Database error fetching reservation hours");
+                let Some((fresh_user, has_paid)) = refresh_user(&state, &user).await else {
                     continue;
                 };
+                user = fresh_user;
 
-                HomeContentTemplate {
-                    current_date,
-                    selected_date,
-                    days: DateRangeIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
-                    reservation_hours,
-                    user: &user,
-                    has_paid: true,
+                let Some(panel) = DayPanelTemplate::render(&state, selected_date, &user, has_paid).await else {
+                    continue;
+                };
+                showing_hours = user.is_active && has_paid;
+
+                // The clicked day is highlighted by the browser, so the calendar is only needed to
+                // put back an invalid date, or after a reconnect when it may have missed changes
+                if selected_date == requested && !ws_message.resync {
+                    panel
+                } else {
+                    match CalendarTemplate::render(&state, today, selected_date).await {
+                        Ok(calendar) => calendar + &panel,
+                        Err(e) => {
+                            error!("Database error fetching the calendar: {e}");
+                            panel
+                        }
+                    }
                 }
-                .to_string()
             }
         };
 
@@ -189,4 +214,18 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, user: User) {
             return;
         }
     }
+}
+
+/// Reads the account again, so a deactivation or a missed payment applies without reconnecting
+async fn refresh_user(state: &AppState, user: &User) -> Option<(User, bool)> {
+    let user = User::fetch_by_email(&state.read_pool, &user.email)
+        .await
+        .inspect_err(|e| error!("Database error fetching user {}: {e}", user.id))
+        .ok()??;
+    let has_paid = check_user_has_paid(&state.read_pool, &user)
+        .await
+        .inspect_err(|e| error!("Database error checking payments of user {}: {e}", user.id))
+        .ok()?;
+
+    Some((user, has_paid))
 }

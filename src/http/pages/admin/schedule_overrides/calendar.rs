@@ -43,14 +43,14 @@ async fn calendar_page_redirect() -> impl IntoResponse {
 }
 
 #[derive(Default, Clone, Copy)]
-struct DayEvents {
-    has_holiday: bool,
-    has_tournament: bool,
-    has_restriction: bool,
+pub(crate) struct DayEvents {
+    pub has_holiday: bool,
+    pub has_tournament: bool,
+    pub has_restriction: bool,
     /// Confirmed reservations, without the waiting list
-    reservations: i64,
+    pub reservations: i64,
     /// Confirmed guest reservations, both guest spots and named guests
-    guests: i64,
+    pub guests: i64,
 }
 
 struct DayDetails {
@@ -221,7 +221,7 @@ struct DayDetailsTemplate {
     update_cell: bool,
 }
 
-async fn get_day_markers(
+pub(crate) async fn get_day_markers(
     state: &AppState,
     from: Date,
     to: Date,

@@ -7,7 +7,7 @@ use sqlx::{SqliteConnection, SqliteExecutor, SqlitePool, query, query_as, query_
 use time::{Date, OffsetDateTime};
 use tracing::info;
 
-mod calendar;
+pub(crate) mod calendar;
 mod holidays;
 mod restrictions;
 mod tournaments;

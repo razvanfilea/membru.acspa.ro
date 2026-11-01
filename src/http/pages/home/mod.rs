@@ -1,8 +1,8 @@
 use crate::http::AppState;
-use crate::http::error::{HttpError, HttpResult, bail};
+use crate::http::error::{HttpError, HttpResult, OrBail, bail};
 use crate::http::pages::AuthSession;
 use crate::http::pages::admin::members::debtors::check_user_has_paid;
-use crate::http::pages::home::reservation_hours::ReservationHours;
+use crate::http::pages::home::panels::{CalendarTemplate, DayPanelTemplate};
 use crate::http::pages::home::socket::handle_ws;
 use crate::http::template_into_response::TemplateIntoResponse;
 use crate::model::day_structure::DayStructure;
@@ -13,7 +13,6 @@ use crate::reservation::{
     ReservationError, ReservationSuccess, create_reservation, is_reservation_possible,
 };
 use crate::utils::date_formats::{DateFormatExt, IsoDate};
-use crate::utils::dates::DateRangeIter;
 use crate::utils::{CssColor, get_reservation_result_color, local_date, local_time};
 use askama::Template;
 use axum::extract::{Query, State};
@@ -26,6 +25,7 @@ use sqlx::query;
 use time::Date;
 use tracing::{error, info};
 
+mod panels;
 pub mod reservation_hours;
 pub mod socket;
 
@@ -51,11 +51,9 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
     #[derive(Template)]
     #[template(path = "home/home_page.html")]
     struct HomeTemplate {
-        current_date: Date,
-        selected_date: Date,
-        days: DateRangeIter,
         user: User,
-        reservation_hours: ReservationHours,
+        calendar: String,
+        day_panel: String,
         global_vars: GlobalVars,
         reservation_color_code: Vec<ColorCode>,
         has_paid: bool,
@@ -74,16 +72,17 @@ async fn index(State(state): State<AppState>, auth_session: AuthSession) -> Http
     .await
     .unwrap_or_default();
 
-    let reservation_hours = ReservationHours::fetch(&state, current_date).await?;
     let auth_user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
     let has_paid = check_user_has_paid(&state.read_pool, &auth_user).await?;
+    let calendar = CalendarTemplate::render(&state, current_date, current_date).await?;
+    let day_panel = DayPanelTemplate::render(&state, current_date, &auth_user, has_paid)
+        .await
+        .or_bail("Orele nu au putut fi încărcate")?;
 
     HomeTemplate {
-        current_date,
-        selected_date: current_date,
-        days: DateRangeIter::weeks_in_range(current_date, current_date + DAYS_AHEAD_ALLOWED),
         user: auth_user,
-        reservation_hours,
+        calendar,
+        day_panel,
         global_vars: GlobalVars::fetch(&state.read_pool).await?,
         reservation_color_code,
         has_paid,

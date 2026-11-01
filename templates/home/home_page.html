@@ -6,19 +6,23 @@
 
 {% block content %}
 <div class="flex flex-col" style="min-height: calc(100vh - 72px)">
-    <div class="p-4 md:p-8 grow" {% if has_paid %} hx-ext="ws" ws-connect="/ws" {% endif %}>
-        <div class="flex flex-row w-full items-center justify-end gap-2 mb-2 md:mb-6 flex-wrap md:flex-nowrap">
+    <div class="page-shell max-w-7xl grow" {% if has_paid %} hx-ext="ws" ws-connect="/ws" {% endif %}>
+        {% if !global_vars.homepage_message.is_empty() || user.is_active %}
+        <div class="flex flex-wrap items-center gap-2 -mb-2 md:mb-0">
             {% if !global_vars.homepage_message.is_empty() %}
-            <p class="bg-cyan-600 text-white text-sm mx-2 p-3 rounded-md grow">{{ global_vars.homepage_message }}</p>
+            <p class="alert alert-info text-sm grow">{{ global_vars.homepage_message }}</p>
             {% endif %}
 
             {% if user.is_active %}
-            <p class="text-nowrap text-lg">Cod intrare: <b>{{ global_vars.entrance_code }}</b></p>
+            <p class="bg-base-200 rounded-full px-3 py-1 text-sm text-nowrap ml-auto">Cod intrare: <b class="font-mono">{{ global_vars.entrance_code }}</b></p>
             {% endif %}
         </div>
+        {% endif %}
 
-        {% include "content.html" %}
-
+        <div id="main" class="flex flex-col xl:flex-row gap-4 md:gap-6">
+            {{ calendar|safe }}
+            {{ day_panel|safe }}
+        </div>
     </div>
 
     <footer class="w-full bg-base-200 p-4 flex flex-row items-center justify-between">
@@ -79,6 +83,25 @@
         <button>Închide</button>
     </form>
 </dialog>
+
+<script>
+    // Highlight right away, the server then sends the day's hours
+    function selectHomeDay(cell) {
+        document.querySelectorAll('#home_calendar .calendar-day[aria-pressed="true"]')
+            .forEach(other => other.setAttribute('aria-pressed', 'false'));
+        cell.setAttribute('aria-pressed', 'true');
+    }
+
+    // Changes sent while the socket was down are lost, so after every (re)connect tell the server
+    // which day is shown and get the calendar and the hours again
+    document.body.addEventListener('htmx:wsOpen', (e) => {
+        const selected = document.querySelector('#home_calendar .calendar-day[aria-pressed="true"]');
+        if (!selected) return;
+
+        const { selected_date } = JSON.parse(selected.getAttribute('hx-vals'));
+        e.detail.socketWrapper.send(JSON.stringify({ selected_date, resync: true, HEADERS: {} }), e.target);
+    });
+</script>
 {% endblock %}
 
 {% block nav_menu %}

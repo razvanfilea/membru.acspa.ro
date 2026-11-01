@@ -20,7 +20,7 @@ mod guests;
 pub mod members;
 mod reservation_history;
 mod roles;
-mod schedule_overrides;
+pub(crate) mod schedule_overrides;
 
 trait CalendarUrl {
     fn calendar_url(&self) -> String;

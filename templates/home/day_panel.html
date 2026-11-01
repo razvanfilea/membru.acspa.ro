@@ -1,0 +1,16 @@
+<section id="day_panel" class="surface-card p-2 sm:p-4 md:p-6 w-full xl:w-120 shrink-0 h-fit flex flex-col gap-2 sm:gap-4"
+         hx-vals='{"selected_date": "{{ selected_date.to_iso() }}"}'>
+    <h2 class="text-lg md:text-2xl font-bold px-1 sm:px-0">
+        {{ date_formats::weekday_as_str(selected_date.weekday()) }}
+        <span class="font-normal text-base-content/60">{{ selected_date.to_readable() }}</span>
+    </h2>
+
+    {% if let Some(hours) = hours_html %}
+    {{ hours|safe }}
+    <div id="confirmation"></div>
+    {% else if has_paid %}
+    <p class="text-error text-center py-4 text-xl">Contul tău este inactiv, contactează un Fondator!</p>
+    {% else %}
+    <p class="text-error text-center py-4 text-xl">Ultimele 3 luni nu au fost plătite, verifică plata cotizației de membru, apoi ia legătura cu un membru fondator!</p>
+    {% endif %}
+</section>
