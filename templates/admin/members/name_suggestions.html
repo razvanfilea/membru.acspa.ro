@@ -1,9 +1,5 @@
-{% if !names.is_empty() %}
-<div class="absolute z-[60] bg-base-100 shadow-2xl rounded-xl w-full mt-1 overflow-hidden">
-    {% for name in names %}
-    <div class="px-4 py-2 hover:bg-primary hover:text-primary-content cursor-pointer"
-         data-name="{{ name }}"
-         onclick="this.closest('.relative').querySelector('input').value = this.dataset.name; this.closest('.search-results-container').innerHTML = '';">{{ name }}</div>
-    {% endfor %}
-</div>
-{% endif %}
+{% for name in names %}
+<button type="button" class="search-result"
+        data-name="{{ name }}"
+        onclick="this.closest('.guest-name').querySelector('input').value = this.dataset.name">{{ name }}</button>
+{% endfor %}

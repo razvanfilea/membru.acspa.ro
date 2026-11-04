@@ -84,10 +84,11 @@
         }
     }
 
-    // Also clears what the form loaded: the hour picked for a date and the name suggestions
+    // Also clears the hour picked for a date and loads the name suggestions for an empty name
     function resetGuestForm(form) {
         form.reset();
-        form.querySelectorAll('[data-reset-empty], .search-results-container').forEach(el => el.innerHTML = '');
+        form.querySelectorAll('[data-reset-empty]').forEach(el => el.innerHTML = '');
+        htmx.trigger(form.querySelector('input[name=name]'), 'guest-form-reset');
         form.closest('[popover]')?.hidePopover();
         form.closest('dialog')?.close();
     }

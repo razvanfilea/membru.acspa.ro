@@ -598,28 +598,78 @@ async fn search_names(
         names: Vec<String>,
     }
 
-    let name = query.name.trim();
-    let names = if name.is_empty() {
-        Vec::new()
-    } else {
-        let pattern = format!("%{name}%");
-        query_scalar!(
-            "select coalesce(nickname, name) as 'name!' from users
-             where (name like $1 or nickname like $1) and is_deleted = false
-             limit 5",
-            pattern
-        )
-        .fetch_all(&state.read_pool)
-        .await?
-    };
+    let names =
+        suggested_guest_names(&state.read_pool, state.location.id, query.name.trim()).await?;
 
     NameSuggestionsTemplate { names }.try_into_response()
+}
+
+/// The most recent past guests come first, followed by members. An empty name matches everyone.
+async fn suggested_guest_names(
+    pool: &SqlitePool,
+    location: i64,
+    name: &str,
+) -> sqlx::Result<Vec<String>> {
+    let pattern = format!("%{name}%");
+    query_scalar!(
+        r#"select name as "name!: String" from (
+            select created_for as name, created_at as used_at from reservations
+            where created_for like $1 and location = $2
+            union all
+            select coalesce(nickname, name), null from users
+            where (name like $1 or nickname like $1) and is_deleted = false
+        )
+        group by name
+        order by max(used_at) desc
+        limit 3"#,
+        pattern,
+        location
+    )
+    .fetch_all(pool)
+    .await
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sqlx::SqlitePool;
+
+    #[sqlx::test]
+    async fn guest_name_suggestions(pool: SqlitePool) -> sqlx::Result<()> {
+        sqlx::query(
+            "insert into users (id, email, name, password_hash, role_id, birthday, member_since) values
+             (10, 'dan@acspa.ro', 'Dan Membru', '', 1, '1995-05-10', '2024-01-01'),
+             (11, 'old@acspa.ro', 'Dan Sters', '', 1, '1995-05-10', '2024-01-01')",
+        )
+        .execute(&pool)
+        .await?;
+        sqlx::query("update users set is_deleted = true where id = 11")
+            .execute(&pool)
+            .await?;
+        sqlx::query(
+            "insert into reservations (user_id, location, date, hour, created_for, created_at) values
+             (0, 1, '2026-01-01', 18, 'Ana Veche', '2026-01-01 10:00:00'),
+             (0, 1, '2026-01-02', 18, 'Dana Noua', '2026-01-03 10:00:00'),
+             (0, 1, '2026-01-03', 18, 'Dana Noua', '2026-01-02 10:00:00'),
+             (0, 1, '2026-01-04', 18, 'Bogdan', '2026-01-02 12:00:00'),
+             (0, 1, '2026-01-05', 18, 'Dan Membru', '2025-01-01 10:00:00')",
+        )
+        .execute(&pool)
+        .await?;
+
+        assert_eq!(
+            suggested_guest_names(&pool, 1, "").await?,
+            ["Dana Noua", "Bogdan", "Ana Veche"]
+        );
+        // A member who was also a guest shows once, deleted members not at all
+        assert_eq!(
+            suggested_guest_names(&pool, 1, "dan").await?,
+            ["Dana Noua", "Bogdan", "Dan Membru"]
+        );
+        assert!(suggested_guest_names(&pool, 1, "zzz").await?.is_empty());
+        // Guests of another location are not suggested
+        assert!(suggested_guest_names(&pool, 2, "dana").await?.is_empty());
+        Ok(())
+    }
 
     #[sqlx::test]
     async fn user_phone_numbers_crud_and_anonymization(pool: SqlitePool) -> sqlx::Result<()> {

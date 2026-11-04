@@ -17,6 +17,11 @@
     ::file-selector-button {
         border-color: var(--color-base-300, currentColor);
     }
+
+    /* Tailwind's reset removes the browser's auto margin, which is what centers a popover */
+    [popover] {
+        margin: auto;
+    }
 }
 
 @theme {
@@ -70,6 +75,15 @@
         .action-collapse-body {
             transition: none;
         }
+    }
+
+    /* Fits the 3 suggestions and keeps its height while empty, so the form never moves */
+    .search-results-container {
+        @apply flex flex-col h-27;
+    }
+    .search-result {
+        @apply h-9 shrink-0 px-3 rounded-lg text-left truncate cursor-pointer
+               hover:bg-primary hover:text-primary-content;
     }
 
     .btn-main-fab {

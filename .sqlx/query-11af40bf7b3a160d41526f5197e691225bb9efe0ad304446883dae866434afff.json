@@ -1,0 +1,21 @@
+{
+  "db_name": "SQLite",
+  "query": "select name as \"name!: String\" from (\n            select created_for as name, created_at as used_at from reservations\n            where created_for like $1 and location = $2\n            union all\n            select coalesce(nickname, name), null from users\n            where (name like $1 or nickname like $1) and is_deleted = false\n        )\n        group by name\n        order by max(used_at) desc\n        limit 3",
+  "describe": {
+    "columns": [
+      {
+        "name": "name!: String",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "11af40bf7b3a160d41526f5197e691225bb9efe0ad304446883dae866434afff"
+}

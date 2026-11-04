@@ -106,7 +106,7 @@
         {% let guest_date = selected_date.to_iso() %}
         {% let guest_hour = slot.start_hour %}
         {% let guest_form_id = format!("home_guest_{}", guest_hour) %}
-        <div id="popover_create_guest_{{ slot.start_hour }}" class="rounded-2xl p-6 w-80 max-w-[90vw]" popover>
+        <div id="popover_create_guest_{{ slot.start_hour }}" class="rounded-2xl p-6 w-80 max-w-[90vw] max-sm:mt-4" popover>
             <p class="mb-4">Adaugă un invitat la ora <b>{{ guest_hour }}</b></p>
             {% call add_guest::form(guest_form_id) %}
             <input type="hidden" name="date" value="{{ guest_date }}">
