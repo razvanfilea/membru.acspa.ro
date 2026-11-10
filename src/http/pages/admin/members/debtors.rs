@@ -1,5 +1,4 @@
 use crate::model::global_vars::GlobalVars;
-use crate::model::role::UserRole;
 use crate::model::user::{User, UserDetails};
 use crate::utils::dates::{YearMonth, YearMonthIter};
 use crate::utils::{date_formats, local_date};
@@ -70,10 +69,12 @@ pub async fn compute_debtors(
     let current_date = local_date();
     let users = query_as!(
         UserDetails,
-        "select * from user_details_with_role where is_active = true and admin_panel_access = false order by name"
+        "select * from user_details_with_role where is_active = true order by name"
     )
     .fetch_all(conn.as_mut())
-    .await?;
+    .await?
+    .into_iter()
+    .filter(UserDetails::pays_monthly_fee);
 
     #[derive(PartialEq, Eq, Hash)]
     struct PaidMonth {
@@ -110,7 +111,6 @@ pub async fn compute_debtors(
     let year_months = YearMonthIter::for_year(selected_year);
 
     let debtors = users
-        .into_iter()
         .filter_map(|member| {
             let member_breaks = breaks_lookup
                 .get(&member.id)
@@ -184,22 +184,17 @@ async fn is_month_covered(
 }
 
 pub async fn check_user_has_paid(pool: &SqlitePool, user: &User) -> sqlx::Result<bool> {
-    let role = UserRole::fetch_by_user_id(pool, user.id).await?;
-
-    if user.admin_panel_access || role.monthly_fee.is_none_or(|fee| fee == 0) {
+    let mut tx = pool.begin().await?;
+    let details = UserDetails::fetch(tx.as_mut(), user.id).await?;
+    if !details.pays_monthly_fee() {
         return Ok(true);
     }
-    let mut tx = pool.begin().await?;
     let global_vars = GlobalVars::fetch(tx.as_mut()).await?;
     if !global_vars.check_payments {
         return Ok(true);
     }
 
-    let member_since = sqlx::query_scalar!("select member_since from users where id = $1", user.id)
-        .fetch_one(tx.as_mut())
-        .await?;
-
-    let join_ym = YearMonth::from(member_since);
+    let join_ym = YearMonth::from(details.member_since);
     let current_ym = YearMonth::from(local_date());
     let start_ym = current_ym.prev().prev();
 
@@ -425,6 +420,30 @@ mod tests {
         let debtors = compute_debtors(&pool, 2020).await?;
 
         // Only the regular member should appear (admins are filtered out)
+        assert_eq!(debtors.len(), 1);
+        assert_eq!(debtors[0].member.name, "Regular");
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn skips_roles_without_monthly_fee(pool: SqlitePool) -> sqlx::Result<()> {
+        setup_test_data(&pool).await?;
+        query!(
+            r#"
+            INSERT INTO user_roles (id, name, reservations, guest_reservations, admin_panel_access, monthly_fee)
+            VALUES (102, 'NoFee', 1, 0, FALSE, NULL),
+                   (103, 'ZeroFee', 1, 0, FALSE, 0)
+            "#
+        )
+        .execute(&pool)
+        .await?;
+
+        insert_user(&pool, 1, "Regular", 100, "2020-01-01").await?;
+        insert_user(&pool, 2, "NoFeeUser", 102, "2020-01-01").await?;
+        insert_user(&pool, 3, "ZeroFeeUser", 103, "2020-01-01").await?;
+
+        let debtors = compute_debtors(&pool, 2020).await?;
+
         assert_eq!(debtors.len(), 1);
         assert_eq!(debtors[0].member.name, "Regular");
         Ok(())

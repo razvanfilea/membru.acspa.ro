@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "select * from user_details_with_role where is_active = true and admin_panel_access = false order by name",
+  "query": "select * from user_details_with_role where is_active = true order by name",
   "describe": {
     "columns": [
       {
@@ -178,5 +178,5 @@
       true
     ]
   },
-  "hash": "d0e62219eeab12ef17b15866b93a508cba68fb425101e6b09bf6d474b1f8f2e0"
+  "hash": "057dacb7ba6a3b9996cbb085752f1ab71b37223d522f97a1ebbb6977f4e9643a"
 }

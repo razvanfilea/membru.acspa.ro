@@ -27,7 +27,7 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         this_weeks_reservations: ReservationsCount,
         max_reservations: ReservationsCount,
         current_year: i32,
-        status_grid: StatusGridTemplate,
+        status_grid: Option<StatusGridTemplate>,
     }
 
     let auth_user = auth_session.user().await.ok_or(HttpError::Unauthorized)?;
@@ -40,8 +40,11 @@ pub async fn profile_page(auth_session: AuthSession, State(state): State<AppStat
         ReservationsCount::fetch_user_week(&state.read_pool, &auth_user, current_date).await?;
 
     let current_year = current_date.year();
-    let status_grid =
-        StatusGridTemplate::fetch(&state.read_pool, user.clone(), current_year, false).await?;
+    let status_grid = if user.pays_monthly_fee() {
+        Some(StatusGridTemplate::fetch(&state.read_pool, user.clone(), current_year, false).await?)
+    } else {
+        None
+    };
 
     ProfileTemplate {
         reservations: GroupedUserReservations::fetch_for_user_year(

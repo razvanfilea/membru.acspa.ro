@@ -102,6 +102,11 @@ impl User {
 }
 
 impl UserDetails {
+    /// Admins (e.g. founders) and roles without a fee don't owe monthly payments
+    pub fn pays_monthly_fee(&self) -> bool {
+        !self.admin_panel_access && self.monthly_fee.is_some_and(|fee| fee > 0)
+    }
+
     pub fn monthly_fee_amount(&self) -> Option<String> {
         self.monthly_fee.map(format_amount)
     }

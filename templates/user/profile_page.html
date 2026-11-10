@@ -135,7 +135,9 @@
         </div>
     </section>
 
+    {% if let Some(status_grid) = status_grid %}
     {{ status_grid|safe }}
+    {% endif %}
 
     {% let selected_year = current_year.clone() %}
     {% include "profile_content.html" %}
